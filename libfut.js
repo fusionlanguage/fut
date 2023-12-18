@@ -18019,6 +18019,10 @@ export class GenD extends GenCCppD
 		}
 		else {
 			this.write(" main() => ");
+			if (this.namespace.length != 0) {
+				this.write(this.namespace);
+				this.writeChar(46);
+			}
 			this.writeName(main.parent);
 			this.writeLine(".main();");
 		}

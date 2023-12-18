@@ -1,0 +1,7 @@
+public static class Test //FAIL: cpp TODO; cl
+{
+	public static bool Run()
+	{
+		return true;
+	}
+}

@@ -16944,6 +16944,10 @@ void GenD::writeMain(const FuMethod * main)
 	}
 	else {
 		write(" main() => ");
+		if (!this->namespace_.empty()) {
+			write(this->namespace_);
+			writeChar('.');
+		}
 		writeName(main->parent);
 		writeLine(".main();");
 	}

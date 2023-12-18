@@ -17521,6 +17521,10 @@ namespace Fusion
 			}
 			else {
 				Write(" main() => ");
+				if (this.Namespace.Length != 0) {
+					Write(this.Namespace);
+					WriteChar('.');
+				}
 				WriteName(main.Parent);
 				WriteLine(".main();");
 			}
