@@ -1,7 +1,7 @@
 public static class HelloFu
 {
 	public const int VersionMajor = 3;
-	public const int VersionMinor = 0;
+	public const int VersionMinor = 1;
 	public const string Version = $"{VersionMajor}.{VersionMinor}";
 
 	/// Returns `true` if and only if `x` is a power of 2 (1, 2, 4, 8, 16, ...).
