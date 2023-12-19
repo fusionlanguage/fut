@@ -10323,7 +10323,7 @@ namespace Fusion
 		{
 			if (def.IsAssignableStorage())
 				return false;
-			return (def is FuField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass)))) || (def.Value != null && GetThrowingMethod(def.Value) != null) || (def.Type.GetStorageType() is FuStorageType storage && (storage.Class.Id == FuId.LockClass || NeedsConstructor(storage.Class))) || HasListDestroy(def.Type) || base.HasInitCode(def);
+			return (def is FuField && (def.Value != null || IsHeapAllocated(def.Type.GetStorageType()) || (def.Type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.StackClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass)))) || (def.Value != null && GetThrowingMethod(def.Value) != null) || (def.Type.GetStorageType() is FuStorageType storage && (storage.Class.Id == FuId.LockClass || NeedsConstructor(storage.Class))) || HasListDestroy(def.Type) || base.HasInitCode(def);
 		}
 
 		FuPriority StartForwardThrow(FuMethod throwingMethod)
