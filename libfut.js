@@ -12008,9 +12008,9 @@ export class GenC extends GenCCpp
 				this.include("stdarg.h");
 				this.include("stdio.h");
 				this.write("FuString_Format(\"%s%s\", ");
-				expr.left.accept(this, FuPriority.ARGUMENT);
+				this.#writeTemporaryOrExpr(expr.left, FuPriority.ARGUMENT);
 				this.write(", ");
-				expr.right.accept(this, FuPriority.ARGUMENT);
+				this.#writeTemporaryOrExpr(expr.right, FuPriority.ARGUMENT);
 				this.writeChar(41);
 				return;
 			}
@@ -12037,7 +12037,7 @@ export class GenC extends GenCCpp
 					this.write(", FuString_Format(\"%s");
 					this.writePrintfFormat(rightInterpolated);
 					this.write("\", ");
-					expr.left.accept(this, FuPriority.ARGUMENT);
+					this.#writeTemporaryOrExpr(expr.left, FuPriority.ARGUMENT);
 					this.writeInterpolatedStringArgs(rightInterpolated);
 					this.writeChar(41);
 				}

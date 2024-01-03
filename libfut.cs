@@ -11616,9 +11616,9 @@ namespace Fusion
 					Include("stdarg.h");
 					Include("stdio.h");
 					Write("FuString_Format(\"%s%s\", ");
-					expr.Left.Accept(this, FuPriority.Argument);
+					WriteTemporaryOrExpr(expr.Left, FuPriority.Argument);
 					Write(", ");
-					expr.Right.Accept(this, FuPriority.Argument);
+					WriteTemporaryOrExpr(expr.Right, FuPriority.Argument);
 					WriteChar(')');
 					return;
 				}
@@ -11644,7 +11644,7 @@ namespace Fusion
 						Write(", FuString_Format(\"%s");
 						WritePrintfFormat(rightInterpolated);
 						Write("\", ");
-						expr.Left.Accept(this, FuPriority.Argument);
+						WriteTemporaryOrExpr(expr.Left, FuPriority.Argument);
 						WriteInterpolatedStringArgs(rightInterpolated);
 						WriteChar(')');
 					}

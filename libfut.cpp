@@ -11341,9 +11341,9 @@ void GenC::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 			include("stdarg.h");
 			include("stdio.h");
 			write("FuString_Format(\"%s%s\", ");
-			expr->left->accept(this, FuPriority::argument);
+			writeTemporaryOrExpr(expr->left.get(), FuPriority::argument);
 			write(", ");
-			expr->right->accept(this, FuPriority::argument);
+			writeTemporaryOrExpr(expr->right.get(), FuPriority::argument);
 			writeChar(')');
 			return;
 		}
@@ -11371,7 +11371,7 @@ void GenC::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 				write(", FuString_Format(\"%s");
 				writePrintfFormat(rightInterpolated);
 				write("\", ");
-				expr->left->accept(this, FuPriority::argument);
+				writeTemporaryOrExpr(expr->left.get(), FuPriority::argument);
 				writeInterpolatedStringArgs(rightInterpolated);
 				writeChar(')');
 			}

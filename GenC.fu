@@ -1,6 +1,6 @@
 // GenC.fu - C code generator
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -2460,9 +2460,9 @@ public class GenC : GenCCpp
 				Include("stdarg.h");
 				Include("stdio.h");
 				Write("FuString_Format(\"%s%s\", ");
-				expr.Left.Accept(this, FuPriority.Argument);
+				WriteTemporaryOrExpr(expr.Left, FuPriority.Argument);
 				Write(", ");
-				expr.Right.Accept(this, FuPriority.Argument);
+				WriteTemporaryOrExpr(expr.Right, FuPriority.Argument);
 				WriteChar(')');
 				return;
 			}
@@ -2488,7 +2488,7 @@ public class GenC : GenCCpp
 					Write(", FuString_Format(\"%s");
 					WritePrintfFormat(rightInterpolated);
 					Write("\", ");
-					expr.Left.Accept(this, FuPriority.Argument); // FIXME: side effect
+					WriteTemporaryOrExpr(expr.Left, FuPriority.Argument); // FIXME: side effect
 					WriteInterpolatedStringArgs(rightInterpolated);
 					WriteChar(')');
 				}
