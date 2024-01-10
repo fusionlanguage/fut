@@ -1,0 +1,16 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		List<Stack<int>()>() los; //FAIL: cl
+		los.Add();
+		los[0].Push(11);
+		los[0].Push(12);
+		los.Add();
+		los[1].Push(21);
+		los[1].Push(22);
+		return los.Count == 2 && los[0].Count == 2 && los[1].Count == 2
+			&& los[0].Pop() == 12 && los[0].Peek() == 11
+			&& los[1].Pop() == 22 && los[1].Peek() == 21;
+	}
+}

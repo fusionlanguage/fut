@@ -9722,9 +9722,25 @@ void GenC::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 	}
 }
 
+bool GenC::isCollection(const FuClass * klass)
+{
+	switch (klass->id) {
+	case FuId::listClass:
+	case FuId::queueClass:
+	case FuId::stackClass:
+	case FuId::hashSetClass:
+	case FuId::sortedSetClass:
+	case FuId::dictionaryClass:
+	case FuId::sortedDictionaryClass:
+		return true;
+	default:
+		return false;
+	}
+}
+
 void GenC::writeStorageInit(const FuNamedValue * def)
 {
-	if (def->type->asClassType()->class_->typeParameterCount > 0)
+	if (isCollection(def->type->asClassType()->class_))
 		GenBase::writeStorageInit(def);
 }
 
@@ -9748,8 +9764,8 @@ void GenC::writeAssignTemporary(const FuType * type, const FuExpr * expr)
 int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 {
 	ensureChildBlock();
-	const FuClassType * klass;
-	bool assign = expr != nullptr || ((klass = dynamic_cast<const FuClassType *>(type)) && (klass->class_->id == FuId::listClass || klass->class_->id == FuId::dictionaryClass || klass->class_->id == FuId::sortedDictionaryClass));
+	const FuStorageType * storage;
+	bool assign = expr != nullptr || ((storage = dynamic_cast<const FuStorageType *>(type)) && isCollection(storage->class_));
 	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, type);
 	if (id < 0) {
 		id = std::ssize(this->currentTemporaries);

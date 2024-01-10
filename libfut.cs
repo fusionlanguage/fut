@@ -10018,9 +10018,25 @@ namespace Fusion
 			}
 		}
 
+		static bool IsCollection(FuClass klass)
+		{
+			switch (klass.Id) {
+			case FuId.ListClass:
+			case FuId.QueueClass:
+			case FuId.StackClass:
+			case FuId.HashSetClass:
+			case FuId.SortedSetClass:
+			case FuId.DictionaryClass:
+			case FuId.SortedDictionaryClass:
+				return true;
+			default:
+				return false;
+			}
+		}
+
 		protected override void WriteStorageInit(FuNamedValue def)
 		{
-			if (def.Type.AsClassType().Class.TypeParameterCount > 0)
+			if (IsCollection(def.Type.AsClassType().Class))
 				base.WriteStorageInit(def);
 		}
 
@@ -10044,7 +10060,7 @@ namespace Fusion
 		int WriteCTemporary(FuType type, FuExpr expr)
 		{
 			EnsureChildBlock();
-			bool assign = expr != null || (type is FuClassType klass && (klass.Class.Id == FuId.ListClass || klass.Class.Id == FuId.DictionaryClass || klass.Class.Id == FuId.SortedDictionaryClass));
+			bool assign = expr != null || (type is FuStorageType storage && IsCollection(storage.Class));
 			int id = this.CurrentTemporaries.IndexOf(type);
 			if (id < 0) {
 				id = this.CurrentTemporaries.Count;

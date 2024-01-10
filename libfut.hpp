@@ -2135,6 +2135,7 @@ private:
 	void writeHashEqual(const FuType * keyType);
 	void writeNewHashTable(const FuType * keyType, std::string_view valueDestroy);
 	void writeNewTree(const FuType * keyType, std::string_view valueDestroy);
+	static bool isCollection(const FuClass * klass);
 	void writeAssignTemporary(const FuType * type, const FuExpr * expr);
 	int writeCTemporary(const FuType * type, const FuExpr * expr);
 	void writeStorageTemporary(const FuExpr * expr);

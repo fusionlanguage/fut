@@ -10363,9 +10363,25 @@ export class GenC extends GenCCpp
 		}
 	}
 
+	static #isCollection(klass)
+	{
+		switch (klass.id) {
+		case FuId.LIST_CLASS:
+		case FuId.QUEUE_CLASS:
+		case FuId.STACK_CLASS:
+		case FuId.HASH_SET_CLASS:
+		case FuId.SORTED_SET_CLASS:
+		case FuId.DICTIONARY_CLASS:
+		case FuId.SORTED_DICTIONARY_CLASS:
+			return true;
+		default:
+			return false;
+		}
+	}
+
 	writeStorageInit(def)
 	{
-		if (def.type.asClassType().class.typeParameterCount > 0)
+		if (GenC.#isCollection(def.type.asClassType().class))
 			super.writeStorageInit(def);
 	}
 
@@ -10389,8 +10405,8 @@ export class GenC extends GenCCpp
 	#writeCTemporary(type, expr)
 	{
 		this.ensureChildBlock();
-		let klass;
-		let assign = expr != null || ((klass = type) instanceof FuClassType && (klass.class.id == FuId.LIST_CLASS || klass.class.id == FuId.DICTIONARY_CLASS || klass.class.id == FuId.SORTED_DICTIONARY_CLASS));
+		let storage;
+		let assign = expr != null || ((storage = type) instanceof FuStorageType && GenC.#isCollection(storage.class));
 		let id = this.currentTemporaries.indexOf(type);
 		if (id < 0) {
 			id = this.currentTemporaries.length;
