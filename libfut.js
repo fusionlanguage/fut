@@ -12139,7 +12139,7 @@ export class GenC extends GenCCpp
 			this.#endForwardThrow(throwingMethod);
 			this.cleanupTemporaries();
 		}
-		else if (statement instanceof FuCallExpr && statement.type.id == FuId.STRING_STORAGE_TYPE) {
+		else if (statement.isNewString(false)) {
 			this.write("free(");
 			statement.accept(this, FuPriority.ARGUMENT);
 			this.writeLine(");");

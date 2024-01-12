@@ -11473,7 +11473,7 @@ void GenC::visitExpr(const FuExpr * statement)
 		endForwardThrow(throwingMethod);
 		cleanupTemporaries();
 	}
-	else if (dynamic_cast<const FuCallExpr *>(statement) && statement->type->id == FuId::stringStorageType) {
+	else if (statement->isNewString(false)) {
 		write("free(");
 		statement->accept(this, FuPriority::argument);
 		writeLine(");");

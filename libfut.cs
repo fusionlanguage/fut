@@ -11746,7 +11746,7 @@ namespace Fusion
 				EndForwardThrow(throwingMethod);
 				CleanupTemporaries();
 			}
-			else if (statement is FuCallExpr && statement.Type.Id == FuId.StringStorageType) {
+			else if (statement.IsNewString(false)) {
 				Write("free(");
 				statement.Accept(this, FuPriority.Argument);
 				WriteLine(");");
