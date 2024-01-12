@@ -9649,13 +9649,17 @@ export class GenC extends GenCCpp
 		return (indexing = expr) instanceof FuBinaryExpr && indexing.op == FuToken.LEFT_BRACKET && (dict = indexing.left.type) instanceof FuClassType && dict.class.typeParameterCount == 2 && dict.getValueType() instanceof FuStorageType;
 	}
 
+	#writeTemporaryName(id)
+	{
+		this.write("futemp");
+		this.visitLiteralLong(BigInt(id));
+	}
+
 	#writeTemporaryOrExpr(expr, parent)
 	{
-		let tempId = this.currentTemporaries.indexOf(expr);
-		if (tempId >= 0) {
-			this.write("futemp");
-			this.visitLiteralLong(BigInt(tempId));
-		}
+		let id = this.currentTemporaries.indexOf(expr);
+		if (id >= 0)
+			this.#writeTemporaryName(id);
 		else
 			expr.accept(this, parent);
 	}
@@ -9826,6 +9830,7 @@ export class GenC extends GenCCpp
 
 	#writeSelfForField(fieldClass)
 	{
+		console.assert(fieldClass instanceof FuClass);
 		this.write("self->");
 		for (let klass = this.currentClass; klass != fieldClass; klass = klass.parent)
 			this.write("base.");
@@ -10411,8 +10416,7 @@ export class GenC extends GenCCpp
 		if (id < 0) {
 			id = this.currentTemporaries.length;
 			this.#startDefinition(type, false, true);
-			this.write("futemp");
-			this.visitLiteralLong(BigInt(id));
+			this.#writeTemporaryName(id);
 			this.#endDefinition(type);
 			if (assign)
 				this.#writeAssignTemporary(type, expr);
@@ -10420,8 +10424,7 @@ export class GenC extends GenCCpp
 			this.currentTemporaries.push(expr);
 		}
 		else if (assign) {
-			this.write("futemp");
-			this.visitLiteralLong(BigInt(id));
+			this.#writeTemporaryName(id);
 			this.#writeAssignTemporary(type, expr);
 			this.writeCharLine(59);
 			this.currentTemporaries[id] = expr;
@@ -10575,12 +10578,16 @@ export class GenC extends GenCCpp
 			this.writeCoerced(type, expr, FuPriority.ARGUMENT);
 	}
 
+	#writeAddressOf(expr)
+	{
+		this.writeChar(38);
+		expr.accept(this, FuPriority.PRIMARY);
+	}
+
 	#writeGConstPointerCast(expr)
 	{
-		if (expr.type instanceof FuStorageType) {
-			this.writeChar(38);
-			expr.accept(this, FuPriority.PRIMARY);
-		}
+		if (expr.type instanceof FuStorageType)
+			this.#writeAddressOf(expr);
 		else if (expr.type instanceof FuClassType)
 			expr.accept(this, FuPriority.ARGUMENT);
 		else {
@@ -10591,10 +10598,8 @@ export class GenC extends GenCCpp
 
 	#writeUnstorage(obj)
 	{
-		if (obj.type instanceof FuStorageType) {
-			this.writeChar(38);
-			obj.accept(this, FuPriority.PRIMARY);
-		}
+		if (obj.type instanceof FuStorageType)
+			this.#writeAddressOf(obj);
 		else
 			obj.accept(this, FuPriority.ARGUMENT);
 	}
@@ -11035,10 +11040,8 @@ export class GenC extends GenCCpp
 			this.writeCall("FuShared_AddRef", expr);
 		}
 		else if ((klass = type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && klass.class.id != FuId.ARRAY_PTR_CLASS && !(klass instanceof FuStorageType)) {
-			if (klass.class.id == FuId.QUEUE_CLASS && expr.type instanceof FuStorageType) {
-				this.writeChar(38);
-				expr.accept(this, FuPriority.PRIMARY);
-			}
+			if (klass.class.id == FuId.QUEUE_CLASS && expr.type instanceof FuStorageType)
+				this.#writeAddressOf(expr);
 			else
 				this.#writeClassPtr(klass.class, expr, parent);
 		}

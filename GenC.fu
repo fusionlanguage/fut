@@ -134,13 +134,17 @@ public class GenC : GenCCpp
 			&& dict.GetValueType() is FuStorageType;
 	}
 
+	void WriteTemporaryName!(int id)
+	{
+		Write("futemp");
+		VisitLiteralLong(id);
+	}
+
 	void WriteTemporaryOrExpr!(FuExpr expr, FuPriority parent)
 	{
-		int tempId = this.CurrentTemporaries.IndexOf(expr);
-		if (tempId >= 0) {
-			Write("futemp");
-			VisitLiteralLong(tempId);
-		}
+		int id = this.CurrentTemporaries.IndexOf(expr);
+		if (id >= 0)
+			WriteTemporaryName(id);
 		else
 			expr.Accept(this, parent);
 	}
@@ -311,8 +315,9 @@ public class GenC : GenCCpp
 		WriteChar(']');
 	}
 
-	void WriteSelfForField!(FuSymbol fieldClass) // FuClass
+	void WriteSelfForField!(FuSymbol fieldClass)
 	{
+		assert fieldClass is FuClass;
 		Write("self->");
 		for (FuSymbol klass = this.CurrentClass; klass != fieldClass; klass = klass.Parent)
 			Write("base.");
@@ -741,7 +746,7 @@ public class GenC : GenCCpp
 			case FuId.SortedDictionaryClass:
 				return "(GDestroyNotify) g_tree_unref";
 			default:
-				return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" /* TODO: emit */ : "free";
+				return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" /* TODO: namespace, TODO: emit */ : "free";
 			}
 		case FuDynamicPtrType:
 			this.SharedRelease = true;
@@ -889,8 +894,7 @@ public class GenC : GenCCpp
 		if (id < 0) {
 			id = this.CurrentTemporaries.Count;
 			StartDefinition(type, false, true);
-			Write("futemp");
-			VisitLiteralLong(id);
+			WriteTemporaryName(id);
 			EndDefinition(type);
 			if (assign)
 				WriteAssignTemporary(type, expr);
@@ -898,8 +902,7 @@ public class GenC : GenCCpp
 			this.CurrentTemporaries.Add(expr);
 		}
 		else if (assign) {
-			Write("futemp");
-			VisitLiteralLong(id);
+			WriteTemporaryName(id);
 			WriteAssignTemporary(type, expr);
 			WriteCharLine(';');
 			this.CurrentTemporaries[id] = expr;
@@ -1036,12 +1039,17 @@ public class GenC : GenCCpp
 			WriteCoerced(type, expr, FuPriority.Argument);
 	}
 
+	void WriteAddressOf!(FuExpr expr)
+	{
+		WriteChar('&');
+		expr.Accept(this, FuPriority.Primary);
+	}
+
 	void WriteGConstPointerCast!(FuExpr expr)
 	{
 		switch (expr.Type) {
 		case FuStorageType:
-			WriteChar('&');
-			expr.Accept(this, FuPriority.Primary);
+			WriteAddressOf(expr);
 			break;
 		case FuClassType:
 			expr.Accept(this, FuPriority.Argument);
@@ -1055,10 +1063,8 @@ public class GenC : GenCCpp
 
 	void WriteUnstorage!(FuExpr obj)
 	{
-		if (obj.Type is FuStorageType) {
-			WriteChar('&');
-			obj.Accept(this, FuPriority.Primary);
-		}
+		if (obj.Type is FuStorageType)
+			WriteAddressOf(obj);
 		else
 			obj.Accept(this, FuPriority.Argument);
 	}
@@ -1495,10 +1501,8 @@ public class GenC : GenCCpp
 			WriteCall("FuShared_AddRef", expr);
 			break;
 		case FuClassType klass when klass.Class.Id != FuId.StringClass && klass.Class.Id != FuId.ArrayPtrClass && !(klass is FuStorageType):
-			if (klass.Class.Id == FuId.QueueClass && expr.Type is FuStorageType) {
-				WriteChar('&');
-				expr.Accept(this, FuPriority.Primary);
-			}
+			if (klass.Class.Id == FuId.QueueClass && expr.Type is FuStorageType)
+				WriteAddressOf(expr);
 			else
 				WriteClassPtr(klass.Class, expr, parent);
 			break;

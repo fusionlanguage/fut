@@ -9312,13 +9312,17 @@ namespace Fusion
 			return expr is FuBinaryExpr indexing && indexing.Op == FuToken.LeftBracket && indexing.Left.Type is FuClassType dict && dict.Class.TypeParameterCount == 2 && dict.GetValueType() is FuStorageType;
 		}
 
+		void WriteTemporaryName(int id)
+		{
+			Write("futemp");
+			VisitLiteralLong(id);
+		}
+
 		void WriteTemporaryOrExpr(FuExpr expr, FuPriority parent)
 		{
-			int tempId = this.CurrentTemporaries.IndexOf(expr);
-			if (tempId >= 0) {
-				Write("futemp");
-				VisitLiteralLong(tempId);
-			}
+			int id = this.CurrentTemporaries.IndexOf(expr);
+			if (id >= 0)
+				WriteTemporaryName(id);
 			else
 				expr.Accept(this, parent);
 		}
@@ -9490,6 +9494,7 @@ namespace Fusion
 
 		void WriteSelfForField(FuSymbol fieldClass)
 		{
+			Debug.Assert(fieldClass is FuClass);
 			Write("self->");
 			for (FuSymbol klass = this.CurrentClass; klass != fieldClass; klass = klass.Parent)
 				Write("base.");
@@ -10065,8 +10070,7 @@ namespace Fusion
 			if (id < 0) {
 				id = this.CurrentTemporaries.Count;
 				StartDefinition(type, false, true);
-				Write("futemp");
-				VisitLiteralLong(id);
+				WriteTemporaryName(id);
 				EndDefinition(type);
 				if (assign)
 					WriteAssignTemporary(type, expr);
@@ -10074,8 +10078,7 @@ namespace Fusion
 				this.CurrentTemporaries.Add(expr);
 			}
 			else if (assign) {
-				Write("futemp");
-				VisitLiteralLong(id);
+				WriteTemporaryName(id);
 				WriteAssignTemporary(type, expr);
 				WriteCharLine(';');
 				this.CurrentTemporaries[id] = expr;
@@ -10210,12 +10213,17 @@ namespace Fusion
 				WriteCoerced(type, expr, FuPriority.Argument);
 		}
 
+		void WriteAddressOf(FuExpr expr)
+		{
+			WriteChar('&');
+			expr.Accept(this, FuPriority.Primary);
+		}
+
 		void WriteGConstPointerCast(FuExpr expr)
 		{
 			switch (expr.Type) {
 			case FuStorageType:
-				WriteChar('&');
-				expr.Accept(this, FuPriority.Primary);
+				WriteAddressOf(expr);
 				break;
 			case FuClassType:
 				expr.Accept(this, FuPriority.Argument);
@@ -10229,10 +10237,8 @@ namespace Fusion
 
 		void WriteUnstorage(FuExpr obj)
 		{
-			if (obj.Type is FuStorageType) {
-				WriteChar('&');
-				obj.Accept(this, FuPriority.Primary);
-			}
+			if (obj.Type is FuStorageType)
+				WriteAddressOf(obj);
 			else
 				obj.Accept(this, FuPriority.Argument);
 		}
@@ -10656,10 +10662,8 @@ namespace Fusion
 				WriteCall("FuShared_AddRef", expr);
 				break;
 			case FuClassType klass when klass.Class.Id != FuId.StringClass && klass.Class.Id != FuId.ArrayPtrClass && !(klass is FuStorageType):
-				if (klass.Class.Id == FuId.QueueClass && expr.Type is FuStorageType) {
-					WriteChar('&');
-					expr.Accept(this, FuPriority.Primary);
-				}
+				if (klass.Class.Id == FuId.QueueClass && expr.Type is FuStorageType)
+					WriteAddressOf(expr);
 				else
 					WriteClassPtr(klass.Class, expr, parent);
 				break;

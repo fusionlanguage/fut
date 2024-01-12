@@ -2112,6 +2112,7 @@ private:
 	std::vector<const FuVar *> varsToDestruct;
 	void writeStringPtrAddCast(const FuCallExpr * call);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
+	void writeTemporaryName(int id);
 	void writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);
 	void writeClassPtr(const FuClass * resultClass, const FuExpr * expr, FuPriority parent);
@@ -2143,6 +2144,7 @@ private:
 	static bool hasTemporariesToDestruct(const FuExpr * expr);
 	static bool containsTemporariesToDestruct(const FuExpr * expr);
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);
+	void writeAddressOf(const FuExpr * expr);
 	void writeGConstPointerCast(const FuExpr * expr);
 	void writeUnstorage(const FuExpr * obj);
 	void writeQueueGet(std::string_view function, const FuExpr * obj, FuPriority parent);

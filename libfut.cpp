@@ -9079,13 +9079,17 @@ bool GenC::isDictionaryClassStgIndexing(const FuExpr * expr)
 	return (indexing = dynamic_cast<const FuBinaryExpr *>(expr)) && indexing->op == FuToken::leftBracket && (dict = dynamic_cast<const FuClassType *>(indexing->left->type.get())) && dict->class_->typeParameterCount == 2 && dynamic_cast<const FuStorageType *>(dict->getValueType().get());
 }
 
+void GenC::writeTemporaryName(int id)
+{
+	write("futemp");
+	visitLiteralLong(id);
+}
+
 void GenC::writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent)
 {
-	int tempId = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
-	if (tempId >= 0) {
-		write("futemp");
-		visitLiteralLong(tempId);
-	}
+	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
+	if (id >= 0)
+		writeTemporaryName(id);
 	else
 		expr->accept(this, parent);
 }
@@ -9194,6 +9198,7 @@ void GenC::writeForeachArrayIndexing(const FuForeach * forEach, const FuSymbol *
 
 void GenC::writeSelfForField(const FuSymbol * fieldClass)
 {
+	assert(dynamic_cast<const FuClass *>(fieldClass));
 	write("self->");
 	for (const FuSymbol * klass = this->currentClass; klass != fieldClass; klass = klass->parent)
 		write("base.");
@@ -9770,8 +9775,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 	if (id < 0) {
 		id = std::ssize(this->currentTemporaries);
 		startDefinition(type, false, true);
-		write("futemp");
-		visitLiteralLong(id);
+		writeTemporaryName(id);
 		endDefinition(type);
 		if (assign)
 			writeAssignTemporary(type, expr);
@@ -9779,8 +9783,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 		this->currentTemporaries.push_back(expr);
 	}
 	else if (assign) {
-		write("futemp");
-		visitLiteralLong(id);
+		writeTemporaryName(id);
 		writeAssignTemporary(type, expr);
 		writeCharLine(';');
 		this->currentTemporaries[id] = expr;
@@ -9909,12 +9912,16 @@ void GenC::writeGPointerCast(const FuType * type, const FuExpr * expr)
 		writeCoerced(type, expr, FuPriority::argument);
 }
 
+void GenC::writeAddressOf(const FuExpr * expr)
+{
+	writeChar('&');
+	expr->accept(this, FuPriority::primary);
+}
+
 void GenC::writeGConstPointerCast(const FuExpr * expr)
 {
-	if (dynamic_cast<const FuStorageType *>(expr->type.get())) {
-		writeChar('&');
-		expr->accept(this, FuPriority::primary);
-	}
+	if (dynamic_cast<const FuStorageType *>(expr->type.get()))
+		writeAddressOf(expr);
 	else if (dynamic_cast<const FuClassType *>(expr->type.get()))
 		expr->accept(this, FuPriority::argument);
 	else {
@@ -9925,10 +9932,8 @@ void GenC::writeGConstPointerCast(const FuExpr * expr)
 
 void GenC::writeUnstorage(const FuExpr * obj)
 {
-	if (dynamic_cast<const FuStorageType *>(obj->type.get())) {
-		writeChar('&');
-		obj->accept(this, FuPriority::primary);
-	}
+	if (dynamic_cast<const FuStorageType *>(obj->type.get()))
+		writeAddressOf(obj);
 	else
 		obj->accept(this, FuPriority::argument);
 }
@@ -10360,10 +10365,8 @@ void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPrio
 		writeCall("FuShared_AddRef", expr);
 	}
 	else if ((klass = dynamic_cast<const FuClassType *>(type)) && klass->class_->id != FuId::stringClass && klass->class_->id != FuId::arrayPtrClass && !dynamic_cast<const FuStorageType *>(klass)) {
-		if (klass->class_->id == FuId::queueClass && dynamic_cast<const FuStorageType *>(expr->type.get())) {
-			writeChar('&');
-			expr->accept(this, FuPriority::primary);
-		}
+		if (klass->class_->id == FuId::queueClass && dynamic_cast<const FuStorageType *>(expr->type.get()))
+			writeAddressOf(expr);
 		else
 			writeClassPtr(klass->class_, expr, parent);
 	}
