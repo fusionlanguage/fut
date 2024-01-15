@@ -9962,34 +9962,22 @@ namespace Fusion
 			case FuArrayStorageType:
 				Write("free");
 				break;
-			case FuStorageType storage:
-				switch (storage.Class.Id) {
-				case FuId.ListClass:
-				case FuId.StackClass:
-					Write("(GDestroyNotify) g_array_unref");
-					break;
-				case FuId.HashSetClass:
-				case FuId.DictionaryClass:
-					Write("(GDestroyNotify) g_hash_table_unref");
-					break;
-				case FuId.SortedSetClass:
-				case FuId.SortedDictionaryClass:
-					Write("(GDestroyNotify) g_tree_unref");
-					break;
-				default:
-					if (NeedsDestructor(storage.Class)) {
-						Write("(GDestroyNotify) ");
-						WriteName(storage.Class);
-						Write("_Delete");
+			case FuOwningType owning:
+				if (owning.Class.Id == FuId.None) {
+					if (type is FuStorageType) {
+						if (NeedsDestructor(owning.Class)) {
+							Write("(GDestroyNotify) ");
+							WriteName(owning.Class);
+							Write("_Delete");
+						}
+						else
+							Write("free");
+						break;
 					}
-					else
-						Write("free");
-					break;
 				}
-				break;
-			case FuDynamicPtrType:
-				this.SharedRelease = true;
-				Write("FuShared_Release");
+				else
+					Write("(GDestroyNotify) ");
+				WriteDestructMethodName(owning);
 				break;
 			default:
 				Write("NULL");

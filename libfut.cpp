@@ -9666,35 +9666,25 @@ void GenC::writeDictionaryDestroy(const FuType * type)
 {
 	if (dynamic_cast<const FuStringStorageType *>(type) || dynamic_cast<const FuArrayStorageType *>(type))
 		write("free");
-	else if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(type)) {
-		switch (storage->class_->id) {
-		case FuId::listClass:
-		case FuId::stackClass:
-			write("(GDestroyNotify) g_array_unref");
-			break;
-		case FuId::hashSetClass:
-		case FuId::dictionaryClass:
-			write("(GDestroyNotify) g_hash_table_unref");
-			break;
-		case FuId::sortedSetClass:
-		case FuId::sortedDictionaryClass:
-			write("(GDestroyNotify) g_tree_unref");
-			break;
-		default:
-			if (needsDestructor(storage->class_)) {
-				write("(GDestroyNotify) ");
-				writeName(storage->class_);
-				write("_Delete");
+	else if (const FuOwningType *owning = dynamic_cast<const FuOwningType *>(type))
+		do {
+			if (owning->class_->id == FuId::none) {
+				if (dynamic_cast<const FuStorageType *>(type)) {
+					if (needsDestructor(owning->class_)) {
+						write("(GDestroyNotify) ");
+						writeName(owning->class_);
+						write("_Delete");
+					}
+					else
+						write("free");
+					break;
+				}
 			}
 			else
-				write("free");
-			break;
+				write("(GDestroyNotify) ");
+			writeDestructMethodName(owning);
 		}
-	}
-	else if (dynamic_cast<const FuDynamicPtrType *>(type)) {
-		this->sharedRelease = true;
-		write("FuShared_Release");
-	}
+		while (false);
 	else
 		write("NULL");
 }

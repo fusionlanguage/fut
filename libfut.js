@@ -10308,40 +10308,30 @@ export class GenC extends GenCCpp
 
 	#writeDictionaryDestroy(type)
 	{
-		if (type instanceof FuStringStorageType || type instanceof FuArrayStorageType)
-			this.write("free");
-		else if (type instanceof FuStorageType) {
-			const storage = type;
-			switch (storage.class.id) {
-			case FuId.LIST_CLASS:
-			case FuId.STACK_CLASS:
-				this.write("(GDestroyNotify) g_array_unref");
-				break;
-			case FuId.HASH_SET_CLASS:
-			case FuId.DICTIONARY_CLASS:
-				this.write("(GDestroyNotify) g_hash_table_unref");
-				break;
-			case FuId.SORTED_SET_CLASS:
-			case FuId.SORTED_DICTIONARY_CLASS:
-				this.write("(GDestroyNotify) g_tree_unref");
-				break;
-			default:
-				if (GenC.#needsDestructor(storage.class)) {
-					this.write("(GDestroyNotify) ");
-					this.writeName(storage.class);
-					this.write("_Delete");
+		fuswitch0: {
+			if (type instanceof FuStringStorageType || type instanceof FuArrayStorageType)
+				this.write("free");
+			else if (type instanceof FuOwningType) {
+				const owning = type;
+				if (owning.class.id == FuId.NONE) {
+					if (type instanceof FuStorageType) {
+						if (GenC.#needsDestructor(owning.class)) {
+							this.write("(GDestroyNotify) ");
+							this.writeName(owning.class);
+							this.write("_Delete");
+						}
+						else
+							this.write("free");
+						break fuswitch0;
+					}
 				}
 				else
-					this.write("free");
-				break;
+					this.write("(GDestroyNotify) ");
+				this.#writeDestructMethodName(owning);
 			}
+			else
+				this.write("NULL");
 		}
-		else if (type instanceof FuDynamicPtrType) {
-			this.#sharedRelease = true;
-			this.write("FuShared_Release");
-		}
-		else
-			this.write("NULL");
 	}
 
 	#writeHashEqual(keyType)
