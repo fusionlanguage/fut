@@ -10100,60 +10100,58 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		nesting++;
 		type = array->getElementType().get();
 	}
-	const FuType * queueElementType = nullptr;
-	if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) {
-		if (dynamic->class_->id == FuId::regexClass)
-			write("g_regex_unref(");
-		else {
+	const FuClassType * klass = static_cast<const FuClassType *>(type);
+	switch (klass->class_->id) {
+	case FuId::none:
+	case FuId::arrayPtrClass:
+		if (dynamic_cast<const FuDynamicPtrType *>(type)) {
 			this->sharedRelease = true;
 			write("FuShared_Release(");
 		}
-	}
-	else if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(type)) {
-		switch (storage->class_->id) {
-		case FuId::listClass:
-		case FuId::stackClass:
-			write("g_array_unref(");
-			break;
-		case FuId::queueClass:
-			if (hasDictionaryDestroy(storage->getElementType().get())) {
-				write("g_queue_clear_full(&");
-				queueElementType = storage->getElementType().get();
-			}
-			else
-				write("g_queue_clear(&");
-			break;
-		case FuId::hashSetClass:
-		case FuId::dictionaryClass:
-			write("g_hash_table_unref(");
-			break;
-		case FuId::sortedSetClass:
-		case FuId::sortedDictionaryClass:
-			write("g_tree_unref(");
-			break;
-		case FuId::matchClass:
-			write("g_match_info_free(");
-			break;
-		case FuId::lockClass:
-			write("mtx_destroy(&");
-			break;
-		default:
-			writeName(storage->class_);
+		else {
+			writeName(klass->class_);
 			write("_Destruct(&");
-			break;
 		}
-	}
-	else
+		break;
+	case FuId::stringClass:
 		write("free(");
+		break;
+	case FuId::listClass:
+	case FuId::stackClass:
+		write("g_array_unref(");
+		break;
+	case FuId::queueClass:
+		write(hasDictionaryDestroy(klass->getElementType().get()) ? "g_queue_clear_full(&" : "g_queue_clear(&");
+		break;
+	case FuId::hashSetClass:
+	case FuId::dictionaryClass:
+		write("g_hash_table_unref(");
+		break;
+	case FuId::sortedSetClass:
+	case FuId::sortedDictionaryClass:
+		write("g_tree_unref(");
+		break;
+	case FuId::regexClass:
+		write("g_regex_unref(");
+		break;
+	case FuId::matchClass:
+		write("g_match_info_free(");
+		break;
+	case FuId::lockClass:
+		write("mtx_destroy(&");
+		break;
+	default:
+		std::abort();
+	}
 	writeLocalName(symbol, FuPriority::primary);
 	for (int i = 0; i < nesting; i++) {
 		write("[_i");
 		visitLiteralLong(i);
 		writeChar(']');
 	}
-	if (queueElementType != nullptr) {
+	if (klass->class_->id == FuId::queueClass && hasDictionaryDestroy(klass->getElementType().get())) {
 		write(", ");
-		writeDictionaryDestroy(queueElementType);
+		writeDictionaryDestroy(klass->getElementType().get());
 	}
 	writeLine(");");
 	this->indent -= nesting;

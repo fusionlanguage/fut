@@ -10775,62 +10775,58 @@ export class GenC extends GenCCpp
 			nesting++;
 			type = array.getElementType();
 		}
-		let queueElementType = null;
-		if (type instanceof FuDynamicPtrType) {
-			const dynamic = type;
-			if (dynamic.class.id == FuId.REGEX_CLASS)
-				this.write("g_regex_unref(");
-			else {
+		let klass = type;
+		switch (klass.class.id) {
+		case FuId.NONE:
+		case FuId.ARRAY_PTR_CLASS:
+			if (type instanceof FuDynamicPtrType) {
 				this.#sharedRelease = true;
 				this.write("FuShared_Release(");
 			}
-		}
-		else if (type instanceof FuStorageType) {
-			const storage = type;
-			switch (storage.class.id) {
-			case FuId.LIST_CLASS:
-			case FuId.STACK_CLASS:
-				this.write("g_array_unref(");
-				break;
-			case FuId.QUEUE_CLASS:
-				if (GenC.#hasDictionaryDestroy(storage.getElementType())) {
-					this.write("g_queue_clear_full(&");
-					queueElementType = storage.getElementType();
-				}
-				else
-					this.write("g_queue_clear(&");
-				break;
-			case FuId.HASH_SET_CLASS:
-			case FuId.DICTIONARY_CLASS:
-				this.write("g_hash_table_unref(");
-				break;
-			case FuId.SORTED_SET_CLASS:
-			case FuId.SORTED_DICTIONARY_CLASS:
-				this.write("g_tree_unref(");
-				break;
-			case FuId.MATCH_CLASS:
-				this.write("g_match_info_free(");
-				break;
-			case FuId.LOCK_CLASS:
-				this.write("mtx_destroy(&");
-				break;
-			default:
-				this.writeName(storage.class);
+			else {
+				this.writeName(klass.class);
 				this.write("_Destruct(&");
-				break;
 			}
-		}
-		else
+			break;
+		case FuId.STRING_CLASS:
 			this.write("free(");
+			break;
+		case FuId.LIST_CLASS:
+		case FuId.STACK_CLASS:
+			this.write("g_array_unref(");
+			break;
+		case FuId.QUEUE_CLASS:
+			this.write(GenC.#hasDictionaryDestroy(klass.getElementType()) ? "g_queue_clear_full(&" : "g_queue_clear(&");
+			break;
+		case FuId.HASH_SET_CLASS:
+		case FuId.DICTIONARY_CLASS:
+			this.write("g_hash_table_unref(");
+			break;
+		case FuId.SORTED_SET_CLASS:
+		case FuId.SORTED_DICTIONARY_CLASS:
+			this.write("g_tree_unref(");
+			break;
+		case FuId.REGEX_CLASS:
+			this.write("g_regex_unref(");
+			break;
+		case FuId.MATCH_CLASS:
+			this.write("g_match_info_free(");
+			break;
+		case FuId.LOCK_CLASS:
+			this.write("mtx_destroy(&");
+			break;
+		default:
+			throw new Error();
+		}
 		this.writeLocalName(symbol, FuPriority.PRIMARY);
 		for (let i = 0; i < nesting; i++) {
 			this.write("[_i");
 			this.visitLiteralLong(BigInt(i));
 			this.writeChar(93);
 		}
-		if (queueElementType != null) {
+		if (klass.class.id == FuId.QUEUE_CLASS && GenC.#hasDictionaryDestroy(klass.getElementType())) {
 			this.write(", ");
-			this.#writeDictionaryDestroy(queueElementType);
+			this.#writeDictionaryDestroy(klass.getElementType());
 		}
 		this.writeLine(");");
 		this.indent -= nesting;

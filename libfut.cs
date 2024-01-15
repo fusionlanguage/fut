@@ -10405,53 +10405,48 @@ namespace Fusion
 				nesting++;
 				type = array.GetElementType();
 			}
-			FuType queueElementType = null;
-			switch (type) {
-			case FuDynamicPtrType dynamic:
-				if (dynamic.Class.Id == FuId.RegexClass)
-					Write("g_regex_unref(");
-				else {
+			FuClassType klass = (FuClassType) type;
+			switch (klass.Class.Id) {
+			case FuId.None:
+			case FuId.ArrayPtrClass:
+				if (type is FuDynamicPtrType) {
 					this.SharedRelease = true;
 					Write("FuShared_Release(");
 				}
-				break;
-			case FuStorageType storage:
-				switch (storage.Class.Id) {
-				case FuId.ListClass:
-				case FuId.StackClass:
-					Write("g_array_unref(");
-					break;
-				case FuId.QueueClass:
-					if (HasDictionaryDestroy(storage.GetElementType())) {
-						Write("g_queue_clear_full(&");
-						queueElementType = storage.GetElementType();
-					}
-					else
-						Write("g_queue_clear(&");
-					break;
-				case FuId.HashSetClass:
-				case FuId.DictionaryClass:
-					Write("g_hash_table_unref(");
-					break;
-				case FuId.SortedSetClass:
-				case FuId.SortedDictionaryClass:
-					Write("g_tree_unref(");
-					break;
-				case FuId.MatchClass:
-					Write("g_match_info_free(");
-					break;
-				case FuId.LockClass:
-					Write("mtx_destroy(&");
-					break;
-				default:
-					WriteName(storage.Class);
+				else {
+					WriteName(klass.Class);
 					Write("_Destruct(&");
-					break;
 				}
 				break;
-			default:
+			case FuId.StringClass:
 				Write("free(");
 				break;
+			case FuId.ListClass:
+			case FuId.StackClass:
+				Write("g_array_unref(");
+				break;
+			case FuId.QueueClass:
+				Write(HasDictionaryDestroy(klass.GetElementType()) ? "g_queue_clear_full(&" : "g_queue_clear(&");
+				break;
+			case FuId.HashSetClass:
+			case FuId.DictionaryClass:
+				Write("g_hash_table_unref(");
+				break;
+			case FuId.SortedSetClass:
+			case FuId.SortedDictionaryClass:
+				Write("g_tree_unref(");
+				break;
+			case FuId.RegexClass:
+				Write("g_regex_unref(");
+				break;
+			case FuId.MatchClass:
+				Write("g_match_info_free(");
+				break;
+			case FuId.LockClass:
+				Write("mtx_destroy(&");
+				break;
+			default:
+				throw new NotImplementedException();
 			}
 			WriteLocalName(symbol, FuPriority.Primary);
 			for (int i = 0; i < nesting; i++) {
@@ -10459,9 +10454,9 @@ namespace Fusion
 				VisitLiteralLong(i);
 				WriteChar(']');
 			}
-			if (queueElementType != null) {
+			if (klass.Class.Id == FuId.QueueClass && HasDictionaryDestroy(klass.GetElementType())) {
 				Write(", ");
-				WriteDictionaryDestroy(queueElementType);
+				WriteDictionaryDestroy(klass.GetElementType());
 			}
 			WriteLine(");");
 			this.Indent -= nesting;
