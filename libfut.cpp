@@ -9545,6 +9545,45 @@ void GenC::writeXstructorPtrs(const FuClass * klass)
 	writeXstructorPtr(needsDestructor(klass), klass, "Destruct");
 }
 
+void GenC::writeListFreeName(FuId id)
+{
+	write("FuList_Free");
+	switch (id) {
+	case FuId::none:
+		write("Shared");
+		break;
+	case FuId::stringClass:
+		write("String");
+		break;
+	case FuId::listClass:
+		write("List");
+		break;
+	case FuId::queueClass:
+		write("Queue");
+		break;
+	case FuId::dictionaryClass:
+		write("HashTable");
+		break;
+	case FuId::sortedDictionaryClass:
+		write("Tree");
+		break;
+	case FuId::regexClass:
+		write("Regex");
+		break;
+	case FuId::matchClass:
+		write("Match");
+		break;
+	default:
+		std::abort();
+	}
+}
+
+void GenC::addListFree(FuId id)
+{
+	this->listFrees.insert(id);
+	writeListFreeName(id);
+}
+
 void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
 	this->sharedMake = true;
@@ -9558,16 +9597,16 @@ void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, 
 	write("), ");
 	if (dynamic_cast<const FuStringStorageType *>(elementType)) {
 		this->ptrConstruct = true;
-		this->listFrees["String"] = "free(*(void **) ptr)";
-		write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
+		write("(FuMethodPtr) FuPtr_Construct, ");
+		addListFree(FuId::stringClass);
 	}
 	else if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(elementType))
 		writeXstructorPtrs(storage->class_);
 	else if (dynamic_cast<const FuDynamicPtrType *>(elementType)) {
 		this->ptrConstruct = true;
 		this->sharedRelease = true;
-		this->listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
-		write("(FuMethodPtr) FuPtr_Construct, FuList_FreeShared");
+		write("(FuMethodPtr) FuPtr_Construct, ");
+		addListFree(FuId::none);
 	}
 	else
 		write("NULL, NULL");
@@ -9647,7 +9686,7 @@ bool GenC::writeDestructMethodName(const FuClassType * klass)
 		write("g_regex_unref");
 		return false;
 	case FuId::matchClass:
-		write("g_match_info_free");
+		write("g_match_info_unref");
 		return false;
 	case FuId::lockClass:
 		write("mtx_destroy");
@@ -10281,41 +10320,47 @@ void GenC::writeInitCode(const FuNamedValue * def)
 		write("g_array_set_clear_func(");
 		writeArrayElement(def, nesting);
 		write(", ");
-		if (dynamic_cast<const FuStringStorageType *>(type->asClassType()->getElementType().get())) {
-			this->listFrees["String"] = "free(*(void **) ptr)";
-			write("FuList_FreeString");
-		}
-		else if (dynamic_cast<const FuDynamicPtrType *>(type->asClassType()->getElementType().get())) {
-			this->sharedRelease = true;
-			this->listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
-			write("FuList_FreeShared");
-		}
-		else if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(type->asClassType()->getElementType().get())) {
-			switch (storage->class_->id) {
-			case FuId::listClass:
-			case FuId::stackClass:
-				this->listFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-				write("FuList_FreeList");
-				break;
-			case FuId::hashSetClass:
-			case FuId::dictionaryClass:
-				this->listFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-				write("FuList_FreeHashTable");
-				break;
-			case FuId::sortedSetClass:
-			case FuId::sortedDictionaryClass:
-				this->listFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-				write("FuList_FreeTree");
-				break;
-			default:
-				write("(GDestroyNotify) ");
-				writeName(storage->class_);
-				write("_Destruct");
-				break;
+		const FuClassType * elementType = static_cast<const FuClassType *>(type->asClassType()->getElementType().get());
+		switch (elementType->class_->id) {
+		case FuId::none:
+		case FuId::arrayPtrClass:
+			if (dynamic_cast<const FuDynamicPtrType *>(elementType)) {
+				this->sharedRelease = true;
+				addListFree(FuId::none);
 			}
-		}
-		else
+			else {
+				write("(GDestroyNotify) ");
+				writeName(elementType->class_);
+				write("_Destruct");
+			}
+			break;
+		case FuId::stringClass:
+			addListFree(FuId::stringClass);
+			break;
+		case FuId::listClass:
+		case FuId::stackClass:
+			addListFree(FuId::listClass);
+			break;
+		case FuId::queueClass:
+			addListFree(FuId::queueClass);
+			break;
+		case FuId::hashSetClass:
+		case FuId::dictionaryClass:
+			addListFree(FuId::dictionaryClass);
+			break;
+		case FuId::sortedSetClass:
+		case FuId::sortedDictionaryClass:
+			addListFree(FuId::sortedDictionaryClass);
+			break;
+		case FuId::regexClass:
+			addListFree(FuId::regexClass);
+			break;
+		case FuId::matchClass:
+			addListFree(FuId::matchClass);
+			break;
+		default:
 			std::abort();
+		}
 		writeLine(");");
 	}
 	while (--nesting >= 0)
@@ -12427,14 +12472,41 @@ void GenC::writeLibrary()
 		writeLine("*ptr = value;");
 		closeBlock();
 	}
-	for (const auto &[name, content] : this->listFrees) {
+	for (FuId id : this->listFrees) {
 		writeNewLine();
-		write("static void FuList_Free");
-		write(name);
+		write("static void ");
+		writeListFreeName(id);
 		writeLine("(void *ptr)");
 		openBlock();
-		write(content);
-		writeCharLine(';');
+		switch (id) {
+		case FuId::none:
+			write("FuShared_Release(*(void **)");
+			break;
+		case FuId::stringClass:
+			write("free(*(char **)");
+			break;
+		case FuId::listClass:
+			write("g_array_unref(*(GArray **)");
+			break;
+		case FuId::queueClass:
+			write("g_queue_clear((GQueue *)");
+			break;
+		case FuId::dictionaryClass:
+			write("g_hash_table_unref(*(GHashTable **)");
+			break;
+		case FuId::sortedDictionaryClass:
+			write("g_tree_unref(*(GTree **)");
+			break;
+		case FuId::regexClass:
+			write("g_regex_unref(*(GRegex **)");
+			break;
+		case FuId::matchClass:
+			write("g_match_info_unref(*(GMatchInfo **)");
+			break;
+		default:
+			std::abort();
+		}
+		writeLine(" ptr);");
 		closeBlock();
 	}
 	if (this->treeCompareInteger) {

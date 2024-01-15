@@ -9217,7 +9217,7 @@ namespace Fusion
 
 		bool SharedAssign;
 
-		readonly SortedDictionary<string, string> ListFrees = new SortedDictionary<string, string>();
+		readonly SortedSet<FuId> ListFrees = new SortedSet<FuId>();
 
 		bool TreeCompareInteger;
 
@@ -9836,6 +9836,45 @@ namespace Fusion
 			WriteXstructorPtr(NeedsDestructor(klass), klass, "Destruct");
 		}
 
+		void WriteListFreeName(FuId id)
+		{
+			Write("FuList_Free");
+			switch (id) {
+			case FuId.None:
+				Write("Shared");
+				break;
+			case FuId.StringClass:
+				Write("String");
+				break;
+			case FuId.ListClass:
+				Write("List");
+				break;
+			case FuId.QueueClass:
+				Write("Queue");
+				break;
+			case FuId.DictionaryClass:
+				Write("HashTable");
+				break;
+			case FuId.SortedDictionaryClass:
+				Write("Tree");
+				break;
+			case FuId.RegexClass:
+				Write("Regex");
+				break;
+			case FuId.MatchClass:
+				Write("Match");
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
+		void AddListFree(FuId id)
+		{
+			this.ListFrees.Add(id);
+			WriteListFreeName(id);
+		}
+
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
 			this.SharedMake = true;
@@ -9850,8 +9889,8 @@ namespace Fusion
 			switch (elementType) {
 			case FuStringStorageType:
 				this.PtrConstruct = true;
-				this.ListFrees["String"] = "free(*(void **) ptr)";
-				Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
+				Write("(FuMethodPtr) FuPtr_Construct, ");
+				AddListFree(FuId.StringClass);
 				break;
 			case FuStorageType storage:
 				WriteXstructorPtrs(storage.Class);
@@ -9859,8 +9898,8 @@ namespace Fusion
 			case FuDynamicPtrType:
 				this.PtrConstruct = true;
 				this.SharedRelease = true;
-				this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
-				Write("(FuMethodPtr) FuPtr_Construct, FuList_FreeShared");
+				Write("(FuMethodPtr) FuPtr_Construct, ");
+				AddListFree(FuId.None);
 				break;
 			default:
 				Write("NULL, NULL");
@@ -9943,7 +9982,7 @@ namespace Fusion
 				Write("g_regex_unref");
 				return false;
 			case FuId.MatchClass:
-				Write("g_match_info_free");
+				Write("g_match_info_unref");
 				return false;
 			case FuId.LockClass:
 				Write("mtx_destroy");
@@ -10580,39 +10619,43 @@ namespace Fusion
 				Write("g_array_set_clear_func(");
 				WriteArrayElement(def, nesting);
 				Write(", ");
-				switch (type.AsClassType().GetElementType()) {
-				case FuStringStorageType:
-					this.ListFrees["String"] = "free(*(void **) ptr)";
-					Write("FuList_FreeString");
-					break;
-				case FuDynamicPtrType:
-					this.SharedRelease = true;
-					this.ListFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
-					Write("FuList_FreeShared");
-					break;
-				case FuStorageType storage:
-					switch (storage.Class.Id) {
-					case FuId.ListClass:
-					case FuId.StackClass:
-						this.ListFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-						Write("FuList_FreeList");
-						break;
-					case FuId.HashSetClass:
-					case FuId.DictionaryClass:
-						this.ListFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-						Write("FuList_FreeHashTable");
-						break;
-					case FuId.SortedSetClass:
-					case FuId.SortedDictionaryClass:
-						this.ListFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-						Write("FuList_FreeTree");
-						break;
-					default:
-						Write("(GDestroyNotify) ");
-						WriteName(storage.Class);
-						Write("_Destruct");
-						break;
+				FuClassType elementType = (FuClassType) type.AsClassType().GetElementType();
+				switch (elementType.Class.Id) {
+				case FuId.None:
+				case FuId.ArrayPtrClass:
+					if (elementType is FuDynamicPtrType) {
+						this.SharedRelease = true;
+						AddListFree(FuId.None);
 					}
+					else {
+						Write("(GDestroyNotify) ");
+						WriteName(elementType.Class);
+						Write("_Destruct");
+					}
+					break;
+				case FuId.StringClass:
+					AddListFree(FuId.StringClass);
+					break;
+				case FuId.ListClass:
+				case FuId.StackClass:
+					AddListFree(FuId.ListClass);
+					break;
+				case FuId.QueueClass:
+					AddListFree(FuId.QueueClass);
+					break;
+				case FuId.HashSetClass:
+				case FuId.DictionaryClass:
+					AddListFree(FuId.DictionaryClass);
+					break;
+				case FuId.SortedSetClass:
+				case FuId.SortedDictionaryClass:
+					AddListFree(FuId.SortedDictionaryClass);
+					break;
+				case FuId.RegexClass:
+					AddListFree(FuId.RegexClass);
+					break;
+				case FuId.MatchClass:
+					AddListFree(FuId.MatchClass);
 					break;
 				default:
 					throw new NotImplementedException();
@@ -12691,14 +12734,41 @@ namespace Fusion
 				WriteLine("*ptr = value;");
 				CloseBlock();
 			}
-			foreach ((string name, string content) in this.ListFrees) {
+			foreach (FuId id in this.ListFrees) {
 				WriteNewLine();
-				Write("static void FuList_Free");
-				Write(name);
+				Write("static void ");
+				WriteListFreeName(id);
 				WriteLine("(void *ptr)");
 				OpenBlock();
-				Write(content);
-				WriteCharLine(';');
+				switch (id) {
+				case FuId.None:
+					Write("FuShared_Release(*(void **)");
+					break;
+				case FuId.StringClass:
+					Write("free(*(char **)");
+					break;
+				case FuId.ListClass:
+					Write("g_array_unref(*(GArray **)");
+					break;
+				case FuId.QueueClass:
+					Write("g_queue_clear((GQueue *)");
+					break;
+				case FuId.DictionaryClass:
+					Write("g_hash_table_unref(*(GHashTable **)");
+					break;
+				case FuId.SortedDictionaryClass:
+					Write("g_tree_unref(*(GTree **)");
+					break;
+				case FuId.RegexClass:
+					Write("g_regex_unref(*(GRegex **)");
+					break;
+				case FuId.MatchClass:
+					Write("g_match_info_unref(*(GMatchInfo **)");
+					break;
+				default:
+					throw new NotImplementedException();
+				}
+				WriteLine(" ptr);");
 				CloseBlock();
 			}
 			if (this.TreeCompareInteger) {

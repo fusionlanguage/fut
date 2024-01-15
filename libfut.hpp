@@ -2113,7 +2113,7 @@ private:
 	bool sharedAddRef;
 	bool sharedRelease;
 	bool sharedAssign;
-	std::map<std::string_view, std::string_view> listFrees;
+	std::set<FuId> listFrees;
 	bool treeCompareInteger;
 	bool treeCompareString;
 	std::set<FuId> compares;
@@ -2140,6 +2140,8 @@ private:
 	static bool needToDestruct(const FuSymbol * symbol);
 	static bool needsDestructor(const FuClass * klass);
 	void writeXstructorPtrs(const FuClass * klass);
+	void writeListFreeName(FuId id);
+	void addListFree(FuId id);
 	void writeStringStorageValue(const FuExpr * expr);
 	bool writeDestructMethodName(const FuClassType * klass);
 	static bool hasDictionaryDestroy(const FuType * type);

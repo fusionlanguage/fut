@@ -9552,7 +9552,7 @@ export class GenC extends GenCCpp
 	#sharedAddRef;
 	#sharedRelease;
 	#sharedAssign;
-	#listFrees = {};
+	#listFrees = new Set();
 	#treeCompareInteger;
 	#treeCompareString;
 	#compares = new Set();
@@ -10187,6 +10187,45 @@ export class GenC extends GenCCpp
 		this.#writeXstructorPtr(GenC.#needsDestructor(klass), klass, "Destruct");
 	}
 
+	#writeListFreeName(id)
+	{
+		this.write("FuList_Free");
+		switch (id) {
+		case FuId.NONE:
+			this.write("Shared");
+			break;
+		case FuId.STRING_CLASS:
+			this.write("String");
+			break;
+		case FuId.LIST_CLASS:
+			this.write("List");
+			break;
+		case FuId.QUEUE_CLASS:
+			this.write("Queue");
+			break;
+		case FuId.DICTIONARY_CLASS:
+			this.write("HashTable");
+			break;
+		case FuId.SORTED_DICTIONARY_CLASS:
+			this.write("Tree");
+			break;
+		case FuId.REGEX_CLASS:
+			this.write("Regex");
+			break;
+		case FuId.MATCH_CLASS:
+			this.write("Match");
+			break;
+		default:
+			throw new Error();
+		}
+	}
+
+	#addListFree(id)
+	{
+		this.#listFrees.add(id);
+		this.#writeListFreeName(id);
+	}
+
 	writeNewArray(elementType, lengthExpr, parent)
 	{
 		this.#sharedMake = true;
@@ -10200,8 +10239,8 @@ export class GenC extends GenCCpp
 		this.write("), ");
 		if (elementType instanceof FuStringStorageType) {
 			this.#ptrConstruct = true;
-			this.#listFrees["String"] = "free(*(void **) ptr)";
-			this.write("(FuMethodPtr) FuPtr_Construct, FuList_FreeString");
+			this.write("(FuMethodPtr) FuPtr_Construct, ");
+			this.#addListFree(FuId.STRING_CLASS);
 		}
 		else if (elementType instanceof FuStorageType) {
 			const storage = elementType;
@@ -10210,8 +10249,8 @@ export class GenC extends GenCCpp
 		else if (elementType instanceof FuDynamicPtrType) {
 			this.#ptrConstruct = true;
 			this.#sharedRelease = true;
-			this.#listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
-			this.write("(FuMethodPtr) FuPtr_Construct, FuList_FreeShared");
+			this.write("(FuMethodPtr) FuPtr_Construct, ");
+			this.#addListFree(FuId.NONE);
 		}
 		else
 			this.write("NULL, NULL");
@@ -10291,7 +10330,7 @@ export class GenC extends GenCCpp
 			this.write("g_regex_unref");
 			return false;
 		case FuId.MATCH_CLASS:
-			this.write("g_match_info_free");
+			this.write("g_match_info_unref");
 			return false;
 		case FuId.LOCK_CLASS:
 			this.write("mtx_destroy");
@@ -10959,42 +10998,47 @@ export class GenC extends GenCCpp
 			this.write("g_array_set_clear_func(");
 			this.writeArrayElement(def, nesting);
 			this.write(", ");
-			if (type.asClassType().getElementType() instanceof FuStringStorageType) {
-				this.#listFrees["String"] = "free(*(void **) ptr)";
-				this.write("FuList_FreeString");
-			}
-			else if (type.asClassType().getElementType() instanceof FuDynamicPtrType) {
-				this.#sharedRelease = true;
-				this.#listFrees["Shared"] = "FuShared_Release(*(void **) ptr)";
-				this.write("FuList_FreeShared");
-			}
-			else if (type.asClassType().getElementType() instanceof FuStorageType) {
-				const storage = type.asClassType().getElementType();
-				switch (storage.class.id) {
-				case FuId.LIST_CLASS:
-				case FuId.STACK_CLASS:
-					this.#listFrees["List"] = "g_array_free(*(GArray **) ptr, TRUE)";
-					this.write("FuList_FreeList");
-					break;
-				case FuId.HASH_SET_CLASS:
-				case FuId.DICTIONARY_CLASS:
-					this.#listFrees["HashTable"] = "g_hash_table_unref(*(GHashTable **) ptr)";
-					this.write("FuList_FreeHashTable");
-					break;
-				case FuId.SORTED_SET_CLASS:
-				case FuId.SORTED_DICTIONARY_CLASS:
-					this.#listFrees["Tree"] = "g_tree_unref(*(GTree **) ptr)";
-					this.write("FuList_FreeTree");
-					break;
-				default:
-					this.write("(GDestroyNotify) ");
-					this.writeName(storage.class);
-					this.write("_Destruct");
-					break;
+			let elementType = type.asClassType().getElementType();
+			switch (elementType.class.id) {
+			case FuId.NONE:
+			case FuId.ARRAY_PTR_CLASS:
+				if (elementType instanceof FuDynamicPtrType) {
+					this.#sharedRelease = true;
+					this.#addListFree(FuId.NONE);
 				}
-			}
-			else
+				else {
+					this.write("(GDestroyNotify) ");
+					this.writeName(elementType.class);
+					this.write("_Destruct");
+				}
+				break;
+			case FuId.STRING_CLASS:
+				this.#addListFree(FuId.STRING_CLASS);
+				break;
+			case FuId.LIST_CLASS:
+			case FuId.STACK_CLASS:
+				this.#addListFree(FuId.LIST_CLASS);
+				break;
+			case FuId.QUEUE_CLASS:
+				this.#addListFree(FuId.QUEUE_CLASS);
+				break;
+			case FuId.HASH_SET_CLASS:
+			case FuId.DICTIONARY_CLASS:
+				this.#addListFree(FuId.DICTIONARY_CLASS);
+				break;
+			case FuId.SORTED_SET_CLASS:
+			case FuId.SORTED_DICTIONARY_CLASS:
+				this.#addListFree(FuId.SORTED_DICTIONARY_CLASS);
+				break;
+			case FuId.REGEX_CLASS:
+				this.#addListFree(FuId.REGEX_CLASS);
+				break;
+			case FuId.MATCH_CLASS:
+				this.#addListFree(FuId.MATCH_CLASS);
+				break;
+			default:
 				throw new Error();
+			}
 			this.writeLine(");");
 		}
 		while (--nesting >= 0)
@@ -13108,14 +13152,41 @@ export class GenC extends GenCCpp
 			this.writeLine("*ptr = value;");
 			this.closeBlock();
 		}
-		for (const [name, content] of Object.entries(this.#listFrees).sort((a, b) => a[0].localeCompare(b[0]))) {
+		for (const id of new Int32Array(this.#listFrees).sort()) {
 			this.writeNewLine();
-			this.write("static void FuList_Free");
-			this.write(name);
+			this.write("static void ");
+			this.#writeListFreeName(id);
 			this.writeLine("(void *ptr)");
 			this.openBlock();
-			this.write(content);
-			this.writeCharLine(59);
+			switch (id) {
+			case FuId.NONE:
+				this.write("FuShared_Release(*(void **)");
+				break;
+			case FuId.STRING_CLASS:
+				this.write("free(*(char **)");
+				break;
+			case FuId.LIST_CLASS:
+				this.write("g_array_unref(*(GArray **)");
+				break;
+			case FuId.QUEUE_CLASS:
+				this.write("g_queue_clear((GQueue *)");
+				break;
+			case FuId.DICTIONARY_CLASS:
+				this.write("g_hash_table_unref(*(GHashTable **)");
+				break;
+			case FuId.SORTED_DICTIONARY_CLASS:
+				this.write("g_tree_unref(*(GTree **)");
+				break;
+			case FuId.REGEX_CLASS:
+				this.write("g_regex_unref(*(GRegex **)");
+				break;
+			case FuId.MATCH_CLASS:
+				this.write("g_match_info_unref(*(GMatchInfo **)");
+				break;
+			default:
+				throw new Error();
+			}
+			this.writeLine(" ptr);");
 			this.closeBlock();
 		}
 		if (this.#treeCompareInteger) {
@@ -13246,8 +13317,7 @@ export class GenC extends GenCCpp
 		this.#sharedAddRef = false;
 		this.#sharedRelease = false;
 		this.#sharedAssign = false;
-		for (const key in this.#listFrees)
-			delete this.#listFrees[key];;
+		this.#listFrees.clear();
 		this.#treeCompareInteger = false;
 		this.#treeCompareString = false;
 		this.#compares.clear();
