@@ -1,6 +1,6 @@
 // AST.fu - Fusion abstract syntax tree
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1321,7 +1321,11 @@ public class FuReadWriteClassType : FuClassType
 	public override string GetClassSuffix() => "!";
 }
 
-public class FuStorageType : FuReadWriteClassType
+public abstract class FuOwningType : FuReadWriteClassType
+{
+}
+
+public class FuStorageType : FuOwningType
 {
 	public override bool IsFinal() => this.Class.Id != FuId.MatchClass;
 	public override bool IsAssignableFrom(FuType right) => right is FuStorageType rightClass && this.Class == rightClass.Class && EqualTypeArguments(rightClass);
@@ -1329,7 +1333,7 @@ public class FuStorageType : FuReadWriteClassType
 	public override string GetClassSuffix() => "()";
 }
 
-class FuDynamicPtrType : FuReadWriteClassType
+class FuDynamicPtrType : FuOwningType
 {
 	public override bool IsAssignableFrom(FuType right)
 	{

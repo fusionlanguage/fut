@@ -3003,7 +3003,11 @@ export class FuReadWriteClassType extends FuClassType
 	}
 }
 
-export class FuStorageType extends FuReadWriteClassType
+export class FuOwningType extends FuReadWriteClassType
+{
+}
+
+export class FuStorageType extends FuOwningType
 {
 
 	isFinal()
@@ -3029,7 +3033,7 @@ export class FuStorageType extends FuReadWriteClassType
 	}
 }
 
-class FuDynamicPtrType extends FuReadWriteClassType
+class FuDynamicPtrType extends FuOwningType
 {
 
 	isAssignableFrom(right)
@@ -10252,32 +10256,47 @@ export class GenC extends GenCCpp
 			throw new Error();
 	}
 
-	#getDictionaryDestroy(type)
+	static #hasDictionaryDestroy(type)
+	{
+		return type instanceof FuOwningType || type instanceof FuStringStorageType;
+	}
+
+	#writeDictionaryDestroy(type)
 	{
 		if (type instanceof FuStringStorageType || type instanceof FuArrayStorageType)
-			return "free";
+			this.write("free");
 		else if (type instanceof FuStorageType) {
 			const storage = type;
 			switch (storage.class.id) {
 			case FuId.LIST_CLASS:
 			case FuId.STACK_CLASS:
-				return "(GDestroyNotify) g_array_unref";
+				this.write("(GDestroyNotify) g_array_unref");
+				break;
 			case FuId.HASH_SET_CLASS:
 			case FuId.DICTIONARY_CLASS:
-				return "(GDestroyNotify) g_hash_table_unref";
+				this.write("(GDestroyNotify) g_hash_table_unref");
+				break;
 			case FuId.SORTED_SET_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
-				return "(GDestroyNotify) g_tree_unref";
+				this.write("(GDestroyNotify) g_tree_unref");
+				break;
 			default:
-				return GenC.#needsDestructor(storage.class) ? `(GDestroyNotify) ${storage.class.name}_Delete` : "free";
+				if (GenC.#needsDestructor(storage.class)) {
+					this.write("(GDestroyNotify) ");
+					this.writeName(storage.class);
+					this.write("_Delete");
+				}
+				else
+					this.write("free");
+				break;
 			}
 		}
 		else if (type instanceof FuDynamicPtrType) {
 			this.#sharedRelease = true;
-			return "FuShared_Release";
+			this.write("FuShared_Release");
 		}
 		else
-			return "NULL";
+			this.write("NULL");
 	}
 
 	#writeHashEqual(keyType)
@@ -10285,28 +10304,27 @@ export class GenC extends GenCCpp
 		this.write(keyType instanceof FuStringType ? "g_str_hash, g_str_equal" : "NULL, NULL");
 	}
 
-	#writeNewHashTable(keyType, valueDestroy)
+	#writeNewHashTable(keyType, valueType)
 	{
 		this.write("g_hash_table_new");
-		let keyDestroy = this.#getDictionaryDestroy(keyType);
-		if (keyDestroy == "NULL" && valueDestroy == "NULL") {
-			this.writeChar(40);
-			this.#writeHashEqual(keyType);
-		}
-		else {
+		if (GenC.#hasDictionaryDestroy(keyType) || GenC.#hasDictionaryDestroy(valueType)) {
 			this.write("_full(");
 			this.#writeHashEqual(keyType);
 			this.write(", ");
-			this.write(keyDestroy);
+			this.#writeDictionaryDestroy(keyType);
 			this.write(", ");
-			this.write(valueDestroy);
+			this.#writeDictionaryDestroy(valueType);
+		}
+		else {
+			this.writeChar(40);
+			this.#writeHashEqual(keyType);
 		}
 		this.writeChar(41);
 	}
 
-	#writeNewTree(keyType, valueDestroy)
+	#writeNewTree(keyType, valueType)
 	{
-		if (keyType.id == FuId.STRING_PTR_TYPE && valueDestroy == "NULL")
+		if (keyType.id == FuId.STRING_PTR_TYPE && !GenC.#hasDictionaryDestroy(valueType))
 			this.write("g_tree_new((GCompareFunc) strcmp");
 		else {
 			this.write("g_tree_new_full(FuTree_Compare");
@@ -10321,9 +10339,9 @@ export class GenC extends GenCCpp
 			else
 				this.notSupported(keyType, keyType.toString());
 			this.write(", NULL, ");
-			this.write(this.#getDictionaryDestroy(keyType));
+			this.#writeDictionaryDestroy(keyType);
 			this.write(", ");
-			this.write(valueDestroy);
+			this.#writeDictionaryDestroy(valueType);
 		}
 		this.writeChar(41);
 	}
@@ -10341,16 +10359,16 @@ export class GenC extends GenCCpp
 			this.write("G_QUEUE_INIT");
 			break;
 		case FuId.HASH_SET_CLASS:
-			this.#writeNewHashTable(klass.getElementType(), "NULL");
+			this.#writeNewHashTable(klass.getElementType(), null);
 			break;
 		case FuId.SORTED_SET_CLASS:
-			this.#writeNewTree(klass.getElementType(), "NULL");
+			this.#writeNewTree(klass.getElementType(), null);
 			break;
 		case FuId.DICTIONARY_CLASS:
-			this.#writeNewHashTable(klass.getKeyType(), this.#getDictionaryDestroy(klass.getValueType()));
+			this.#writeNewHashTable(klass.getKeyType(), klass.getValueType());
 			break;
 		case FuId.SORTED_DICTIONARY_CLASS:
-			this.#writeNewTree(klass.getKeyType(), this.#getDictionaryDestroy(klass.getValueType()));
+			this.#writeNewTree(klass.getKeyType(), klass.getValueType());
 			break;
 		default:
 			this.#sharedMake = true;
@@ -10784,12 +10802,11 @@ export class GenC extends GenCCpp
 				this.write("g_array_unref(");
 				break;
 			case FuId.QUEUE_CLASS:
-				let destroy = this.#getDictionaryDestroy(storage.getElementType());
-				if (destroy != "NULL") {
+				if (GenC.#hasDictionaryDestroy(storage.getElementType())) {
 					this.write("g_queue_clear_full(&");
 					this.#writeDestructElement(symbol, nesting);
 					this.write(", ");
-					this.write(destroy);
+					this.#writeDictionaryDestroy(storage.getElementType());
 					this.writeLine(");");
 					this.indent -= nesting;
 					return;
@@ -11699,16 +11716,16 @@ export class GenC extends GenCCpp
 			this.#compares.add(typeId2);
 			break;
 		case FuId.QUEUE_CLEAR:
-			let destroy = this.#getDictionaryDestroy(obj.type.asClassType().getElementType());
-			if (destroy == "NULL") {
-				this.write("g_queue_clear(");
-				this.#writeUnstorage(obj);
-			}
-			else {
+			let elementType = obj.type.asClassType().getElementType();
+			if (GenC.#hasDictionaryDestroy(elementType)) {
 				this.write("g_queue_clear_full(");
 				this.#writeUnstorage(obj);
 				this.write(", ");
-				this.write(destroy);
+				this.#writeDictionaryDestroy(elementType);
+			}
+			else {
+				this.write("g_queue_clear(");
+				this.#writeUnstorage(obj);
 			}
 			this.writeChar(41);
 			break;

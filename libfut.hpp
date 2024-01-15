@@ -421,6 +421,7 @@ class FuEnumFlags;
 class FuClass;
 class FuClassType;
 class FuReadWriteClassType;
+class FuOwningType;
 class FuStorageType;
 class FuDynamicPtrType;
 class FuArrayStorageType;
@@ -1371,7 +1372,15 @@ public:
 	std::string_view getClassSuffix() const override;
 };
 
-class FuStorageType : public FuReadWriteClassType
+class FuOwningType : public FuReadWriteClassType
+{
+public:
+	virtual ~FuOwningType() = default;
+protected:
+	FuOwningType() = default;
+};
+
+class FuStorageType : public FuOwningType
 {
 public:
 	FuStorageType() = default;
@@ -1382,7 +1391,7 @@ public:
 	std::string_view getClassSuffix() const override;
 };
 
-class FuDynamicPtrType : public FuReadWriteClassType
+class FuDynamicPtrType : public FuOwningType
 {
 public:
 	FuDynamicPtrType() = default;
@@ -2132,10 +2141,11 @@ private:
 	static bool needsDestructor(const FuClass * klass);
 	void writeXstructorPtrs(const FuClass * klass);
 	void writeStringStorageValue(const FuExpr * expr);
-	std::string getDictionaryDestroy(const FuType * type);
+	static bool hasDictionaryDestroy(const FuType * type);
+	void writeDictionaryDestroy(const FuType * type);
 	void writeHashEqual(const FuType * keyType);
-	void writeNewHashTable(const FuType * keyType, std::string_view valueDestroy);
-	void writeNewTree(const FuType * keyType, std::string_view valueDestroy);
+	void writeNewHashTable(const FuType * keyType, const FuType * valueType);
+	void writeNewTree(const FuType * keyType, const FuType * valueType);
 	static bool isCollection(const FuClass * klass);
 	void writeAssignTemporary(const FuType * type, const FuExpr * expr);
 	int writeCTemporary(const FuType * type, const FuExpr * expr);

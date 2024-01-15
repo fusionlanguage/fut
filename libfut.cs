@@ -2889,7 +2889,11 @@ namespace Fusion
 		public override string GetClassSuffix() => "!";
 	}
 
-	public class FuStorageType : FuReadWriteClassType
+	public abstract class FuOwningType : FuReadWriteClassType
+	{
+	}
+
+	public class FuStorageType : FuOwningType
 	{
 
 		public override bool IsFinal() => this.Class.Id != FuId.MatchClass;
@@ -2901,7 +2905,7 @@ namespace Fusion
 		public override string GetClassSuffix() => "()";
 	}
 
-	class FuDynamicPtrType : FuReadWriteClassType
+	class FuDynamicPtrType : FuOwningType
 	{
 
 		public override bool IsAssignableFrom(FuType right)
@@ -9904,31 +9908,47 @@ namespace Fusion
 			}
 		}
 
-		string GetDictionaryDestroy(FuType type)
+		static bool HasDictionaryDestroy(FuType type) => type is FuOwningType || type is FuStringStorageType;
+
+		void WriteDictionaryDestroy(FuType type)
 		{
 			switch (type) {
 			case FuStringStorageType:
 			case FuArrayStorageType:
-				return "free";
+				Write("free");
+				break;
 			case FuStorageType storage:
 				switch (storage.Class.Id) {
 				case FuId.ListClass:
 				case FuId.StackClass:
-					return "(GDestroyNotify) g_array_unref";
+					Write("(GDestroyNotify) g_array_unref");
+					break;
 				case FuId.HashSetClass:
 				case FuId.DictionaryClass:
-					return "(GDestroyNotify) g_hash_table_unref";
+					Write("(GDestroyNotify) g_hash_table_unref");
+					break;
 				case FuId.SortedSetClass:
 				case FuId.SortedDictionaryClass:
-					return "(GDestroyNotify) g_tree_unref";
+					Write("(GDestroyNotify) g_tree_unref");
+					break;
 				default:
-					return NeedsDestructor(storage.Class) ? $"(GDestroyNotify) {storage.Class.Name}_Delete" : "free";
+					if (NeedsDestructor(storage.Class)) {
+						Write("(GDestroyNotify) ");
+						WriteName(storage.Class);
+						Write("_Delete");
+					}
+					else
+						Write("free");
+					break;
 				}
+				break;
 			case FuDynamicPtrType:
 				this.SharedRelease = true;
-				return "FuShared_Release";
+				Write("FuShared_Release");
+				break;
 			default:
-				return "NULL";
+				Write("NULL");
+				break;
 			}
 		}
 
@@ -9937,28 +9957,27 @@ namespace Fusion
 			Write(keyType is FuStringType ? "g_str_hash, g_str_equal" : "NULL, NULL");
 		}
 
-		void WriteNewHashTable(FuType keyType, string valueDestroy)
+		void WriteNewHashTable(FuType keyType, FuType valueType)
 		{
 			Write("g_hash_table_new");
-			string keyDestroy = GetDictionaryDestroy(keyType);
-			if (keyDestroy == "NULL" && valueDestroy == "NULL") {
-				WriteChar('(');
-				WriteHashEqual(keyType);
-			}
-			else {
+			if (HasDictionaryDestroy(keyType) || HasDictionaryDestroy(valueType)) {
 				Write("_full(");
 				WriteHashEqual(keyType);
 				Write(", ");
-				Write(keyDestroy);
+				WriteDictionaryDestroy(keyType);
 				Write(", ");
-				Write(valueDestroy);
+				WriteDictionaryDestroy(valueType);
+			}
+			else {
+				WriteChar('(');
+				WriteHashEqual(keyType);
 			}
 			WriteChar(')');
 		}
 
-		void WriteNewTree(FuType keyType, string valueDestroy)
+		void WriteNewTree(FuType keyType, FuType valueType)
 		{
-			if (keyType.Id == FuId.StringPtrType && valueDestroy == "NULL")
+			if (keyType.Id == FuId.StringPtrType && !HasDictionaryDestroy(valueType))
 				Write("g_tree_new((GCompareFunc) strcmp");
 			else {
 				Write("g_tree_new_full(FuTree_Compare");
@@ -9976,9 +9995,9 @@ namespace Fusion
 					break;
 				}
 				Write(", NULL, ");
-				Write(GetDictionaryDestroy(keyType));
+				WriteDictionaryDestroy(keyType);
 				Write(", ");
-				Write(valueDestroy);
+				WriteDictionaryDestroy(valueType);
 			}
 			WriteChar(')');
 		}
@@ -9996,16 +10015,16 @@ namespace Fusion
 				Write("G_QUEUE_INIT");
 				break;
 			case FuId.HashSetClass:
-				WriteNewHashTable(klass.GetElementType(), "NULL");
+				WriteNewHashTable(klass.GetElementType(), null);
 				break;
 			case FuId.SortedSetClass:
-				WriteNewTree(klass.GetElementType(), "NULL");
+				WriteNewTree(klass.GetElementType(), null);
 				break;
 			case FuId.DictionaryClass:
-				WriteNewHashTable(klass.GetKeyType(), GetDictionaryDestroy(klass.GetValueType()));
+				WriteNewHashTable(klass.GetKeyType(), klass.GetValueType());
 				break;
 			case FuId.SortedDictionaryClass:
-				WriteNewTree(klass.GetKeyType(), GetDictionaryDestroy(klass.GetValueType()));
+				WriteNewTree(klass.GetKeyType(), klass.GetValueType());
 				break;
 			default:
 				this.SharedMake = true;
@@ -10412,12 +10431,11 @@ namespace Fusion
 					Write("g_array_unref(");
 					break;
 				case FuId.QueueClass:
-					string destroy = GetDictionaryDestroy(storage.GetElementType());
-					if (destroy != "NULL") {
+					if (HasDictionaryDestroy(storage.GetElementType())) {
 						Write("g_queue_clear_full(&");
 						WriteDestructElement(symbol, nesting);
 						Write(", ");
-						Write(destroy);
+						WriteDictionaryDestroy(storage.GetElementType());
 						WriteLine(");");
 						this.Indent -= nesting;
 						return;
@@ -11310,16 +11328,16 @@ namespace Fusion
 				this.Compares.Add(typeId2);
 				break;
 			case FuId.QueueClear:
-				string destroy = GetDictionaryDestroy(obj.Type.AsClassType().GetElementType());
-				if (destroy == "NULL") {
-					Write("g_queue_clear(");
-					WriteUnstorage(obj);
-				}
-				else {
+				FuType elementType = obj.Type.AsClassType().GetElementType();
+				if (HasDictionaryDestroy(elementType)) {
 					Write("g_queue_clear_full(");
 					WriteUnstorage(obj);
 					Write(", ");
-					Write(destroy);
+					WriteDictionaryDestroy(elementType);
+				}
+				else {
+					Write("g_queue_clear(");
+					WriteUnstorage(obj);
 				}
 				WriteChar(')');
 				break;

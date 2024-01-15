@@ -9612,31 +9612,46 @@ void GenC::writeArrayStorageInit(const FuArrayStorageType * array, const FuExpr 
 		std::abort();
 }
 
-std::string GenC::getDictionaryDestroy(const FuType * type)
+bool GenC::hasDictionaryDestroy(const FuType * type)
+{
+	return dynamic_cast<const FuOwningType *>(type) || dynamic_cast<const FuStringStorageType *>(type);
+}
+
+void GenC::writeDictionaryDestroy(const FuType * type)
 {
 	if (dynamic_cast<const FuStringStorageType *>(type) || dynamic_cast<const FuArrayStorageType *>(type))
-		return "free";
+		write("free");
 	else if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(type)) {
 		switch (storage->class_->id) {
 		case FuId::listClass:
 		case FuId::stackClass:
-			return "(GDestroyNotify) g_array_unref";
+			write("(GDestroyNotify) g_array_unref");
+			break;
 		case FuId::hashSetClass:
 		case FuId::dictionaryClass:
-			return "(GDestroyNotify) g_hash_table_unref";
+			write("(GDestroyNotify) g_hash_table_unref");
+			break;
 		case FuId::sortedSetClass:
 		case FuId::sortedDictionaryClass:
-			return "(GDestroyNotify) g_tree_unref";
+			write("(GDestroyNotify) g_tree_unref");
+			break;
 		default:
-			return std::string(needsDestructor(storage->class_) ? std::format("(GDestroyNotify) {}_Delete", storage->class_->name) : "free");
+			if (needsDestructor(storage->class_)) {
+				write("(GDestroyNotify) ");
+				writeName(storage->class_);
+				write("_Delete");
+			}
+			else
+				write("free");
+			break;
 		}
 	}
 	else if (dynamic_cast<const FuDynamicPtrType *>(type)) {
 		this->sharedRelease = true;
-		return "FuShared_Release";
+		write("FuShared_Release");
 	}
 	else
-		return "NULL";
+		write("NULL");
 }
 
 void GenC::writeHashEqual(const FuType * keyType)
@@ -9644,28 +9659,27 @@ void GenC::writeHashEqual(const FuType * keyType)
 	write(dynamic_cast<const FuStringType *>(keyType) ? "g_str_hash, g_str_equal" : "NULL, NULL");
 }
 
-void GenC::writeNewHashTable(const FuType * keyType, std::string_view valueDestroy)
+void GenC::writeNewHashTable(const FuType * keyType, const FuType * valueType)
 {
 	write("g_hash_table_new");
-	std::string keyDestroy{getDictionaryDestroy(keyType)};
-	if (keyDestroy == "NULL" && valueDestroy == "NULL") {
-		writeChar('(');
-		writeHashEqual(keyType);
-	}
-	else {
+	if (hasDictionaryDestroy(keyType) || hasDictionaryDestroy(valueType)) {
 		write("_full(");
 		writeHashEqual(keyType);
 		write(", ");
-		write(keyDestroy);
+		writeDictionaryDestroy(keyType);
 		write(", ");
-		write(valueDestroy);
+		writeDictionaryDestroy(valueType);
+	}
+	else {
+		writeChar('(');
+		writeHashEqual(keyType);
 	}
 	writeChar(')');
 }
 
-void GenC::writeNewTree(const FuType * keyType, std::string_view valueDestroy)
+void GenC::writeNewTree(const FuType * keyType, const FuType * valueType)
 {
-	if (keyType->id == FuId::stringPtrType && valueDestroy == "NULL")
+	if (keyType->id == FuId::stringPtrType && !hasDictionaryDestroy(valueType))
 		write("g_tree_new((GCompareFunc) strcmp");
 	else {
 		write("g_tree_new_full(FuTree_Compare");
@@ -9680,9 +9694,9 @@ void GenC::writeNewTree(const FuType * keyType, std::string_view valueDestroy)
 		else
 			notSupported(keyType, keyType->toString());
 		write(", NULL, ");
-		write(getDictionaryDestroy(keyType));
+		writeDictionaryDestroy(keyType);
 		write(", ");
-		write(valueDestroy);
+		writeDictionaryDestroy(valueType);
 	}
 	writeChar(')');
 }
@@ -9700,16 +9714,16 @@ void GenC::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 		write("G_QUEUE_INIT");
 		break;
 	case FuId::hashSetClass:
-		writeNewHashTable(klass->getElementType().get(), "NULL");
+		writeNewHashTable(klass->getElementType().get(), nullptr);
 		break;
 	case FuId::sortedSetClass:
-		writeNewTree(klass->getElementType().get(), "NULL");
+		writeNewTree(klass->getElementType().get(), nullptr);
 		break;
 	case FuId::dictionaryClass:
-		writeNewHashTable(klass->getKeyType(), getDictionaryDestroy(klass->getValueType().get()));
+		writeNewHashTable(klass->getKeyType(), klass->getValueType().get());
 		break;
 	case FuId::sortedDictionaryClass:
-		writeNewTree(klass->getKeyType(), getDictionaryDestroy(klass->getValueType().get()));
+		writeNewTree(klass->getKeyType(), klass->getValueType().get());
 		break;
 	default:
 		this->sharedMake = true;
@@ -10111,20 +10125,17 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 			write("g_array_unref(");
 			break;
 		case FuId::queueClass:
-			{
-				std::string destroy{getDictionaryDestroy(storage->getElementType().get())};
-				if (destroy != "NULL") {
-					write("g_queue_clear_full(&");
-					writeDestructElement(symbol, nesting);
-					write(", ");
-					write(destroy);
-					writeLine(");");
-					this->indent -= nesting;
-					return;
-				}
-				write("g_queue_clear(&");
-				break;
+			if (hasDictionaryDestroy(storage->getElementType().get())) {
+				write("g_queue_clear_full(&");
+				writeDestructElement(symbol, nesting);
+				write(", ");
+				writeDictionaryDestroy(storage->getElementType().get());
+				writeLine(");");
+				this->indent -= nesting;
+				return;
 			}
+			write("g_queue_clear(&");
+			break;
 		case FuId::hashSetClass:
 		case FuId::dictionaryClass:
 			write("g_hash_table_unref(");
@@ -11030,16 +11041,16 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		}
 	case FuId::queueClear:
 		{
-			std::string destroy{getDictionaryDestroy(obj->type->asClassType()->getElementType().get())};
-			if (destroy == "NULL") {
-				write("g_queue_clear(");
-				writeUnstorage(obj);
-			}
-			else {
+			const FuType * elementType = obj->type->asClassType()->getElementType().get();
+			if (hasDictionaryDestroy(elementType)) {
 				write("g_queue_clear_full(");
 				writeUnstorage(obj);
 				write(", ");
-				write(destroy);
+				writeDictionaryDestroy(elementType);
+			}
+			else {
+				write("g_queue_clear(");
+				writeUnstorage(obj);
 			}
 			writeChar(')');
 			break;
