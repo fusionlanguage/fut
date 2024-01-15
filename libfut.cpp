@@ -2301,7 +2301,7 @@ bool FuReadWriteClassType::isAssignableFrom(const FuType * right) const
 bool FuReadWriteClassType::equalsType(const FuType * right) const
 {
 	const FuReadWriteClassType * that;
-	return (that = dynamic_cast<const FuReadWriteClassType *>(right)) && !dynamic_cast<const FuStorageType *>(right) && !dynamic_cast<const FuDynamicPtrType *>(right) && equalsTypeInternal(that);
+	return (that = dynamic_cast<const FuReadWriteClassType *>(right)) && !dynamic_cast<const FuOwningType *>(right) && equalsTypeInternal(that);
 }
 
 std::string FuReadWriteClassType::getArraySuffix() const
@@ -4807,7 +4807,7 @@ bool FuSema::canCompareEqual(const FuType * left, const FuType * right)
 	else if (const FuClassType *leftClass = dynamic_cast<const FuClassType *>(left)) {
 		if (left->nullable && right->id == FuId::nullType)
 			return true;
-		if ((dynamic_cast<const FuStorageType *>(left) && (dynamic_cast<const FuStorageType *>(right) || dynamic_cast<const FuDynamicPtrType *>(right))) || (dynamic_cast<const FuDynamicPtrType *>(left) && dynamic_cast<const FuStorageType *>(right)))
+		if ((dynamic_cast<const FuStorageType *>(left) && dynamic_cast<const FuOwningType *>(right)) || (dynamic_cast<const FuDynamicPtrType *>(left) && dynamic_cast<const FuStorageType *>(right)))
 			return false;
 		const FuClassType * rightClass;
 		return (rightClass = dynamic_cast<const FuClassType *>(right)) && (leftClass->class_->isSameOrBaseOf(rightClass->class_) || rightClass->class_->isSameOrBaseOf(leftClass->class_)) && leftClass->equalTypeArguments(rightClass);
@@ -14072,7 +14072,7 @@ void GenCpp::writeArrayPtr(const FuExpr * expr, FuPriority parent)
 void GenCpp::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
 {
 	const FuClassType * klass;
-	if ((klass = dynamic_cast<const FuClassType *>(type)) && !dynamic_cast<const FuDynamicPtrType *>(klass) && !dynamic_cast<const FuStorageType *>(klass)) {
+	if ((klass = dynamic_cast<const FuClassType *>(type)) && !dynamic_cast<const FuOwningType *>(klass)) {
 		if (klass->class_->id == FuId::stringClass) {
 			if (expr->type->id == FuId::nullType) {
 				include("string_view");
@@ -21809,7 +21809,7 @@ void GenSwift::writeField(const FuField * field)
 	writeDoc(field->documentation.get());
 	writeVisibility(field->visibility);
 	const FuClassType * klass;
-	if ((klass = dynamic_cast<const FuClassType *>(field->type.get())) && klass->class_->id != FuId::stringClass && !dynamic_cast<const FuDynamicPtrType *>(klass) && !dynamic_cast<const FuStorageType *>(klass))
+	if ((klass = dynamic_cast<const FuClassType *>(field->type.get())) && klass->class_->id != FuId::stringClass && !dynamic_cast<const FuOwningType *>(klass))
 		write("unowned ");
 	writeVar(field);
 	if (field->value == nullptr && (dynamic_cast<const FuNumericType *>(field->type.get()) || dynamic_cast<const FuEnum *>(field->type.get()) || field->type->id == FuId::stringStorageType)) {

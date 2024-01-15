@@ -1,6 +1,6 @@
 // Sema.fu - semantic analysis of Fusion
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -759,7 +759,7 @@ public class FuSema
 		case FuClassType leftClass:
 			if (left.Nullable && right.Id == FuId.NullType)
 				return true;
-			 if ((left is FuStorageType && (right is FuStorageType || right is FuDynamicPtrType))
+			 if ((left is FuStorageType && right is FuOwningType)
 			 || (left is FuDynamicPtrType && right is FuStorageType))
 				return false;
 			return right is FuClassType rightClass

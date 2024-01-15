@@ -2989,7 +2989,7 @@ export class FuReadWriteClassType extends FuClassType
 	equalsType(right)
 	{
 		let that;
-		return (that = right) instanceof FuReadWriteClassType && !(right instanceof FuStorageType) && !(right instanceof FuDynamicPtrType) && this.equalsTypeInternal(that);
+		return (that = right) instanceof FuReadWriteClassType && !(right instanceof FuOwningType) && this.equalsTypeInternal(that);
 	}
 
 	getArraySuffix()
@@ -5249,7 +5249,7 @@ export class FuSema
 			const leftClass = left;
 			if (left.nullable && right.id == FuId.NULL_TYPE)
 				return true;
-			if ((left instanceof FuStorageType && (right instanceof FuStorageType || right instanceof FuDynamicPtrType)) || (left instanceof FuDynamicPtrType && right instanceof FuStorageType))
+			if ((left instanceof FuStorageType && right instanceof FuOwningType) || (left instanceof FuDynamicPtrType && right instanceof FuStorageType))
 				return false;
 			let rightClass;
 			return (rightClass = right) instanceof FuClassType && (leftClass.class.isSameOrBaseOf(rightClass.class) || rightClass.class.isSameOrBaseOf(leftClass.class)) && leftClass.equalTypeArguments(rightClass);
@@ -14876,7 +14876,7 @@ export class GenCpp extends GenCCpp
 	writeCoercedInternal(type, expr, parent)
 	{
 		let klass;
-		if ((klass = type) instanceof FuClassType && !(klass instanceof FuDynamicPtrType) && !(klass instanceof FuStorageType)) {
+		if ((klass = type) instanceof FuClassType && !(klass instanceof FuOwningType)) {
 			if (klass.class.id == FuId.STRING_CLASS) {
 				if (expr.type.id == FuId.NULL_TYPE) {
 					this.include("string_view");
@@ -23180,7 +23180,7 @@ export class GenSwift extends GenPySwift
 		this.writeDoc(field.documentation);
 		this.#writeVisibility(field.visibility);
 		let klass;
-		if ((klass = field.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && !(klass instanceof FuDynamicPtrType) && !(klass instanceof FuStorageType))
+		if ((klass = field.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && !(klass instanceof FuOwningType))
 			this.write("unowned ");
 		this.writeVar(field);
 		if (field.value == null && (field.type instanceof FuNumericType || field.type instanceof FuEnum || field.type.id == FuId.STRING_STORAGE_TYPE)) {

@@ -2882,7 +2882,7 @@ namespace Fusion
 			return (this.Nullable && right.Id == FuId.NullType) || (right is FuReadWriteClassType rightClass && IsAssignableFromClass(rightClass));
 		}
 
-		public override bool EqualsType(FuType right) => right is FuReadWriteClassType that && !(right is FuStorageType) && !(right is FuDynamicPtrType) && EqualsTypeInternal(that);
+		public override bool EqualsType(FuType right) => right is FuReadWriteClassType that && !(right is FuOwningType) && EqualsTypeInternal(that);
 
 		public override string GetArraySuffix() => IsArray() ? "[]!" : "";
 
@@ -5067,7 +5067,7 @@ namespace Fusion
 			case FuClassType leftClass:
 				if (left.Nullable && right.Id == FuId.NullType)
 					return true;
-				if ((left is FuStorageType && (right is FuStorageType || right is FuDynamicPtrType)) || (left is FuDynamicPtrType && right is FuStorageType))
+				if ((left is FuStorageType && right is FuOwningType) || (left is FuDynamicPtrType && right is FuStorageType))
 					return false;
 				return right is FuClassType rightClass && (leftClass.Class.IsSameOrBaseOf(rightClass.Class) || rightClass.Class.IsSameOrBaseOf(leftClass.Class)) && leftClass.EqualTypeArguments(rightClass);
 			default:
@@ -14453,7 +14453,7 @@ namespace Fusion
 
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
 		{
-			if (type is FuClassType klass && !(klass is FuDynamicPtrType) && !(klass is FuStorageType)) {
+			if (type is FuClassType klass && !(klass is FuOwningType)) {
 				if (klass.Class.Id == FuId.StringClass) {
 					if (expr.Type.Id == FuId.NullType) {
 						Include("string_view");
@@ -22613,7 +22613,7 @@ namespace Fusion
 			WriteNewLine();
 			WriteDoc(field.Documentation);
 			WriteVisibility(field.Visibility);
-			if (field.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && !(klass is FuDynamicPtrType) && !(klass is FuStorageType))
+			if (field.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && !(klass is FuOwningType))
 				Write("unowned ");
 			WriteVar(field);
 			if (field.Value == null && (field.Type is FuNumericType || field.Type is FuEnum || field.Type.Id == FuId.StringStorageType)) {
