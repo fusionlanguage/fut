@@ -10079,16 +10079,6 @@ FuPriority GenC::startForwardThrow(const FuMethod * throwingMethod)
 	}
 }
 
-void GenC::writeDestructElement(const FuSymbol * symbol, int nesting)
-{
-	writeLocalName(symbol, FuPriority::primary);
-	for (int i = 0; i < nesting; i++) {
-		write("[_i");
-		visitLiteralLong(i);
-		writeChar(']');
-	}
-}
-
 void GenC::writeDestruct(const FuSymbol * symbol)
 {
 	if (!needToDestruct(symbol))
@@ -10110,6 +10100,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		nesting++;
 		type = array->getElementType().get();
 	}
+	const FuType * queueElementType = nullptr;
 	if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) {
 		if (dynamic->class_->id == FuId::regexClass)
 			write("g_regex_unref(");
@@ -10127,14 +10118,10 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		case FuId::queueClass:
 			if (hasDictionaryDestroy(storage->getElementType().get())) {
 				write("g_queue_clear_full(&");
-				writeDestructElement(symbol, nesting);
-				write(", ");
-				writeDictionaryDestroy(storage->getElementType().get());
-				writeLine(");");
-				this->indent -= nesting;
-				return;
+				queueElementType = storage->getElementType().get();
 			}
-			write("g_queue_clear(&");
+			else
+				write("g_queue_clear(&");
 			break;
 		case FuId::hashSetClass:
 		case FuId::dictionaryClass:
@@ -10158,7 +10145,16 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 	}
 	else
 		write("free(");
-	writeDestructElement(symbol, nesting);
+	writeLocalName(symbol, FuPriority::primary);
+	for (int i = 0; i < nesting; i++) {
+		write("[_i");
+		visitLiteralLong(i);
+		writeChar(']');
+	}
+	if (queueElementType != nullptr) {
+		write(", ");
+		writeDictionaryDestroy(queueElementType);
+	}
 	writeLine(");");
 	this->indent -= nesting;
 }

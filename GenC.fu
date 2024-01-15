@@ -1219,16 +1219,6 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteDestructElement!(FuSymbol symbol, int nesting)
-	{
-		WriteLocalName(symbol, FuPriority.Primary);
-		for (int i = 0; i < nesting; i++) {
-			Write("[_i");
-			VisitLiteralLong(i);
-			WriteChar(']');
-		}
-	}
-
 	void WriteDestruct!(FuSymbol symbol)
 	{
 		if (!NeedToDestruct(symbol))
@@ -1250,6 +1240,7 @@ public class GenC : GenCCpp
 			nesting++;
 			type = array.GetElementType();
 		}
+		FuType? queueElementType = null;
 		switch (type) {
 		case FuDynamicPtrType dynamic:
 			if (dynamic.Class.Id == FuId.RegexClass)
@@ -1268,14 +1259,10 @@ public class GenC : GenCCpp
 			case FuId.QueueClass:
 				if (HasDictionaryDestroy(storage.GetElementType())) {
 					Write("g_queue_clear_full(&");
-					WriteDestructElement(symbol, nesting);
-					Write(", ");
-					WriteDictionaryDestroy(storage.GetElementType());
-					WriteLine(");");
-					this.Indent -= nesting;
-					return;
+					queueElementType = storage.GetElementType();
 				}
-				Write("g_queue_clear(&");
+				else
+					Write("g_queue_clear(&");
 				break;
 			case FuId.HashSetClass:
 			case FuId.DictionaryClass:
@@ -1301,7 +1288,16 @@ public class GenC : GenCCpp
 			Write("free(");
 			break;
 		}
-		WriteDestructElement(symbol, nesting);
+		WriteLocalName(symbol, FuPriority.Primary);
+		for (int i = 0; i < nesting; i++) {
+			Write("[_i");
+			VisitLiteralLong(i);
+			WriteChar(']');
+		}
+		if (queueElementType != null) {
+			Write(", ");
+			WriteDictionaryDestroy(queueElementType);
+		}
 		WriteLine(");");
 		this.Indent -= nesting;
 	}

@@ -10753,16 +10753,6 @@ export class GenC extends GenCCpp
 		}
 	}
 
-	#writeDestructElement(symbol, nesting)
-	{
-		this.writeLocalName(symbol, FuPriority.PRIMARY);
-		for (let i = 0; i < nesting; i++) {
-			this.write("[_i");
-			this.visitLiteralLong(BigInt(i));
-			this.writeChar(93);
-		}
-	}
-
 	#writeDestruct(symbol)
 	{
 		if (!GenC.#needToDestruct(symbol))
@@ -10785,6 +10775,7 @@ export class GenC extends GenCCpp
 			nesting++;
 			type = array.getElementType();
 		}
+		let queueElementType = null;
 		if (type instanceof FuDynamicPtrType) {
 			const dynamic = type;
 			if (dynamic.class.id == FuId.REGEX_CLASS)
@@ -10804,14 +10795,10 @@ export class GenC extends GenCCpp
 			case FuId.QUEUE_CLASS:
 				if (GenC.#hasDictionaryDestroy(storage.getElementType())) {
 					this.write("g_queue_clear_full(&");
-					this.#writeDestructElement(symbol, nesting);
-					this.write(", ");
-					this.#writeDictionaryDestroy(storage.getElementType());
-					this.writeLine(");");
-					this.indent -= nesting;
-					return;
+					queueElementType = storage.getElementType();
 				}
-				this.write("g_queue_clear(&");
+				else
+					this.write("g_queue_clear(&");
 				break;
 			case FuId.HASH_SET_CLASS:
 			case FuId.DICTIONARY_CLASS:
@@ -10835,7 +10822,16 @@ export class GenC extends GenCCpp
 		}
 		else
 			this.write("free(");
-		this.#writeDestructElement(symbol, nesting);
+		this.writeLocalName(symbol, FuPriority.PRIMARY);
+		for (let i = 0; i < nesting; i++) {
+			this.write("[_i");
+			this.visitLiteralLong(BigInt(i));
+			this.writeChar(93);
+		}
+		if (queueElementType != null) {
+			this.write(", ");
+			this.#writeDictionaryDestroy(queueElementType);
+		}
 		this.writeLine(");");
 		this.indent -= nesting;
 	}

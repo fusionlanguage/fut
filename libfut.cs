@@ -10384,16 +10384,6 @@ namespace Fusion
 			}
 		}
 
-		void WriteDestructElement(FuSymbol symbol, int nesting)
-		{
-			WriteLocalName(symbol, FuPriority.Primary);
-			for (int i = 0; i < nesting; i++) {
-				Write("[_i");
-				VisitLiteralLong(i);
-				WriteChar(']');
-			}
-		}
-
 		void WriteDestruct(FuSymbol symbol)
 		{
 			if (!NeedToDestruct(symbol))
@@ -10415,6 +10405,7 @@ namespace Fusion
 				nesting++;
 				type = array.GetElementType();
 			}
+			FuType queueElementType = null;
 			switch (type) {
 			case FuDynamicPtrType dynamic:
 				if (dynamic.Class.Id == FuId.RegexClass)
@@ -10433,14 +10424,10 @@ namespace Fusion
 				case FuId.QueueClass:
 					if (HasDictionaryDestroy(storage.GetElementType())) {
 						Write("g_queue_clear_full(&");
-						WriteDestructElement(symbol, nesting);
-						Write(", ");
-						WriteDictionaryDestroy(storage.GetElementType());
-						WriteLine(");");
-						this.Indent -= nesting;
-						return;
+						queueElementType = storage.GetElementType();
 					}
-					Write("g_queue_clear(&");
+					else
+						Write("g_queue_clear(&");
 					break;
 				case FuId.HashSetClass:
 				case FuId.DictionaryClass:
@@ -10466,7 +10453,16 @@ namespace Fusion
 				Write("free(");
 				break;
 			}
-			WriteDestructElement(symbol, nesting);
+			WriteLocalName(symbol, FuPriority.Primary);
+			for (int i = 0; i < nesting; i++) {
+				Write("[_i");
+				VisitLiteralLong(i);
+				WriteChar(']');
+			}
+			if (queueElementType != null) {
+				Write(", ");
+				WriteDictionaryDestroy(queueElementType);
+			}
 			WriteLine(");");
 			this.Indent -= nesting;
 		}
