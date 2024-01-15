@@ -1,0 +1,36 @@
+public class Test
+{
+	static string() CreateString() //FAIL: cl
+	{
+		return "foo";
+	}
+
+	static Test# CreateObject() => new Test();
+
+	static List<int>() CreateListStg()
+	{
+		List<int>() result;
+		result.Add(5);
+		result.Add(10);
+		return result;
+	}
+
+	static Dictionary<string(), string()>() CreateDictionaryStg()
+	{
+		Dictionary<string(), string()>() result;
+		result["foo"] = "bar";
+		return result;
+	}
+
+	static List<int># CreateDynamicList() => new List<int>();
+
+	public static bool Run()
+	{
+		CreateString();
+		CreateObject();
+		CreateListStg(); //FAIL: c leak TODO
+		CreateDictionaryStg();
+		CreateDynamicList();
+		return true;
+	}
+}

@@ -12202,15 +12202,18 @@ export class GenC extends GenCCpp
 			this.writeLine(");");
 			this.cleanupTemporaries();
 		}
-		else if (statement instanceof FuCallExpr && statement.type instanceof FuDynamicPtrType) {
-			this.#sharedRelease = true;
-			this.write("FuShared_Release(");
-			statement.accept(this, FuPriority.ARGUMENT);
-			this.writeLine(");");
-			this.cleanupTemporaries();
+		else {
+			let dynamic;
+			if (statement instanceof FuCallExpr && (dynamic = statement.type) instanceof FuDynamicPtrType) {
+				this.#writeDestructMethodName(dynamic);
+				this.writeChar(40);
+				statement.accept(this, FuPriority.ARGUMENT);
+				this.writeLine(");");
+				this.cleanupTemporaries();
+			}
+			else
+				super.visitExpr(statement);
 		}
-		else
-			super.visitExpr(statement);
 	}
 
 	#startForeachHashTable(statement)

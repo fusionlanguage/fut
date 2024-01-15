@@ -11532,15 +11532,18 @@ void GenC::visitExpr(const FuExpr * statement)
 		writeLine(");");
 		cleanupTemporaries();
 	}
-	else if (dynamic_cast<const FuCallExpr *>(statement) && dynamic_cast<const FuDynamicPtrType *>(statement->type.get())) {
-		this->sharedRelease = true;
-		write("FuShared_Release(");
-		statement->accept(this, FuPriority::argument);
-		writeLine(");");
-		cleanupTemporaries();
+	else {
+		const FuDynamicPtrType * dynamic;
+		if (dynamic_cast<const FuCallExpr *>(statement) && (dynamic = dynamic_cast<const FuDynamicPtrType *>(statement->type.get()))) {
+			writeDestructMethodName(dynamic);
+			writeChar('(');
+			statement->accept(this, FuPriority::argument);
+			writeLine(");");
+			cleanupTemporaries();
+		}
+		else
+			GenBase::visitExpr(statement);
 	}
-	else
-		GenBase::visitExpr(statement);
 }
 
 void GenC::startForeachHashTable(const FuForeach * statement)

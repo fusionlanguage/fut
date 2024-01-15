@@ -11806,9 +11806,9 @@ namespace Fusion
 				WriteLine(");");
 				CleanupTemporaries();
 			}
-			else if (statement is FuCallExpr && statement.Type is FuDynamicPtrType) {
-				this.SharedRelease = true;
-				Write("FuShared_Release(");
+			else if (statement is FuCallExpr && statement.Type is FuDynamicPtrType dynamic) {
+				WriteDestructMethodName(dynamic);
+				WriteChar('(');
 				statement.Accept(this, FuPriority.Argument);
 				WriteLine(");");
 				CleanupTemporaries();
