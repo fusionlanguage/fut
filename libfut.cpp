@@ -9584,6 +9584,50 @@ void GenC::addListFree(FuId id)
 	writeListFreeName(id);
 }
 
+void GenC::writeListFree(const FuClassType * elementType)
+{
+	switch (elementType->class_->id) {
+	case FuId::none:
+	case FuId::arrayPtrClass:
+		if (dynamic_cast<const FuDynamicPtrType *>(elementType)) {
+			this->sharedRelease = true;
+			addListFree(FuId::none);
+		}
+		else {
+			write("(GDestroyNotify) ");
+			writeName(elementType->class_);
+			write("_Destruct");
+		}
+		break;
+	case FuId::stringClass:
+		addListFree(FuId::stringClass);
+		break;
+	case FuId::listClass:
+	case FuId::stackClass:
+		addListFree(FuId::listClass);
+		break;
+	case FuId::queueClass:
+		addListFree(FuId::queueClass);
+		break;
+	case FuId::hashSetClass:
+	case FuId::dictionaryClass:
+		addListFree(FuId::dictionaryClass);
+		break;
+	case FuId::sortedSetClass:
+	case FuId::sortedDictionaryClass:
+		addListFree(FuId::sortedDictionaryClass);
+		break;
+	case FuId::regexClass:
+		addListFree(FuId::regexClass);
+		break;
+	case FuId::matchClass:
+		addListFree(FuId::matchClass);
+		break;
+	default:
+		std::abort();
+	}
+}
+
 void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
 	this->sharedMake = true;
@@ -9602,11 +9646,10 @@ void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, 
 	}
 	else if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(elementType))
 		writeXstructorPtrs(storage->class_);
-	else if (dynamic_cast<const FuDynamicPtrType *>(elementType)) {
+	else if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(elementType)) {
 		this->ptrConstruct = true;
-		this->sharedRelease = true;
 		write("(FuMethodPtr) FuPtr_Construct, ");
-		addListFree(FuId::none);
+		writeListFree(dynamic);
 	}
 	else
 		write("NULL, NULL");
@@ -10320,47 +10363,7 @@ void GenC::writeInitCode(const FuNamedValue * def)
 		write("g_array_set_clear_func(");
 		writeArrayElement(def, nesting);
 		write(", ");
-		const FuClassType * elementType = static_cast<const FuClassType *>(type->asClassType()->getElementType().get());
-		switch (elementType->class_->id) {
-		case FuId::none:
-		case FuId::arrayPtrClass:
-			if (dynamic_cast<const FuDynamicPtrType *>(elementType)) {
-				this->sharedRelease = true;
-				addListFree(FuId::none);
-			}
-			else {
-				write("(GDestroyNotify) ");
-				writeName(elementType->class_);
-				write("_Destruct");
-			}
-			break;
-		case FuId::stringClass:
-			addListFree(FuId::stringClass);
-			break;
-		case FuId::listClass:
-		case FuId::stackClass:
-			addListFree(FuId::listClass);
-			break;
-		case FuId::queueClass:
-			addListFree(FuId::queueClass);
-			break;
-		case FuId::hashSetClass:
-		case FuId::dictionaryClass:
-			addListFree(FuId::dictionaryClass);
-			break;
-		case FuId::sortedSetClass:
-		case FuId::sortedDictionaryClass:
-			addListFree(FuId::sortedDictionaryClass);
-			break;
-		case FuId::regexClass:
-			addListFree(FuId::regexClass);
-			break;
-		case FuId::matchClass:
-			addListFree(FuId::matchClass);
-			break;
-		default:
-			std::abort();
-		}
+		writeListFree(type->asClassType()->getElementType()->asClassType());
 		writeLine(");");
 	}
 	while (--nesting >= 0)

@@ -9875,6 +9875,50 @@ namespace Fusion
 			WriteListFreeName(id);
 		}
 
+		void WriteListFree(FuClassType elementType)
+		{
+			switch (elementType.Class.Id) {
+			case FuId.None:
+			case FuId.ArrayPtrClass:
+				if (elementType is FuDynamicPtrType) {
+					this.SharedRelease = true;
+					AddListFree(FuId.None);
+				}
+				else {
+					Write("(GDestroyNotify) ");
+					WriteName(elementType.Class);
+					Write("_Destruct");
+				}
+				break;
+			case FuId.StringClass:
+				AddListFree(FuId.StringClass);
+				break;
+			case FuId.ListClass:
+			case FuId.StackClass:
+				AddListFree(FuId.ListClass);
+				break;
+			case FuId.QueueClass:
+				AddListFree(FuId.QueueClass);
+				break;
+			case FuId.HashSetClass:
+			case FuId.DictionaryClass:
+				AddListFree(FuId.DictionaryClass);
+				break;
+			case FuId.SortedSetClass:
+			case FuId.SortedDictionaryClass:
+				AddListFree(FuId.SortedDictionaryClass);
+				break;
+			case FuId.RegexClass:
+				AddListFree(FuId.RegexClass);
+				break;
+			case FuId.MatchClass:
+				AddListFree(FuId.MatchClass);
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
 			this.SharedMake = true;
@@ -9895,11 +9939,10 @@ namespace Fusion
 			case FuStorageType storage:
 				WriteXstructorPtrs(storage.Class);
 				break;
-			case FuDynamicPtrType:
+			case FuDynamicPtrType dynamic:
 				this.PtrConstruct = true;
-				this.SharedRelease = true;
 				Write("(FuMethodPtr) FuPtr_Construct, ");
-				AddListFree(FuId.None);
+				WriteListFree(dynamic);
 				break;
 			default:
 				Write("NULL, NULL");
@@ -10619,47 +10662,7 @@ namespace Fusion
 				Write("g_array_set_clear_func(");
 				WriteArrayElement(def, nesting);
 				Write(", ");
-				FuClassType elementType = (FuClassType) type.AsClassType().GetElementType();
-				switch (elementType.Class.Id) {
-				case FuId.None:
-				case FuId.ArrayPtrClass:
-					if (elementType is FuDynamicPtrType) {
-						this.SharedRelease = true;
-						AddListFree(FuId.None);
-					}
-					else {
-						Write("(GDestroyNotify) ");
-						WriteName(elementType.Class);
-						Write("_Destruct");
-					}
-					break;
-				case FuId.StringClass:
-					AddListFree(FuId.StringClass);
-					break;
-				case FuId.ListClass:
-				case FuId.StackClass:
-					AddListFree(FuId.ListClass);
-					break;
-				case FuId.QueueClass:
-					AddListFree(FuId.QueueClass);
-					break;
-				case FuId.HashSetClass:
-				case FuId.DictionaryClass:
-					AddListFree(FuId.DictionaryClass);
-					break;
-				case FuId.SortedSetClass:
-				case FuId.SortedDictionaryClass:
-					AddListFree(FuId.SortedDictionaryClass);
-					break;
-				case FuId.RegexClass:
-					AddListFree(FuId.RegexClass);
-					break;
-				case FuId.MatchClass:
-					AddListFree(FuId.MatchClass);
-					break;
-				default:
-					throw new NotImplementedException();
-				}
+				WriteListFree(type.AsClassType().GetElementType().AsClassType());
 				WriteLine(");");
 			}
 			while (--nesting >= 0)

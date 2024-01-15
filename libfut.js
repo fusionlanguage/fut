@@ -10226,6 +10226,50 @@ export class GenC extends GenCCpp
 		this.#writeListFreeName(id);
 	}
 
+	#writeListFree(elementType)
+	{
+		switch (elementType.class.id) {
+		case FuId.NONE:
+		case FuId.ARRAY_PTR_CLASS:
+			if (elementType instanceof FuDynamicPtrType) {
+				this.#sharedRelease = true;
+				this.#addListFree(FuId.NONE);
+			}
+			else {
+				this.write("(GDestroyNotify) ");
+				this.writeName(elementType.class);
+				this.write("_Destruct");
+			}
+			break;
+		case FuId.STRING_CLASS:
+			this.#addListFree(FuId.STRING_CLASS);
+			break;
+		case FuId.LIST_CLASS:
+		case FuId.STACK_CLASS:
+			this.#addListFree(FuId.LIST_CLASS);
+			break;
+		case FuId.QUEUE_CLASS:
+			this.#addListFree(FuId.QUEUE_CLASS);
+			break;
+		case FuId.HASH_SET_CLASS:
+		case FuId.DICTIONARY_CLASS:
+			this.#addListFree(FuId.DICTIONARY_CLASS);
+			break;
+		case FuId.SORTED_SET_CLASS:
+		case FuId.SORTED_DICTIONARY_CLASS:
+			this.#addListFree(FuId.SORTED_DICTIONARY_CLASS);
+			break;
+		case FuId.REGEX_CLASS:
+			this.#addListFree(FuId.REGEX_CLASS);
+			break;
+		case FuId.MATCH_CLASS:
+			this.#addListFree(FuId.MATCH_CLASS);
+			break;
+		default:
+			throw new Error();
+		}
+	}
+
 	writeNewArray(elementType, lengthExpr, parent)
 	{
 		this.#sharedMake = true;
@@ -10247,10 +10291,10 @@ export class GenC extends GenCCpp
 			this.#writeXstructorPtrs(storage.class);
 		}
 		else if (elementType instanceof FuDynamicPtrType) {
+			const dynamic = elementType;
 			this.#ptrConstruct = true;
-			this.#sharedRelease = true;
 			this.write("(FuMethodPtr) FuPtr_Construct, ");
-			this.#addListFree(FuId.NONE);
+			this.#writeListFree(dynamic);
 		}
 		else
 			this.write("NULL, NULL");
@@ -10998,47 +11042,7 @@ export class GenC extends GenCCpp
 			this.write("g_array_set_clear_func(");
 			this.writeArrayElement(def, nesting);
 			this.write(", ");
-			let elementType = type.asClassType().getElementType();
-			switch (elementType.class.id) {
-			case FuId.NONE:
-			case FuId.ARRAY_PTR_CLASS:
-				if (elementType instanceof FuDynamicPtrType) {
-					this.#sharedRelease = true;
-					this.#addListFree(FuId.NONE);
-				}
-				else {
-					this.write("(GDestroyNotify) ");
-					this.writeName(elementType.class);
-					this.write("_Destruct");
-				}
-				break;
-			case FuId.STRING_CLASS:
-				this.#addListFree(FuId.STRING_CLASS);
-				break;
-			case FuId.LIST_CLASS:
-			case FuId.STACK_CLASS:
-				this.#addListFree(FuId.LIST_CLASS);
-				break;
-			case FuId.QUEUE_CLASS:
-				this.#addListFree(FuId.QUEUE_CLASS);
-				break;
-			case FuId.HASH_SET_CLASS:
-			case FuId.DICTIONARY_CLASS:
-				this.#addListFree(FuId.DICTIONARY_CLASS);
-				break;
-			case FuId.SORTED_SET_CLASS:
-			case FuId.SORTED_DICTIONARY_CLASS:
-				this.#addListFree(FuId.SORTED_DICTIONARY_CLASS);
-				break;
-			case FuId.REGEX_CLASS:
-				this.#addListFree(FuId.REGEX_CLASS);
-				break;
-			case FuId.MATCH_CLASS:
-				this.#addListFree(FuId.MATCH_CLASS);
-				break;
-			default:
-				throw new Error();
-			}
+			this.#writeListFree(type.asClassType().getElementType().asClassType());
 			this.writeLine(");");
 		}
 		while (--nesting >= 0)

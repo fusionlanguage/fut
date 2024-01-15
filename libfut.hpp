@@ -2142,6 +2142,7 @@ private:
 	void writeXstructorPtrs(const FuClass * klass);
 	void writeListFreeName(FuId id);
 	void addListFree(FuId id);
+	void writeListFree(const FuClassType * elementType);
 	void writeStringStorageValue(const FuExpr * expr);
 	bool writeDestructMethodName(const FuClassType * klass);
 	static bool hasDictionaryDestroy(const FuType * type);
