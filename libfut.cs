@@ -11806,8 +11806,8 @@ namespace Fusion
 				WriteLine(");");
 				CleanupTemporaries();
 			}
-			else if (statement is FuCallExpr && statement.Type is FuDynamicPtrType dynamic) {
-				WriteDestructMethodName(dynamic);
+			else if (statement is FuCallExpr && statement.Type is FuOwningType owning) {
+				WriteDestructMethodName(owning);
 				WriteChar('(');
 				statement.Accept(this, FuPriority.Argument);
 				WriteLine(");");

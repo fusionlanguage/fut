@@ -11533,9 +11533,9 @@ void GenC::visitExpr(const FuExpr * statement)
 		cleanupTemporaries();
 	}
 	else {
-		const FuDynamicPtrType * dynamic;
-		if (dynamic_cast<const FuCallExpr *>(statement) && (dynamic = dynamic_cast<const FuDynamicPtrType *>(statement->type.get()))) {
-			writeDestructMethodName(dynamic);
+		const FuOwningType * owning;
+		if (dynamic_cast<const FuCallExpr *>(statement) && (owning = dynamic_cast<const FuOwningType *>(statement->type.get()))) {
+			writeDestructMethodName(owning);
 			writeChar('(');
 			statement->accept(this, FuPriority::argument);
 			writeLine(");");

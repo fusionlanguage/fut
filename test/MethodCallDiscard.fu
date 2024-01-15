@@ -28,7 +28,7 @@ public class Test
 	{
 		CreateString();
 		CreateObject();
-		CreateListStg(); //FAIL: c leak TODO
+		CreateListStg();
 		CreateDictionaryStg();
 		CreateDynamicList();
 		return true;

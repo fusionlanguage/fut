@@ -12203,9 +12203,9 @@ export class GenC extends GenCCpp
 			this.cleanupTemporaries();
 		}
 		else {
-			let dynamic;
-			if (statement instanceof FuCallExpr && (dynamic = statement.type) instanceof FuDynamicPtrType) {
-				this.#writeDestructMethodName(dynamic);
+			let owning;
+			if (statement instanceof FuCallExpr && (owning = statement.type) instanceof FuOwningType) {
+				this.#writeDestructMethodName(owning);
 				this.writeChar(40);
 				statement.accept(this, FuPriority.ARGUMENT);
 				this.writeLine(");");
