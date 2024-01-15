@@ -10256,6 +10256,51 @@ export class GenC extends GenCCpp
 			throw new Error();
 	}
 
+	#writeDestructMethodName(klass)
+	{
+		switch (klass.class.id) {
+		case FuId.NONE:
+		case FuId.ARRAY_PTR_CLASS:
+			if (klass instanceof FuDynamicPtrType) {
+				this.#sharedRelease = true;
+				this.write("FuShared_Release");
+				return false;
+			}
+			this.writeName(klass.class);
+			this.write("_Destruct");
+			return true;
+		case FuId.STRING_CLASS:
+			this.write("free");
+			return false;
+		case FuId.LIST_CLASS:
+		case FuId.STACK_CLASS:
+			this.write("g_array_unref");
+			return false;
+		case FuId.QUEUE_CLASS:
+			this.write(GenC.#hasDictionaryDestroy(klass.getElementType()) ? "g_queue_clear_full" : "g_queue_clear");
+			return true;
+		case FuId.HASH_SET_CLASS:
+		case FuId.DICTIONARY_CLASS:
+			this.write("g_hash_table_unref");
+			return false;
+		case FuId.SORTED_SET_CLASS:
+		case FuId.SORTED_DICTIONARY_CLASS:
+			this.write("g_tree_unref");
+			return false;
+		case FuId.REGEX_CLASS:
+			this.write("g_regex_unref");
+			return false;
+		case FuId.MATCH_CLASS:
+			this.write("g_match_info_free");
+			return false;
+		case FuId.LOCK_CLASS:
+			this.write("mtx_destroy");
+			return true;
+		default:
+			throw new Error();
+		}
+	}
+
 	static #hasDictionaryDestroy(type)
 	{
 		return type instanceof FuOwningType || type instanceof FuStringStorageType;
@@ -10776,48 +10821,10 @@ export class GenC extends GenCCpp
 			type = array.getElementType();
 		}
 		let klass = type;
-		switch (klass.class.id) {
-		case FuId.NONE:
-		case FuId.ARRAY_PTR_CLASS:
-			if (type instanceof FuDynamicPtrType) {
-				this.#sharedRelease = true;
-				this.write("FuShared_Release(");
-			}
-			else {
-				this.writeName(klass.class);
-				this.write("_Destruct(&");
-			}
-			break;
-		case FuId.STRING_CLASS:
-			this.write("free(");
-			break;
-		case FuId.LIST_CLASS:
-		case FuId.STACK_CLASS:
-			this.write("g_array_unref(");
-			break;
-		case FuId.QUEUE_CLASS:
-			this.write(GenC.#hasDictionaryDestroy(klass.getElementType()) ? "g_queue_clear_full(&" : "g_queue_clear(&");
-			break;
-		case FuId.HASH_SET_CLASS:
-		case FuId.DICTIONARY_CLASS:
-			this.write("g_hash_table_unref(");
-			break;
-		case FuId.SORTED_SET_CLASS:
-		case FuId.SORTED_DICTIONARY_CLASS:
-			this.write("g_tree_unref(");
-			break;
-		case FuId.REGEX_CLASS:
-			this.write("g_regex_unref(");
-			break;
-		case FuId.MATCH_CLASS:
-			this.write("g_match_info_free(");
-			break;
-		case FuId.LOCK_CLASS:
-			this.write("mtx_destroy(&");
-			break;
-		default:
-			throw new Error();
-		}
+		let addressOf = this.#writeDestructMethodName(klass);
+		this.writeChar(40);
+		if (addressOf)
+			this.writeChar(38);
 		this.writeLocalName(symbol, FuPriority.PRIMARY);
 		for (let i = 0; i < nesting; i++) {
 			this.write("[_i");

@@ -9612,6 +9612,51 @@ void GenC::writeArrayStorageInit(const FuArrayStorageType * array, const FuExpr 
 		std::abort();
 }
 
+bool GenC::writeDestructMethodName(const FuClassType * klass)
+{
+	switch (klass->class_->id) {
+	case FuId::none:
+	case FuId::arrayPtrClass:
+		if (dynamic_cast<const FuDynamicPtrType *>(klass)) {
+			this->sharedRelease = true;
+			write("FuShared_Release");
+			return false;
+		}
+		writeName(klass->class_);
+		write("_Destruct");
+		return true;
+	case FuId::stringClass:
+		write("free");
+		return false;
+	case FuId::listClass:
+	case FuId::stackClass:
+		write("g_array_unref");
+		return false;
+	case FuId::queueClass:
+		write(hasDictionaryDestroy(klass->getElementType().get()) ? "g_queue_clear_full" : "g_queue_clear");
+		return true;
+	case FuId::hashSetClass:
+	case FuId::dictionaryClass:
+		write("g_hash_table_unref");
+		return false;
+	case FuId::sortedSetClass:
+	case FuId::sortedDictionaryClass:
+		write("g_tree_unref");
+		return false;
+	case FuId::regexClass:
+		write("g_regex_unref");
+		return false;
+	case FuId::matchClass:
+		write("g_match_info_free");
+		return false;
+	case FuId::lockClass:
+		write("mtx_destroy");
+		return true;
+	default:
+		std::abort();
+	}
+}
+
 bool GenC::hasDictionaryDestroy(const FuType * type)
 {
 	return dynamic_cast<const FuOwningType *>(type) || dynamic_cast<const FuStringStorageType *>(type);
@@ -10101,48 +10146,10 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		type = array->getElementType().get();
 	}
 	const FuClassType * klass = static_cast<const FuClassType *>(type);
-	switch (klass->class_->id) {
-	case FuId::none:
-	case FuId::arrayPtrClass:
-		if (dynamic_cast<const FuDynamicPtrType *>(type)) {
-			this->sharedRelease = true;
-			write("FuShared_Release(");
-		}
-		else {
-			writeName(klass->class_);
-			write("_Destruct(&");
-		}
-		break;
-	case FuId::stringClass:
-		write("free(");
-		break;
-	case FuId::listClass:
-	case FuId::stackClass:
-		write("g_array_unref(");
-		break;
-	case FuId::queueClass:
-		write(hasDictionaryDestroy(klass->getElementType().get()) ? "g_queue_clear_full(&" : "g_queue_clear(&");
-		break;
-	case FuId::hashSetClass:
-	case FuId::dictionaryClass:
-		write("g_hash_table_unref(");
-		break;
-	case FuId::sortedSetClass:
-	case FuId::sortedDictionaryClass:
-		write("g_tree_unref(");
-		break;
-	case FuId::regexClass:
-		write("g_regex_unref(");
-		break;
-	case FuId::matchClass:
-		write("g_match_info_free(");
-		break;
-	case FuId::lockClass:
-		write("mtx_destroy(&");
-		break;
-	default:
-		std::abort();
-	}
+	bool addressOf = writeDestructMethodName(klass);
+	writeChar('(');
+	if (addressOf)
+		writeChar('&');
 	writeLocalName(symbol, FuPriority::primary);
 	for (int i = 0; i < nesting; i++) {
 		write("[_i");
