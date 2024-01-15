@@ -11577,8 +11577,8 @@ export class GenC extends GenCCpp
 			if (parent > FuPriority.ADD)
 				this.writeChar(40);
 			this.write("(const ");
-			let elementType2 = obj.type.asClassType().getElementType();
-			this.writeType(elementType2, false);
+			let elementType = obj.type.asClassType().getElementType();
+			this.writeType(elementType, false);
 			this.write(" *) bsearch(&");
 			args[0].accept(this, FuPriority.PRIMARY);
 			this.write(", ");
@@ -11591,7 +11591,7 @@ export class GenC extends GenCCpp
 				this.writeArrayStorageLength(obj);
 			else
 				args[2].accept(this, FuPriority.ARGUMENT);
-			this.#writeSizeofCompare(elementType2);
+			this.#writeSizeofCompare(elementType);
 			this.write(" - ");
 			this.writeArrayPtr(obj, FuPriority.MUL);
 			if (parent > FuPriority.ADD)
@@ -11609,20 +11609,20 @@ export class GenC extends GenCCpp
 		case FuId.ARRAY_COPY_TO:
 		case FuId.LIST_COPY_TO:
 			this.include("string.h");
-			let elementType = obj.type.asClassType().getElementType();
-			if (GenC.#isHeapAllocated(elementType))
+			let elementType2 = obj.type.asClassType().getElementType();
+			if (GenC.#isHeapAllocated(elementType2))
 				this.notYet(obj, "CopyTo for this type");
 			this.write("memcpy(");
 			this.writeArrayPtrAdd(args[1], args[2]);
 			this.write(", ");
 			this.writeArrayPtrAdd(obj, args[0]);
 			this.write(", ");
-			if (elementType.id == FuId.S_BYTE_RANGE || elementType.id == FuId.BYTE_RANGE)
+			if (elementType2.id == FuId.S_BYTE_RANGE || elementType2.id == FuId.BYTE_RANGE)
 				args[3].accept(this, FuPriority.ARGUMENT);
 			else {
 				args[3].accept(this, FuPriority.MUL);
 				this.write(" * sizeof(");
-				this.writeType(elementType, false);
+				this.writeType(elementType2, false);
 				this.writeChar(41);
 			}
 			this.writeChar(41);
@@ -11716,12 +11716,12 @@ export class GenC extends GenCCpp
 			this.#compares.add(typeId2);
 			break;
 		case FuId.QUEUE_CLEAR:
-			let elementType = obj.type.asClassType().getElementType();
-			if (GenC.#hasDictionaryDestroy(elementType)) {
+			let elementType3 = obj.type.asClassType().getElementType();
+			if (GenC.#hasDictionaryDestroy(elementType3)) {
 				this.write("g_queue_clear_full(");
 				this.#writeUnstorage(obj);
 				this.write(", ");
-				this.#writeDictionaryDestroy(elementType);
+				this.#writeDictionaryDestroy(elementType3);
 			}
 			else {
 				this.write("g_queue_clear(");

@@ -11191,8 +11191,8 @@ namespace Fusion
 				if (parent > FuPriority.Add)
 					WriteChar('(');
 				Write("(const ");
-				FuType elementType2 = obj.Type.AsClassType().GetElementType();
-				WriteType(elementType2, false);
+				FuType elementType = obj.Type.AsClassType().GetElementType();
+				WriteType(elementType, false);
 				Write(" *) bsearch(&");
 				args[0].Accept(this, FuPriority.Primary);
 				Write(", ");
@@ -11205,7 +11205,7 @@ namespace Fusion
 					WriteArrayStorageLength(obj);
 				else
 					args[2].Accept(this, FuPriority.Argument);
-				WriteSizeofCompare(elementType2);
+				WriteSizeofCompare(elementType);
 				Write(" - ");
 				WriteArrayPtr(obj, FuPriority.Mul);
 				if (parent > FuPriority.Add)
@@ -11223,20 +11223,20 @@ namespace Fusion
 			case FuId.ArrayCopyTo:
 			case FuId.ListCopyTo:
 				Include("string.h");
-				FuType elementType = obj.Type.AsClassType().GetElementType();
-				if (IsHeapAllocated(elementType))
+				FuType elementType2 = obj.Type.AsClassType().GetElementType();
+				if (IsHeapAllocated(elementType2))
 					NotYet(obj, "CopyTo for this type");
 				Write("memcpy(");
 				WriteArrayPtrAdd(args[1], args[2]);
 				Write(", ");
 				WriteArrayPtrAdd(obj, args[0]);
 				Write(", ");
-				if (elementType.Id == FuId.SByteRange || elementType.Id == FuId.ByteRange)
+				if (elementType2.Id == FuId.SByteRange || elementType2.Id == FuId.ByteRange)
 					args[3].Accept(this, FuPriority.Argument);
 				else {
 					args[3].Accept(this, FuPriority.Mul);
 					Write(" * sizeof(");
-					WriteType(elementType, false);
+					WriteType(elementType2, false);
 					WriteChar(')');
 				}
 				WriteChar(')');
@@ -11328,12 +11328,12 @@ namespace Fusion
 				this.Compares.Add(typeId2);
 				break;
 			case FuId.QueueClear:
-				FuType elementType = obj.Type.AsClassType().GetElementType();
-				if (HasDictionaryDestroy(elementType)) {
+				FuType elementType3 = obj.Type.AsClassType().GetElementType();
+				if (HasDictionaryDestroy(elementType3)) {
 					Write("g_queue_clear_full(");
 					WriteUnstorage(obj);
 					Write(", ");
-					WriteDictionaryDestroy(elementType);
+					WriteDictionaryDestroy(elementType3);
 				}
 				else {
 					Write("g_queue_clear(");

@@ -10892,8 +10892,8 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			writeChar('(');
 		write("(const ");
 		{
-			const FuType * elementType2 = obj->type->asClassType()->getElementType().get();
-			writeType(elementType2, false);
+			const FuType * elementType = obj->type->asClassType()->getElementType().get();
+			writeType(elementType, false);
 			write(" *) bsearch(&");
 			(*args)[0]->accept(this, FuPriority::primary);
 			write(", ");
@@ -10906,7 +10906,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 				writeArrayStorageLength(obj);
 			else
 				(*args)[2]->accept(this, FuPriority::argument);
-			writeSizeofCompare(elementType2);
+			writeSizeofCompare(elementType);
 			write(" - ");
 			writeArrayPtr(obj, FuPriority::mul);
 			if (parent > FuPriority::add)
@@ -10926,20 +10926,20 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::listCopyTo:
 		include("string.h");
 		{
-			const FuType * elementType = obj->type->asClassType()->getElementType().get();
-			if (isHeapAllocated(elementType))
+			const FuType * elementType2 = obj->type->asClassType()->getElementType().get();
+			if (isHeapAllocated(elementType2))
 				notYet(obj, "CopyTo for this type");
 			write("memcpy(");
 			writeArrayPtrAdd((*args)[1].get(), (*args)[2].get());
 			write(", ");
 			writeArrayPtrAdd(obj, (*args)[0].get());
 			write(", ");
-			if (elementType->id == FuId::sByteRange || elementType->id == FuId::byteRange)
+			if (elementType2->id == FuId::sByteRange || elementType2->id == FuId::byteRange)
 				(*args)[3]->accept(this, FuPriority::argument);
 			else {
 				(*args)[3]->accept(this, FuPriority::mul);
 				write(" * sizeof(");
-				writeType(elementType, false);
+				writeType(elementType2, false);
 				writeChar(')');
 			}
 			writeChar(')');
@@ -11041,12 +11041,12 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		}
 	case FuId::queueClear:
 		{
-			const FuType * elementType = obj->type->asClassType()->getElementType().get();
-			if (hasDictionaryDestroy(elementType)) {
+			const FuType * elementType3 = obj->type->asClassType()->getElementType().get();
+			if (hasDictionaryDestroy(elementType3)) {
 				write("g_queue_clear_full(");
 				writeUnstorage(obj);
 				write(", ");
-				writeDictionaryDestroy(elementType);
+				writeDictionaryDestroy(elementType3);
 			}
 			else {
 				write("g_queue_clear(");
