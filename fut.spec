@@ -5,7 +5,7 @@ Summary: Fusion Transpiler
 License: GPLv3+
 Source: https://github.com/fusionlanguage/fut/archive/fut-%{version}/fut-%{version}.tar.gz
 URL: https://github.com/fusionlanguage/fut
-BuildRequires: gcc >= 13
+BuildRequires: g++ >= 13
 
 %description
 Transpiles the Fusion programming langauge to
