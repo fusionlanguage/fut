@@ -73,7 +73,7 @@ jobs:
       - uses: actions/checkout@main
       - run: make -j3 host-diff
       - run: make -j3 java/GenBase.java
-      #- run: make -j3 host-diff-java
+      - run: make -j3 host-diff-java
       - run: make -j3 test-error FUT_HOST=cs
       - run: make -j3 test-error FUT_HOST=java
       - run: make -j3 test-error FUT_HOST=node
