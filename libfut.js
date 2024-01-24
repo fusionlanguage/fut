@@ -7698,6 +7698,12 @@ export class GenBase extends FuVisitor
 		this.openBlock();
 	}
 
+	writeTemporaryName(id)
+	{
+		this.write("futemp");
+		this.visitLiteralLong(BigInt(id));
+	}
+
 	writeResourceName(name)
 	{
 		for (const c of name)
@@ -7733,10 +7739,8 @@ export class GenBase extends FuVisitor
 				let init;
 				if ((init = expr.inner) instanceof FuAggregateInitializer) {
 					let tempId = this.currentTemporaries.indexOf(expr);
-					if (tempId >= 0) {
-						this.write("futemp");
-						this.visitLiteralLong(BigInt(tempId));
-					}
+					if (tempId >= 0)
+						this.writeTemporaryName(tempId);
 					else
 						this.writeNewWithFields(dynamic, init);
 				}
@@ -8270,15 +8274,13 @@ export class GenBase extends FuVisitor
 			}
 			else
 				this.currentTemporaries[id] = expr;
-			this.write("futemp");
-			this.visitLiteralLong(BigInt(id));
+			this.writeTemporaryName(id);
 			this.write(" = ");
 			let dynamic = expr.type;
 			this.writeNew(dynamic, FuPriority.ARGUMENT);
 			this.endStatement();
 			for (const item of init.items) {
-				this.write("futemp");
-				this.visitLiteralLong(BigInt(id));
+				this.writeTemporaryName(id);
 				this.#writeAggregateInitField(expr, item);
 			}
 		}
@@ -9658,17 +9660,11 @@ export class GenC extends GenCCpp
 		this.#startDefinition(type, true, true);
 	}
 
-	#writeTemporaryName(id)
-	{
-		this.write("futemp");
-		this.visitLiteralLong(BigInt(id));
-	}
-
 	#writeTemporaryOrExpr(expr, parent)
 	{
 		let id = this.currentTemporaries.indexOf(expr);
 		if (id >= 0)
-			this.#writeTemporaryName(id);
+			this.writeTemporaryName(id);
 		else
 			expr.accept(this, parent);
 	}
@@ -10557,7 +10553,7 @@ export class GenC extends GenCCpp
 		if (id < 0) {
 			id = this.currentTemporaries.length;
 			this.#startDefinition(type, false, true);
-			this.#writeTemporaryName(id);
+			this.writeTemporaryName(id);
 			this.#endDefinition(type);
 			if (assign)
 				this.#writeAssignTemporary(type, expr);
@@ -10565,7 +10561,7 @@ export class GenC extends GenCCpp
 			this.currentTemporaries.push(expr);
 		}
 		else if (assign) {
-			this.#writeTemporaryName(id);
+			this.writeTemporaryName(id);
 			this.#writeAssignTemporary(type, expr);
 			this.writeCharLine(59);
 			this.currentTemporaries[id] = expr;

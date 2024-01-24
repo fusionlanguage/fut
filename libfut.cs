@@ -7407,6 +7407,12 @@ namespace Fusion
 			OpenBlock();
 		}
 
+		protected void WriteTemporaryName(int id)
+		{
+			Write("futemp");
+			VisitLiteralLong(id);
+		}
+
 		protected void WriteResourceName(string name)
 		{
 			foreach (int c in name)
@@ -7441,10 +7447,8 @@ namespace Fusion
 					WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
 				else if (expr.Inner is FuAggregateInitializer init) {
 					int tempId = this.CurrentTemporaries.IndexOf(expr);
-					if (tempId >= 0) {
-						Write("futemp");
-						VisitLiteralLong(tempId);
-					}
+					if (tempId >= 0)
+						WriteTemporaryName(tempId);
 					else
 						WriteNewWithFields(dynamic, init);
 				}
@@ -7956,15 +7960,13 @@ namespace Fusion
 				}
 				else
 					this.CurrentTemporaries[id] = expr;
-				Write("futemp");
-				VisitLiteralLong(id);
+				WriteTemporaryName(id);
 				Write(" = ");
 				FuDynamicPtrType dynamic = (FuDynamicPtrType) expr.Type;
 				WriteNew(dynamic, FuPriority.Argument);
 				EndStatement();
 				foreach (FuExpr item in init.Items) {
-					Write("futemp");
-					VisitLiteralLong(id);
+					WriteTemporaryName(id);
 					WriteAggregateInitField(expr, item);
 				}
 			}
@@ -9319,12 +9321,6 @@ namespace Fusion
 		protected override void StartTemporaryVar(FuType type)
 		{
 			StartDefinition(type, true, true);
-		}
-
-		void WriteTemporaryName(int id)
-		{
-			Write("futemp");
-			VisitLiteralLong(id);
 		}
 
 		void WriteTemporaryOrExpr(FuExpr expr, FuPriority parent)

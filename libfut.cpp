@@ -7215,6 +7215,12 @@ void GenBase::openLoop(std::string_view intString, int nesting, int count)
 	openBlock();
 }
 
+void GenBase::writeTemporaryName(int id)
+{
+	write("futemp");
+	visitLiteralLong(id);
+}
+
 void GenBase::writeResourceName(std::string_view name)
 {
 	for (int c : name)
@@ -7251,10 +7257,8 @@ void GenBase::visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent)
 				writeNewArray(dynamic->getElementType().get(), expr->inner.get(), parent);
 			else if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr->inner.get())) {
 				int tempId = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
-				if (tempId >= 0) {
-					write("futemp");
-					visitLiteralLong(tempId);
-				}
+				if (tempId >= 0)
+					writeTemporaryName(tempId);
 				else
 					writeNewWithFields(dynamic, init);
 			}
@@ -7769,15 +7773,13 @@ void GenBase::defineObjectLiteralTemporary(const FuUnaryExpr * expr)
 		}
 		else
 			this->currentTemporaries[id] = expr;
-		write("futemp");
-		visitLiteralLong(id);
+		writeTemporaryName(id);
 		write(" = ");
 		const FuDynamicPtrType * dynamic = static_cast<const FuDynamicPtrType *>(expr->type.get());
 		writeNew(dynamic, FuPriority::argument);
 		endStatement();
 		for (const std::shared_ptr<FuExpr> &item : init->items) {
-			write("futemp");
-			visitLiteralLong(id);
+			writeTemporaryName(id);
 			writeAggregateInitField(expr, item.get());
 		}
 	}
@@ -9082,12 +9084,6 @@ bool GenC::isDictionaryClassStgIndexing(const FuExpr * expr)
 void GenC::startTemporaryVar(const FuType * type)
 {
 	startDefinition(type, true, true);
-}
-
-void GenC::writeTemporaryName(int id)
-{
-	write("futemp");
-	visitLiteralLong(id);
 }
 
 void GenC::writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent)

@@ -1,6 +1,6 @@
 // GenBase.fu - base class for code generators
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -870,6 +870,12 @@ public abstract class GenBase : FuVisitor
 		OpenBlock();
 	}
 
+	protected void WriteTemporaryName!(int id)
+	{
+		Write("futemp");
+		VisitLiteralLong(id);
+	}
+
 	protected void WriteResourceName!(string name)
 	{
 		foreach (int c in name)
@@ -905,10 +911,8 @@ public abstract class GenBase : FuVisitor
 				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
 			else if (expr.Inner is FuAggregateInitializer init) {
 				int tempId = this.CurrentTemporaries.IndexOf(expr);
-				if (tempId >= 0) {
-					Write("futemp");
-					VisitLiteralLong(tempId);
-				}
+				if (tempId >= 0)
+					WriteTemporaryName(tempId);
 				else
 					WriteNewWithFields(dynamic, init);
 			}
@@ -1424,15 +1428,13 @@ public abstract class GenBase : FuVisitor
 			}
 			else
 				this.CurrentTemporaries[id] = expr;
-			Write("futemp");
-			VisitLiteralLong(id);
+			WriteTemporaryName(id);
 			Write(" = ");
 			assert expr.Type is FuDynamicPtrType dynamic;
 			WriteNew(dynamic, FuPriority.Argument);
 			EndStatement();
 			foreach (FuExpr item in init.Items) {
-				Write("futemp");
-				VisitLiteralLong(id);
+				WriteTemporaryName(id);
 				WriteAggregateInitField(expr, item);
 			}
 		}

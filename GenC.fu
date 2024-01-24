@@ -140,12 +140,6 @@ public class GenC : GenCCpp
 		StartDefinition(type, true, true);
 	}
 
-	void WriteTemporaryName!(int id)
-	{
-		Write("futemp");
-		VisitLiteralLong(id);
-	}
-
 	void WriteTemporaryOrExpr!(FuExpr expr, FuPriority parent)
 	{
 		int id = this.CurrentTemporaries.IndexOf(expr);

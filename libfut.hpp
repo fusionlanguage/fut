@@ -1789,6 +1789,7 @@ protected:
 	virtual void defineIsVar(const FuBinaryExpr * binary);
 	void writeArrayElement(const FuNamedValue * def, int nesting);
 	void openLoop(std::string_view intString, int nesting, int count);
+	void writeTemporaryName(int id);
 	void writeResourceName(std::string_view name);
 	virtual void writeResource(std::string_view name, int length) = 0;
 	bool isWholeArray(const FuExpr * array, const FuExpr * offset, const FuExpr * length) const;
@@ -2122,7 +2123,6 @@ private:
 	std::vector<const FuVar *> varsToDestruct;
 	void writeStringPtrAddCast(const FuCallExpr * call);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
-	void writeTemporaryName(int id);
 	void writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);
 	void writeClassPtr(const FuClass * resultClass, const FuExpr * expr, FuPriority parent);
