@@ -9653,6 +9653,11 @@ export class GenC extends GenCCpp
 		return (indexing = expr) instanceof FuBinaryExpr && indexing.op == FuToken.LEFT_BRACKET && (dict = indexing.left.type) instanceof FuClassType && dict.class.typeParameterCount == 2 && dict.getValueType() instanceof FuStorageType;
 	}
 
+	startTemporaryVar(type)
+	{
+		this.#startDefinition(type, true, true);
+	}
+
 	#writeTemporaryName(id)
 	{
 		this.write("futemp");

@@ -134,6 +134,12 @@ public class GenC : GenCCpp
 			&& dict.GetValueType() is FuStorageType;
 	}
 
+	protected override void StartTemporaryVar!(FuType type)
+	{
+		// overridden just to avoid the unnecessary space
+		StartDefinition(type, true, true);
+	}
+
 	void WriteTemporaryName!(int id)
 	{
 		Write("futemp");

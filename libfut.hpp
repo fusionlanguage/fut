@@ -2033,6 +2033,7 @@ protected:
 	virtual void writePrintfLongPrefix();
 	void writePrintfWidth(const FuInterpolatedPart * part) override;
 	virtual void writeInterpolatedStringArgBase(const FuExpr * expr);
+	void startTemporaryVar(const FuType * type) override;
 	void writeInterpolatedStringArg(const FuExpr * expr) override;
 	virtual void writeCamelCaseNotKeyword(std::string_view name);
 	void writeName(const FuSymbol * symbol) override;

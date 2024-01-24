@@ -9079,6 +9079,11 @@ bool GenC::isDictionaryClassStgIndexing(const FuExpr * expr)
 	return (indexing = dynamic_cast<const FuBinaryExpr *>(expr)) && indexing->op == FuToken::leftBracket && (dict = dynamic_cast<const FuClassType *>(indexing->left->type.get())) && dict->class_->typeParameterCount == 2 && dynamic_cast<const FuStorageType *>(dict->getValueType().get());
 }
 
+void GenC::startTemporaryVar(const FuType * type)
+{
+	startDefinition(type, true, true);
+}
+
 void GenC::writeTemporaryName(int id)
 {
 	write("futemp");

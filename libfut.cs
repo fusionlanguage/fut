@@ -9316,6 +9316,11 @@ namespace Fusion
 			return expr is FuBinaryExpr indexing && indexing.Op == FuToken.LeftBracket && indexing.Left.Type is FuClassType dict && dict.Class.TypeParameterCount == 2 && dict.GetValueType() is FuStorageType;
 		}
 
+		protected override void StartTemporaryVar(FuType type)
+		{
+			StartDefinition(type, true, true);
+		}
+
 		void WriteTemporaryName(int id)
 		{
 			Write("futemp");
