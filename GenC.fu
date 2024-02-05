@@ -860,6 +860,9 @@ public class GenC : GenCCpp
 	void WriteDictionaryDestroy!(FuType? type)
 	{
 		switch (type) {
+		case null: // for Java fut
+			Write("NULL");
+			break;
 		case FuStringStorageType:
 		case FuArrayStorageType:
 			Write("free");

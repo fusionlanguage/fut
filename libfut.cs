@@ -10041,6 +10041,9 @@ namespace Fusion
 		void WriteDictionaryDestroy(FuType type)
 		{
 			switch (type) {
+			case null:
+				Write("NULL");
+				break;
 			case FuStringStorageType:
 			case FuArrayStorageType:
 				Write("free");

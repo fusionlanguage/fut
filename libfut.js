@@ -10393,7 +10393,9 @@ export class GenC extends GenCCpp
 	#writeDictionaryDestroy(type)
 	{
 		fuswitch0: {
-			if (type instanceof FuStringStorageType || type instanceof FuArrayStorageType)
+			if (type == null)
+				this.write("NULL");
+			else if (type instanceof FuStringStorageType || type instanceof FuArrayStorageType)
 				this.write("free");
 			else if (type instanceof FuOwningType) {
 				const owning = type;

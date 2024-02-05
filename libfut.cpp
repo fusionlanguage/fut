@@ -9747,7 +9747,9 @@ bool GenC::hasDictionaryDestroy(const FuType * type)
 
 void GenC::writeDictionaryDestroy(const FuType * type)
 {
-	if (dynamic_cast<const FuStringStorageType *>(type) || dynamic_cast<const FuArrayStorageType *>(type))
+	if (type == nullptr)
+		write("NULL");
+	else if (dynamic_cast<const FuStringStorageType *>(type) || dynamic_cast<const FuArrayStorageType *>(type))
 		write("free");
 	else if (const FuOwningType *owning = dynamic_cast<const FuOwningType *>(type))
 		do {
