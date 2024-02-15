@@ -6,10 +6,10 @@ public class Test
 		string() s = "foo bar"; //FAIL: cl
 		if (!m.Find(s, "\\w{3}")) //FAIL: swift TODO
 			return false;
-		if (m.Start != 0)
+		if (m.Value != "foo") //FAIL: c leak TODO
 			return false;
 		if (!m.Find(s, "b\\w\\w")) //FAIL: c leak TODO
 			return false;
-		return m.Start == 4;
+		return m.Value == "bar";
 	}
 }
