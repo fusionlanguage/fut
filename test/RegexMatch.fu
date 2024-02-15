@@ -12,13 +12,14 @@ public class Test
 			|| m.Value != "brown fox"
 			|| m.GetCapture(1) != "brown" || m.GetCapture(2) != "fox")
 			return false;
+		Match() m2;
 		string p = "The quick brown fox jumps over the lazy dog";
-		if (!m.Find(p, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase))
+		if (!m2.Find(p, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase))
 			return false;
-		return m.Start == 10
-			&& m.End == 19 && m.End * 2 == 38
-			&& m.Length == 9 && m.Length * 2 == 18
-			&& m.Value == "brown fox"
-			&& m.GetCapture(1) == "brown" && m.GetCapture(2) == "fox";
+		return m2.Start == 10
+			&& m2.End == 19 && m2.End * 2 == 38
+			&& m2.Length == 9 && m2.Length * 2 == 18
+			&& m2.Value == "brown fox"
+			&& m2.GetCapture(1) == "brown" && m2.GetCapture(2) == "fox";
 	}
 }
