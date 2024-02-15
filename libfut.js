@@ -14853,7 +14853,9 @@ export class GenCpp extends GenCCpp
 		case FuId.MATCH_FIND_STR:
 		case FuId.MATCH_FIND_REGEX:
 			this.write("std::regex_search(");
-			if (args[0].type.id == FuId.STRING_PTR_TYPE && !(args[0] instanceof FuLiteral))
+			if (args[0].type.id == FuId.STRING_STORAGE_TYPE)
+				this.writePostfix(args[0], ".c_str()");
+			else if (args[0].type.id == FuId.STRING_PTR_TYPE && !(args[0] instanceof FuLiteral))
 				this.#writeBeginEnd(args[0]);
 			else
 				args[0].accept(this, FuPriority.ARGUMENT);

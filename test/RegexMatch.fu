@@ -3,8 +3,17 @@ public class Test
 	public static bool Run()
 	{
 		Match() m;
-		string s = "The quick brown fox jumps over the lazy dog";
-		if (!m.Find(s, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase)) //FAIL: swift TODO; cl
+		string() s = "The quick brown fox jumps over the lazy dog"; //FAIL: cl
+		if (!m.Find(s, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase)) //FAIL: swift TODO
+			return false;
+		if (m.Start != 10
+			|| m.End != 19 || m.End * 2 != 38
+			|| m.Length != 9 || m.Length * 2 != 18
+			|| m.Value != "brown fox"
+			|| m.GetCapture(1) != "brown" || m.GetCapture(2) != "fox")
+			return false;
+		string p = "The quick brown fox jumps over the lazy dog";
+		if (!m.Find(p, "(B.+?) (\\wo\\w)", RegexOptions.IgnoreCase))
 			return false;
 		return m.Start == 10
 			&& m.End == 19 && m.End * 2 == 38

@@ -1160,7 +1160,9 @@ public class GenCpp : GenCCpp
 		case FuId.MatchFindStr:
 		case FuId.MatchFindRegex:
 			Write("std::regex_search(");
-			if (args[0].Type.Id == FuId.StringPtrType && !(args[0] is FuLiteral))
+			if (args[0].Type.Id == FuId.StringStorageType)
+				WritePostfix(args[0], ".c_str()");
+			else if (args[0].Type.Id == FuId.StringPtrType && !(args[0] is FuLiteral))
 				WriteBeginEnd(args[0]);
 			else
 				args[0].Accept(this, FuPriority.Argument);

@@ -14052,7 +14052,9 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 	case FuId::matchFindStr:
 	case FuId::matchFindRegex:
 		write("std::regex_search(");
-		if ((*args)[0]->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteral *>((*args)[0].get()))
+		if ((*args)[0]->type->id == FuId::stringStorageType)
+			writePostfix((*args)[0].get(), ".c_str()");
+		else if ((*args)[0]->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteral *>((*args)[0].get()))
 			writeBeginEnd((*args)[0].get());
 		else
 			(*args)[0]->accept(this, FuPriority::argument);
