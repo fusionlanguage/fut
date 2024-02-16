@@ -802,6 +802,14 @@ public class GenD : GenCCppD
 		case FuId.StringSubstring:
 			WriteSlice(obj, args[0], args.Count == 2 ? args[1] : null);
 			break;
+		case FuId.StringToLower:
+			Include("std.uni");
+			WritePostfix(obj, ".toLower()");
+			break;
+		case FuId.StringToUpper:
+			Include("std.uni");
+			WritePostfix(obj, ".toUpper()");
+			break;
 		case FuId.ArrayBinarySearchAll:
 		case FuId.ArrayBinarySearchPart:
 			Include("std.range");

@@ -2462,6 +2462,8 @@ FuSystem::FuSystem()
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringReplace, "Replace", false, FuVar::new_(this->stringPtrType, "oldValue"), FuVar::new_(this->stringPtrType, "newValue"));
 	this->stringClass->addMethod(this->boolType, FuId::stringStartsWith, "StartsWith", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringSubstring, "Substring", false, FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length", newLiteralLong(-1)));
+	this->stringClass->addMethod(this->stringStorageType, FuId::stringToLower, "ToLower", false);
+	this->stringClass->addMethod(this->stringStorageType, FuId::stringToUpper, "ToUpper", false);
 	this->stringPtrType->class_ = this->stringClass.get();
 	add(this->stringPtrType);
 	this->stringNullablePtrType->class_ = this->stringClass.get();
@@ -10989,6 +10991,16 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::stringSubstring:
 		writeStringSubstring(obj, args, parent);
 		break;
+	case FuId::stringToLower:
+		writeGlib("g_utf8_strdown(");
+		writeTemporaryOrExpr(obj, FuPriority::argument);
+		write(", -1)");
+		break;
+	case FuId::stringToUpper:
+		writeGlib("g_utf8_strup(");
+		writeTemporaryOrExpr(obj, FuPriority::argument);
+		write(", -1)");
+		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
 		if (parent > FuPriority::add)
@@ -13757,6 +13769,26 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 	case FuId::stringSubstring:
 		writeStringMethod(obj, "substr", method, args);
 		break;
+	case FuId::stringToLower:
+		include("algorithm");
+		include("cctype");
+		write("[&] { std::string data = std::string{");
+		obj->accept(this, FuPriority::argument);
+		write("}; ");
+		write("std::transform(data.begin(), data.end(), data.begin(), ");
+		write("[](unsigned char c) { return std::tolower(c); }); ");
+		write("return data; }()");
+		break;
+	case FuId::stringToUpper:
+		include("algorithm");
+		include("cctype");
+		write("[&] { std::string data = std::string{");
+		obj->accept(this, FuPriority::argument);
+		write("}; ");
+		write("std::transform(data.begin(), data.end(), data.begin(), ");
+		write("[](unsigned char c) { return std::toupper(c); }); ");
+		write("return data; }()");
+		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
 		include("algorithm");
@@ -16457,6 +16489,14 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::stringSubstring:
 		writeSlice(obj, (*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 		break;
+	case FuId::stringToLower:
+		include("std.uni");
+		writePostfix(obj, ".toLower()");
+		break;
+	case FuId::stringToUpper:
+		include("std.uni");
+		writePostfix(obj, ".toUpper()");
+		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
 		include("std.range");
@@ -17788,6 +17828,12 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 		}
 		writeChar(')');
 		break;
+	case FuId::stringToLower:
+		writePostfix(obj, ".toLowerCase()");
+		break;
+	case FuId::stringToUpper:
+		writePostfix(obj, ".toUpperCase()");
+		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
 		writeArrayBinarySearchFill(obj, "binarySearch", args);
@@ -19093,6 +19139,12 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 			writeAdd((*args)[0].get(), (*args)[1].get());
 		}
 		writeChar(')');
+		break;
+	case FuId::stringToLower:
+		writePostfix(obj, ".toLowerCase()");
+		break;
+	case FuId::stringToUpper:
+		writePostfix(obj, ".toUpperCase()");
 		break;
 	case FuId::arrayFillAll:
 	case FuId::arrayFillPart:
@@ -20937,6 +20989,12 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 			writeCoerced(this->system->intType.get(), (*args)[1].get(), FuPriority::argument);
 			writeChar(')');
 		}
+		break;
+	case FuId::stringToLower:
+		writePostfix(obj, ".lowercased()");
+		break;
+	case FuId::stringToUpper:
+		writePostfix(obj, ".uppercased()");
 		break;
 	case FuId::arrayCopyTo:
 	case FuId::listCopyTo:
@@ -22949,6 +23007,12 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 	case FuId::stringSubstring:
 		obj->accept(this, FuPriority::primary);
 		writeSlice((*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
+		break;
+	case FuId::stringToLower:
+		writePostfix(obj, ".lower()");
+		break;
+	case FuId::stringToUpper:
+		writePostfix(obj, ".upper()");
 		break;
 	case FuId::arrayBinarySearchAll:
 		include("bisect");

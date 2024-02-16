@@ -601,6 +601,12 @@ public class GenJsNoModule : GenBase
 			}
 			WriteChar(')');
 			break;
+		case FuId.StringToLower:
+			WritePostfix(obj, ".toLowerCase()");
+			break;
+		case FuId.StringToUpper:
+			WritePostfix(obj, ".toUpperCase()");
+			break;
 		case FuId.ArrayFillAll:
 		case FuId.ArrayFillPart:
 			WritePostfix(obj, ".fill(");

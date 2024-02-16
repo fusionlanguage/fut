@@ -2057,6 +2057,16 @@ public class GenC : GenCCpp
 		case FuId.StringSubstring:
 			WriteStringSubstring(obj, args, parent);
 			break;
+		case FuId.StringToLower:
+			WriteGlib("g_utf8_strdown(");
+			WriteTemporaryOrExpr(obj, FuPriority.Argument);
+			Write(", -1)");
+			break;
+		case FuId.StringToUpper:
+			WriteGlib("g_utf8_strup(");
+			WriteTemporaryOrExpr(obj, FuPriority.Argument);
+			Write(", -1)");
+			break;
 		case FuId.ArrayBinarySearchAll:
 		case FuId.ArrayBinarySearchPart:
 			if (parent > FuPriority.Add)

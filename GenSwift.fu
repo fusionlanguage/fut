@@ -524,6 +524,12 @@ public class GenSwift : GenPySwift
 				WriteChar(')');
 			}
 			break;
+		case FuId.StringToLower:
+			WritePostfix(obj, ".lowercased()");
+			break;
+		case FuId.StringToUpper:
+			WritePostfix(obj, ".uppercased()");
+			break;
 		case FuId.ArrayCopyTo:
 		case FuId.ListCopyTo:
 			OpenIndexing(args[1]);

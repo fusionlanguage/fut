@@ -808,6 +808,26 @@ public class GenCpp : GenCCpp
 		case FuId.StringSubstring:
 			WriteStringMethod(obj, "substr", method, args);
 			break;
+		case FuId.StringToLower:
+			Include("algorithm");
+			Include("cctype");
+			Write("[&] { std::string data = std::string{");
+			obj.Accept(this, FuPriority.Argument);
+			Write("}; ");
+			Write("std::transform(data.begin(), data.end(), data.begin(), ");
+			Write("[](unsigned char c) { return std::tolower(c); }); ");
+			Write("return data; }()");
+			break;
+		case FuId.StringToUpper:
+			Include("algorithm");
+			Include("cctype");
+			Write("[&] { std::string data = std::string{");
+			obj.Accept(this, FuPriority.Argument);
+			Write("}; ");
+			Write("std::transform(data.begin(), data.end(), data.begin(), ");
+			Write("[](unsigned char c) { return std::toupper(c); }); ");
+			Write("return data; }()");
+			break;
 		case FuId.ArrayBinarySearchAll:
 		case FuId.ArrayBinarySearchPart:
 			Include("algorithm");

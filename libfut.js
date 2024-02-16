@@ -1327,104 +1327,106 @@ export const FuId = {
 	STRING_REPLACE : 62,
 	STRING_STARTS_WITH : 63,
 	STRING_SUBSTRING : 64,
-	ARRAY_BINARY_SEARCH_ALL : 65,
-	ARRAY_BINARY_SEARCH_PART : 66,
-	ARRAY_CONTAINS : 67,
-	ARRAY_COPY_TO : 68,
-	ARRAY_FILL_ALL : 69,
-	ARRAY_FILL_PART : 70,
-	ARRAY_SORT_ALL : 71,
-	ARRAY_SORT_PART : 72,
-	LIST_ADD : 73,
-	LIST_ADD_RANGE : 74,
-	LIST_ALL : 75,
-	LIST_ANY : 76,
-	LIST_CLEAR : 77,
-	LIST_CONTAINS : 78,
-	LIST_COPY_TO : 79,
-	LIST_COUNT : 80,
-	LIST_INDEX_OF : 81,
-	LIST_INSERT : 82,
-	LIST_LAST : 83,
-	LIST_REMOVE_AT : 84,
-	LIST_REMOVE_RANGE : 85,
-	LIST_SORT_ALL : 86,
-	LIST_SORT_PART : 87,
-	QUEUE_CLEAR : 88,
-	QUEUE_COUNT : 89,
-	QUEUE_DEQUEUE : 90,
-	QUEUE_ENQUEUE : 91,
-	QUEUE_PEEK : 92,
-	STACK_CLEAR : 93,
-	STACK_COUNT : 94,
-	STACK_PEEK : 95,
-	STACK_PUSH : 96,
-	STACK_POP : 97,
-	HASH_SET_ADD : 98,
-	HASH_SET_CLEAR : 99,
-	HASH_SET_CONTAINS : 100,
-	HASH_SET_COUNT : 101,
-	HASH_SET_REMOVE : 102,
-	SORTED_SET_ADD : 103,
-	SORTED_SET_CLEAR : 104,
-	SORTED_SET_CONTAINS : 105,
-	SORTED_SET_COUNT : 106,
-	SORTED_SET_REMOVE : 107,
-	DICTIONARY_ADD : 108,
-	DICTIONARY_CLEAR : 109,
-	DICTIONARY_CONTAINS_KEY : 110,
-	DICTIONARY_COUNT : 111,
-	DICTIONARY_REMOVE : 112,
-	SORTED_DICTIONARY_CLEAR : 113,
-	SORTED_DICTIONARY_CONTAINS_KEY : 114,
-	SORTED_DICTIONARY_COUNT : 115,
-	SORTED_DICTIONARY_REMOVE : 116,
-	ORDERED_DICTIONARY_CLEAR : 117,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 118,
-	ORDERED_DICTIONARY_COUNT : 119,
-	ORDERED_DICTIONARY_REMOVE : 120,
-	TEXT_WRITER_WRITE : 121,
-	TEXT_WRITER_WRITE_CHAR : 122,
-	TEXT_WRITER_WRITE_CODE_POINT : 123,
-	TEXT_WRITER_WRITE_LINE : 124,
-	CONSOLE_WRITE : 125,
-	CONSOLE_WRITE_LINE : 126,
-	STRING_WRITER_CLEAR : 127,
-	STRING_WRITER_TO_STRING : 128,
-	CONVERT_TO_BASE64_STRING : 129,
-	U_T_F8_GET_BYTE_COUNT : 130,
-	U_T_F8_GET_BYTES : 131,
-	U_T_F8_GET_STRING : 132,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 133,
-	REGEX_COMPILE : 134,
-	REGEX_ESCAPE : 135,
-	REGEX_IS_MATCH_STR : 136,
-	REGEX_IS_MATCH_REGEX : 137,
-	MATCH_FIND_STR : 138,
-	MATCH_FIND_REGEX : 139,
-	MATCH_GET_CAPTURE : 140,
-	JSON_ELEMENT_PARSE : 141,
-	JSON_ELEMENT_TRY_PARSE : 142,
-	JSON_ELEMENT_GET_OBJECT : 143,
-	JSON_ELEMENT_GET_ARRAY : 144,
-	JSON_ELEMENT_GET_STRING : 145,
-	JSON_ELEMENT_GET_DOUBLE : 146,
-	JSON_ELEMENT_GET_BOOLEAN : 147,
-	MATH_METHOD : 148,
-	MATH_ABS : 149,
-	MATH_CEILING : 150,
-	MATH_CLAMP : 151,
-	MATH_FUSED_MULTIPLY_ADD : 152,
-	MATH_IS_FINITE : 153,
-	MATH_IS_INFINITY : 154,
-	MATH_IS_NA_N : 155,
-	MATH_LOG2 : 156,
-	MATH_MAX_INT : 157,
-	MATH_MAX_DOUBLE : 158,
-	MATH_MIN_INT : 159,
-	MATH_MIN_DOUBLE : 160,
-	MATH_ROUND : 161,
-	MATH_TRUNCATE : 162
+	STRING_TO_LOWER : 65,
+	STRING_TO_UPPER : 66,
+	ARRAY_BINARY_SEARCH_ALL : 67,
+	ARRAY_BINARY_SEARCH_PART : 68,
+	ARRAY_CONTAINS : 69,
+	ARRAY_COPY_TO : 70,
+	ARRAY_FILL_ALL : 71,
+	ARRAY_FILL_PART : 72,
+	ARRAY_SORT_ALL : 73,
+	ARRAY_SORT_PART : 74,
+	LIST_ADD : 75,
+	LIST_ADD_RANGE : 76,
+	LIST_ALL : 77,
+	LIST_ANY : 78,
+	LIST_CLEAR : 79,
+	LIST_CONTAINS : 80,
+	LIST_COPY_TO : 81,
+	LIST_COUNT : 82,
+	LIST_INDEX_OF : 83,
+	LIST_INSERT : 84,
+	LIST_LAST : 85,
+	LIST_REMOVE_AT : 86,
+	LIST_REMOVE_RANGE : 87,
+	LIST_SORT_ALL : 88,
+	LIST_SORT_PART : 89,
+	QUEUE_CLEAR : 90,
+	QUEUE_COUNT : 91,
+	QUEUE_DEQUEUE : 92,
+	QUEUE_ENQUEUE : 93,
+	QUEUE_PEEK : 94,
+	STACK_CLEAR : 95,
+	STACK_COUNT : 96,
+	STACK_PEEK : 97,
+	STACK_PUSH : 98,
+	STACK_POP : 99,
+	HASH_SET_ADD : 100,
+	HASH_SET_CLEAR : 101,
+	HASH_SET_CONTAINS : 102,
+	HASH_SET_COUNT : 103,
+	HASH_SET_REMOVE : 104,
+	SORTED_SET_ADD : 105,
+	SORTED_SET_CLEAR : 106,
+	SORTED_SET_CONTAINS : 107,
+	SORTED_SET_COUNT : 108,
+	SORTED_SET_REMOVE : 109,
+	DICTIONARY_ADD : 110,
+	DICTIONARY_CLEAR : 111,
+	DICTIONARY_CONTAINS_KEY : 112,
+	DICTIONARY_COUNT : 113,
+	DICTIONARY_REMOVE : 114,
+	SORTED_DICTIONARY_CLEAR : 115,
+	SORTED_DICTIONARY_CONTAINS_KEY : 116,
+	SORTED_DICTIONARY_COUNT : 117,
+	SORTED_DICTIONARY_REMOVE : 118,
+	ORDERED_DICTIONARY_CLEAR : 119,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 120,
+	ORDERED_DICTIONARY_COUNT : 121,
+	ORDERED_DICTIONARY_REMOVE : 122,
+	TEXT_WRITER_WRITE : 123,
+	TEXT_WRITER_WRITE_CHAR : 124,
+	TEXT_WRITER_WRITE_CODE_POINT : 125,
+	TEXT_WRITER_WRITE_LINE : 126,
+	CONSOLE_WRITE : 127,
+	CONSOLE_WRITE_LINE : 128,
+	STRING_WRITER_CLEAR : 129,
+	STRING_WRITER_TO_STRING : 130,
+	CONVERT_TO_BASE64_STRING : 131,
+	U_T_F8_GET_BYTE_COUNT : 132,
+	U_T_F8_GET_BYTES : 133,
+	U_T_F8_GET_STRING : 134,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 135,
+	REGEX_COMPILE : 136,
+	REGEX_ESCAPE : 137,
+	REGEX_IS_MATCH_STR : 138,
+	REGEX_IS_MATCH_REGEX : 139,
+	MATCH_FIND_STR : 140,
+	MATCH_FIND_REGEX : 141,
+	MATCH_GET_CAPTURE : 142,
+	JSON_ELEMENT_PARSE : 143,
+	JSON_ELEMENT_TRY_PARSE : 144,
+	JSON_ELEMENT_GET_OBJECT : 145,
+	JSON_ELEMENT_GET_ARRAY : 146,
+	JSON_ELEMENT_GET_STRING : 147,
+	JSON_ELEMENT_GET_DOUBLE : 148,
+	JSON_ELEMENT_GET_BOOLEAN : 149,
+	MATH_METHOD : 150,
+	MATH_ABS : 151,
+	MATH_CEILING : 152,
+	MATH_CLAMP : 153,
+	MATH_FUSED_MULTIPLY_ADD : 154,
+	MATH_IS_FINITE : 155,
+	MATH_IS_INFINITY : 156,
+	MATH_IS_NA_N : 157,
+	MATH_LOG2 : 158,
+	MATH_MAX_INT : 159,
+	MATH_MAX_DOUBLE : 160,
+	MATH_MIN_INT : 161,
+	MATH_MIN_DOUBLE : 162,
+	MATH_ROUND : 163,
+	MATH_TRUNCATE : 164
 }
 
 class FuDocInline
@@ -3174,6 +3176,8 @@ export class FuSystem extends FuScope
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_REPLACE, "Replace", false, FuVar.new(this.stringPtrType, "oldValue"), FuVar.new(this.stringPtrType, "newValue"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_STARTS_WITH, "StartsWith", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length", this.newLiteralLong(-1n)));
+		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_TO_LOWER, "ToLower", false);
+		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_TO_UPPER, "ToUpper", false);
 		this.stringPtrType.class = this.#stringClass;
 		this.add(this.stringPtrType);
 		this.stringNullablePtrType.class = this.#stringClass;
@@ -11647,6 +11651,16 @@ export class GenC extends GenCCpp
 		case FuId.STRING_SUBSTRING:
 			this.writeStringSubstring(obj, args, parent);
 			break;
+		case FuId.STRING_TO_LOWER:
+			this.#writeGlib("g_utf8_strdown(");
+			this.#writeTemporaryOrExpr(obj, FuPriority.ARGUMENT);
+			this.write(", -1)");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.#writeGlib("g_utf8_strup(");
+			this.#writeTemporaryOrExpr(obj, FuPriority.ARGUMENT);
+			this.write(", -1)");
+			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
 			if (parent > FuPriority.ADD)
@@ -14535,6 +14549,26 @@ export class GenCpp extends GenCCpp
 			break;
 		case FuId.STRING_SUBSTRING:
 			this.#writeStringMethod(obj, "substr", method, args);
+			break;
+		case FuId.STRING_TO_LOWER:
+			this.include("algorithm");
+			this.include("cctype");
+			this.write("[&] { std::string data = std::string{");
+			obj.accept(this, FuPriority.ARGUMENT);
+			this.write("}; ");
+			this.write("std::transform(data.begin(), data.end(), data.begin(), ");
+			this.write("[](unsigned char c) { return std::tolower(c); }); ");
+			this.write("return data; }()");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.include("algorithm");
+			this.include("cctype");
+			this.write("[&] { std::string data = std::string{");
+			obj.accept(this, FuPriority.ARGUMENT);
+			this.write("}; ");
+			this.write("std::transform(data.begin(), data.end(), data.begin(), ");
+			this.write("[](unsigned char c) { return std::toupper(c); }); ");
+			this.write("return data; }()");
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
@@ -17503,6 +17537,14 @@ export class GenD extends GenCCppD
 		case FuId.STRING_SUBSTRING:
 			this.#writeSlice(obj, args[0], args.length == 2 ? args[1] : null);
 			break;
+		case FuId.STRING_TO_LOWER:
+			this.include("std.uni");
+			this.writePostfix(obj, ".toLower()");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.include("std.uni");
+			this.writePostfix(obj, ".toUpper()");
+			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
 			this.include("std.range");
@@ -18927,6 +18969,12 @@ export class GenJava extends GenTyped
 			}
 			this.writeChar(41);
 			break;
+		case FuId.STRING_TO_LOWER:
+			this.writePostfix(obj, ".toLowerCase()");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.writePostfix(obj, ".toUpperCase()");
+			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
 			this.#writeArrayBinarySearchFill(obj, "binarySearch", args);
@@ -20283,6 +20331,12 @@ export class GenJsNoModule extends GenBase
 				this.writeAdd(args[0], args[1]);
 			}
 			this.writeChar(41);
+			break;
+		case FuId.STRING_TO_LOWER:
+			this.writePostfix(obj, ".toLowerCase()");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.writePostfix(obj, ".toUpperCase()");
 			break;
 		case FuId.ARRAY_FILL_ALL:
 		case FuId.ARRAY_FILL_PART:
@@ -22268,6 +22322,12 @@ export class GenSwift extends GenPySwift
 				this.writeCoerced(this.#system.intType, args[1], FuPriority.ARGUMENT);
 				this.writeChar(41);
 			}
+			break;
+		case FuId.STRING_TO_LOWER:
+			this.writePostfix(obj, ".lowercased()");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.writePostfix(obj, ".uppercased()");
 			break;
 		case FuId.ARRAY_COPY_TO:
 		case FuId.LIST_COPY_TO:
@@ -24391,6 +24451,12 @@ export class GenPy extends GenPySwift
 		case FuId.STRING_SUBSTRING:
 			obj.accept(this, FuPriority.PRIMARY);
 			this.#writeSlice(args[0], args.length == 2 ? args[1] : null);
+			break;
+		case FuId.STRING_TO_LOWER:
+			this.writePostfix(obj, ".lower()");
+			break;
+		case FuId.STRING_TO_UPPER:
+			this.writePostfix(obj, ".upper()");
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 			this.include("bisect");
