@@ -825,6 +825,12 @@ public class GenPy : GenPySwift
 			obj.Accept(this, FuPriority.Primary);
 			WriteSlice(args[0], args.Count == 2 ? args[1] : null);
 			break;
+		case FuId.StringToLower:
+			WritePostfix(obj, ".lower()");
+			break;
+		case FuId.StringToUpper:
+			WritePostfix(obj, ".upper()");
+			break;
 		case FuId.ArrayBinarySearchAll:
 			Include("bisect");
 			WriteCall("bisect.bisect_left", obj, args[0]);

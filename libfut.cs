@@ -1344,6 +1344,8 @@ namespace Fusion
 		StringReplace,
 		StringStartsWith,
 		StringSubstring,
+		StringToLower,
+		StringToUpper,
 		ArrayBinarySearchAll,
 		ArrayBinarySearchPart,
 		ArrayContains,
@@ -3016,6 +3018,8 @@ namespace Fusion
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringReplace, "Replace", false, FuVar.New(this.StringPtrType, "oldValue"), FuVar.New(this.StringPtrType, "newValue"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringStartsWith, "StartsWith", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(this.IntType, "offset"), FuVar.New(this.IntType, "length", NewLiteralLong(-1)));
+			this.StringClass.AddMethod(this.StringStorageType, FuId.StringToLower, "ToLower", false);
+			this.StringClass.AddMethod(this.StringStorageType, FuId.StringToUpper, "ToUpper", false);
 			this.StringPtrType.Class = this.StringClass;
 			Add(this.StringPtrType);
 			this.StringNullablePtrType.Class = this.StringClass;
@@ -11256,6 +11260,16 @@ namespace Fusion
 			case FuId.StringSubstring:
 				WriteStringSubstring(obj, args, parent);
 				break;
+			case FuId.StringToLower:
+				WriteGlib("g_utf8_strdown(");
+				WriteTemporaryOrExpr(obj, FuPriority.Argument);
+				Write(", -1)");
+				break;
+			case FuId.StringToUpper:
+				WriteGlib("g_utf8_strup(");
+				WriteTemporaryOrExpr(obj, FuPriority.Argument);
+				Write(", -1)");
+				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
 				if (parent > FuPriority.Add)
@@ -14103,6 +14117,26 @@ namespace Fusion
 				break;
 			case FuId.StringSubstring:
 				WriteStringMethod(obj, "substr", method, args);
+				break;
+			case FuId.StringToLower:
+				Include("algorithm");
+				Include("cctype");
+				Write("[&] { std::string data = std::string{");
+				obj.Accept(this, FuPriority.Argument);
+				Write("}; ");
+				Write("std::transform(data.begin(), data.end(), data.begin(), ");
+				Write("[](unsigned char c) { return std::tolower(c); }); ");
+				Write("return data; }()");
+				break;
+			case FuId.StringToUpper:
+				Include("algorithm");
+				Include("cctype");
+				Write("[&] { std::string data = std::string{");
+				obj.Accept(this, FuPriority.Argument);
+				Write("}; ");
+				Write("std::transform(data.begin(), data.end(), data.begin(), ");
+				Write("[](unsigned char c) { return std::toupper(c); }); ");
+				Write("return data; }()");
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
@@ -17013,6 +17047,14 @@ namespace Fusion
 			case FuId.StringSubstring:
 				WriteSlice(obj, args[0], args.Count == 2 ? args[1] : null);
 				break;
+			case FuId.StringToLower:
+				Include("std.uni");
+				WritePostfix(obj, ".toLower()");
+				break;
+			case FuId.StringToUpper:
+				Include("std.uni");
+				WritePostfix(obj, ".toUpper()");
+				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
 				Include("std.range");
@@ -18407,6 +18449,12 @@ namespace Fusion
 				}
 				WriteChar(')');
 				break;
+			case FuId.StringToLower:
+				WritePostfix(obj, ".toLowerCase()");
+				break;
+			case FuId.StringToUpper:
+				WritePostfix(obj, ".toUpperCase()");
+				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
 				WriteArrayBinarySearchFill(obj, "binarySearch", args);
@@ -19726,6 +19774,12 @@ namespace Fusion
 					WriteAdd(args[0], args[1]);
 				}
 				WriteChar(')');
+				break;
+			case FuId.StringToLower:
+				WritePostfix(obj, ".toLowerCase()");
+				break;
+			case FuId.StringToUpper:
+				WritePostfix(obj, ".toUpperCase()");
 				break;
 			case FuId.ArrayFillAll:
 			case FuId.ArrayFillPart:
@@ -21704,6 +21758,12 @@ namespace Fusion
 					WriteCoerced(this.System.IntType, args[1], FuPriority.Argument);
 					WriteChar(')');
 				}
+				break;
+			case FuId.StringToLower:
+				WritePostfix(obj, ".lowercased()");
+				break;
+			case FuId.StringToUpper:
+				WritePostfix(obj, ".uppercased()");
 				break;
 			case FuId.ArrayCopyTo:
 			case FuId.ListCopyTo:
@@ -23802,6 +23862,12 @@ namespace Fusion
 			case FuId.StringSubstring:
 				obj.Accept(this, FuPriority.Primary);
 				WriteSlice(args[0], args.Count == 2 ? args[1] : null);
+				break;
+			case FuId.StringToLower:
+				WritePostfix(obj, ".lower()");
+				break;
+			case FuId.StringToUpper:
+				WritePostfix(obj, ".upper()");
 				break;
 			case FuId.ArrayBinarySearchAll:
 				Include("bisect");

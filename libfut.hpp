@@ -253,6 +253,8 @@ enum class FuId
 	stringReplace,
 	stringStartsWith,
 	stringSubstring,
+	stringToLower,
+	stringToUpper,
 	arrayBinarySearchAll,
 	arrayBinarySearchPart,
 	arrayContains,

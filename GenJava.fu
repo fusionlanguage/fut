@@ -661,6 +661,12 @@ public class GenJava : GenTyped
 			}
 			WriteChar(')');
 			break;
+		case FuId.StringToLower:
+			WritePostfix(obj, ".toLowerCase()");
+			break;
+		case FuId.StringToUpper:
+			WritePostfix(obj, ".toUpperCase()");
+			break;
 		case FuId.ArrayBinarySearchAll:
 		case FuId.ArrayBinarySearchPart:
 			WriteArrayBinarySearchFill(obj, "binarySearch", args);

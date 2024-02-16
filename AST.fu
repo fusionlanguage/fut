@@ -125,6 +125,8 @@ public enum FuId
 	StringReplace,
 	StringStartsWith,
 	StringSubstring,
+	StringToLower,
+	StringToUpper,
 	ArrayBinarySearchAll,
 	ArrayBinarySearchPart,
 	ArrayContains,
@@ -1540,6 +1542,8 @@ public class FuSystem : FuScope
 		StringClass.AddMethod(StringStorageType, FuId.StringReplace, "Replace", false, FuVar.New(StringPtrType, "oldValue"), FuVar.New(StringPtrType, "newValue"));
 		StringClass.AddMethod(BoolType, FuId.StringStartsWith, "StartsWith", false, FuVar.New(StringPtrType, "value"));
 		StringClass.AddMethod(StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(IntType, "offset"), FuVar.New(IntType, "length", NewLiteralLong(-1))); // TODO: UIntType
+		StringClass.AddMethod(StringStorageType, FuId.StringToLower, "ToLower", false);
+		StringClass.AddMethod(StringStorageType, FuId.StringToUpper, "ToUpper", false);
 		StringPtrType.Class = StringClass;
 		Add(StringPtrType);
 		StringNullablePtrType.Class = StringClass;
