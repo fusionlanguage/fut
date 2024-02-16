@@ -9494,7 +9494,8 @@ void GenC::writeXstructorPtr(bool need, const FuClass * klass, std::string_view 
 
 bool GenC::isHeapAllocated(const FuType * type)
 {
-	return type->id == FuId::stringStorageType || dynamic_cast<const FuDynamicPtrType *>(type);
+	const FuStorageType * storage;
+	return type->id == FuId::stringStorageType || dynamic_cast<const FuDynamicPtrType *>(type) || ((storage = dynamic_cast<const FuStorageType *>(type)) && storage->class_->id == FuId::matchClass);
 }
 
 bool GenC::needToDestructType(const FuType * type)

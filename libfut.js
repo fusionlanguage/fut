@@ -10134,7 +10134,8 @@ export class GenC extends GenCCpp
 
 	static #isHeapAllocated(type)
 	{
-		return type.id == FuId.STRING_STORAGE_TYPE || type instanceof FuDynamicPtrType;
+		let storage;
+		return type.id == FuId.STRING_STORAGE_TYPE || type instanceof FuDynamicPtrType || ((storage = type) instanceof FuStorageType && storage.class.id == FuId.MATCH_CLASS);
 	}
 
 	static #needToDestructType(type)

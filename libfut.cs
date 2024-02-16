@@ -9788,7 +9788,7 @@ namespace Fusion
 				Write("NULL");
 		}
 
-		static bool IsHeapAllocated(FuType type) => type.Id == FuId.StringStorageType || type is FuDynamicPtrType;
+		static bool IsHeapAllocated(FuType type) => type.Id == FuId.StringStorageType || type is FuDynamicPtrType || (type is FuStorageType storage && storage.Class.Id == FuId.MatchClass);
 
 		static bool NeedToDestructType(FuType type)
 		{
