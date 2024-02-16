@@ -890,7 +890,7 @@
 			}
 		},
 		"class-builtin": {
-			"match": "\\b(Console|Convert|Dictionary|Encoding|Environment|Exception|HashSet|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|SortedSet|Stack|StringWriter|TextWriter)\\b",
+			"match": "\\b(Console|Convert|Dictionary|Encoding|Environment|Exception|HashSet|JsonElement|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|SortedSet|Stack|StringWriter|TextWriter)\\b",
 			"captures": {
 				"1": {
 					"name": "support.class.fu"

@@ -97,6 +97,8 @@ public enum FuId
 	RegexOptionsEnum,
 	RegexClass,
 	MatchClass,
+	JsonValueKindEnum,
+	JsonElementClass,
 	LockClass,
 	StringLength,
 	ArrayLength,
@@ -107,6 +109,7 @@ public enum FuId
 	MatchEnd,
 	MatchLength,
 	MatchValue,
+	JsonElementValueKind,
 	MathNaN,
 	MathNegativeInfinity,
 	MathPositiveInfinity,
@@ -198,6 +201,13 @@ public enum FuId
 	MatchFindStr,
 	MatchFindRegex,
 	MatchGetCapture,
+	JsonElementParse,
+	JsonElementTryParse,
+	JsonElementGetObject,
+	JsonElementGetArray,
+	JsonElementGetString,
+	JsonElementGetDouble,
+	JsonElementGetBoolean,
 	MathMethod,
 	MathAbs,
 	MathCeiling,
@@ -1464,12 +1474,13 @@ public class FuSystem : FuScope
 		set.AddMethod(VoidType, removeId, "Remove", true, FuVar.New(TypeParam0, "value"));
 	}
 
-	void AddDictionary!(FuId id, string name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId)
+	FuClass AddDictionary!(FuId id, string name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId)
 	{
 		FuClass! dict = AddCollection(id, name, 2, clearId, countId);
 		dict.Add(FuMethod.New(dict, FuVisibility.FinalValueType, FuCallType.Normal, VoidType, FuId.DictionaryAdd, "Add", true, FuVar.New(TypeParam0, "key")));
 		dict.AddMethod(BoolType, containsKeyId, "ContainsKey", false, FuVar.New(TypeParam0, "key"));
 		dict.AddMethod(VoidType, removeId, "Remove", true, FuVar.New(TypeParam0, "key"));
+		return dict;
 	}
 
 	static void AddEnumValue(FuEnum# enu, FuConst# value)
@@ -1585,7 +1596,7 @@ public class FuSystem : FuScope
 		stackClass.AddMethod(TypeParam0, FuId.StackPop, "Pop", true);
 		AddSet(FuId.HashSetClass, "HashSet", FuId.HashSetAdd, FuId.HashSetClear, FuId.HashSetContains, FuId.HashSetCount, FuId.HashSetRemove);
 		AddSet(FuId.SortedSetClass, "SortedSet", FuId.SortedSetAdd, FuId.SortedSetClear, FuId.SortedSetContains, FuId.SortedSetCount, FuId.SortedSetRemove);
-		AddDictionary(FuId.DictionaryClass, "Dictionary", FuId.DictionaryClear, FuId.DictionaryContainsKey, FuId.DictionaryCount, FuId.DictionaryRemove);
+		FuClass dictionaryClass = AddDictionary(FuId.DictionaryClass, "Dictionary", FuId.DictionaryClear, FuId.DictionaryContainsKey, FuId.DictionaryCount, FuId.DictionaryRemove);
 		AddDictionary(FuId.SortedDictionaryClass, "SortedDictionary", FuId.SortedDictionaryClear, FuId.SortedDictionaryContainsKey, FuId.SortedDictionaryCount, FuId.SortedDictionaryRemove);
 		AddDictionary(FuId.OrderedDictionaryClass, "OrderedDictionary", FuId.OrderedDictionaryClear, FuId.OrderedDictionaryContainsKey, FuId.OrderedDictionaryCount, FuId.OrderedDictionaryRemove);
 
@@ -1648,6 +1659,29 @@ public class FuSystem : FuScope
 		matchClass.Add(FuProperty.New(UIntType, FuId.MatchLength, "Length"));
 		matchClass.Add(FuProperty.New(StringStorageType, FuId.MatchValue, "Value"));
 		Add(matchClass);
+		FuEnum# jsonValueKindEnum = NewEnum(false);
+		jsonValueKindEnum.IsPublic = true;
+		jsonValueKindEnum.Id = FuId.JsonValueKindEnum;
+		jsonValueKindEnum.Name = "JsonValueKind";
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Object", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Array", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "String", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Number", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "True", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "False", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Null", VisitStatus = FuVisitStatus.Done });
+		Add(jsonValueKindEnum);
+		FuClass# jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, VoidType, FuId.JsonElementParse, "Parse", true, FuVar.New(StringPtrType, "value")));
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.JsonElementTryParse, "TryParse", true, FuVar.New(StringPtrType, "value")));
+		FuDynamicPtrType# jsonElementPtr = new FuDynamicPtrType { Class = jsonElementClass };
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = dictionaryClass, TypeArg0 = StringStorageType, TypeArg1 = jsonElementPtr }, FuId.JsonElementGetObject, "GetObject", false));
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = listClass, TypeArg0 = jsonElementPtr }, FuId.JsonElementGetArray, "GetArray", false));
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, StringPtrType, FuId.JsonElementGetString, "GetString", false));
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, DoubleType, FuId.JsonElementGetDouble, "GetDouble", false));
+		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.JsonElementGetBoolean, "GetBoolean", false));
+		jsonElementClass.Add(FuProperty.New(jsonValueKindEnum, FuId.JsonElementValueKind, "ValueKind"));
+		Add(jsonElementClass);
 
 		FuFloatingType# floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
 		FuClass# mathClass = FuClass.New(FuCallType.Static, FuId.None, "Math");

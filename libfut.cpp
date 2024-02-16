@@ -2520,7 +2520,7 @@ FuSystem::FuSystem()
 	stackClass->addMethod(this->typeParam0, FuId::stackPop, "Pop", true);
 	addSet(FuId::hashSetClass, "HashSet", FuId::hashSetAdd, FuId::hashSetClear, FuId::hashSetContains, FuId::hashSetCount, FuId::hashSetRemove);
 	addSet(FuId::sortedSetClass, "SortedSet", FuId::sortedSetAdd, FuId::sortedSetClear, FuId::sortedSetContains, FuId::sortedSetCount, FuId::sortedSetRemove);
-	addDictionary(FuId::dictionaryClass, "Dictionary", FuId::dictionaryClear, FuId::dictionaryContainsKey, FuId::dictionaryCount, FuId::dictionaryRemove);
+	const FuClass * dictionaryClass = addDictionary(FuId::dictionaryClass, "Dictionary", FuId::dictionaryClear, FuId::dictionaryContainsKey, FuId::dictionaryCount, FuId::dictionaryRemove);
 	addDictionary(FuId::sortedDictionaryClass, "SortedDictionary", FuId::sortedDictionaryClear, FuId::sortedDictionaryContainsKey, FuId::sortedDictionaryCount, FuId::sortedDictionaryRemove);
 	addDictionary(FuId::orderedDictionaryClass, "OrderedDictionary", FuId::orderedDictionaryClear, FuId::orderedDictionaryContainsKey, FuId::orderedDictionaryCount, FuId::orderedDictionaryRemove);
 	std::shared_ptr<FuClass> textWriterClass = FuClass::new_(FuCallType::normal, FuId::textWriterClass, "TextWriter");
@@ -2590,6 +2590,65 @@ FuSystem::FuSystem()
 	matchClass->add(FuProperty::new_(this->uIntType, FuId::matchLength, "Length"));
 	matchClass->add(FuProperty::new_(this->stringStorageType, FuId::matchValue, "Value"));
 	add(matchClass);
+	std::shared_ptr<FuEnum> jsonValueKindEnum = newEnum(false);
+	jsonValueKindEnum->isPublic = true;
+	jsonValueKindEnum->id = FuId::jsonValueKindEnum;
+	jsonValueKindEnum->name = "JsonValueKind";
+	std::shared_ptr<FuConst> futemp9 = std::make_shared<FuConst>();
+	futemp9->visibility = FuVisibility::public_;
+	futemp9->name = "Object";
+	futemp9->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp9);
+	std::shared_ptr<FuConst> futemp10 = std::make_shared<FuConst>();
+	futemp10->visibility = FuVisibility::public_;
+	futemp10->name = "Array";
+	futemp10->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp10);
+	std::shared_ptr<FuConst> futemp11 = std::make_shared<FuConst>();
+	futemp11->visibility = FuVisibility::public_;
+	futemp11->name = "String";
+	futemp11->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp11);
+	std::shared_ptr<FuConst> futemp12 = std::make_shared<FuConst>();
+	futemp12->visibility = FuVisibility::public_;
+	futemp12->name = "Number";
+	futemp12->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp12);
+	std::shared_ptr<FuConst> futemp13 = std::make_shared<FuConst>();
+	futemp13->visibility = FuVisibility::public_;
+	futemp13->name = "True";
+	futemp13->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp13);
+	std::shared_ptr<FuConst> futemp14 = std::make_shared<FuConst>();
+	futemp14->visibility = FuVisibility::public_;
+	futemp14->name = "False";
+	futemp14->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp14);
+	std::shared_ptr<FuConst> futemp15 = std::make_shared<FuConst>();
+	futemp15->visibility = FuVisibility::public_;
+	futemp15->name = "Null";
+	futemp15->visitStatus = FuVisitStatus::done;
+	addEnumValue(jsonValueKindEnum, futemp15);
+	add(jsonValueKindEnum);
+	std::shared_ptr<FuClass> jsonElementClass = FuClass::new_(FuCallType::sealed, FuId::jsonElementClass, "JsonElement");
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->voidType, FuId::jsonElementParse, "Parse", true, FuVar::new_(this->stringPtrType, "value")));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
+	std::shared_ptr<FuDynamicPtrType> jsonElementPtr = std::make_shared<FuDynamicPtrType>();
+	jsonElementPtr->class_ = jsonElementClass.get();
+	std::shared_ptr<FuClassType> futemp16 = std::make_shared<FuClassType>();
+	futemp16->class_ = dictionaryClass;
+	futemp16->typeArg0 = this->stringStorageType;
+	futemp16->typeArg1 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp16, FuId::jsonElementGetObject, "GetObject", false));
+	std::shared_ptr<FuClassType> futemp17 = std::make_shared<FuClassType>();
+	futemp17->class_ = listClass;
+	futemp17->typeArg0 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp17, FuId::jsonElementGetArray, "GetArray", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->stringPtrType, FuId::jsonElementGetString, "GetString", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->doubleType, FuId::jsonElementGetDouble, "GetDouble", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementGetBoolean, "GetBoolean", false));
+	jsonElementClass->add(FuProperty::new_(jsonValueKindEnum, FuId::jsonElementValueKind, "ValueKind"));
+	add(jsonElementClass);
 	std::shared_ptr<FuFloatingType> floatIntType = std::make_shared<FuFloatingType>();
 	floatIntType->id = FuId::floatIntType;
 	floatIntType->name = "float";
@@ -2699,12 +2758,13 @@ void FuSystem::addSet(FuId id, std::string_view name, FuId addId, FuId clearId, 
 	set->addMethod(this->voidType, removeId, "Remove", true, FuVar::new_(this->typeParam0, "value"));
 }
 
-void FuSystem::addDictionary(FuId id, std::string_view name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId)
+const FuClass * FuSystem::addDictionary(FuId id, std::string_view name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId)
 {
 	FuClass * dict = addCollection(id, name, 2, clearId, countId);
 	dict->add(FuMethod::new_(dict, FuVisibility::finalValueType, FuCallType::normal, this->voidType, FuId::dictionaryAdd, "Add", true, FuVar::new_(this->typeParam0, "key")));
 	dict->addMethod(this->boolType, containsKeyId, "ContainsKey", false, FuVar::new_(this->typeParam0, "key"));
 	dict->addMethod(this->voidType, removeId, "Remove", true, FuVar::new_(this->typeParam0, "key"));
+	return dict;
 }
 
 void FuSystem::addEnumValue(std::shared_ptr<FuEnum> enu, std::shared_ptr<FuConst> value)
@@ -15065,6 +15125,10 @@ void GenCs::writeType(const FuType * type, bool promote)
 			include("System.Text.RegularExpressions");
 			write(klass->class_->name);
 			break;
+		case FuId::jsonElementClass:
+			include("System.Text.Json");
+			write("JsonElement");
+			break;
 		case FuId::lockClass:
 			write("object");
 			break;
@@ -15473,6 +15537,20 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writePostfix(obj, ".Groups[");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write("].Value");
+		break;
+	case FuId::jsonElementParse:
+		obj->accept(this, FuPriority::assign);
+		write(" = JsonDocument.Parse(");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write(").RootElement");
+		break;
+	case FuId::jsonElementGetObject:
+		include("System.Linq");
+		writePostfix(obj, ".EnumerateObject().ToDictionary(p => p.Name, p => p.Value)");
+		break;
+	case FuId::jsonElementGetArray:
+		include("System.Linq");
+		writePostfix(obj, ".EnumerateArray().ToList()");
 		break;
 	case FuId::mathMethod:
 	case FuId::mathAbs:

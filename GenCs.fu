@@ -1,6 +1,6 @@
 // GenCs.fu - C# code generator
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -266,6 +266,10 @@ public class GenCs : GenTyped
 			case FuId.MatchClass:
 				Include("System.Text.RegularExpressions");
 				Write(klass.Class.Name);
+				break;
+			case FuId.JsonElementClass:
+				Include("System.Text.Json");
+				Write("JsonElement");
 				break;
 			case FuId.LockClass:
 				Write("object");
@@ -658,6 +662,20 @@ public class GenCs : GenTyped
 			WritePostfix(obj, ".Groups[");
 			args[0].Accept(this, FuPriority.Argument);
 			Write("].Value");
+			break;
+		case FuId.JsonElementParse:
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = JsonDocument.Parse(");
+			args[0].Accept(this, FuPriority.Argument);
+			Write(").RootElement");
+			break;
+		case FuId.JsonElementGetObject:
+			Include("System.Linq");
+			WritePostfix(obj, ".EnumerateObject().ToDictionary(p => p.Name, p => p.Value)");
+			break;
+		case FuId.JsonElementGetArray:
+			Include("System.Linq");
+			WritePostfix(obj, ".EnumerateArray().ToList()");
 			break;
 		case FuId.MathMethod:
 		case FuId.MathAbs:

@@ -225,6 +225,8 @@ enum class FuId
 	regexOptionsEnum,
 	regexClass,
 	matchClass,
+	jsonValueKindEnum,
+	jsonElementClass,
 	lockClass,
 	stringLength,
 	arrayLength,
@@ -235,6 +237,7 @@ enum class FuId
 	matchEnd,
 	matchLength,
 	matchValue,
+	jsonElementValueKind,
 	mathNaN,
 	mathNegativeInfinity,
 	mathPositiveInfinity,
@@ -326,6 +329,13 @@ enum class FuId
 	matchFindStr,
 	matchFindRegex,
 	matchGetCapture,
+	jsonElementParse,
+	jsonElementTryParse,
+	jsonElementGetObject,
+	jsonElementGetArray,
+	jsonElementGetString,
+	jsonElementGetDouble,
+	jsonElementGetBoolean,
 	mathMethod,
 	mathAbs,
 	mathCeiling,
@@ -1473,7 +1483,7 @@ private:
 	std::shared_ptr<FuClass> stringClass = FuClass::new_(FuCallType::normal, FuId::stringClass, "string");
 	FuClass * addCollection(FuId id, std::string_view name, int typeParameterCount, FuId clearId, FuId countId);
 	void addSet(FuId id, std::string_view name, FuId addId, FuId clearId, FuId containsId, FuId countId, FuId removeId);
-	void addDictionary(FuId id, std::string_view name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId);
+	const FuClass * addDictionary(FuId id, std::string_view name, FuId clearId, FuId containsKeyId, FuId countId, FuId removeId);
 	static void addEnumValue(std::shared_ptr<FuEnum> enu, std::shared_ptr<FuConst> value);
 	std::shared_ptr<FuConst> newConstLong(std::string_view name, int64_t value) const;
 	std::shared_ptr<FuConst> newConstDouble(std::string_view name, double value) const;

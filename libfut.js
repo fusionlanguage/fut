@@ -1299,122 +1299,132 @@ export const FuId = {
 	REGEX_OPTIONS_ENUM : 34,
 	REGEX_CLASS : 35,
 	MATCH_CLASS : 36,
-	LOCK_CLASS : 37,
-	STRING_LENGTH : 38,
-	ARRAY_LENGTH : 39,
-	CONSOLE_ERROR : 40,
-	MAIN : 41,
-	CLASS_TO_STRING : 42,
-	MATCH_START : 43,
-	MATCH_END : 44,
-	MATCH_LENGTH : 45,
-	MATCH_VALUE : 46,
-	MATH_NA_N : 47,
-	MATH_NEGATIVE_INFINITY : 48,
-	MATH_POSITIVE_INFINITY : 49,
-	ENUM_FROM_INT : 50,
-	ENUM_HAS_FLAG : 51,
-	INT_TRY_PARSE : 52,
-	LONG_TRY_PARSE : 53,
-	DOUBLE_TRY_PARSE : 54,
-	STRING_CONTAINS : 55,
-	STRING_ENDS_WITH : 56,
-	STRING_INDEX_OF : 57,
-	STRING_LAST_INDEX_OF : 58,
-	STRING_REPLACE : 59,
-	STRING_STARTS_WITH : 60,
-	STRING_SUBSTRING : 61,
-	ARRAY_BINARY_SEARCH_ALL : 62,
-	ARRAY_BINARY_SEARCH_PART : 63,
-	ARRAY_CONTAINS : 64,
-	ARRAY_COPY_TO : 65,
-	ARRAY_FILL_ALL : 66,
-	ARRAY_FILL_PART : 67,
-	ARRAY_SORT_ALL : 68,
-	ARRAY_SORT_PART : 69,
-	LIST_ADD : 70,
-	LIST_ADD_RANGE : 71,
-	LIST_ALL : 72,
-	LIST_ANY : 73,
-	LIST_CLEAR : 74,
-	LIST_CONTAINS : 75,
-	LIST_COPY_TO : 76,
-	LIST_COUNT : 77,
-	LIST_INDEX_OF : 78,
-	LIST_INSERT : 79,
-	LIST_LAST : 80,
-	LIST_REMOVE_AT : 81,
-	LIST_REMOVE_RANGE : 82,
-	LIST_SORT_ALL : 83,
-	LIST_SORT_PART : 84,
-	QUEUE_CLEAR : 85,
-	QUEUE_COUNT : 86,
-	QUEUE_DEQUEUE : 87,
-	QUEUE_ENQUEUE : 88,
-	QUEUE_PEEK : 89,
-	STACK_CLEAR : 90,
-	STACK_COUNT : 91,
-	STACK_PEEK : 92,
-	STACK_PUSH : 93,
-	STACK_POP : 94,
-	HASH_SET_ADD : 95,
-	HASH_SET_CLEAR : 96,
-	HASH_SET_CONTAINS : 97,
-	HASH_SET_COUNT : 98,
-	HASH_SET_REMOVE : 99,
-	SORTED_SET_ADD : 100,
-	SORTED_SET_CLEAR : 101,
-	SORTED_SET_CONTAINS : 102,
-	SORTED_SET_COUNT : 103,
-	SORTED_SET_REMOVE : 104,
-	DICTIONARY_ADD : 105,
-	DICTIONARY_CLEAR : 106,
-	DICTIONARY_CONTAINS_KEY : 107,
-	DICTIONARY_COUNT : 108,
-	DICTIONARY_REMOVE : 109,
-	SORTED_DICTIONARY_CLEAR : 110,
-	SORTED_DICTIONARY_CONTAINS_KEY : 111,
-	SORTED_DICTIONARY_COUNT : 112,
-	SORTED_DICTIONARY_REMOVE : 113,
-	ORDERED_DICTIONARY_CLEAR : 114,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 115,
-	ORDERED_DICTIONARY_COUNT : 116,
-	ORDERED_DICTIONARY_REMOVE : 117,
-	TEXT_WRITER_WRITE : 118,
-	TEXT_WRITER_WRITE_CHAR : 119,
-	TEXT_WRITER_WRITE_CODE_POINT : 120,
-	TEXT_WRITER_WRITE_LINE : 121,
-	CONSOLE_WRITE : 122,
-	CONSOLE_WRITE_LINE : 123,
-	STRING_WRITER_CLEAR : 124,
-	STRING_WRITER_TO_STRING : 125,
-	CONVERT_TO_BASE64_STRING : 126,
-	U_T_F8_GET_BYTE_COUNT : 127,
-	U_T_F8_GET_BYTES : 128,
-	U_T_F8_GET_STRING : 129,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 130,
-	REGEX_COMPILE : 131,
-	REGEX_ESCAPE : 132,
-	REGEX_IS_MATCH_STR : 133,
-	REGEX_IS_MATCH_REGEX : 134,
-	MATCH_FIND_STR : 135,
-	MATCH_FIND_REGEX : 136,
-	MATCH_GET_CAPTURE : 137,
-	MATH_METHOD : 138,
-	MATH_ABS : 139,
-	MATH_CEILING : 140,
-	MATH_CLAMP : 141,
-	MATH_FUSED_MULTIPLY_ADD : 142,
-	MATH_IS_FINITE : 143,
-	MATH_IS_INFINITY : 144,
-	MATH_IS_NA_N : 145,
-	MATH_LOG2 : 146,
-	MATH_MAX_INT : 147,
-	MATH_MAX_DOUBLE : 148,
-	MATH_MIN_INT : 149,
-	MATH_MIN_DOUBLE : 150,
-	MATH_ROUND : 151,
-	MATH_TRUNCATE : 152
+	JSON_VALUE_KIND_ENUM : 37,
+	JSON_ELEMENT_CLASS : 38,
+	LOCK_CLASS : 39,
+	STRING_LENGTH : 40,
+	ARRAY_LENGTH : 41,
+	CONSOLE_ERROR : 42,
+	MAIN : 43,
+	CLASS_TO_STRING : 44,
+	MATCH_START : 45,
+	MATCH_END : 46,
+	MATCH_LENGTH : 47,
+	MATCH_VALUE : 48,
+	JSON_ELEMENT_VALUE_KIND : 49,
+	MATH_NA_N : 50,
+	MATH_NEGATIVE_INFINITY : 51,
+	MATH_POSITIVE_INFINITY : 52,
+	ENUM_FROM_INT : 53,
+	ENUM_HAS_FLAG : 54,
+	INT_TRY_PARSE : 55,
+	LONG_TRY_PARSE : 56,
+	DOUBLE_TRY_PARSE : 57,
+	STRING_CONTAINS : 58,
+	STRING_ENDS_WITH : 59,
+	STRING_INDEX_OF : 60,
+	STRING_LAST_INDEX_OF : 61,
+	STRING_REPLACE : 62,
+	STRING_STARTS_WITH : 63,
+	STRING_SUBSTRING : 64,
+	ARRAY_BINARY_SEARCH_ALL : 65,
+	ARRAY_BINARY_SEARCH_PART : 66,
+	ARRAY_CONTAINS : 67,
+	ARRAY_COPY_TO : 68,
+	ARRAY_FILL_ALL : 69,
+	ARRAY_FILL_PART : 70,
+	ARRAY_SORT_ALL : 71,
+	ARRAY_SORT_PART : 72,
+	LIST_ADD : 73,
+	LIST_ADD_RANGE : 74,
+	LIST_ALL : 75,
+	LIST_ANY : 76,
+	LIST_CLEAR : 77,
+	LIST_CONTAINS : 78,
+	LIST_COPY_TO : 79,
+	LIST_COUNT : 80,
+	LIST_INDEX_OF : 81,
+	LIST_INSERT : 82,
+	LIST_LAST : 83,
+	LIST_REMOVE_AT : 84,
+	LIST_REMOVE_RANGE : 85,
+	LIST_SORT_ALL : 86,
+	LIST_SORT_PART : 87,
+	QUEUE_CLEAR : 88,
+	QUEUE_COUNT : 89,
+	QUEUE_DEQUEUE : 90,
+	QUEUE_ENQUEUE : 91,
+	QUEUE_PEEK : 92,
+	STACK_CLEAR : 93,
+	STACK_COUNT : 94,
+	STACK_PEEK : 95,
+	STACK_PUSH : 96,
+	STACK_POP : 97,
+	HASH_SET_ADD : 98,
+	HASH_SET_CLEAR : 99,
+	HASH_SET_CONTAINS : 100,
+	HASH_SET_COUNT : 101,
+	HASH_SET_REMOVE : 102,
+	SORTED_SET_ADD : 103,
+	SORTED_SET_CLEAR : 104,
+	SORTED_SET_CONTAINS : 105,
+	SORTED_SET_COUNT : 106,
+	SORTED_SET_REMOVE : 107,
+	DICTIONARY_ADD : 108,
+	DICTIONARY_CLEAR : 109,
+	DICTIONARY_CONTAINS_KEY : 110,
+	DICTIONARY_COUNT : 111,
+	DICTIONARY_REMOVE : 112,
+	SORTED_DICTIONARY_CLEAR : 113,
+	SORTED_DICTIONARY_CONTAINS_KEY : 114,
+	SORTED_DICTIONARY_COUNT : 115,
+	SORTED_DICTIONARY_REMOVE : 116,
+	ORDERED_DICTIONARY_CLEAR : 117,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 118,
+	ORDERED_DICTIONARY_COUNT : 119,
+	ORDERED_DICTIONARY_REMOVE : 120,
+	TEXT_WRITER_WRITE : 121,
+	TEXT_WRITER_WRITE_CHAR : 122,
+	TEXT_WRITER_WRITE_CODE_POINT : 123,
+	TEXT_WRITER_WRITE_LINE : 124,
+	CONSOLE_WRITE : 125,
+	CONSOLE_WRITE_LINE : 126,
+	STRING_WRITER_CLEAR : 127,
+	STRING_WRITER_TO_STRING : 128,
+	CONVERT_TO_BASE64_STRING : 129,
+	U_T_F8_GET_BYTE_COUNT : 130,
+	U_T_F8_GET_BYTES : 131,
+	U_T_F8_GET_STRING : 132,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 133,
+	REGEX_COMPILE : 134,
+	REGEX_ESCAPE : 135,
+	REGEX_IS_MATCH_STR : 136,
+	REGEX_IS_MATCH_REGEX : 137,
+	MATCH_FIND_STR : 138,
+	MATCH_FIND_REGEX : 139,
+	MATCH_GET_CAPTURE : 140,
+	JSON_ELEMENT_PARSE : 141,
+	JSON_ELEMENT_TRY_PARSE : 142,
+	JSON_ELEMENT_GET_OBJECT : 143,
+	JSON_ELEMENT_GET_ARRAY : 144,
+	JSON_ELEMENT_GET_STRING : 145,
+	JSON_ELEMENT_GET_DOUBLE : 146,
+	JSON_ELEMENT_GET_BOOLEAN : 147,
+	MATH_METHOD : 148,
+	MATH_ABS : 149,
+	MATH_CEILING : 150,
+	MATH_CLAMP : 151,
+	MATH_FUSED_MULTIPLY_ADD : 152,
+	MATH_IS_FINITE : 153,
+	MATH_IS_INFINITY : 154,
+	MATH_IS_NA_N : 155,
+	MATH_LOG2 : 156,
+	MATH_MAX_INT : 157,
+	MATH_MAX_DOUBLE : 158,
+	MATH_MIN_INT : 159,
+	MATH_MIN_DOUBLE : 160,
+	MATH_ROUND : 161,
+	MATH_TRUNCATE : 162
 }
 
 class FuDocInline
@@ -3209,7 +3219,7 @@ export class FuSystem extends FuScope
 		stackClass.addMethod(this.#typeParam0, FuId.STACK_POP, "Pop", true);
 		this.#addSet(FuId.HASH_SET_CLASS, "HashSet", FuId.HASH_SET_ADD, FuId.HASH_SET_CLEAR, FuId.HASH_SET_CONTAINS, FuId.HASH_SET_COUNT, FuId.HASH_SET_REMOVE);
 		this.#addSet(FuId.SORTED_SET_CLASS, "SortedSet", FuId.SORTED_SET_ADD, FuId.SORTED_SET_CLEAR, FuId.SORTED_SET_CONTAINS, FuId.SORTED_SET_COUNT, FuId.SORTED_SET_REMOVE);
-		this.#addDictionary(FuId.DICTIONARY_CLASS, "Dictionary", FuId.DICTIONARY_CLEAR, FuId.DICTIONARY_CONTAINS_KEY, FuId.DICTIONARY_COUNT, FuId.DICTIONARY_REMOVE);
+		let dictionaryClass = this.#addDictionary(FuId.DICTIONARY_CLASS, "Dictionary", FuId.DICTIONARY_CLEAR, FuId.DICTIONARY_CONTAINS_KEY, FuId.DICTIONARY_COUNT, FuId.DICTIONARY_REMOVE);
 		this.#addDictionary(FuId.SORTED_DICTIONARY_CLASS, "SortedDictionary", FuId.SORTED_DICTIONARY_CLEAR, FuId.SORTED_DICTIONARY_CONTAINS_KEY, FuId.SORTED_DICTIONARY_COUNT, FuId.SORTED_DICTIONARY_REMOVE);
 		this.#addDictionary(FuId.ORDERED_DICTIONARY_CLASS, "OrderedDictionary", FuId.ORDERED_DICTIONARY_CLEAR, FuId.ORDERED_DICTIONARY_CONTAINS_KEY, FuId.ORDERED_DICTIONARY_COUNT, FuId.ORDERED_DICTIONARY_REMOVE);
 		let textWriterClass = FuClass.new(FuCallType.NORMAL, FuId.TEXT_WRITER_CLASS, "TextWriter");
@@ -3264,6 +3274,29 @@ export class FuSystem extends FuScope
 		matchClass.add(FuProperty.new(this.#uIntType, FuId.MATCH_LENGTH, "Length"));
 		matchClass.add(FuProperty.new(this.stringStorageType, FuId.MATCH_VALUE, "Value"));
 		this.add(matchClass);
+		let jsonValueKindEnum = this.newEnum(false);
+		jsonValueKindEnum.isPublic = true;
+		jsonValueKindEnum.id = FuId.JSON_VALUE_KIND_ENUM;
+		jsonValueKindEnum.name = "JsonValueKind";
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "Object", visitStatus: FuVisitStatus.DONE }));
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "Array", visitStatus: FuVisitStatus.DONE }));
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "String", visitStatus: FuVisitStatus.DONE }));
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "Number", visitStatus: FuVisitStatus.DONE }));
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "True", visitStatus: FuVisitStatus.DONE }));
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "False", visitStatus: FuVisitStatus.DONE }));
+		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, name: "Null", visitStatus: FuVisitStatus.DONE }));
+		this.add(jsonValueKindEnum);
+		let jsonElementClass = FuClass.new(FuCallType.SEALED, FuId.JSON_ELEMENT_CLASS, "JsonElement");
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.JSON_ELEMENT_PARSE, "Parse", true, FuVar.new(this.stringPtrType, "value")));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
+		let jsonElementPtr = Object.assign(new FuDynamicPtrType(), { class: jsonElementClass });
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: dictionaryClass, typeArg0: this.stringStorageType, typeArg1: jsonElementPtr }), FuId.JSON_ELEMENT_GET_OBJECT, "GetObject", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: listClass, typeArg0: jsonElementPtr }), FuId.JSON_ELEMENT_GET_ARRAY, "GetArray", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.stringPtrType, FuId.JSON_ELEMENT_GET_STRING, "GetString", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.doubleType, FuId.JSON_ELEMENT_GET_DOUBLE, "GetDouble", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_GET_BOOLEAN, "GetBoolean", false));
+		jsonElementClass.add(FuProperty.new(jsonValueKindEnum, FuId.JSON_ELEMENT_VALUE_KIND, "ValueKind"));
+		this.add(jsonElementClass);
 		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
 		let mathClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Math");
 		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_ABS, "Abs", false, FuVar.new(this.longType, "a")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.#floatType, FuId.MATH_ABS, "Abs", false, FuVar.new(this.doubleType, "a"))));
@@ -3389,6 +3422,7 @@ export class FuSystem extends FuScope
 		dict.add(FuMethod.new(dict, FuVisibility.FINAL_VALUE_TYPE, FuCallType.NORMAL, this.voidType, FuId.DICTIONARY_ADD, "Add", true, FuVar.new(this.#typeParam0, "key")));
 		dict.addMethod(this.boolType, containsKeyId, "ContainsKey", false, FuVar.new(this.#typeParam0, "key"));
 		dict.addMethod(this.voidType, removeId, "Remove", true, FuVar.new(this.#typeParam0, "key"));
+		return dict;
 	}
 
 	static #addEnumValue(enu, value)
@@ -15937,6 +15971,10 @@ export class GenCs extends GenTyped
 				this.include("System.Text.RegularExpressions");
 				this.write(klass.class.name);
 				break;
+			case FuId.JSON_ELEMENT_CLASS:
+				this.include("System.Text.Json");
+				this.write("JsonElement");
+				break;
 			case FuId.LOCK_CLASS:
 				this.write("object");
 				break;
@@ -16339,6 +16377,20 @@ export class GenCs extends GenTyped
 			this.writePostfix(obj, ".Groups[");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write("].Value");
+			break;
+		case FuId.JSON_ELEMENT_PARSE:
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = JsonDocument.Parse(");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write(").RootElement");
+			break;
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+			this.include("System.Linq");
+			this.writePostfix(obj, ".EnumerateObject().ToDictionary(p => p.Name, p => p.Value)");
+			break;
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+			this.include("System.Linq");
+			this.writePostfix(obj, ".EnumerateArray().ToList()");
 			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_ABS:
