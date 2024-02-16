@@ -23323,6 +23323,9 @@ namespace Fusion
 					Include("re");
 					Write("re.Match");
 					break;
+				case FuId.JsonElementClass:
+					Write("dict | list | str | float | bool | None");
+					break;
 				case FuId.LockClass:
 					Include("threading");
 					Write("threading.RLock");

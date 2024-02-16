@@ -22464,6 +22464,9 @@ void GenPy::writeTypeAnnotation(const FuType * type, bool nullable)
 			include("re");
 			write("re.Match");
 			break;
+		case FuId::jsonElementClass:
+			write("dict | list | str | float | bool | None");
+			break;
 		case FuId::lockClass:
 			include("threading");
 			write("threading.RLock");

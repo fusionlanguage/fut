@@ -1,6 +1,6 @@
 // GenPy.fu - Python code generator
 //
-// Copyright (C) 2020-2023  Piotr Fusik
+// Copyright (C) 2020-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -339,6 +339,9 @@ public class GenPy : GenPySwift
 			case FuId.MatchClass:
 				Include("re");
 				Write("re.Match");
+				break;
+			case FuId.JsonElementClass:
+				Write("dict | list | str | float | bool | None");
 				break;
 			case FuId.LockClass:
 				Include("threading");

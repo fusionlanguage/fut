@@ -23900,6 +23900,9 @@ export class GenPy extends GenPySwift
 				this.include("re");
 				this.write("re.Match");
 				break;
+			case FuId.JSON_ELEMENT_CLASS:
+				this.write("dict | list | str | float | bool | None");
+				break;
 			case FuId.LOCK_CLASS:
 				this.include("threading");
 				this.write("threading.RLock");
