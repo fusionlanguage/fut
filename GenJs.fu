@@ -1357,7 +1357,6 @@ public class GenJsNoModule : GenBase
 			WriteLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
 			CloseBlock();
 			CloseBlock();
-			WriteNewLine();
 			CloseBlock();
 		}
 		if (this.StringWriter) {

@@ -21076,7 +21076,6 @@ export class GenJsNoModule extends GenBase
 			this.writeLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
 			this.closeBlock();
 			this.closeBlock();
-			this.writeNewLine();
 			this.closeBlock();
 		}
 		if (this.#stringWriter) {
@@ -23842,6 +23841,7 @@ export class GenPy extends GenPySwift
 		case "global":
 		case "import":
 		case "is":
+		case "json":
 		case "lambda":
 		case "len":
 		case "list":
@@ -24150,6 +24150,9 @@ export class GenPy extends GenPySwift
 		case FuId.SORTED_DICTIONARY_COUNT:
 		case FuId.ORDERED_DICTIONARY_COUNT:
 			this.writeStringLength(expr.left);
+			break;
+		case FuId.JSON_ELEMENT_VALUE_KIND:
+			this.writeCall("JsonValueKind.get", expr.left);
 			break;
 		case FuId.MATH_NA_N:
 			this.include("math");
@@ -24732,6 +24735,18 @@ export class GenPy extends GenPySwift
 		case FuId.MATCH_GET_CAPTURE:
 			this.writeMethodCall(obj, "group", args[0]);
 			break;
+		case FuId.JSON_ELEMENT_PARSE:
+			this.include("json");
+			obj.accept(this, FuPriority.ASSIGN);
+			this.writeCall(" = json.loads", args[0]);
+			break;
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+		case FuId.JSON_ELEMENT_GET_STRING:
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			obj.accept(this, parent);
+			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_IS_FINITE:
 		case FuId.MATH_IS_NA_N:
@@ -25252,6 +25267,41 @@ export class GenPy extends GenPySwift
 		this.#writtenTypes.clear();
 		this.#switchBreak = false;
 		this.openStringWriter();
+		if (program.jsonValueKindEnum) {
+			this.writeNewLine();
+			this.include("enum");
+			this.write("class JsonValueKind(enum.Enum)");
+			this.openChild();
+			this.writeLine("OBJECT = 1");
+			this.writeLine("ARRAY = 2");
+			this.writeLine("STRING = 3");
+			this.writeLine("NUMBER = 4");
+			this.writeLine("TRUE = 5");
+			this.writeLine("FALSE = 6");
+			this.writeLine("NULL = 7");
+			this.writeLine("@staticmethod");
+			this.write("def get(e)");
+			this.openChild();
+			this.write("match e");
+			this.openChild();
+			this.writeLine("case dict():");
+			this.writeLine("\treturn OBJECT");
+			this.writeLine("case list():");
+			this.writeLine("\treturn ARRAY");
+			this.writeLine("case str():");
+			this.writeLine("\treturn STRING");
+			this.writeLine("case float():");
+			this.writeLine("\treturn NUMBER");
+			this.writeLine("case True:");
+			this.writeLine("\treturn TRUE");
+			this.writeLine("case False:");
+			this.writeLine("\treturn FALSE");
+			this.writeLine("case None:");
+			this.writeLine("\treturn NULL");
+			this.closeChild();
+			this.closeChild();
+			this.closeChild();
+		}
 		this.writeTypes(program);
 		this.createOutputFile();
 		this.writeTopLevelNatives(program);

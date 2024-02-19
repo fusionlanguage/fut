@@ -178,6 +178,7 @@ public class GenPy : GenPySwift
 		case "global":
 		case "import":
 		case "is":
+		case "json":
 		case "lambda":
 		case "len":
 		case "list":
@@ -482,6 +483,9 @@ public class GenPy : GenPySwift
 		case FuId.SortedDictionaryCount:
 		case FuId.OrderedDictionaryCount:
 			WriteStringLength(expr.Left);
+			break;
+		case FuId.JsonElementValueKind:
+			WriteCall("JsonValueKind.get", expr.Left);
 			break;
 		case FuId.MathNaN:
 			Include("math");
@@ -1060,6 +1064,18 @@ public class GenPy : GenPySwift
 		case FuId.MatchGetCapture:
 			WriteMethodCall(obj, "group", args[0]);
 			break;
+		case FuId.JsonElementParse:
+			Include("json");
+			obj.Accept(this, FuPriority.Assign);
+			WriteCall(" = json.loads", args[0]);
+			break;
+		case FuId.JsonElementGetObject:
+		case FuId.JsonElementGetArray:
+		case FuId.JsonElementGetString:
+		case FuId.JsonElementGetDouble:
+		case FuId.JsonElementGetBoolean:
+			obj.Accept(this, parent);
+			break;
 		case FuId.MathMethod:
 		case FuId.MathIsFinite:
 		case FuId.MathIsNaN:
@@ -1574,6 +1590,41 @@ public class GenPy : GenPySwift
 		this.WrittenTypes.Clear();
 		this.SwitchBreak = false;
 		OpenStringWriter();
+		if (program.JsonValueKindEnum) {
+			WriteNewLine();
+			Include("enum");
+			Write("class JsonValueKind(enum.Enum)");
+			OpenChild();
+			WriteLine("OBJECT = 1");
+			WriteLine("ARRAY = 2");
+			WriteLine("STRING = 3");
+			WriteLine("NUMBER = 4");
+			WriteLine("TRUE = 5");
+			WriteLine("FALSE = 6");
+			WriteLine("NULL = 7");
+			WriteLine("@staticmethod");
+			Write("def get(e)");
+			OpenChild();
+			Write("match e");
+			OpenChild();
+			WriteLine("case dict():");
+			WriteLine("\treturn JsonValueKind.OBJECT");
+			WriteLine("case list():");
+			WriteLine("\treturn JsonValueKind.ARRAY");
+			WriteLine("case str():");
+			WriteLine("\treturn JsonValueKind.STRING");
+			WriteLine("case float():");
+			WriteLine("\treturn JsonValueKind.NUMBER");
+			WriteLine("case True:");
+			WriteLine("\treturn JsonValueKind.TRUE");
+			WriteLine("case False:");
+			WriteLine("\treturn JsonValueKind.FALSE");
+			WriteLine("case None:");
+			WriteLine("\treturn JsonValueKind.NULL");
+			CloseChild();
+			CloseChild();
+			CloseChild();
+		}
 		WriteTypes(program);
 		CreateOutputFile();
 		WriteTopLevelNatives(program);

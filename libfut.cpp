@@ -19882,7 +19882,6 @@ void GenJsNoModule::writeLib(const FuProgram * program)
 		writeLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
 		closeBlock();
 		closeBlock();
-		writeNewLine();
 		closeBlock();
 	}
 	if (this->stringWriter) {
@@ -22423,7 +22422,7 @@ void GenPy::writeNameNotKeyword(std::string_view name)
 {
 	if (name == "this")
 		write("self");
-	else if (name == "And" || name == "Array" || name == "As" || name == "Assert" || name == "Async" || name == "Await" || name == "Bool" || name == "Break" || name == "Class" || name == "Continue" || name == "Def" || name == "Del" || name == "Dict" || name == "Elif" || name == "Else" || name == "Enum" || name == "Except" || name == "Finally" || name == "For" || name == "From" || name == "Global" || name == "If" || name == "Import" || name == "In" || name == "Is" || name == "Lambda" || name == "Len" || name == "List" || name == "Math" || name == "Nonlocal" || name == "Not" || name == "Or" || name == "Pass" || name == "Pyfma" || name == "Raise" || name == "Re" || name == "Return" || name == "Str" || name == "Sys" || name == "Try" || name == "While" || name == "With" || name == "Yield" || name == "and" || name == "array" || name == "as" || name == "async" || name == "await" || name == "def" || name == "del" || name == "dict" || name == "elif" || name == "enum" || name == "except" || name == "finally" || name == "from" || name == "global" || name == "import" || name == "is" || name == "lambda" || name == "len" || name == "list" || name == "math" || name == "nonlocal" || name == "not" || name == "or" || name == "pass" || name == "pyfma" || name == "raise" || name == "re" || name == "str" || name == "sys" || name == "try" || name == "with" || name == "yield") {
+	else if (name == "And" || name == "Array" || name == "As" || name == "Assert" || name == "Async" || name == "Await" || name == "Bool" || name == "Break" || name == "Class" || name == "Continue" || name == "Def" || name == "Del" || name == "Dict" || name == "Elif" || name == "Else" || name == "Enum" || name == "Except" || name == "Finally" || name == "For" || name == "From" || name == "Global" || name == "If" || name == "Import" || name == "In" || name == "Is" || name == "Lambda" || name == "Len" || name == "List" || name == "Math" || name == "Nonlocal" || name == "Not" || name == "Or" || name == "Pass" || name == "Pyfma" || name == "Raise" || name == "Re" || name == "Return" || name == "Str" || name == "Sys" || name == "Try" || name == "While" || name == "With" || name == "Yield" || name == "and" || name == "array" || name == "as" || name == "async" || name == "await" || name == "def" || name == "del" || name == "dict" || name == "elif" || name == "enum" || name == "except" || name == "finally" || name == "from" || name == "global" || name == "import" || name == "is" || name == "json" || name == "lambda" || name == "len" || name == "list" || name == "math" || name == "nonlocal" || name == "not" || name == "or" || name == "pass" || name == "pyfma" || name == "raise" || name == "re" || name == "str" || name == "sys" || name == "try" || name == "with" || name == "yield") {
 		writeCamelCase(name);
 		writeChar('_');
 	}
@@ -22710,6 +22709,9 @@ void GenPy::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	case FuId::sortedDictionaryCount:
 	case FuId::orderedDictionaryCount:
 		writeStringLength(expr->left.get());
+		break;
+	case FuId::jsonElementValueKind:
+		writeCall("JsonValueKind.get", expr->left.get());
 		break;
 	case FuId::mathNaN:
 		include("math");
@@ -23289,6 +23291,18 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 	case FuId::matchGetCapture:
 		writeMethodCall(obj, "group", (*args)[0].get());
 		break;
+	case FuId::jsonElementParse:
+		include("json");
+		obj->accept(this, FuPriority::assign);
+		writeCall(" = json.loads", (*args)[0].get());
+		break;
+	case FuId::jsonElementGetObject:
+	case FuId::jsonElementGetArray:
+	case FuId::jsonElementGetString:
+	case FuId::jsonElementGetDouble:
+	case FuId::jsonElementGetBoolean:
+		obj->accept(this, parent);
+		break;
 	case FuId::mathMethod:
 	case FuId::mathIsFinite:
 	case FuId::mathIsNaN:
@@ -23805,6 +23819,41 @@ void GenPy::writeProgram(const FuProgram * program)
 	this->writtenTypes.clear();
 	this->switchBreak = false;
 	openStringWriter();
+	if (program->jsonValueKindEnum) {
+		writeNewLine();
+		include("enum");
+		write("class JsonValueKind(enum.Enum)");
+		openChild();
+		writeLine("OBJECT = 1");
+		writeLine("ARRAY = 2");
+		writeLine("STRING = 3");
+		writeLine("NUMBER = 4");
+		writeLine("TRUE = 5");
+		writeLine("FALSE = 6");
+		writeLine("NULL = 7");
+		writeLine("@staticmethod");
+		write("def get(e)");
+		openChild();
+		write("match e");
+		openChild();
+		writeLine("case dict():");
+		writeLine("\treturn JsonValueKind.OBJECT");
+		writeLine("case list():");
+		writeLine("\treturn JsonValueKind.ARRAY");
+		writeLine("case str():");
+		writeLine("\treturn JsonValueKind.STRING");
+		writeLine("case float():");
+		writeLine("\treturn JsonValueKind.NUMBER");
+		writeLine("case True:");
+		writeLine("\treturn JsonValueKind.TRUE");
+		writeLine("case False:");
+		writeLine("\treturn JsonValueKind.FALSE");
+		writeLine("case None:");
+		writeLine("\treturn JsonValueKind.NULL");
+		closeChild();
+		closeChild();
+		closeChild();
+	}
 	writeTypes(program);
 	createOutputFile();
 	writeTopLevelNatives(program);

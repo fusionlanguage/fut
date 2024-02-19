@@ -20525,7 +20525,6 @@ namespace Fusion
 				WriteLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
 				CloseBlock();
 				CloseBlock();
-				WriteNewLine();
 				CloseBlock();
 			}
 			if (this.StringWriter) {
@@ -23265,6 +23264,7 @@ namespace Fusion
 			case "global":
 			case "import":
 			case "is":
+			case "json":
 			case "lambda":
 			case "len":
 			case "list":
@@ -23569,6 +23569,9 @@ namespace Fusion
 			case FuId.SortedDictionaryCount:
 			case FuId.OrderedDictionaryCount:
 				WriteStringLength(expr.Left);
+				break;
+			case FuId.JsonElementValueKind:
+				WriteCall("JsonValueKind.get", expr.Left);
 				break;
 			case FuId.MathNaN:
 				Include("math");
@@ -24142,6 +24145,18 @@ namespace Fusion
 			case FuId.MatchGetCapture:
 				WriteMethodCall(obj, "group", args[0]);
 				break;
+			case FuId.JsonElementParse:
+				Include("json");
+				obj.Accept(this, FuPriority.Assign);
+				WriteCall(" = json.loads", args[0]);
+				break;
+			case FuId.JsonElementGetObject:
+			case FuId.JsonElementGetArray:
+			case FuId.JsonElementGetString:
+			case FuId.JsonElementGetDouble:
+			case FuId.JsonElementGetBoolean:
+				obj.Accept(this, parent);
+				break;
 			case FuId.MathMethod:
 			case FuId.MathIsFinite:
 			case FuId.MathIsNaN:
@@ -24651,6 +24666,41 @@ namespace Fusion
 			this.WrittenTypes.Clear();
 			this.SwitchBreak = false;
 			OpenStringWriter();
+			if (program.JsonValueKindEnum) {
+				WriteNewLine();
+				Include("enum");
+				Write("class JsonValueKind(enum.Enum)");
+				OpenChild();
+				WriteLine("OBJECT = 1");
+				WriteLine("ARRAY = 2");
+				WriteLine("STRING = 3");
+				WriteLine("NUMBER = 4");
+				WriteLine("TRUE = 5");
+				WriteLine("FALSE = 6");
+				WriteLine("NULL = 7");
+				WriteLine("@staticmethod");
+				Write("def get(e)");
+				OpenChild();
+				Write("match e");
+				OpenChild();
+				WriteLine("case dict():");
+				WriteLine("\treturn OBJECT");
+				WriteLine("case list():");
+				WriteLine("\treturn ARRAY");
+				WriteLine("case str():");
+				WriteLine("\treturn STRING");
+				WriteLine("case float():");
+				WriteLine("\treturn NUMBER");
+				WriteLine("case True:");
+				WriteLine("\treturn TRUE");
+				WriteLine("case False:");
+				WriteLine("\treturn FALSE");
+				WriteLine("case None:");
+				WriteLine("\treturn NULL");
+				CloseChild();
+				CloseChild();
+				CloseChild();
+			}
 			WriteTypes(program);
 			CreateOutputFile();
 			WriteTopLevelNatives(program);
