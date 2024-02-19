@@ -13532,6 +13532,15 @@ void GenCpp::writeStringMethod(const FuExpr * obj, std::string_view name, const 
 		writeArgsInParentheses(method, args);
 }
 
+void GenCpp::writeStringToLowerUpper(const FuExpr * obj, std::string_view name)
+{
+	include("string");
+	include("unicode/unistr.h");
+	write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
+	write(name);
+	writeCall("er().toUTF8String(result); }", obj);
+}
+
 void GenCpp::writeAllAnyContains(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	include("algorithm");
@@ -13770,24 +13779,10 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeStringMethod(obj, "substr", method, args);
 		break;
 	case FuId::stringToLower:
-		include("algorithm");
-		include("cctype");
-		write("[&] { std::string data = std::string{");
-		obj->accept(this, FuPriority::argument);
-		write("}; ");
-		write("std::transform(data.begin(), data.end(), data.begin(), ");
-		write("[](unsigned char c) { return std::tolower(c); }); ");
-		write("return data; }()");
+		writeStringToLowerUpper(obj, "Low");
 		break;
 	case FuId::stringToUpper:
-		include("algorithm");
-		include("cctype");
-		write("[&] { std::string data = std::string{");
-		obj->accept(this, FuPriority::argument);
-		write("}; ");
-		write("std::transform(data.begin(), data.end(), data.begin(), ");
-		write("[](unsigned char c) { return std::toupper(c); }); ");
-		write("return data; }()");
+		writeStringToLowerUpper(obj, "Upp");
 		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:

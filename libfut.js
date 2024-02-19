@@ -14312,6 +14312,15 @@ export class GenCpp extends GenCCpp
 			this.writeArgsInParentheses(method, args);
 	}
 
+	#writeStringToLowerUpper(obj, name)
+	{
+		this.include("string");
+		this.include("unicode/unistr.h");
+		this.write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
+		this.write(name);
+		this.writeCall("er().toUTF8String(result); }", obj);
+	}
+
 	#writeAllAnyContains(function_, obj, args)
 	{
 		this.include("algorithm");
@@ -14551,24 +14560,10 @@ export class GenCpp extends GenCCpp
 			this.#writeStringMethod(obj, "substr", method, args);
 			break;
 		case FuId.STRING_TO_LOWER:
-			this.include("algorithm");
-			this.include("cctype");
-			this.write("[&] { std::string data = std::string{");
-			obj.accept(this, FuPriority.ARGUMENT);
-			this.write("}; ");
-			this.write("std::transform(data.begin(), data.end(), data.begin(), ");
-			this.write("[](unsigned char c) { return std::tolower(c); }); ");
-			this.write("return data; }()");
+			this.#writeStringToLowerUpper(obj, "Low");
 			break;
 		case FuId.STRING_TO_UPPER:
-			this.include("algorithm");
-			this.include("cctype");
-			this.write("[&] { std::string data = std::string{");
-			obj.accept(this, FuPriority.ARGUMENT);
-			this.write("}; ");
-			this.write("std::transform(data.begin(), data.end(), data.begin(), ");
-			this.write("[](unsigned char c) { return std::toupper(c); }); ");
-			this.write("return data; }()");
+			this.#writeStringToLowerUpper(obj, "Upp");
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:

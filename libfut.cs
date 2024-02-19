@@ -13882,6 +13882,15 @@ namespace Fusion
 				WriteArgsInParentheses(method, args);
 		}
 
+		void WriteStringToLowerUpper(FuExpr obj, string name)
+		{
+			Include("string");
+			Include("unicode/unistr.h");
+			Write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
+			Write(name);
+			WriteCall("er().toUTF8String(result); }", obj);
+		}
+
 		void WriteAllAnyContains(string function, FuExpr obj, List<FuExpr> args)
 		{
 			Include("algorithm");
@@ -14119,24 +14128,10 @@ namespace Fusion
 				WriteStringMethod(obj, "substr", method, args);
 				break;
 			case FuId.StringToLower:
-				Include("algorithm");
-				Include("cctype");
-				Write("[&] { std::string data = std::string{");
-				obj.Accept(this, FuPriority.Argument);
-				Write("}; ");
-				Write("std::transform(data.begin(), data.end(), data.begin(), ");
-				Write("[](unsigned char c) { return std::tolower(c); }); ");
-				Write("return data; }()");
+				WriteStringToLowerUpper(obj, "Low");
 				break;
 			case FuId.StringToUpper:
-				Include("algorithm");
-				Include("cctype");
-				Write("[&] { std::string data = std::string{");
-				obj.Accept(this, FuPriority.Argument);
-				Write("}; ");
-				Write("std::transform(data.begin(), data.end(), data.begin(), ");
-				Write("[](unsigned char c) { return std::toupper(c); }); ");
-				Write("return data; }()");
+				WriteStringToLowerUpper(obj, "Upp");
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:

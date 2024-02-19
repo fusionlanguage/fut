@@ -1,4 +1,4 @@
-// https://pastebin.com/fuw4Uizk
+﻿// https://pastebin.com/fuw4Uizk
 // ĐÂĂÊÔƠƯẤẮẾỐỚỨẦẰỀỒỜỪẬẶỆỘỢỰШ
 // đâăêôơưấắếốớứầằềồờừậặệộợựш
 
@@ -8,11 +8,11 @@ public class Test
 	{
 		string() orig1 = "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш"; //FAIL: cl
 		string orig2 = "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш";
-		string() new1 = orig1.ToUpper();
+		string() new1 = orig1.ToUpper(); //FAIL: cpp requires ICU
 		string() new2 = orig2.ToUpper();
-		return orig1 == "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш" &&
-			orig2 == "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш" &&
-			new1 == "MIXED CASE ĐÂĂÊÔƠƯẤẮẾỐỚỨẦẰỀỒỜỪẬẶỆỘỢỰШ" &&
-			new2 == "MIXED CASE ĐÂĂÊÔƠƯẤẮẾỐỚỨẦẰỀỒỜỪẬẶỆỘỢỰШ";
+		return orig1 == "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш"
+			&& orig2 == "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш"
+			&& new1 == "MIXED CASE ĐÂĂÊÔƠƯẤẮẾỐỚỨẦẰỀỒỜỪẬẶỆỘỢỰШ"
+			&& new2 == "MIXED CASE ĐÂĂÊÔƠƯẤẮẾỐỚỨẦẰỀỒỜỪẬẶỆỘỢỰШ";
 	}
 }
