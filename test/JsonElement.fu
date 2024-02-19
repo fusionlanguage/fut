@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement() json; //FAIL: c cpp d java js py swift ts TODO; cl
+		JsonElement() json; //FAIL: c cpp d java py swift TODO; cl
 		json.Parse("\"foo\"");
 		if (json.ValueKind != JsonValueKind.String || json.GetString() != "foo")
 			return false;

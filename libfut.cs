@@ -2551,7 +2551,7 @@ namespace Fusion
 
 		internal FuExpr Value;
 
-		public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
+		public bool IsAssignableStorage() => this.Type is FuStorageType storage && !(this.Type is FuArrayStorageType) && (this.Value is FuLiteralNull || storage.Class.Id == FuId.JsonElementClass);
 	}
 
 	public abstract class FuMember : FuNamedValue
@@ -3326,6 +3326,8 @@ namespace Fusion
 		internal readonly SortedDictionary<string, List<byte>> Resources = new SortedDictionary<string, List<byte>>();
 
 		internal bool RegexOptionsEnum = false;
+
+		internal bool JsonValueKindEnum = false;
 	}
 
 	public class FuParser : FuLexer
@@ -4591,6 +4593,8 @@ namespace Fusion
 					}
 					else if (symbol.Symbol.Id == FuId.RegexOptionsEnum)
 						this.Program.RegexOptionsEnum = true;
+					else if (symbol.Symbol.Id == FuId.JsonValueKindEnum)
+						this.Program.JsonValueKindEnum = true;
 				}
 				return resolved;
 			}
@@ -19575,6 +19579,9 @@ namespace Fusion
 			case FuId.MatchValue:
 				WritePostfix(expr.Left, "[0]");
 				break;
+			case FuId.JsonElementValueKind:
+				WriteCall("JsonValueKind.get", expr.Left);
+				break;
 			case FuId.MathNaN:
 				Write("NaN");
 				break;
@@ -20014,6 +20021,17 @@ namespace Fusion
 				break;
 			case FuId.MatchGetCapture:
 				WriteIndexing(obj, args[0]);
+				break;
+			case FuId.JsonElementParse:
+				obj.Accept(this, FuPriority.Assign);
+				WriteCall(" = JSON.parse", args[0]);
+				break;
+			case FuId.JsonElementGetObject:
+			case FuId.JsonElementGetArray:
+			case FuId.JsonElementGetString:
+			case FuId.JsonElementGetDouble:
+			case FuId.JsonElementGetBoolean:
+				obj.Accept(this, parent);
 				break;
 			case FuId.MathAbs:
 				WriteCall(args[0].Type.Id == FuId.LongType ? "(x => x < 0n ? -x : x)" : "Math.abs", args[0]);
@@ -20482,6 +20500,34 @@ namespace Fusion
 
 		protected void WriteLib(FuProgram program)
 		{
+			if (program.JsonValueKindEnum) {
+				WriteNewLine();
+				Write("const JsonValueKind = ");
+				OpenBlock();
+				WriteLine("OBJECT : 1,");
+				WriteLine("ARRAY : 2,");
+				WriteLine("STRING : 3,");
+				WriteLine("NUMBER : 4,");
+				WriteLine("TRUE : 5,");
+				WriteLine("FALSE : 6,");
+				WriteLine("NULL : 7,");
+				Write("get : e => ");
+				OpenBlock();
+				Write("switch (typeof(e)) ");
+				OpenBlock();
+				WriteLine("case \"string\":");
+				WriteLine("\treturn JsonValueKind.STRING;");
+				WriteLine("case \"number\":");
+				WriteLine("\treturn JsonValueKind.NUMBER;");
+				WriteLine("case \"boolean\":");
+				WriteLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
+				WriteLine("default:");
+				WriteLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
+				CloseBlock();
+				CloseBlock();
+				WriteNewLine();
+				CloseBlock();
+			}
 			if (this.StringWriter) {
 				WriteNewLine();
 				WriteLine("class StringWriter");
@@ -20662,6 +20708,9 @@ namespace Fusion
 						break;
 					case FuId.MatchClass:
 						Write("RegExpMatchArray");
+						break;
+					case FuId.JsonElementClass:
+						Write("any");
 						break;
 					default:
 						Write(klass.Class.Name);

@@ -1503,6 +1503,7 @@ public:
 	const FuMethod * main = nullptr;
 	std::map<std::string, std::vector<uint8_t>> resources;
 	bool regexOptionsEnum = false;
+	bool jsonValueKindEnum = false;
 };
 
 class FuParser : public FuLexer

@@ -2593,7 +2593,8 @@ export class FuNamedValue extends FuSymbol
 
 	isAssignableStorage()
 	{
-		return this.type instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && this.value instanceof FuLiteralNull;
+		let storage;
+		return (storage = this.type) instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && (this.value instanceof FuLiteralNull || storage.class.id == FuId.JSON_ELEMENT_CLASS);
 	}
 }
 
@@ -3467,6 +3468,7 @@ export class FuProgram extends FuScope
 	main = null;
 	resources = {};
 	regexOptionsEnum = false;
+	jsonValueKindEnum = false;
 }
 
 export class FuParser extends FuLexer
@@ -4742,6 +4744,8 @@ export class FuSema
 				}
 				else if (symbol.symbol.id == FuId.REGEX_OPTIONS_ENUM)
 					this.program.regexOptionsEnum = true;
+				else if (symbol.symbol.id == FuId.JSON_VALUE_KIND_ENUM)
+					this.program.jsonValueKindEnum = true;
 			}
 			return resolved;
 		}
@@ -20128,6 +20132,9 @@ export class GenJsNoModule extends GenBase
 		case FuId.MATCH_VALUE:
 			this.writePostfix(expr.left, "[0]");
 			break;
+		case FuId.JSON_ELEMENT_VALUE_KIND:
+			this.writeCall("JsonValueKind.get", expr.left);
+			break;
 		case FuId.MATH_NA_N:
 			this.write("NaN");
 			break;
@@ -20572,6 +20579,17 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.MATCH_GET_CAPTURE:
 			this.writeIndexing(obj, args[0]);
+			break;
+		case FuId.JSON_ELEMENT_PARSE:
+			obj.accept(this, FuPriority.ASSIGN);
+			this.writeCall(" = JSON.parse", args[0]);
+			break;
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+		case FuId.JSON_ELEMENT_GET_STRING:
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			obj.accept(this, parent);
 			break;
 		case FuId.MATH_ABS:
 			this.writeCall(args[0].type.id == FuId.LONG_TYPE ? "(x => x < 0n ? -x : x)" : "Math.abs", args[0]);
@@ -21033,6 +21051,34 @@ export class GenJsNoModule extends GenBase
 
 	writeLib(program)
 	{
+		if (program.jsonValueKindEnum) {
+			this.writeNewLine();
+			this.write("const JsonValueKind = ");
+			this.openBlock();
+			this.writeLine("OBJECT : 1,");
+			this.writeLine("ARRAY : 2,");
+			this.writeLine("STRING : 3,");
+			this.writeLine("NUMBER : 4,");
+			this.writeLine("TRUE : 5,");
+			this.writeLine("FALSE : 6,");
+			this.writeLine("NULL : 7,");
+			this.write("get : e => ");
+			this.openBlock();
+			this.write("switch (typeof(e)) ");
+			this.openBlock();
+			this.writeLine("case \"string\":");
+			this.writeLine("\treturn JsonValueKind.STRING;");
+			this.writeLine("case \"number\":");
+			this.writeLine("\treturn JsonValueKind.NUMBER;");
+			this.writeLine("case \"boolean\":");
+			this.writeLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
+			this.writeLine("default:");
+			this.writeLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
+			this.closeBlock();
+			this.closeBlock();
+			this.writeNewLine();
+			this.closeBlock();
+		}
 		if (this.#stringWriter) {
 			this.writeNewLine();
 			this.writeLine("class StringWriter");
@@ -21209,6 +21255,9 @@ export class GenTs extends GenJs
 					break;
 				case FuId.MATCH_CLASS:
 					this.write("RegExpMatchArray");
+					break;
+				case FuId.JSON_ELEMENT_CLASS:
+					this.write("any");
 					break;
 				default:
 					this.write(klass.class.name);

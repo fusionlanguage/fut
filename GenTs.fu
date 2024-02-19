@@ -1,7 +1,7 @@
 // GenTs.fu - TypeScript code generator
 //
 // Copyright (C) 2020-2021  Andy Edwards
-// Copyright (C) 2020-2023  Piotr Fusik
+// Copyright (C) 2020-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -130,6 +130,9 @@ public class GenTs : GenJs
 					break;
 				case FuId.MatchClass:
 					Write("RegExpMatchArray");
+					break;
+				case FuId.JsonElementClass:
+					Write("any");
 					break;
 				default:
 					Write(klass.Class.Name);

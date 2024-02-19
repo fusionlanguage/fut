@@ -1961,7 +1961,8 @@ bool FuFloatingType::isAssignableFrom(const FuType * right) const
 
 bool FuNamedValue::isAssignableStorage() const
 {
-	return dynamic_cast<const FuStorageType *>(this->type.get()) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && dynamic_cast<const FuLiteralNull *>(this->value.get());
+	const FuStorageType * storage;
+	return (storage = dynamic_cast<const FuStorageType *>(this->type.get())) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && (dynamic_cast<const FuLiteralNull *>(this->value.get()) || storage->class_->id == FuId::jsonElementClass);
 }
 FuMember::FuMember()
 {
@@ -4296,6 +4297,8 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 			}
 			else if (symbol->symbol->id == FuId::regexOptionsEnum)
 				this->program->regexOptionsEnum = true;
+			else if (symbol->symbol->id == FuId::jsonValueKindEnum)
+				this->program->jsonValueKindEnum = true;
 		}
 		return resolved;
 	}
@@ -18937,6 +18940,9 @@ void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPrior
 	case FuId::matchValue:
 		writePostfix(expr->left.get(), "[0]");
 		break;
+	case FuId::jsonElementValueKind:
+		writeCall("JsonValueKind.get", expr->left.get());
+		break;
 	case FuId::mathNaN:
 		write("NaN");
 		break;
@@ -19382,6 +19388,17 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		break;
 	case FuId::matchGetCapture:
 		writeIndexing(obj, (*args)[0].get());
+		break;
+	case FuId::jsonElementParse:
+		obj->accept(this, FuPriority::assign);
+		writeCall(" = JSON.parse", (*args)[0].get());
+		break;
+	case FuId::jsonElementGetObject:
+	case FuId::jsonElementGetArray:
+	case FuId::jsonElementGetString:
+	case FuId::jsonElementGetDouble:
+	case FuId::jsonElementGetBoolean:
+		obj->accept(this, parent);
 		break;
 	case FuId::mathAbs:
 		writeCall((*args)[0]->type->id == FuId::longType ? "(x => x < 0n ? -x : x)" : "Math.abs", (*args)[0].get());
@@ -19840,6 +19857,34 @@ void GenJsNoModule::writeMain(const FuMethod * main)
 
 void GenJsNoModule::writeLib(const FuProgram * program)
 {
+	if (program->jsonValueKindEnum) {
+		writeNewLine();
+		write("const JsonValueKind = ");
+		openBlock();
+		writeLine("OBJECT : 1,");
+		writeLine("ARRAY : 2,");
+		writeLine("STRING : 3,");
+		writeLine("NUMBER : 4,");
+		writeLine("TRUE : 5,");
+		writeLine("FALSE : 6,");
+		writeLine("NULL : 7,");
+		write("get : e => ");
+		openBlock();
+		write("switch (typeof(e)) ");
+		openBlock();
+		writeLine("case \"string\":");
+		writeLine("\treturn JsonValueKind.STRING;");
+		writeLine("case \"number\":");
+		writeLine("\treturn JsonValueKind.NUMBER;");
+		writeLine("case \"boolean\":");
+		writeLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
+		writeLine("default:");
+		writeLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
+		closeBlock();
+		closeBlock();
+		writeNewLine();
+		closeBlock();
+	}
 	if (this->stringWriter) {
 		writeNewLine();
 		writeLine("class StringWriter");
@@ -20002,6 +20047,9 @@ void GenTs::writeType(const FuType * type, bool readOnly)
 				break;
 			case FuId::matchClass:
 				write("RegExpMatchArray");
+				break;
+			case FuId::jsonElementClass:
+				write("any");
 				break;
 			default:
 				write(klass->class_->name);

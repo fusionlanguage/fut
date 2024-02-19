@@ -1051,7 +1051,7 @@ public abstract class FuNamedValue : FuSymbol
 {
 	internal FuExpr#? TypeExpr;
 	internal FuExpr#? Value;
-	public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
+	public bool IsAssignableStorage() => this.Type is FuStorageType storage && !(this.Type is FuArrayStorageType) && (this.Value is FuLiteralNull || storage.Class.Id == FuId.JsonElementClass);
 }
 
 public abstract class FuMember : FuNamedValue
@@ -1749,4 +1749,5 @@ public class FuProgram : FuScope
 	internal FuMethod? Main = null;
 	internal SortedDictionary<string(), List<byte>()>() Resources;
 	internal bool RegexOptionsEnum = false;
+	internal bool JsonValueKindEnum = false;
 }
