@@ -306,6 +306,8 @@ Possible string operations include the following:
   from the specified position until the end of the string.
 * `str.Replace(old, new)` returns the contents of `str` with all occurrences
   of `old` substituted with `new`.
+* `str.ToLower()` and `str.ToUpper()` return a copy of the string
+  with characters changed to respectively lowercase and uppercase
 * `Convert.ToBase64String(byteArray, offset, length)` encodes the specified
   array part as a Base64 string.
 * `Encoding.UTF8.GetByteCount(str)` calculates the number of bytes needed
