@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement() json; //FAIL: c cpp d java swift TODO; cl
+		JsonElement() json; //FAIL: c cpp java swift TODO; cl
 		json.Parse("\"foo\"");
 		if (json.ValueKind != JsonValueKind.String || json.GetString() != "foo")
 			return false;
@@ -22,7 +22,7 @@ public static class Test
 		json.Parse("[ 5, true ]");
 		if (json.ValueKind != JsonValueKind.Array)
 			return false;
-		List<JsonElement#> list = json.GetArray();
+		List<JsonElement#> list = json.GetArray(); //FAIL: d TODO
 		if (list.Count != 2 || list[0].GetDouble() != 5 || list[1].ValueKind != JsonValueKind.True)
 			return false;
 

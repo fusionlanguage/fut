@@ -2599,36 +2599,43 @@ FuSystem::FuSystem()
 	jsonValueKindEnum->name = "JsonValueKind";
 	std::shared_ptr<FuConst> futemp9 = std::make_shared<FuConst>();
 	futemp9->visibility = FuVisibility::public_;
+	futemp9->id = FuId::jsonValueKindObject;
 	futemp9->name = "Object";
 	futemp9->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp9);
 	std::shared_ptr<FuConst> futemp10 = std::make_shared<FuConst>();
 	futemp10->visibility = FuVisibility::public_;
+	futemp10->id = FuId::jsonValueKindArray;
 	futemp10->name = "Array";
 	futemp10->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp10);
 	std::shared_ptr<FuConst> futemp11 = std::make_shared<FuConst>();
 	futemp11->visibility = FuVisibility::public_;
+	futemp11->id = FuId::jsonValueKindString;
 	futemp11->name = "String";
 	futemp11->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp11);
 	std::shared_ptr<FuConst> futemp12 = std::make_shared<FuConst>();
 	futemp12->visibility = FuVisibility::public_;
+	futemp12->id = FuId::jsonValueKindNumber;
 	futemp12->name = "Number";
 	futemp12->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp12);
 	std::shared_ptr<FuConst> futemp13 = std::make_shared<FuConst>();
 	futemp13->visibility = FuVisibility::public_;
+	futemp13->id = FuId::jsonValueKindTrue;
 	futemp13->name = "True";
 	futemp13->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp13);
 	std::shared_ptr<FuConst> futemp14 = std::make_shared<FuConst>();
 	futemp14->visibility = FuVisibility::public_;
+	futemp14->id = FuId::jsonValueKindFalse;
 	futemp14->name = "False";
 	futemp14->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp14);
 	std::shared_ptr<FuConst> futemp15 = std::make_shared<FuConst>();
 	futemp15->visibility = FuVisibility::public_;
+	futemp15->id = FuId::jsonValueKindNull;
 	futemp15->name = "Null";
 	futemp15->visitStatus = FuVisitStatus::done;
 	addEnumValue(jsonValueKindEnum, futemp15);
@@ -16167,6 +16174,10 @@ void GenD::writeType(const FuType * type, bool promote)
 			include("std.regex");
 			write("Captures!string");
 			break;
+		case FuId::jsonElementClass:
+			include("std.json");
+			write("JSONValue");
+			break;
 		case FuId::lockClass:
 			write("Object");
 			break;
@@ -16175,8 +16186,14 @@ void GenD::writeType(const FuType * type, bool promote)
 			break;
 		}
 	}
-	else
-		write(type->name);
+	else {
+		if (type->id == FuId::jsonValueKindEnum) {
+			include("std.json");
+			write("JSONType");
+		}
+		else
+			write(type->name);
+	}
 }
 
 void GenD::writeTypeAndName(const FuNamedValue * value)
@@ -16376,6 +16393,30 @@ void GenD::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 		break;
 	case FuId::matchValue:
 		writePostfix(expr->left.get(), ".hit");
+		break;
+	case FuId::jsonElementValueKind:
+		writePostfix(expr->left.get(), ".type");
+		break;
+	case FuId::jsonValueKindObject:
+		write("JSONType.object");
+		break;
+	case FuId::jsonValueKindArray:
+		write("JSONType.array");
+		break;
+	case FuId::jsonValueKindString:
+		write("JSONType.string");
+		break;
+	case FuId::jsonValueKindNumber:
+		write("JSONType.float_");
+		break;
+	case FuId::jsonValueKindTrue:
+		write("JSONType.true_");
+		break;
+	case FuId::jsonValueKindFalse:
+		write("JSONType.false_");
+		break;
+	case FuId::jsonValueKindNull:
+		write("JSONType.null_");
 		break;
 	case FuId::mathNaN:
 		write("double.nan");
@@ -16772,6 +16813,25 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::matchGetCapture:
 		writeIndexing(obj, (*args)[0].get());
+		break;
+	case FuId::jsonElementParse:
+		obj->accept(this, FuPriority::assign);
+		writeCall(" = parseJSON", (*args)[0].get());
+		break;
+	case FuId::jsonElementGetObject:
+		writePostfix(obj, ".object");
+		break;
+	case FuId::jsonElementGetArray:
+		writePostfix(obj, ".array");
+		break;
+	case FuId::jsonElementGetString:
+		writePostfix(obj, ".str");
+		break;
+	case FuId::jsonElementGetDouble:
+		writePostfix(obj, ".floating");
+		break;
+	case FuId::jsonElementGetBoolean:
+		writePostfix(obj, ".boolean");
 		break;
 	case FuId::mathMethod:
 	case FuId::mathAbs:

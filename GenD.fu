@@ -477,6 +477,10 @@ public class GenD : GenCCppD
 				Include("std.regex");
 				Write("Captures!string");
 				break;
+			case FuId.JsonElementClass:
+				Include("std.json");
+				Write("JSONValue");
+				break;
 			case FuId.LockClass:
 				Write("Object");
 				break;
@@ -486,7 +490,12 @@ public class GenD : GenCCppD
 			}
 			break;
 		default:
-			Write(type.Name);
+			if (type.Id == FuId.JsonValueKindEnum) {
+				Include("std.json");
+				Write("JSONType");
+			}
+			else
+				Write(type.Name);
 			break;
 		}
 	}
@@ -688,6 +697,30 @@ public class GenD : GenCCppD
 			break;
 		case FuId.MatchValue:
 			WritePostfix(expr.Left, ".hit");
+			break;
+		case FuId.JsonElementValueKind:
+			WritePostfix(expr.Left, ".type");
+			break;
+		case FuId.JsonValueKindObject:
+			Write("JSONType.object");
+			break;
+		case FuId.JsonValueKindArray:
+			Write("JSONType.array");
+			break;
+		case FuId.JsonValueKindString:
+			Write("JSONType.string");
+			break;
+		case FuId.JsonValueKindNumber:
+			Write("JSONType.float_");
+			break;
+		case FuId.JsonValueKindTrue:
+			Write("JSONType.true_");
+			break;
+		case FuId.JsonValueKindFalse:
+			Write("JSONType.false_");
+			break;
+		case FuId.JsonValueKindNull:
+			Write("JSONType.null_");
 			break;
 		case FuId.MathNaN:
 			Write("double.nan");
@@ -1087,6 +1120,25 @@ public class GenD : GenCCppD
 			break;
 		case FuId.MatchGetCapture:
 			WriteIndexing(obj, args[0]);
+			break;
+		case FuId.JsonElementParse:
+			obj.Accept(this, FuPriority.Assign);
+			WriteCall(" = parseJSON", args[0]);
+			break;
+		case FuId.JsonElementGetObject:
+			WritePostfix(obj, ".object");
+			break;
+		case FuId.JsonElementGetArray:
+			WritePostfix(obj, ".array");
+			break;
+		case FuId.JsonElementGetString:
+			WritePostfix(obj, ".str");
+			break;
+		case FuId.JsonElementGetDouble:
+			WritePostfix(obj, ".floating");
+			break;
+		case FuId.JsonElementGetBoolean:
+			WritePostfix(obj, ".boolean");
 			break;
 		case FuId.MathMethod:
 		case FuId.MathAbs:

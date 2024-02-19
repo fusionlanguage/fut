@@ -1328,6 +1328,13 @@ namespace Fusion
 		MatchEnd,
 		MatchLength,
 		MatchValue,
+		JsonValueKindObject,
+		JsonValueKindArray,
+		JsonValueKindString,
+		JsonValueKindNumber,
+		JsonValueKindTrue,
+		JsonValueKindFalse,
+		JsonValueKindNull,
 		JsonElementValueKind,
 		MathNaN,
 		MathNegativeInfinity,
@@ -3124,13 +3131,13 @@ namespace Fusion
 			jsonValueKindEnum.IsPublic = true;
 			jsonValueKindEnum.Id = FuId.JsonValueKindEnum;
 			jsonValueKindEnum.Name = "JsonValueKind";
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Object", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Array", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "String", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Number", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "True", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "False", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Null", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindObject, Name = "Object", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindArray, Name = "Array", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindString, Name = "String", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindNumber, Name = "Number", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindTrue, Name = "True", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindFalse, Name = "False", VisitStatus = FuVisitStatus.Done });
+			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindNull, Name = "Null", VisitStatus = FuVisitStatus.Done });
 			Add(jsonValueKindEnum);
 			FuClass jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.JsonElementParse, "Parse", true, FuVar.New(this.StringPtrType, "value")));
@@ -16724,6 +16731,10 @@ namespace Fusion
 					Include("std.regex");
 					Write("Captures!string");
 					break;
+				case FuId.JsonElementClass:
+					Include("std.json");
+					Write("JSONValue");
+					break;
 				case FuId.LockClass:
 					Write("Object");
 					break;
@@ -16733,7 +16744,12 @@ namespace Fusion
 				}
 				break;
 			default:
-				Write(type.Name);
+				if (type.Id == FuId.JsonValueKindEnum) {
+					Include("std.json");
+					Write("JSONType");
+				}
+				else
+					Write(type.Name);
 				break;
 			}
 		}
@@ -16935,6 +16951,30 @@ namespace Fusion
 				break;
 			case FuId.MatchValue:
 				WritePostfix(expr.Left, ".hit");
+				break;
+			case FuId.JsonElementValueKind:
+				WritePostfix(expr.Left, ".type");
+				break;
+			case FuId.JsonValueKindObject:
+				Write("JSONType.object");
+				break;
+			case FuId.JsonValueKindArray:
+				Write("JSONType.array");
+				break;
+			case FuId.JsonValueKindString:
+				Write("JSONType.string");
+				break;
+			case FuId.JsonValueKindNumber:
+				Write("JSONType.float_");
+				break;
+			case FuId.JsonValueKindTrue:
+				Write("JSONType.true_");
+				break;
+			case FuId.JsonValueKindFalse:
+				Write("JSONType.false_");
+				break;
+			case FuId.JsonValueKindNull:
+				Write("JSONType.null_");
 				break;
 			case FuId.MathNaN:
 				Write("double.nan");
@@ -17331,6 +17371,25 @@ namespace Fusion
 				break;
 			case FuId.MatchGetCapture:
 				WriteIndexing(obj, args[0]);
+				break;
+			case FuId.JsonElementParse:
+				obj.Accept(this, FuPriority.Assign);
+				WriteCall(" = parseJSON", args[0]);
+				break;
+			case FuId.JsonElementGetObject:
+				WritePostfix(obj, ".object");
+				break;
+			case FuId.JsonElementGetArray:
+				WritePostfix(obj, ".array");
+				break;
+			case FuId.JsonElementGetString:
+				WritePostfix(obj, ".str");
+				break;
+			case FuId.JsonElementGetDouble:
+				WritePostfix(obj, ".floating");
+				break;
+			case FuId.JsonElementGetBoolean:
+				WritePostfix(obj, ".boolean");
 				break;
 			case FuId.MathMethod:
 			case FuId.MathAbs:

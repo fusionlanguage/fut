@@ -109,6 +109,13 @@ public enum FuId
 	MatchEnd,
 	MatchLength,
 	MatchValue,
+	JsonValueKindObject,
+	JsonValueKindArray,
+	JsonValueKindString,
+	JsonValueKindNumber,
+	JsonValueKindTrue,
+	JsonValueKindFalse,
+	JsonValueKindNull,
 	JsonElementValueKind,
 	MathNaN,
 	MathNegativeInfinity,
@@ -1667,13 +1674,13 @@ public class FuSystem : FuScope
 		jsonValueKindEnum.IsPublic = true;
 		jsonValueKindEnum.Id = FuId.JsonValueKindEnum;
 		jsonValueKindEnum.Name = "JsonValueKind";
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Object", VisitStatus = FuVisitStatus.Done });
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Array", VisitStatus = FuVisitStatus.Done });
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "String", VisitStatus = FuVisitStatus.Done });
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Number", VisitStatus = FuVisitStatus.Done });
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "True", VisitStatus = FuVisitStatus.Done });
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "False", VisitStatus = FuVisitStatus.Done });
-		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Name = "Null", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindObject, Name = "Object", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindArray, Name = "Array", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindString, Name = "String", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindNumber, Name = "Number", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindTrue, Name = "True", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindFalse, Name = "False", VisitStatus = FuVisitStatus.Done });
+		AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindNull, Name = "Null", VisitStatus = FuVisitStatus.Done });
 		Add(jsonValueKindEnum);
 		FuClass# jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");
 		jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, VoidType, FuId.JsonElementParse, "Parse", true, FuVar.New(StringPtrType, "value")));
