@@ -106,6 +106,7 @@ function usage()
 	console.log("-D NAME    Define conditional compilation symbol");
 	console.log("-r FILE.fu Read the specified source file but don't emit code");
 	console.log("-I DIR     Add directory to resource search path");
+	console.log("--no-icu   Disable ICU4C full unicode support for C++");
 	console.log("--help     Display this information");
 	console.log("--version  Display version information");
 }
@@ -137,7 +138,7 @@ function isDirectory(filename)
 	}
 }
 
-function emit(program, lang, namespace, outputFile, host)
+function emit(program, lang, namespace, outputFile, host, useIcu)
 {
 	let gen;
 	switch (lang) {
@@ -145,7 +146,7 @@ function emit(program, lang, namespace, outputFile, host)
 		gen = new GenC();
 		break;
 	case "cpp":
-		gen = new GenCpp();
+		gen = new GenCpp().useIcu(useIcu);
 		break;
 	case "cs":
 		gen = new GenCs();
@@ -192,7 +193,7 @@ function emit(program, lang, namespace, outputFile, host)
 	}
 }
 
-function emitImplicitLang(program, namespace, outputFile, host)
+function emitImplicitLang(program, namespace, outputFile, host, useIcu)
 {
 	for (let i = outputFile.length; --i >= 0; ) {
 		const c = outputFile.charAt(i);
@@ -201,7 +202,7 @@ function emitImplicitLang(program, namespace, outputFile, host)
 				continue;
 			const outputBase = outputFile.slice(0, i + 1);
 			for (const outputExt of outputFile.slice(i + 1).split(","))
-				emit(program, outputExt, namespace, outputBase + outputExt, host);
+				emit(program, outputExt, namespace, outputBase + outputExt, host, useIcu);
 			return;
 		}
 		if (c == "/" || c == "\\" || c == ":")
@@ -218,6 +219,7 @@ const sema = new FileResourceSema();
 let lang = null;
 let outputFile = null;
 let namespace = "";
+let icuEnabled = true;
 for (let i = 2; i < process.argv.length; i++) {
 	const arg = process.argv[i];
 	if (!arg.startsWith("-"))
@@ -229,6 +231,9 @@ for (let i = 2; i < process.argv.length; i++) {
 	else if (arg == "--version") {
 		console.log("Fusion Transpiler 3.1.1 (Node.js)");
 		process.exit(0);
+	}
+	else if (arg == "--no-icu") {
+		icuEnabled = false;
 	}
 	else if (i + 1 < process.argv.length) {
 		switch (arg) {
@@ -280,9 +285,9 @@ try {
 		parent = parseAndResolve(parser, system, parent, referencedFiles, sema, host);
 	const program = parseAndResolve(parser, system, parent, inputFiles, sema, host);
 	if (lang != null)
-		emit(program, lang, namespace, outputFile, host);
+		emit(program, lang, namespace, outputFile, host, icuEnabled);
 	else
-		emitImplicitLang(program, namespace, outputFile, host);
+		emitImplicitLang(program, namespace, outputFile, host, icuEnabled);
 }
 catch (e) {
 	console.error(`fut: ERROR: ${e.message}`);

@@ -13353,7 +13353,15 @@ namespace Fusion
 
 		bool StringReplace;
 
+		bool UseIcuUnicode = true;
+
 		protected override string GetTargetName() => "C++";
+
+		public GenCpp UseIcu(bool useIcu)
+		{
+			this.UseIcuUnicode = useIcu;
+			return this;
+		}
 
 		protected override void IncludeStdInt()
 		{
@@ -13893,13 +13901,27 @@ namespace Fusion
 				WriteArgsInParentheses(method, args);
 		}
 
-		void WriteStringToLowerUpper(FuExpr obj, string name)
+		void WriteStringToLowerUpper(FuExpr obj, string icuname, string stdname)
 		{
-			Include("string");
-			Include("unicode/unistr.h");
-			Write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
-			Write(name);
-			WriteCall("er().toUTF8String(result); }", obj);
+			if (this.UseIcuUnicode) {
+				Include("string");
+				Include("unicode/unistr.h");
+				Write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
+				Write(icuname);
+				WriteCall("().toUTF8String(result); }", obj);
+			}
+			else {
+				Include("algorithm");
+				Include("cctype");
+				Write("[&] { std::string data = std::string{");
+				obj.Accept(this, FuPriority.Argument);
+				Write("}; ");
+				Write("std::transform(data.begin(), data.end(), data.begin(), ");
+				Write("[](unsigned char c) { return std::to");
+				Write(stdname);
+				Write("(c); }); ");
+				Write("return data; }()");
+			}
 		}
 
 		void WriteAllAnyContains(string function, FuExpr obj, List<FuExpr> args)
@@ -14139,10 +14161,10 @@ namespace Fusion
 				WriteStringMethod(obj, "substr", method, args);
 				break;
 			case FuId.StringToLower:
-				WriteStringToLowerUpper(obj, "Low");
+				WriteStringToLowerUpper(obj, "Lower", "lower");
 				break;
 			case FuId.StringToUpper:
-				WriteStringToLowerUpper(obj, "Upp");
+				WriteStringToLowerUpper(obj, "Upper", "upper");
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:

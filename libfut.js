@@ -13776,10 +13776,17 @@ export class GenCpp extends GenCCpp
 	#usingStringViewLiterals;
 	#hasEnumFlags;
 	#stringReplace;
+	#useIcuUnicode = true;
 
 	getTargetName()
 	{
 		return "C++";
+	}
+
+	useIcu(useIcu)
+	{
+		this.#useIcuUnicode = useIcu;
+		return this;
 	}
 
 	includeStdInt()
@@ -14323,13 +14330,27 @@ export class GenCpp extends GenCCpp
 			this.writeArgsInParentheses(method, args);
 	}
 
-	#writeStringToLowerUpper(obj, name)
+	#writeStringToLowerUpper(obj, icuname, stdname)
 	{
-		this.include("string");
-		this.include("unicode/unistr.h");
-		this.write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
-		this.write(name);
-		this.writeCall("er().toUTF8String(result); }", obj);
+		if (this.#useIcuUnicode) {
+			this.include("string");
+			this.include("unicode/unistr.h");
+			this.write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
+			this.write(icuname);
+			this.writeCall("().toUTF8String(result); }", obj);
+		}
+		else {
+			this.include("algorithm");
+			this.include("cctype");
+			this.write("[&] { std::string data = std::string{");
+			obj.accept(this, FuPriority.ARGUMENT);
+			this.write("}; ");
+			this.write("std::transform(data.begin(), data.end(), data.begin(), ");
+			this.write("[](unsigned char c) { return std::to");
+			this.write(stdname);
+			this.write("(c); }); ");
+			this.write("return data; }()");
+		}
 	}
 
 	#writeAllAnyContains(function_, obj, args)
@@ -14571,10 +14592,10 @@ export class GenCpp extends GenCCpp
 			this.#writeStringMethod(obj, "substr", method, args);
 			break;
 		case FuId.STRING_TO_LOWER:
-			this.#writeStringToLowerUpper(obj, "Low");
+			this.#writeStringToLowerUpper(obj, "Lower", "lower");
 			break;
 		case FuId.STRING_TO_UPPER:
-			this.#writeStringToLowerUpper(obj, "Upp");
+			this.#writeStringToLowerUpper(obj, "Upper", "upper");
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:

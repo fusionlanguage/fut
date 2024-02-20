@@ -131,6 +131,7 @@ public class Fut
 		System.out.println("-D NAME    Define conditional compilation symbol");
 		System.out.println("-r FILE.fu Read the specified source file but don't emit code");
 		System.out.println("-I DIR     Add directory to resource search path");
+		System.out.println("--no-icu   Disable ICU4C full unicode support for C++");
 		System.out.println("--help     Display this information");
 		System.out.println("--version  Display version information");
 	}
@@ -152,7 +153,7 @@ public class Fut
 		return parser.program;
 	}
 
-	private static void emit(FuProgram program, String lang, String namespace, String outputFile, FileGenHost host)
+	private static void emit(FuProgram program, String lang, String namespace, String outputFile, FileGenHost host, boolean useIcu)
 	{
 		final GenBase gen;
 		switch (lang) {
@@ -160,7 +161,7 @@ public class Fut
 			gen = new GenC();
 			break;
 		case "cpp":
-			gen = new GenCpp();
+			gen = new GenCpp().useIcu(useIcu);
 			break;
 		case "cs":
 			gen = new GenCs();
@@ -214,6 +215,7 @@ public class Fut
 		String lang = null;
 		String outputFile = null;
 		String namespace = "";
+		boolean icuEnabled = true;
 		for (int i = 0; i < args.length; i++) {
 			String arg = args[i];
 			if (!arg.startsWith("-"))
@@ -225,6 +227,9 @@ public class Fut
 			else if (arg.equals("--version")) {
 				System.out.println("Fusion Transpiler 3.1.1 (Java)");
 				return;
+			}
+			else if (arg.equals("--no-icu")) {
+				icuEnabled = true;
 			}
 			else if (arg.length() == 2 && i + 1 < args.length) {
 				switch (arg.charAt(1)) {
@@ -277,7 +282,7 @@ public class Fut
 			final FuProgram program = parseAndResolve(parser, system, parent, inputFiles, sema, host);
 
 			if (lang != null) {
-				emit(program, lang, namespace, outputFile, host);
+				emit(program, lang, namespace, outputFile, host, icuEnabled);
 				if (host.hasErrors)
 					System.exit(1);
 				return;
@@ -293,7 +298,7 @@ public class Fut
 					String outputBase = outputFile.substring(0, i + 1);
 					boolean error = false;
 					for (String outputExt : outputFile.substring(i + 1).split(",")) {
-						emit(program, outputExt, namespace, outputBase + outputExt, host);
+						emit(program, outputExt, namespace, outputBase + outputExt, host, icuEnabled);
 						if (host.hasErrors) {
 							host.hasErrors = false;
 							error = true;

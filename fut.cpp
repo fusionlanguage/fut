@@ -51,6 +51,7 @@ static void usage()
 		"-D NAME    Define conditional compilation symbol\n"
 		"-r FILE.fu Read the specified source file but don't emit code\n"
 		"-I DIR     Add directory to resource search path\n"
+		"--no-icu   Disable ICU4C full unicode support for C++\n"
 		"--help     Display this information\n"
 		"--version  Display version information\n";
 }
@@ -147,14 +148,17 @@ static bool parseAndResolve(FuParser *parser, FuProgram *program,
 	return !host->hasErrors;
 }
 
-static void emit(FuProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host)
+static void emit(FuProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host, bool icuEnabled)
 {
 	std::string dir;
 	std::unique_ptr<GenBase> gen;
 	if (strcmp(lang, "c") == 0)
 		gen = std::make_unique<GenC>();
-	else if (strcmp(lang, "cpp") == 0)
-		gen = std::make_unique<GenCpp>();
+	else if (strcmp(lang, "cpp") == 0) {
+		std::unique_ptr<GenCpp> genCpp = std::make_unique<GenCpp>();
+		genCpp->useIcu(icuEnabled);
+		gen = std::move(genCpp);
+	}
 	else if (strcmp(lang, "cs") == 0)
 		gen = std::make_unique<GenCs>();
 	else if (strcmp(lang, "d") == 0)
@@ -201,6 +205,7 @@ int main(int argc, char **argv)
 	const char *lang = nullptr;
 	const char *outputFile = nullptr;
 	const char *namespace_ = "";
+	bool icuEnabled = true;
 	for (int i = 1; i < argc; i++) {
 		const char *arg = argv[i];
 		if (arg[0] != '-')
@@ -212,6 +217,8 @@ int main(int argc, char **argv)
 		else if (strcmp(arg, "--version") == 0) {
 			puts("Fusion Transpiler 3.1.1 (C++)");
 			return 0;
+		} else if (strcmp(arg, "--no-icu") == 0) {
+			icuEnabled = false;
 		}
 		else if (arg[1] != '\0' && arg[2] == '\0' && i + 1 < argc) {
 			switch (arg[1]) {
@@ -274,7 +281,7 @@ int main(int argc, char **argv)
 		return 1;
 
 	if (lang != nullptr) {
-		emit(&program, lang, namespace_, outputFile, &host);
+		emit(&program, lang, namespace_, outputFile, &host, icuEnabled);
 		return host.hasErrors ? 1 : 0;
 	}
 	for (size_t i = strlen(outputFile); --i >= 0; ) {
@@ -293,14 +300,14 @@ int main(int argc, char **argv)
 				if (extEnd == nullptr)
 					break;
 				std::string outputExt = std::string(extBegin, extEnd);
-				emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str(), &host);
+				emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str(), &host, icuEnabled);
 				if (host.hasErrors) {
 					host.hasErrors = false;
 					exitCode = 1;
 				}
 				extBegin = extEnd + 1;
 			}
-			emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str(), &host);
+			emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str(), &host, icuEnabled);
 			return host.hasErrors ? 1 : exitCode;
 		}
 		if (c == '/' || c == '\\' || c == ':')

@@ -104,6 +104,7 @@ public static class Fut
 		Console.WriteLine("-D NAME    Define conditional compilation symbol");
 		Console.WriteLine("-r FILE.fu Read the specified source file but don't emit code");
 		Console.WriteLine("-I DIR     Add directory to resource search path");
+		Console.WriteLine("--no-icu   Disable ICU4C full unicode support for C++");
 		Console.WriteLine("--help     Display this information");
 		Console.WriteLine("--version  Display version information");
 	}
@@ -123,7 +124,7 @@ public static class Fut
 		return parser.Program;
 	}
 
-	static void Emit(FuProgram program, string lang, string namespace_, string outputFile, FileGenHost host)
+	static void Emit(FuProgram program, string lang, string namespace_, string outputFile, FileGenHost host, bool useIcu)
 	{
 		GenBase gen;
 		switch (lang) {
@@ -131,7 +132,7 @@ public static class Fut
 			gen = new GenC();
 			break;
 		case "cpp":
-			gen = new GenCpp();
+			gen = new GenCpp().UseIcu(useIcu);
 			break;
 		case "cs":
 			gen = new GenCs();
@@ -184,6 +185,7 @@ public static class Fut
 		string lang = null;
 		string outputFile = null;
 		string namespace_ = "";
+		bool icuEnabled = true;
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
 			if (arg.Length < 2 || arg[0] != '-')
@@ -195,6 +197,9 @@ public static class Fut
 			else if (arg == "--version") {
 				Console.WriteLine("Fusion Transpiler 3.1.1 (C#)");
 				return 0;
+			}
+			else if (arg == "--no-icu") {
+				icuEnabled = false;
 			}
 			else if (arg.Length == 2 && i + 1 < args.Length) {
 				switch (arg[1]) {
@@ -252,7 +257,7 @@ public static class Fut
 				return 1;
 
 			if (lang != null) {
-				Emit(program, lang, namespace_, outputFile, host);
+				Emit(program, lang, namespace_, outputFile, host, icuEnabled);
 				return host.HasErrors ? 1 : 0;
 			}
 			for (int i = outputFile.Length; --i >= 0; ) {
@@ -266,7 +271,7 @@ public static class Fut
 					string outputBase = outputFile.Substring(0, i + 1);
 					int exitCode = 0;
 					foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
-						Emit(program, outputExt, namespace_, outputBase + outputExt, host);
+						Emit(program, outputExt, namespace_, outputBase + outputExt, host, icuEnabled);
 						if (host.HasErrors) {
 							host.HasErrors = false;
 							exitCode = 1;
