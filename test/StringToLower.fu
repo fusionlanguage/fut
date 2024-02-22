@@ -8,7 +8,7 @@ public class Test
 	{
 		string() orig1 = "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш"; //FAIL: cl
 		string orig2 = "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш";
-		string() new1 = orig1.ToLower(); //FAIL: cpp requires ICU
+		string() new1 = orig1.ToLower();
 		string() new2 = orig2.ToLower();
 		return orig1 == "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш"
 			&& orig2 == "MiXeD cAsE ĐÂĂÊÔơưấắếỐỚỨẦẰềồờừậẶỆỘỢỰш"

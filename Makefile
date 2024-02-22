@@ -19,8 +19,10 @@ else
 ifeq ($(shell uname),Linux)
 TEST_CFLAGS += -fsanitize=address -g
 TEST_CXXFLAGS += -fsanitize=address -g
+else ifeq ($(shell uname),Darwin)
+TEST_ICUFLAGS = -I /opt/homebrew/opt/icu4c/include -L /opt/homebrew/opt/icu4c/lib
 endif
-TEST_CXXFLAGS += $(if $(findstring $*, StringToLower StringToLowerUpperMaxMin StringToUpper), -licuuc) 
+TEST_CXXFLAGS += $(if $(findstring $*, StringToLower StringToLowerUpperMaxMin StringToUpper), $(TEST_ICUFLAGS) -licuuc)
 JAVACPSEP = :
 SWIFTC += -sanitize=address
 endif
