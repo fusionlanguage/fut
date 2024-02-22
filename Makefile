@@ -20,6 +20,7 @@ ifeq ($(shell uname),Linux)
 TEST_CFLAGS += -fsanitize=address -g
 TEST_CXXFLAGS += -fsanitize=address -g
 endif
+TEST_CXXFLAGS += $(if $(findstring $*, StringToLower StringToUpper), -licuuc) 
 JAVACPSEP = :
 SWIFTC += -sanitize=address
 endif
@@ -181,7 +182,7 @@ test/bin/%/c.exe: test/bin/%/Test.c
 	$(DO)$(CC) -o $@ $(TEST_CFLAGS) -Wno-unused-function -I $(<D) $^ `pkg-config --cflags --libs glib-2.0` -lm || grep '//FAIL:.*\<c\>' test/$*.fu
 
 test/bin/%/cpp.exe: test/bin/%/Test.cpp
-	$(DO)$(CXX) -o $@ $(TEST_CXXFLAGS) -I $(<D) $^ $(if $(findstring $*, StringToLower StringToUpper), -licuuc) || grep '//FAIL:.*\<cpp\>' test/$*.fu
+	$(DO)$(CXX) -o $@ $(TEST_CXXFLAGS) -I $(<D) $^ || grep '//FAIL:.*\<cpp\>' test/$*.fu
 
 test/bin/%/cs.dll: test/bin/%/Test.cs
 	$(DO)$(CSC) -out:$@ $^ || grep '//FAIL:.*\<cs\>' test/$*.fu
