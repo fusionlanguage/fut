@@ -13780,11 +13780,11 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeStringMethod(obj, "substr", method, args);
 		break;
 	case FuId::stringToLower:
-		this->stringToLowerUpper = true;
+		this->stringToLower = true;
 		writeCall("FuString_ToLower", obj);
 		break;
 	case FuId::stringToUpper:
-		this->stringToLowerUpper = true;
+		this->stringToUpper = true;
 		writeCall("FuString_ToUpper", obj);
 		break;
 	case FuId::arrayBinarySearchAll:
@@ -14882,6 +14882,8 @@ void GenCpp::writeProgram(const FuProgram * program)
 	this->usingStringViewLiterals = false;
 	this->hasEnumFlags = false;
 	this->stringReplace = false;
+	this->stringToLower = false;
+	this->stringToUpper = false;
 	openStringWriter();
 	openNamespace();
 	writeRegexOptionsEnum(program);
@@ -14945,7 +14947,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 		writeCharLine('}');
 		closeBlock();
 	}
-	if (this->stringToLowerUpper) {
+	if (this->stringToLower || this->stringToUpper) {
 		writeNewLine();
 		writeLine("#if defined(_WIN32)");
 		writeNewLine();
@@ -14977,7 +14979,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 		writeLine("\twide.length(), // cchSrc");
 		writeLine("\t0, // lpDestStr");
 		writeLine("\t0, // cchDest");
-		writeLine("\tNULL, NULL, NULL);");
+		writeLine("\tNULL, NULL, 0);");
 		writeLine("std::wstring strTo(sizeNeeded, 0);");
 		writeLine("LCMapStringEx(");
 		writeLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
@@ -14986,35 +14988,43 @@ void GenCpp::writeProgram(const FuProgram * program)
 		writeLine("\twide.length(), // cchSrc");
 		writeLine("\t&strTo[0], // lpDestStr");
 		writeLine("\tsizeNeeded, // cchDest");
-		writeLine("\tNULL, NULL, NULL);");
+		writeLine("\tNULL, NULL, 0);");
 		writeLine("return FuString_WideToUtf8(strTo);");
 		closeBlock();
-		writeNewLine();
-		writeLine("static std::string FuString_ToUpper(std::string_view str)");
-		openBlock();
-		writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
-		closeBlock();
-		writeNewLine();
-		writeLine("static std::string FuString_ToLower(std::string_view str)");
-		openBlock();
-		writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
-		closeBlock();
+		if (this->stringToLower) {
+			writeNewLine();
+			writeLine("static std::string FuString_ToLower(std::string_view str)");
+			openBlock();
+			writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
+			closeBlock();
+		}
+		if (this->stringToUpper) {
+			writeNewLine();
+			writeLine("static std::string FuString_ToUpper(std::string_view str)");
+			openBlock();
+			writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
+			closeBlock();
+		}
 		writeNewLine();
 		writeLine("#else");
 		writeNewLine();
 		writeLine("#include <unicode/unistr.h>");
-		writeNewLine();
-		writeLine("static std::string FuString_ToUpper(std::string_view str)");
-		openBlock();
-		writeLine("\tstd::string result;");
-		writeLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
-		closeBlock();
-		writeNewLine();
-		writeLine("static std::string FuString_ToLower(std::string_view str)");
-		openBlock();
-		writeLine("\tstd::string result;");
-		writeLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
-		closeBlock();
+		if (this->stringToLower) {
+			writeNewLine();
+			writeLine("static std::string FuString_ToLower(std::string_view str)");
+			openBlock();
+			writeLine("\tstd::string result;");
+			writeLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
+			closeBlock();
+		}
+		if (this->stringToUpper) {
+			writeNewLine();
+			writeLine("static std::string FuString_ToUpper(std::string_view str)");
+			openBlock();
+			writeLine("\tstd::string result;");
+			writeLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
+			closeBlock();
+		}
 		writeNewLine();
 		writeLine("#endif");
 	}

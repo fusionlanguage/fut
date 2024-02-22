@@ -13353,7 +13353,9 @@ namespace Fusion
 
 		bool StringReplace;
 
-		bool StringToLowerUpper;
+		bool StringToLower;
+
+		bool StringToUpper;
 
 		protected override string GetTargetName() => "C++";
 
@@ -14132,11 +14134,11 @@ namespace Fusion
 				WriteStringMethod(obj, "substr", method, args);
 				break;
 			case FuId.StringToLower:
-				this.StringToLowerUpper = true;
+				this.StringToLower = true;
 				WriteCall("FuString_ToLower", obj);
 				break;
 			case FuId.StringToUpper:
-				this.StringToLowerUpper = true;
+				this.StringToUpper = true;
 				WriteCall("FuString_ToUpper", obj);
 				break;
 			case FuId.ArrayBinarySearchAll:
@@ -15234,6 +15236,8 @@ namespace Fusion
 			this.UsingStringViewLiterals = false;
 			this.HasEnumFlags = false;
 			this.StringReplace = false;
+			this.StringToLower = false;
+			this.StringToUpper = false;
 			OpenStringWriter();
 			OpenNamespace();
 			WriteRegexOptionsEnum(program);
@@ -15297,7 +15301,7 @@ namespace Fusion
 				WriteCharLine('}');
 				CloseBlock();
 			}
-			if (this.StringToLowerUpper) {
+			if (this.StringToLower || this.StringToUpper) {
 				WriteNewLine();
 				WriteLine("#if defined(_WIN32)");
 				WriteNewLine();
@@ -15329,7 +15333,7 @@ namespace Fusion
 				WriteLine("\twide.length(), // cchSrc");
 				WriteLine("\t0, // lpDestStr");
 				WriteLine("\t0, // cchDest");
-				WriteLine("\tNULL, NULL, NULL);");
+				WriteLine("\tNULL, NULL, 0);");
 				WriteLine("std::wstring strTo(sizeNeeded, 0);");
 				WriteLine("LCMapStringEx(");
 				WriteLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
@@ -15338,35 +15342,43 @@ namespace Fusion
 				WriteLine("\twide.length(), // cchSrc");
 				WriteLine("\t&strTo[0], // lpDestStr");
 				WriteLine("\tsizeNeeded, // cchDest");
-				WriteLine("\tNULL, NULL, NULL);");
+				WriteLine("\tNULL, NULL, 0);");
 				WriteLine("return FuString_WideToUtf8(strTo);");
 				CloseBlock();
-				WriteNewLine();
-				WriteLine("static std::string FuString_ToUpper(std::string_view str)");
-				OpenBlock();
-				WriteLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
-				CloseBlock();
-				WriteNewLine();
-				WriteLine("static std::string FuString_ToLower(std::string_view str)");
-				OpenBlock();
-				WriteLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
-				CloseBlock();
+				if (this.StringToLower) {
+					WriteNewLine();
+					WriteLine("static std::string FuString_ToLower(std::string_view str)");
+					OpenBlock();
+					WriteLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
+					CloseBlock();
+				}
+				if (this.StringToUpper) {
+					WriteNewLine();
+					WriteLine("static std::string FuString_ToUpper(std::string_view str)");
+					OpenBlock();
+					WriteLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
+					CloseBlock();
+				}
 				WriteNewLine();
 				WriteLine("#else");
 				WriteNewLine();
 				WriteLine("#include <unicode/unistr.h>");
-				WriteNewLine();
-				WriteLine("static std::string FuString_ToUpper(std::string_view str)");
-				OpenBlock();
-				WriteLine("\tstd::string result;");
-				WriteLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
-				CloseBlock();
-				WriteNewLine();
-				WriteLine("static std::string FuString_ToLower(std::string_view str)");
-				OpenBlock();
-				WriteLine("\tstd::string result;");
-				WriteLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
-				CloseBlock();
+				if (this.StringToLower) {
+					WriteNewLine();
+					WriteLine("static std::string FuString_ToLower(std::string_view str)");
+					OpenBlock();
+					WriteLine("\tstd::string result;");
+					WriteLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
+					CloseBlock();
+				}
+				if (this.StringToUpper) {
+					WriteNewLine();
+					WriteLine("static std::string FuString_ToUpper(std::string_view str)");
+					OpenBlock();
+					WriteLine("\tstd::string result;");
+					WriteLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
+					CloseBlock();
+				}
 				WriteNewLine();
 				WriteLine("#endif");
 			}

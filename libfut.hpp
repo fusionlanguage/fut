@@ -2315,7 +2315,8 @@ private:
 	bool usingStringViewLiterals;
 	bool hasEnumFlags;
 	bool stringReplace;
-	bool stringToLowerUpper;
+	bool stringToLower;
+	bool stringToUpper;
 	void startMethodCall(const FuExpr * obj);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeCollectionType(std::string_view name, const FuType * elementType);

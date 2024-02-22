@@ -13776,7 +13776,8 @@ export class GenCpp extends GenCCpp
 	#usingStringViewLiterals;
 	#hasEnumFlags;
 	#stringReplace;
-	#stringToLowerUpper;
+	#stringToLower;
+	#stringToUpper;
 
 	getTargetName()
 	{
@@ -14563,11 +14564,11 @@ export class GenCpp extends GenCCpp
 			this.#writeStringMethod(obj, "substr", method, args);
 			break;
 		case FuId.STRING_TO_LOWER:
-			this.#stringToLowerUpper = true;
+			this.#stringToLower = true;
 			this.writeCall("FuString_ToLower", obj);
 			break;
 		case FuId.STRING_TO_UPPER:
-			this.#stringToLowerUpper = true;
+			this.#stringToUpper = true;
 			this.writeCall("FuString_ToUpper", obj);
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
@@ -15679,6 +15680,8 @@ export class GenCpp extends GenCCpp
 		this.#usingStringViewLiterals = false;
 		this.#hasEnumFlags = false;
 		this.#stringReplace = false;
+		this.#stringToLower = false;
+		this.#stringToUpper = false;
 		this.openStringWriter();
 		this.#openNamespace();
 		this.writeRegexOptionsEnum(program);
@@ -15743,7 +15746,7 @@ export class GenCpp extends GenCCpp
 			this.writeCharLine(125);
 			this.closeBlock();
 		}
-		if (this.#stringToLowerUpper) {
+		if (this.#stringToLower || this.#stringToUpper) {
 			this.writeNewLine();
 			this.writeLine("#if defined(_WIN32)");
 			this.writeNewLine();
@@ -15775,7 +15778,7 @@ export class GenCpp extends GenCCpp
 			this.writeLine("\twide.length(), // cchSrc");
 			this.writeLine("\t0, // lpDestStr");
 			this.writeLine("\t0, // cchDest");
-			this.writeLine("\tNULL, NULL, NULL);");
+			this.writeLine("\tNULL, NULL, 0);");
 			this.writeLine("std::wstring strTo(sizeNeeded, 0);");
 			this.writeLine("LCMapStringEx(");
 			this.writeLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
@@ -15784,35 +15787,43 @@ export class GenCpp extends GenCCpp
 			this.writeLine("\twide.length(), // cchSrc");
 			this.writeLine("\t&strTo[0], // lpDestStr");
 			this.writeLine("\tsizeNeeded, // cchDest");
-			this.writeLine("\tNULL, NULL, NULL);");
+			this.writeLine("\tNULL, NULL, 0);");
 			this.writeLine("return FuString_WideToUtf8(strTo);");
 			this.closeBlock();
-			this.writeNewLine();
-			this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
-			this.openBlock();
-			this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
-			this.closeBlock();
-			this.writeNewLine();
-			this.writeLine("static std::string FuString_ToLower(std::string_view str)");
-			this.openBlock();
-			this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
-			this.closeBlock();
+			if (this.#stringToLower) {
+				this.writeNewLine();
+				this.writeLine("static std::string FuString_ToLower(std::string_view str)");
+				this.openBlock();
+				this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
+				this.closeBlock();
+			}
+			if (this.#stringToUpper) {
+				this.writeNewLine();
+				this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
+				this.openBlock();
+				this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
+				this.closeBlock();
+			}
 			this.writeNewLine();
 			this.writeLine("#else");
 			this.writeNewLine();
 			this.writeLine("#include <unicode/unistr.h>");
-			this.writeNewLine();
-			this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
-			this.openBlock();
-			this.writeLine("\tstd::string result;");
-			this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
-			this.closeBlock();
-			this.writeNewLine();
-			this.writeLine("static std::string FuString_ToLower(std::string_view str)");
-			this.openBlock();
-			this.writeLine("\tstd::string result;");
-			this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
-			this.closeBlock();
+			if (this.#stringToLower) {
+				this.writeNewLine();
+				this.writeLine("static std::string FuString_ToLower(std::string_view str)");
+				this.openBlock();
+				this.writeLine("\tstd::string result;");
+				this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
+				this.closeBlock();
+			}
+			if (this.#stringToUpper) {
+				this.writeNewLine();
+				this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
+				this.openBlock();
+				this.writeLine("\tstd::string result;");
+				this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
+				this.closeBlock();
+			}
 			this.writeNewLine();
 			this.writeLine("#endif");
 		}
