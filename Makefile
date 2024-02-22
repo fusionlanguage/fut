@@ -20,7 +20,7 @@ ifeq ($(shell uname),Linux)
 TEST_CFLAGS += -fsanitize=address -g
 TEST_CXXFLAGS += -fsanitize=address -g
 endif
-TEST_CXXFLAGS += $(if $(findstring $*, StringToLower StringToUpper), -licuuc) 
+TEST_CXXFLAGS += $(if $(findstring $*, StringToLower StringToLowerUpperMaxMin StringToUpper), -licuuc) 
 JAVACPSEP = :
 SWIFTC += -sanitize=address
 endif
