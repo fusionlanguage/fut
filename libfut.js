@@ -14562,7 +14562,7 @@ export class GenCpp extends GenCCpp
 			break;
 		case FuId.STRING_REPLACE:
 			this.#stringReplace = true;
-			this.writeCall("FuString_replace", obj, args[0], args[1]);
+			this.writeCall("FuString_Replace", obj, args[0], args[1]);
 			break;
 		case FuId.STRING_STARTS_WITH:
 			this.#writeStringMethod(obj, "starts_with", method, args);
@@ -15733,7 +15733,7 @@ export class GenCpp extends GenCCpp
 			this.writeLine("using namespace std::string_view_literals;");
 		if (this.#stringReplace) {
 			this.writeNewLine();
-			this.writeLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+			this.writeLine("static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 			this.openBlock();
 			this.writeLine("std::string result;");
 			this.writeLine("result.reserve(s.size());");

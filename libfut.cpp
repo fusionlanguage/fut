@@ -6,7 +6,7 @@
 #include <format>
 #include "libfut.hpp"
 
-static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
+static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
 {
 	std::string result;
 	result.reserve(s.size());
@@ -2932,7 +2932,7 @@ void FuParser::checkXcrementParent()
 std::shared_ptr<FuLiteralDouble> FuParser::parseDouble()
 {
 	double d;
-	if (![&] { char *ciend; d = std::strtod(FuString_replace(getLexeme(), "_", "").data(), &ciend); return *ciend == '\0'; }())
+	if (![&] { char *ciend; d = std::strtod(FuString_Replace(getLexeme(), "_", "").data(), &ciend); return *ciend == '\0'; }())
 		reportError("Invalid floating-point number");
 	std::shared_ptr<FuLiteralDouble> result = std::make_shared<FuLiteralDouble>();
 	result->line = this->line;
@@ -2953,7 +2953,7 @@ std::shared_ptr<FuInterpolatedString> FuParser::parseInterpolatedString()
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
 	result->line = this->line;
 	do {
-		std::string prefix{FuString_replace(this->stringValue, "{{", "{")};
+		std::string prefix{FuString_Replace(this->stringValue, "{{", "{")};
 		nextToken();
 		std::shared_ptr<FuExpr> arg = parseExpr();
 		std::shared_ptr<FuExpr> width = eat(FuToken::comma) ? parseExpr() : nullptr;
@@ -2972,7 +2972,7 @@ std::shared_ptr<FuInterpolatedString> FuParser::parseInterpolatedString()
 		check(FuToken::rightBrace);
 	}
 	while (readString(true) == FuToken::interpolatedString);
-	result->suffix = FuString_replace(this->stringValue, "{{", "{");
+	result->suffix = FuString_Replace(this->stringValue, "{{", "{");
 	nextToken();
 	return result;
 }
@@ -13780,7 +13780,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::stringReplace:
 		this->stringReplace = true;
-		writeCall("FuString_replace", obj, (*args)[0].get(), (*args)[1].get());
+		writeCall("FuString_Replace", obj, (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::stringStartsWith:
 		writeStringMethod(obj, "starts_with", method, args);
@@ -14936,7 +14936,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 		writeLine("using namespace std::string_view_literals;");
 	if (this->stringReplace) {
 		writeNewLine();
-		writeLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+		writeLine("static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 		openBlock();
 		writeLine("std::string result;");
 		writeLine("result.reserve(s.size());");

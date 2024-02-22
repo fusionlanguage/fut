@@ -14130,7 +14130,7 @@ namespace Fusion
 				break;
 			case FuId.StringReplace:
 				this.StringReplace = true;
-				WriteCall("FuString_replace", obj, args[0], args[1]);
+				WriteCall("FuString_Replace", obj, args[0], args[1]);
 				break;
 			case FuId.StringStartsWith:
 				WriteStringMethod(obj, "starts_with", method, args);
@@ -15286,7 +15286,7 @@ namespace Fusion
 				WriteLine("using namespace std::string_view_literals;");
 			if (this.StringReplace) {
 				WriteNewLine();
-				WriteLine("static std::string FuString_replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
+				WriteLine("static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");
 				OpenBlock();
 				WriteLine("std::string result;");
 				WriteLine("result.reserve(s.size());");
