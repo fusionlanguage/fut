@@ -15340,7 +15340,7 @@ namespace Fusion
 				WriteLine("#include <unicode/unistr.h>");
 				if (this.StringToLower) {
 					WriteNewLine();
-					WriteLine("static std::string FuString_ToLower(std::string_view str)");
+					WriteLine("static std::string FuString_ToLower(std::string_view s)");
 					OpenBlock();
 					WriteLine("std::string result;");
 					WriteLine("return icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
@@ -15348,7 +15348,7 @@ namespace Fusion
 				}
 				if (this.StringToUpper) {
 					WriteNewLine();
-					WriteLine("static std::string FuString_ToUpper(std::string_view str)");
+					WriteLine("static std::string FuString_ToUpper(std::string_view s)");
 					OpenBlock();
 					WriteLine("std::string result;");
 					WriteLine("return icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");

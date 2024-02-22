@@ -14986,7 +14986,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 		writeLine("#include <unicode/unistr.h>");
 		if (this->stringToLower) {
 			writeNewLine();
-			writeLine("static std::string FuString_ToLower(std::string_view str)");
+			writeLine("static std::string FuString_ToLower(std::string_view s)");
 			openBlock();
 			writeLine("std::string result;");
 			writeLine("return icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
@@ -14994,7 +14994,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 		}
 		if (this->stringToUpper) {
 			writeNewLine();
-			writeLine("static std::string FuString_ToUpper(std::string_view str)");
+			writeLine("static std::string FuString_ToUpper(std::string_view s)");
 			openBlock();
 			writeLine("std::string result;");
 			writeLine("return icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");

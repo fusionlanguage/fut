@@ -15785,7 +15785,7 @@ export class GenCpp extends GenCCpp
 			this.writeLine("#include <unicode/unistr.h>");
 			if (this.#stringToLower) {
 				this.writeNewLine();
-				this.writeLine("static std::string FuString_ToLower(std::string_view str)");
+				this.writeLine("static std::string FuString_ToLower(std::string_view s)");
 				this.openBlock();
 				this.writeLine("std::string result;");
 				this.writeLine("return icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
@@ -15793,7 +15793,7 @@ export class GenCpp extends GenCCpp
 			}
 			if (this.#stringToUpper) {
 				this.writeNewLine();
-				this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
+				this.writeLine("static std::string FuString_ToUpper(std::string_view s)");
 				this.openBlock();
 				this.writeLine("std::string result;");
 				this.writeLine("return icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
