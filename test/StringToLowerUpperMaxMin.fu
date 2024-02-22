@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string s = "Foo";
+		return Math.Min(5, 10) == 5 && Math.Max(5, 10) == 10 //FAIL: c
+			&& s.ToLower() == "foo" && s.ToUpper() == "FOO"; //FAIL: cl
+	}
+}
