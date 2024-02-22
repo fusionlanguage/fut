@@ -2315,6 +2315,7 @@ private:
 	bool usingStringViewLiterals;
 	bool hasEnumFlags;
 	bool stringReplace;
+	bool stringToLowerUpper;
 	void startMethodCall(const FuExpr * obj);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeCollectionType(std::string_view name, const FuType * elementType);
@@ -2328,7 +2329,6 @@ private:
 	void writePtrRange(const FuExpr * obj, const FuExpr * index, const FuExpr * count);
 	void writeNotRawStringLiteral(const FuExpr * obj, FuPriority priority);
 	void writeStringMethod(const FuExpr * obj, std::string_view name, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeStringToLowerUpper(const FuExpr * obj, std::string_view name);
 	void writeAllAnyContains(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeCollectionMethod(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeCString(const FuExpr * expr);

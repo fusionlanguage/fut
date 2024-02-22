@@ -13353,6 +13353,8 @@ namespace Fusion
 
 		bool StringReplace;
 
+		bool StringToLowerUpper;
+
 		protected override string GetTargetName() => "C++";
 
 		protected override void IncludeStdInt()
@@ -13893,15 +13895,6 @@ namespace Fusion
 				WriteArgsInParentheses(method, args);
 		}
 
-		void WriteStringToLowerUpper(FuExpr obj, string name)
-		{
-			Include("string");
-			Include("unicode/unistr.h");
-			Write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
-			Write(name);
-			WriteCall("er().toUTF8String(result); }", obj);
-		}
-
 		void WriteAllAnyContains(string function, FuExpr obj, List<FuExpr> args)
 		{
 			Include("algorithm");
@@ -14139,10 +14132,12 @@ namespace Fusion
 				WriteStringMethod(obj, "substr", method, args);
 				break;
 			case FuId.StringToLower:
-				WriteStringToLowerUpper(obj, "Low");
+				this.StringToLowerUpper = true;
+				WriteCall("FuString_ToLower", obj);
 				break;
 			case FuId.StringToUpper:
-				WriteStringToLowerUpper(obj, "Upp");
+				this.StringToLowerUpper = true;
+				WriteCall("FuString_ToUpper", obj);
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
@@ -15301,6 +15296,79 @@ namespace Fusion
 				WriteLine("\ti = j + oldValue.size();");
 				WriteCharLine('}');
 				CloseBlock();
+			}
+			if (this.StringToLowerUpper) {
+				WriteNewLine();
+				WriteLine("#if defined(_WIN32)");
+				WriteNewLine();
+				WriteLine("#include <Windows.h>");
+				WriteNewLine();
+				WriteLine("inline std::string FuString_WideToUtf8(std::wstring const& wstr)");
+				OpenBlock();
+				WriteLine("int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);");
+				WriteLine("std::string strTo(sizeNeeded, 0);");
+				WriteLine("WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);");
+				WriteLine("return strTo;");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("inline std::wstring FuString_Utf8ToWide(std::string const& str)");
+				OpenBlock();
+				WriteLine("int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);");
+				WriteLine("std::wstring strTo(sizeNeeded, 0);");
+				WriteLine("MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &strTo[0], sizeNeeded);");
+				WriteLine("return strTo;");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("static std::string FuString_Win32LCMap(std::string str, DWORD flags)");
+				OpenBlock();
+				WriteLine("std::wstring wide = FuString_Utf8ToWide(str);");
+				WriteLine("int sizeNeeded = LCMapStringEx(");
+				WriteLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
+				WriteLine("\tLCMAP_LINGUISTIC_CASING | flags, // dwMapFlags");
+				WriteLine("\twide.c_str(), // lpSrcStr");
+				WriteLine("\twide.length(), // cchSrc");
+				WriteLine("\t0, // lpDestStr");
+				WriteLine("\t0, // cchDest");
+				WriteLine("\tNULL, NULL, NULL);");
+				WriteLine("std::wstring strTo(sizeNeeded, 0);");
+				WriteLine("LCMapStringEx(");
+				WriteLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
+				WriteLine("\tLCMAP_LINGUISTIC_CASING | flags, // dwMapFlags");
+				WriteLine("\twide.c_str(), // lpSrcStr");
+				WriteLine("\twide.length(), // cchSrc");
+				WriteLine("\t&strTo[0], // lpDestStr");
+				WriteLine("\tsizeNeeded, // cchDest");
+				WriteLine("\tNULL, NULL, NULL);");
+				WriteLine("return FuString_WideToUtf8(strTo);");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("static std::string FuString_ToUpper(std::string_view str)");
+				OpenBlock();
+				WriteLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("static std::string FuString_ToLower(std::string_view str)");
+				OpenBlock();
+				WriteLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("#else");
+				WriteNewLine();
+				WriteLine("#include <unicode/unistr.h>");
+				WriteNewLine();
+				WriteLine("static std::string FuString_ToUpper(std::string_view str)");
+				OpenBlock();
+				WriteLine("\tstd::string result;");
+				WriteLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("static std::string FuString_ToLower(std::string_view str)");
+				OpenBlock();
+				WriteLine("\tstd::string result;");
+				WriteLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
+				CloseBlock();
+				WriteNewLine();
+				WriteLine("#endif");
 			}
 			CloseStringWriter();
 			CloseFile();

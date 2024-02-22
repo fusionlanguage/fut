@@ -13776,6 +13776,7 @@ export class GenCpp extends GenCCpp
 	#usingStringViewLiterals;
 	#hasEnumFlags;
 	#stringReplace;
+	#stringToLowerUpper;
 
 	getTargetName()
 	{
@@ -14323,15 +14324,6 @@ export class GenCpp extends GenCCpp
 			this.writeArgsInParentheses(method, args);
 	}
 
-	#writeStringToLowerUpper(obj, name)
-	{
-		this.include("string");
-		this.include("unicode/unistr.h");
-		this.write("[](icu::StringPiece s) { std::string result; return icu::UnicodeString::fromUTF8(s).to");
-		this.write(name);
-		this.writeCall("er().toUTF8String(result); }", obj);
-	}
-
 	#writeAllAnyContains(function_, obj, args)
 	{
 		this.include("algorithm");
@@ -14571,10 +14563,12 @@ export class GenCpp extends GenCCpp
 			this.#writeStringMethod(obj, "substr", method, args);
 			break;
 		case FuId.STRING_TO_LOWER:
-			this.#writeStringToLowerUpper(obj, "Low");
+			this.#stringToLowerUpper = true;
+			this.writeCall("FuString_ToLower", obj);
 			break;
 		case FuId.STRING_TO_UPPER:
-			this.#writeStringToLowerUpper(obj, "Upp");
+			this.#stringToLowerUpper = true;
+			this.writeCall("FuString_ToUpper", obj);
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
@@ -15748,6 +15742,79 @@ export class GenCpp extends GenCCpp
 			this.writeLine("\ti = j + oldValue.size();");
 			this.writeCharLine(125);
 			this.closeBlock();
+		}
+		if (this.#stringToLowerUpper) {
+			this.writeNewLine();
+			this.writeLine("#if defined(_WIN32)");
+			this.writeNewLine();
+			this.writeLine("#include <Windows.h>");
+			this.writeNewLine();
+			this.writeLine("inline std::string FuString_WideToUtf8(std::wstring const& wstr)");
+			this.openBlock();
+			this.writeLine("int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);");
+			this.writeLine("std::string strTo(sizeNeeded, 0);");
+			this.writeLine("WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);");
+			this.writeLine("return strTo;");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("inline std::wstring FuString_Utf8ToWide(std::string const& str)");
+			this.openBlock();
+			this.writeLine("int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);");
+			this.writeLine("std::wstring strTo(sizeNeeded, 0);");
+			this.writeLine("MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &strTo[0], sizeNeeded);");
+			this.writeLine("return strTo;");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("static std::string FuString_Win32LCMap(std::string str, DWORD flags)");
+			this.openBlock();
+			this.writeLine("std::wstring wide = FuString_Utf8ToWide(str);");
+			this.writeLine("int sizeNeeded = LCMapStringEx(");
+			this.writeLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
+			this.writeLine("\tLCMAP_LINGUISTIC_CASING | flags, // dwMapFlags");
+			this.writeLine("\twide.c_str(), // lpSrcStr");
+			this.writeLine("\twide.length(), // cchSrc");
+			this.writeLine("\t0, // lpDestStr");
+			this.writeLine("\t0, // cchDest");
+			this.writeLine("\tNULL, NULL, NULL);");
+			this.writeLine("std::wstring strTo(sizeNeeded, 0);");
+			this.writeLine("LCMapStringEx(");
+			this.writeLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
+			this.writeLine("\tLCMAP_LINGUISTIC_CASING | flags, // dwMapFlags");
+			this.writeLine("\twide.c_str(), // lpSrcStr");
+			this.writeLine("\twide.length(), // cchSrc");
+			this.writeLine("\t&strTo[0], // lpDestStr");
+			this.writeLine("\tsizeNeeded, // cchDest");
+			this.writeLine("\tNULL, NULL, NULL);");
+			this.writeLine("return FuString_WideToUtf8(strTo);");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
+			this.openBlock();
+			this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("static std::string FuString_ToLower(std::string_view str)");
+			this.openBlock();
+			this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("#else");
+			this.writeNewLine();
+			this.writeLine("#include <unicode/unistr.h>");
+			this.writeNewLine();
+			this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
+			this.openBlock();
+			this.writeLine("\tstd::string result;");
+			this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("static std::string FuString_ToLower(std::string_view str)");
+			this.openBlock();
+			this.writeLine("\tstd::string result;");
+			this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
+			this.closeBlock();
+			this.writeNewLine();
+			this.writeLine("#endif");
 		}
 		this.closeStringWriter();
 		this.closeFile();
