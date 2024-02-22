@@ -14547,12 +14547,12 @@ namespace Fusion
 			case FuId.MathMaxInt:
 			case FuId.MathMaxDouble:
 				Include("algorithm");
-				WriteCall("std::max", args[0], args[1]);
+				WriteCall("(std::max)", args[0], args[1]);
 				break;
 			case FuId.MathMinInt:
 			case FuId.MathMinDouble:
 				Include("algorithm");
-				WriteCall("std::min", args[0], args[1]);
+				WriteCall("(std::min)", args[0], args[1]);
 				break;
 			case FuId.MathTruncate:
 				IncludeMath();
