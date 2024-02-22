@@ -14981,12 +14981,12 @@ export class GenCpp extends GenCCpp
 		case FuId.MATH_MAX_INT:
 		case FuId.MATH_MAX_DOUBLE:
 			this.include("algorithm");
-			this.writeCall("std::max", args[0], args[1]);
+			this.writeCall("(std::max)", args[0], args[1]);
 			break;
 		case FuId.MATH_MIN_INT:
 		case FuId.MATH_MIN_DOUBLE:
 			this.include("algorithm");
-			this.writeCall("std::min", args[0], args[1]);
+			this.writeCall("(std::min)", args[0], args[1]);
 			break;
 		case FuId.MATH_TRUNCATE:
 			this.includeMath();

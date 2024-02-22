@@ -1228,12 +1228,12 @@ public class GenCpp : GenCCpp
 		case FuId.MathMaxInt:
 		case FuId.MathMaxDouble: // TODO: <cmath> fmax ?
 			Include("algorithm");
-			WriteCall("std::max", args[0], args[1]);
+			WriteCall("(std::max)", args[0], args[1]);
 			break;
 		case FuId.MathMinInt:
 		case FuId.MathMinDouble: // TODO: <cmath> fmin ?
 			Include("algorithm");
-			WriteCall("std::min", args[0], args[1]);
+			WriteCall("(std::min)", args[0], args[1]);
 			break;
 		case FuId.MathTruncate:
 			IncludeMath();

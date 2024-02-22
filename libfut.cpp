@@ -5098,10 +5098,10 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			const FuRangeType * leftMod;
 			const FuRangeType * rightMod;
 			if ((leftMod = dynamic_cast<const FuRangeType *>(left->type.get())) && (rightMod = dynamic_cast<const FuRangeType *>(right->type.get()))) {
-				int den = ~std::min(rightMod->min, -rightMod->max);
+				int den = ~(std::min)(rightMod->min, -rightMod->max);
 				if (den < 0)
 					return poisonError(expr.get(), "Mod zero");
-				type = FuRangeType::new_(leftMod->min >= 0 ? 0 : std::max(leftMod->min, -den), leftMod->max < 0 ? 0 : std::min(leftMod->max, den));
+				type = FuRangeType::new_(leftMod->min >= 0 ? 0 : (std::max)(leftMod->min, -den), leftMod->max < 0 ? 0 : (std::min)(leftMod->max, den));
 			}
 			else
 				type = getIntegerType(left.get(), right.get());
@@ -14203,12 +14203,12 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 	case FuId::mathMaxInt:
 	case FuId::mathMaxDouble:
 		include("algorithm");
-		writeCall("std::max", (*args)[0].get(), (*args)[1].get());
+		writeCall("(std::max)", (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::mathMinInt:
 	case FuId::mathMinDouble:
 		include("algorithm");
-		writeCall("std::min", (*args)[0].get(), (*args)[1].get());
+		writeCall("(std::min)", (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::mathTruncate:
 		includeMath();
