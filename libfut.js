@@ -15748,60 +15748,35 @@ export class GenCpp extends GenCCpp
 		}
 		if (this.#stringToLower || this.#stringToUpper) {
 			this.writeNewLine();
-			this.writeLine("#if defined(_WIN32)");
+			this.writeLine("#ifdef _WIN32");
 			this.writeNewLine();
 			this.writeLine("#include <Windows.h>");
 			this.writeNewLine();
-			this.writeLine("inline std::string FuString_WideToUtf8(std::wstring const& wstr)");
+			this.writeLine("static std::string FuString_Win32LCMap(std::string_view s, DWORD flags)");
 			this.openBlock();
-			this.writeLine("int sizeNeeded = WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), NULL, 0, NULL, NULL);");
-			this.writeLine("std::string strTo(sizeNeeded, 0);");
-			this.writeLine("WideCharToMultiByte(CP_UTF8, 0, &wstr[0], (int)wstr.size(), &strTo[0], sizeNeeded, NULL, NULL);");
-			this.writeLine("return strTo;");
-			this.closeBlock();
-			this.writeNewLine();
-			this.writeLine("inline std::wstring FuString_Utf8ToWide(std::string const& str)");
-			this.openBlock();
-			this.writeLine("int sizeNeeded = MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), NULL, 0);");
-			this.writeLine("std::wstring strTo(sizeNeeded, 0);");
-			this.writeLine("MultiByteToWideChar(CP_UTF8, 0, &str[0], (int)str.size(), &strTo[0], sizeNeeded);");
-			this.writeLine("return strTo;");
-			this.closeBlock();
-			this.writeNewLine();
-			this.writeLine("static std::string FuString_Win32LCMap(std::string str, DWORD flags)");
-			this.openBlock();
-			this.writeLine("std::wstring wide = FuString_Utf8ToWide(str);");
-			this.writeLine("int sizeNeeded = LCMapStringEx(");
-			this.writeLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
-			this.writeLine("\tLCMAP_LINGUISTIC_CASING | flags, // dwMapFlags");
-			this.writeLine("\twide.c_str(), // lpSrcStr");
-			this.writeLine("\twide.length(), // cchSrc");
-			this.writeLine("\t0, // lpDestStr");
-			this.writeLine("\t0, // cchDest");
-			this.writeLine("\tNULL, NULL, 0);");
-			this.writeLine("std::wstring strTo(sizeNeeded, 0);");
-			this.writeLine("LCMapStringEx(");
-			this.writeLine("\tLOCALE_NAME_SYSTEM_DEFAULT, // lpLocaleName");
-			this.writeLine("\tLCMAP_LINGUISTIC_CASING | flags, // dwMapFlags");
-			this.writeLine("\twide.c_str(), // lpSrcStr");
-			this.writeLine("\twide.length(), // cchSrc");
-			this.writeLine("\t&strTo[0], // lpDestStr");
-			this.writeLine("\tsizeNeeded, // cchDest");
-			this.writeLine("\tNULL, NULL, 0);");
-			this.writeLine("return FuString_WideToUtf8(strTo);");
+			this.writeLine("int size = MultiByteToWideChar(CP_UTF8, 0, s.data(), (int) s.size(), nullptr, 0);");
+			this.writeLine("std::wstring wide(size, 0);");
+			this.writeLine("MultiByteToWideChar(CP_UTF8, 0, s.data(), (int) s.size(), wide.data(), size);");
+			this.writeLine("size = LCMapStringEx(LOCALE_NAME_SYSTEM_DEFAULT, LCMAP_LINGUISTIC_CASING | flags, wide.data(), size, nullptr, 0, nullptr, nullptr, 0);");
+			this.writeLine("std::wstring wideResult(size, 0);");
+			this.writeLine("LCMapStringEx(LOCALE_NAME_SYSTEM_DEFAULT, LCMAP_LINGUISTIC_CASING | flags, wide.data(), wide.size(), wideResult.data(), size, nullptr, nullptr, 0);");
+			this.writeLine("int resultSize = WideCharToMultiByte(CP_UTF8, 0, wideResult.data(), size, nullptr, 0, nullptr, nullptr);");
+			this.writeLine("std::string result(resultSize, 0);");
+			this.writeLine("WideCharToMultiByte(CP_UTF8, 0, wideResult.data(), size, result.data(), resultSize, nullptr, nullptr);");
+			this.writeLine("return result;");
 			this.closeBlock();
 			if (this.#stringToLower) {
 				this.writeNewLine();
-				this.writeLine("static std::string FuString_ToLower(std::string_view str)");
+				this.writeLine("static std::string FuString_ToLower(std::string_view s)");
 				this.openBlock();
-				this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_LOWERCASE);");
+				this.writeLine("return FuString_Win32LCMap(s, LCMAP_LOWERCASE);");
 				this.closeBlock();
 			}
 			if (this.#stringToUpper) {
 				this.writeNewLine();
-				this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
+				this.writeLine("static std::string FuString_ToUpper(std::string_view s)");
 				this.openBlock();
-				this.writeLine("\treturn FuString_Win32LCMap(std::string{ str }, LCMAP_UPPERCASE);");
+				this.writeLine("return FuString_Win32LCMap(s, LCMAP_UPPERCASE);");
 				this.closeBlock();
 			}
 			this.writeNewLine();
@@ -15812,16 +15787,16 @@ export class GenCpp extends GenCCpp
 				this.writeNewLine();
 				this.writeLine("static std::string FuString_ToLower(std::string_view str)");
 				this.openBlock();
-				this.writeLine("\tstd::string result;");
-				this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
+				this.writeLine("std::string result;");
+				this.writeLine("return icu::UnicodeString::fromUTF8(s).toLower().toUTF8String(result);");
 				this.closeBlock();
 			}
 			if (this.#stringToUpper) {
 				this.writeNewLine();
 				this.writeLine("static std::string FuString_ToUpper(std::string_view str)");
 				this.openBlock();
-				this.writeLine("\tstd::string result;");
-				this.writeLine("\treturn icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
+				this.writeLine("std::string result;");
+				this.writeLine("return icu::UnicodeString::fromUTF8(s).toUpper().toUTF8String(result);");
 				this.closeBlock();
 			}
 			this.writeNewLine();
