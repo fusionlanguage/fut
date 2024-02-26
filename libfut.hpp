@@ -2012,10 +2012,6 @@ protected:
 	void writeArrayPtrAdd(const FuExpr * array, const FuExpr * index);
 	static const FuCallExpr * isStringSubstring(const FuExpr * expr);
 	static bool isUTF8GetString(const FuCallExpr * call);
-	static const FuExpr * getStringSubstringPtr(const FuCallExpr * call);
-	static const FuExpr * getStringSubstringOffset(const FuCallExpr * call);
-	static const FuExpr * getStringSubstringLength(const FuCallExpr * call);
-	void writeStringPtrAdd(const FuCallExpr * call);
 	static const FuExpr * isTrimSubstring(const FuBinaryExpr * expr);
 	void writeStringLiteralWithNewLine(std::string_view s);
 	virtual void writeUnreachable(const FuAssert * statement);
@@ -2141,7 +2137,7 @@ private:
 	std::set<FuId> compares;
 	std::set<FuId> contains;
 	std::vector<const FuVar *> varsToDestruct;
-	void writeStringPtrAddCast(const FuCallExpr * call);
+	void writeStringPtrAdd(const FuExpr * obj, bool utf8GetString, const std::vector<std::shared_ptr<FuExpr>> * args, bool cast);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
 	void writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);
@@ -2164,6 +2160,7 @@ private:
 	void writeListFreeName(FuId id);
 	void addListFree(FuId id);
 	void writeListFree(const FuClassType * elementType);
+	static const FuExpr * getStringSubstringLength(const FuCallExpr * call);
 	void writeStringStorageValue(const FuExpr * expr);
 	bool writeDestructMethodName(const FuClassType * klass);
 	static bool hasDictionaryDestroy(const FuType * type);

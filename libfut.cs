@@ -9091,22 +9091,11 @@ namespace Fusion
 
 		protected static bool IsUTF8GetString(FuCallExpr call) => call.Method.Symbol.Id == FuId.UTF8GetString;
 
-		protected static FuExpr GetStringSubstringPtr(FuCallExpr call) => IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left;
-
-		protected static FuExpr GetStringSubstringOffset(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 1 : 0];
-
-		protected static FuExpr GetStringSubstringLength(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
-
-		protected void WriteStringPtrAdd(FuCallExpr call)
-		{
-			WriteArrayPtrAdd(GetStringSubstringPtr(call), GetStringSubstringOffset(call));
-		}
-
 		protected static FuExpr IsTrimSubstring(FuBinaryExpr expr)
 		{
 			FuCallExpr call = IsStringSubstring(expr.Right);
-			if (call != null && !IsUTF8GetString(call) && expr.Left is FuSymbolReference leftSymbol && GetStringSubstringPtr(call).IsReferenceTo(leftSymbol.Symbol) && GetStringSubstringOffset(call).IsLiteralZero())
-				return GetStringSubstringLength(call);
+			if (call != null && !IsUTF8GetString(call) && expr.Left is FuSymbolReference leftSymbol && call.Method.Left.IsReferenceTo(leftSymbol.Symbol) && call.Arguments[0].IsLiteralZero())
+				return call.Arguments[1];
 			return null;
 		}
 
@@ -9355,11 +9344,15 @@ namespace Fusion
 				WriteTemporaryOrExpr(expr, FuPriority.Argument);
 		}
 
-		void WriteStringPtrAddCast(FuCallExpr call)
+		void WriteStringPtrAdd(FuExpr obj, bool utf8GetString, List<FuExpr> args, bool cast)
 		{
-			if (IsUTF8GetString(call))
-				Write("(const char *) ");
-			WriteStringPtrAdd(call);
+			if (utf8GetString) {
+				if (cast)
+					Write("(const char *) ");
+				WriteArrayPtrAdd(args[0], args[1]);
+			}
+			else
+				WriteArrayPtrAdd(obj, args[0]);
 		}
 
 		static bool IsDictionaryClassStgIndexing(FuExpr expr)
@@ -9412,7 +9405,7 @@ namespace Fusion
 			if (call != null) {
 				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteStringPtrAddCast(call);
+				WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, true);
 			}
 			else if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 				Write(this.Namespace);
@@ -10003,6 +9996,8 @@ namespace Fusion
 				WriteChar(')');
 		}
 
+		static FuExpr GetStringSubstringLength(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
+
 		void WriteStringStorageValue(FuExpr expr)
 		{
 			FuCallExpr call = IsStringSubstring(expr);
@@ -10010,7 +10005,7 @@ namespace Fusion
 				Include("string.h");
 				this.StringSubstring = true;
 				Write("FuString_Substring(");
-				WriteStringPtrAddCast(call);
+				WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, true);
 				Write(", ");
 				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 				WriteChar(')');
@@ -10787,7 +10782,7 @@ namespace Fusion
 				WriteChar('(');
 			Include("string.h");
 			Write("memcmp(");
-			WriteStringPtrAdd(call);
+			WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, false);
 			Write(", ");
 			VisitLiteralString(literal);
 			Write(", ");
@@ -13110,12 +13105,13 @@ namespace Fusion
 			if (IsUTF8GetString(call)) {
 				this.BytesEqualsString = true;
 				Write("FuBytes_Equals(");
+				WriteArrayPtrAdd(call.Arguments[0], call.Arguments[1]);
 			}
 			else {
 				this.StringStartsWith = true;
 				Write("FuString_StartsWith(");
+				WriteArrayPtrAdd(call.Method.Left, call.Arguments[0]);
 			}
-			WriteStringPtrAdd(call);
 			Write(", ");
 			VisitLiteralString(literal);
 			WriteChar(')');
@@ -14891,16 +14887,19 @@ namespace Fusion
 			}
 			else {
 				FuCallExpr call = IsStringSubstring(expr);
-				if (call != null && type.Id == FuId.StringStorageType && GetStringSubstringPtr(call).Type.Id != FuId.StringStorageType) {
+				if (call != null && type.Id == FuId.StringStorageType && (IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left).Type.Id != FuId.StringStorageType) {
 					Write("std::string(");
-					bool cast = IsUTF8GetString(call);
-					if (cast)
+					if (IsUTF8GetString(call)) {
 						Write("reinterpret_cast<const char *>(");
-					WriteStringPtrAdd(call);
-					if (cast)
-						WriteChar(')');
-					Write(", ");
-					GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
+						WriteArrayPtrAdd(call.Arguments[0], call.Arguments[1]);
+						Write("), ");
+						call.Arguments[2].Accept(this, FuPriority.Argument);
+					}
+					else {
+						WriteArrayPtrAdd(call.Method.Left, call.Arguments[0]);
+						Write(", ");
+						call.Arguments[1].Accept(this, FuPriority.Argument);
+					}
 					WriteChar(')');
 				}
 				else

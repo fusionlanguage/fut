@@ -9434,32 +9434,12 @@ export class GenCCpp extends GenCCppD
 		return call.method.symbol.id == FuId.U_T_F8_GET_STRING;
 	}
 
-	static getStringSubstringPtr(call)
-	{
-		return GenCCpp.isUTF8GetString(call) ? call.arguments_[0] : call.method.left;
-	}
-
-	static getStringSubstringOffset(call)
-	{
-		return call.arguments_[GenCCpp.isUTF8GetString(call) ? 1 : 0];
-	}
-
-	static getStringSubstringLength(call)
-	{
-		return call.arguments_[GenCCpp.isUTF8GetString(call) ? 2 : 1];
-	}
-
-	writeStringPtrAdd(call)
-	{
-		this.writeArrayPtrAdd(GenCCpp.getStringSubstringPtr(call), GenCCpp.getStringSubstringOffset(call));
-	}
-
 	static isTrimSubstring(expr)
 	{
 		let call = GenCCpp.isStringSubstring(expr.right);
 		let leftSymbol;
-		if (call != null && !GenCCpp.isUTF8GetString(call) && (leftSymbol = expr.left) instanceof FuSymbolReference && GenCCpp.getStringSubstringPtr(call).isReferenceTo(leftSymbol.symbol) && GenCCpp.getStringSubstringOffset(call).isLiteralZero())
-			return GenCCpp.getStringSubstringLength(call);
+		if (call != null && !GenCCpp.isUTF8GetString(call) && (leftSymbol = expr.left) instanceof FuSymbolReference && call.method.left.isReferenceTo(leftSymbol.symbol) && call.arguments_[0].isLiteralZero())
+			return call.arguments_[1];
 		return null;
 	}
 
@@ -9690,11 +9670,15 @@ export class GenC extends GenCCpp
 			this.#writeTemporaryOrExpr(expr, FuPriority.ARGUMENT);
 	}
 
-	#writeStringPtrAddCast(call)
+	#writeStringPtrAdd(obj, utf8GetString, args, cast)
 	{
-		if (GenC.isUTF8GetString(call))
-			this.write("(const char *) ");
-		this.writeStringPtrAdd(call);
+		if (utf8GetString) {
+			if (cast)
+				this.write("(const char *) ");
+			this.writeArrayPtrAdd(args[0], args[1]);
+		}
+		else
+			this.writeArrayPtrAdd(obj, args[0]);
 	}
 
 	static #isDictionaryClassStgIndexing(expr)
@@ -9746,9 +9730,9 @@ export class GenC extends GenCCpp
 	{
 		let call = GenC.isStringSubstring(expr);
 		if (call != null) {
-			GenC.getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
+			GenC.#getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
-			this.#writeStringPtrAddCast(call);
+			this.#writeStringPtrAdd(call.method.left, GenC.isUTF8GetString(call), call.arguments_, true);
 		}
 		else {
 			let klass;
@@ -10354,6 +10338,11 @@ export class GenC extends GenCCpp
 			this.writeChar(41);
 	}
 
+	static #getStringSubstringLength(call)
+	{
+		return call.arguments_[GenC.isUTF8GetString(call) ? 2 : 1];
+	}
+
 	#writeStringStorageValue(expr)
 	{
 		let call = GenC.isStringSubstring(expr);
@@ -10361,9 +10350,9 @@ export class GenC extends GenCCpp
 			this.include("string.h");
 			this.#stringSubstring = true;
 			this.write("FuString_Substring(");
-			this.#writeStringPtrAddCast(call);
+			this.#writeStringPtrAdd(call.method.left, GenC.isUTF8GetString(call), call.arguments_, true);
 			this.write(", ");
-			GenC.getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
+			GenC.#getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
 		}
 		else if (expr.isNewString(false))
@@ -11168,7 +11157,7 @@ export class GenC extends GenCCpp
 			this.writeChar(40);
 		this.include("string.h");
 		this.write("memcmp(");
-		this.writeStringPtrAdd(call);
+		this.#writeStringPtrAdd(call.method.left, GenC.isUTF8GetString(call), call.arguments_, false);
 		this.write(", ");
 		this.visitLiteralString(literal);
 		this.write(", ");
@@ -11202,7 +11191,7 @@ export class GenC extends GenCCpp
 			let call = GenC.isStringSubstring(left);
 			let literal;
 			if (call != null && (literal = right) instanceof FuLiteralString) {
-				let lengthExpr = GenC.getStringSubstringLength(call);
+				let lengthExpr = GenC.#getStringSubstringLength(call);
 				let rightLength = literal.getAsciiLength();
 				if (rightLength >= 0) {
 					let rightValue = literal.value;
@@ -13534,12 +13523,13 @@ export class GenCl extends GenC
 		if (GenCl.isUTF8GetString(call)) {
 			this.#bytesEqualsString = true;
 			this.write("FuBytes_Equals(");
+			this.writeArrayPtrAdd(call.arguments_[0], call.arguments_[1]);
 		}
 		else {
 			this.#stringStartsWith = true;
 			this.write("FuString_StartsWith(");
+			this.writeArrayPtrAdd(call.method.left, call.arguments_[0]);
 		}
-		this.writeStringPtrAdd(call);
 		this.write(", ");
 		this.visitLiteralString(literal);
 		this.writeChar(41);
@@ -15325,16 +15315,19 @@ export class GenCpp extends GenCCpp
 		}
 		else {
 			let call = GenCpp.isStringSubstring(expr);
-			if (call != null && type.id == FuId.STRING_STORAGE_TYPE && GenCpp.getStringSubstringPtr(call).type.id != FuId.STRING_STORAGE_TYPE) {
+			if (call != null && type.id == FuId.STRING_STORAGE_TYPE && (GenCpp.isUTF8GetString(call) ? call.arguments_[0] : call.method.left).type.id != FuId.STRING_STORAGE_TYPE) {
 				this.write("std::string(");
-				let cast = GenCpp.isUTF8GetString(call);
-				if (cast)
+				if (GenCpp.isUTF8GetString(call)) {
 					this.write("reinterpret_cast<const char *>(");
-				this.writeStringPtrAdd(call);
-				if (cast)
-					this.writeChar(41);
-				this.write(", ");
-				GenCpp.getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
+					this.writeArrayPtrAdd(call.arguments_[0], call.arguments_[1]);
+					this.write("), ");
+					call.arguments_[2].accept(this, FuPriority.ARGUMENT);
+				}
+				else {
+					this.writeArrayPtrAdd(call.method.left, call.arguments_[0]);
+					this.write(", ");
+					call.arguments_[1].accept(this, FuPriority.ARGUMENT);
+				}
 				this.writeChar(41);
 			}
 			else

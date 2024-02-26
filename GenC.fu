@@ -118,11 +118,15 @@ public class GenC : GenCCpp
 			WriteTemporaryOrExpr(expr, FuPriority.Argument);
 	}
 
-	void WriteStringPtrAddCast!(FuCallExpr call)
+	void WriteStringPtrAdd!(FuExpr? obj, bool utf8GetString, List<FuExpr#> args, bool cast)
 	{
-		if (IsUTF8GetString(call))
-			Write("(const char *) ");
-		WriteStringPtrAdd(call);
+		if (utf8GetString) {
+			if (cast)
+				Write("(const char *) ");
+			WriteArrayPtrAdd(args[0], args[1]);
+		}
+		else
+			WriteArrayPtrAdd(obj, args[0]);
 	}
 
 	static bool IsDictionaryClassStgIndexing(FuExpr expr)
@@ -180,7 +184,7 @@ public class GenC : GenCCpp
 		if (call != null) {
 			GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteStringPtrAddCast(call);
+			WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, true);
 		}
 		else if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 			// TODO: abstract, virtual, override
@@ -773,6 +777,8 @@ public class GenC : GenCCpp
 			WriteChar(')');
 	}
 
+	static FuExpr GetStringSubstringLength(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
+
 	void WriteStringStorageValue!(FuExpr expr)
 	{
 		FuCallExpr? call = IsStringSubstring(expr);
@@ -780,7 +786,7 @@ public class GenC : GenCCpp
 			Include("string.h");
 			this.StringSubstring = true;
 			Write("FuString_Substring(");
-			WriteStringPtrAddCast(call);
+			WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, true);
 			Write(", ");
 			GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 			WriteChar(')');
@@ -1572,7 +1578,7 @@ public class GenC : GenCCpp
 			WriteChar('(');
 		Include("string.h");
 		Write("memcmp(");
-		WriteStringPtrAdd(call);
+		WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, false);
 		Write(", ");
 		VisitLiteralString(literal);
 		Write(", ");

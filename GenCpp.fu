@@ -1578,16 +1578,19 @@ public class GenCpp : GenCCpp
 			FuCallExpr? call = IsStringSubstring(expr);
 			if (call != null
 			 && type.Id == FuId.StringStorageType
-			 && GetStringSubstringPtr(call).Type.Id != FuId.StringStorageType) {
+			 && (IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left).Type.Id != FuId.StringStorageType) {
 				Write("std::string(");
-				bool cast = IsUTF8GetString(call);
-				if (cast)
+				if (IsUTF8GetString(call)) {
 					Write("reinterpret_cast<const char *>(");
-				WriteStringPtrAdd(call);
-				if (cast)
-					WriteChar(')');
-				Write(", ");
-				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
+					WriteArrayPtrAdd(call.Arguments[0], call.Arguments[1]);
+					Write("), ");
+					call.Arguments[2].Accept(this, FuPriority.Argument);
+				}
+				else {
+					WriteArrayPtrAdd(call.Method.Left, call.Arguments[0]);
+					Write(", ");
+					call.Arguments[1].Accept(this, FuPriority.Argument);
+				}
 				WriteChar(')');
 			}
 			else

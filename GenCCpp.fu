@@ -1,6 +1,6 @@
 // GenCCpp.fu - C/C++ code generator
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -154,25 +154,14 @@ public abstract class GenCCpp : GenCCppD
 
 	protected static bool IsUTF8GetString(FuCallExpr call) => call.Method.Symbol.Id == FuId.UTF8GetString;
 
-	protected static FuExpr GetStringSubstringPtr(FuCallExpr call) => IsUTF8GetString(call) ? call.Arguments[0] : call.Method.Left;
-
-	protected static FuExpr GetStringSubstringOffset(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 1 : 0];
-
-	protected static FuExpr GetStringSubstringLength(FuCallExpr call) => call.Arguments[IsUTF8GetString(call) ? 2 : 1];
-
-	protected void WriteStringPtrAdd!(FuCallExpr call)
-	{
-		WriteArrayPtrAdd(GetStringSubstringPtr(call), GetStringSubstringOffset(call));
-	}
-
 	protected static FuExpr? IsTrimSubstring(FuBinaryExpr expr)
 	{
 		FuCallExpr? call = IsStringSubstring(expr.Right);
 		if (call != null
 		 && !IsUTF8GetString(call)
-		 && expr.Left is FuSymbolReference leftSymbol && GetStringSubstringPtr(call).IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
-		 && GetStringSubstringOffset(call).IsLiteralZero())
-			return GetStringSubstringLength(call);
+		 && expr.Left is FuSymbolReference leftSymbol && call.Method.Left.IsReferenceTo(leftSymbol.Symbol) // TODO: more complex expr
+		 && call.Arguments[0].IsLiteralZero())
+			return call.Arguments[1];
 		return null;
 	}
 

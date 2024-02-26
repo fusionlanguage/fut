@@ -8913,32 +8913,12 @@ bool GenCCpp::isUTF8GetString(const FuCallExpr * call)
 	return call->method->symbol->id == FuId::uTF8GetString;
 }
 
-const FuExpr * GenCCpp::getStringSubstringPtr(const FuCallExpr * call)
-{
-	return isUTF8GetString(call) ? call->arguments[0].get() : call->method->left.get();
-}
-
-const FuExpr * GenCCpp::getStringSubstringOffset(const FuCallExpr * call)
-{
-	return call->arguments[isUTF8GetString(call) ? 1 : 0].get();
-}
-
-const FuExpr * GenCCpp::getStringSubstringLength(const FuCallExpr * call)
-{
-	return call->arguments[isUTF8GetString(call) ? 2 : 1].get();
-}
-
-void GenCCpp::writeStringPtrAdd(const FuCallExpr * call)
-{
-	writeArrayPtrAdd(getStringSubstringPtr(call), getStringSubstringOffset(call));
-}
-
 const FuExpr * GenCCpp::isTrimSubstring(const FuBinaryExpr * expr)
 {
 	const FuCallExpr * call = isStringSubstring(expr->right.get());
 	const FuSymbolReference * leftSymbol;
-	if (call != nullptr && !isUTF8GetString(call) && (leftSymbol = dynamic_cast<const FuSymbolReference *>(expr->left.get())) && getStringSubstringPtr(call)->isReferenceTo(leftSymbol->symbol) && getStringSubstringOffset(call)->isLiteralZero())
-		return getStringSubstringLength(call);
+	if (call != nullptr && !isUTF8GetString(call) && (leftSymbol = dynamic_cast<const FuSymbolReference *>(expr->left.get())) && call->method->left->isReferenceTo(leftSymbol->symbol) && call->arguments[0]->isLiteralZero())
+		return call->arguments[1].get();
 	return nullptr;
 }
 
@@ -9139,11 +9119,15 @@ void GenC::writeInterpolatedStringArgBase(const FuExpr * expr)
 		writeTemporaryOrExpr(expr, FuPriority::argument);
 }
 
-void GenC::writeStringPtrAddCast(const FuCallExpr * call)
+void GenC::writeStringPtrAdd(const FuExpr * obj, bool utf8GetString, const std::vector<std::shared_ptr<FuExpr>> * args, bool cast)
 {
-	if (isUTF8GetString(call))
-		write("(const char *) ");
-	writeStringPtrAdd(call);
+	if (utf8GetString) {
+		if (cast)
+			write("(const char *) ");
+		writeArrayPtrAdd((*args)[0].get(), (*args)[1].get());
+	}
+	else
+		writeArrayPtrAdd(obj, (*args)[0].get());
 }
 
 bool GenC::isDictionaryClassStgIndexing(const FuExpr * expr)
@@ -9197,7 +9181,7 @@ void GenC::writeInterpolatedStringArg(const FuExpr * expr)
 	if (call != nullptr) {
 		getStringSubstringLength(call)->accept(this, FuPriority::argument);
 		write(", ");
-		writeStringPtrAddCast(call);
+		writeStringPtrAdd(call->method->left.get(), isUTF8GetString(call), &call->arguments, true);
 	}
 	else {
 		const FuClassType * klass;
@@ -9732,6 +9716,11 @@ void GenC::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, 
 		writeChar(')');
 }
 
+const FuExpr * GenC::getStringSubstringLength(const FuCallExpr * call)
+{
+	return call->arguments[isUTF8GetString(call) ? 2 : 1].get();
+}
+
 void GenC::writeStringStorageValue(const FuExpr * expr)
 {
 	const FuCallExpr * call = isStringSubstring(expr);
@@ -9739,7 +9728,7 @@ void GenC::writeStringStorageValue(const FuExpr * expr)
 		include("string.h");
 		this->stringSubstring = true;
 		write("FuString_Substring(");
-		writeStringPtrAddCast(call);
+		writeStringPtrAdd(call->method->left.get(), isUTF8GetString(call), &call->arguments, true);
 		write(", ");
 		getStringSubstringLength(call)->accept(this, FuPriority::argument);
 		writeChar(')');
@@ -10512,7 +10501,7 @@ void GenC::writeSubstringEqual(const FuCallExpr * call, std::string_view literal
 		writeChar('(');
 	include("string.h");
 	write("memcmp(");
-	writeStringPtrAdd(call);
+	writeStringPtrAdd(call->method->left.get(), isUTF8GetString(call), &call->arguments, false);
 	write(", ");
 	visitLiteralString(literal);
 	write(", ");
@@ -12856,12 +12845,13 @@ void GenCl::writeSubstringEqual(const FuCallExpr * call, std::string_view litera
 	if (isUTF8GetString(call)) {
 		this->bytesEqualsString = true;
 		write("FuBytes_Equals(");
+		writeArrayPtrAdd(call->arguments[0].get(), call->arguments[1].get());
 	}
 	else {
 		this->stringStartsWith = true;
 		write("FuString_StartsWith(");
+		writeArrayPtrAdd(call->method->left.get(), call->arguments[0].get());
 	}
-	writeStringPtrAdd(call);
 	write(", ");
 	visitLiteralString(literal);
 	writeChar(')');
@@ -14544,16 +14534,19 @@ void GenCpp::writeStronglyCoerced(const FuType * type, const FuExpr * expr)
 	}
 	else {
 		const FuCallExpr * call = isStringSubstring(expr);
-		if (call != nullptr && type->id == FuId::stringStorageType && getStringSubstringPtr(call)->type->id != FuId::stringStorageType) {
+		if (call != nullptr && type->id == FuId::stringStorageType && (isUTF8GetString(call) ? call->arguments[0] : call->method->left)->type->id != FuId::stringStorageType) {
 			write("std::string(");
-			bool cast = isUTF8GetString(call);
-			if (cast)
+			if (isUTF8GetString(call)) {
 				write("reinterpret_cast<const char *>(");
-			writeStringPtrAdd(call);
-			if (cast)
-				writeChar(')');
-			write(", ");
-			getStringSubstringLength(call)->accept(this, FuPriority::argument);
+				writeArrayPtrAdd(call->arguments[0].get(), call->arguments[1].get());
+				write("), ");
+				call->arguments[2]->accept(this, FuPriority::argument);
+			}
+			else {
+				writeArrayPtrAdd(call->method->left.get(), call->arguments[0].get());
+				write(", ");
+				call->arguments[1]->accept(this, FuPriority::argument);
+			}
 			writeChar(')');
 		}
 		else

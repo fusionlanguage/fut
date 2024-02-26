@@ -1,6 +1,6 @@
 // GenCl.fu - OpenCL C code generator
 //
-// Copyright (C) 2020-2023  Piotr Fusik
+// Copyright (C) 2020-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -133,12 +133,13 @@ public class GenCl : GenC
 		if (IsUTF8GetString(call)) {
 			this.BytesEqualsString = true;
 			Write("FuBytes_Equals(");
+			WriteArrayPtrAdd(call.Arguments[0], call.Arguments[1]);
 		}
 		else {
 			this.StringStartsWith = true;
 			Write("FuString_StartsWith(");
+			WriteArrayPtrAdd(call.Method.Left, call.Arguments[0]);
 		}
-		WriteStringPtrAdd(call);
 		Write(", ");
 		VisitLiteralString(literal);
 		WriteChar(')');
