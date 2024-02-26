@@ -9119,15 +9119,15 @@ void GenC::writeInterpolatedStringArgBase(const FuExpr * expr)
 		writeTemporaryOrExpr(expr, FuPriority::argument);
 }
 
-void GenC::writeStringPtrAdd(const FuExpr * obj, bool utf8GetString, const std::vector<std::shared_ptr<FuExpr>> * args, bool cast)
+void GenC::writeStringPtrAdd(const FuCallExpr * call, bool cast)
 {
-	if (utf8GetString) {
+	if (isUTF8GetString(call)) {
 		if (cast)
 			write("(const char *) ");
-		writeArrayPtrAdd((*args)[0].get(), (*args)[1].get());
+		writeArrayPtrAdd(call->arguments[0].get(), call->arguments[1].get());
 	}
 	else
-		writeArrayPtrAdd(obj, (*args)[0].get());
+		writeArrayPtrAdd(call->method->left.get(), call->arguments[0].get());
 }
 
 bool GenC::isDictionaryClassStgIndexing(const FuExpr * expr)
@@ -9181,7 +9181,7 @@ void GenC::writeInterpolatedStringArg(const FuExpr * expr)
 	if (call != nullptr) {
 		getStringSubstringLength(call)->accept(this, FuPriority::argument);
 		write(", ");
-		writeStringPtrAdd(call->method->left.get(), isUTF8GetString(call), &call->arguments, true);
+		writeStringPtrAdd(call, true);
 	}
 	else {
 		const FuClassType * klass;
@@ -9723,17 +9723,7 @@ const FuExpr * GenC::getStringSubstringLength(const FuCallExpr * call)
 
 void GenC::writeStringStorageValue(const FuExpr * expr)
 {
-	const FuCallExpr * call = isStringSubstring(expr);
-	if (call != nullptr) {
-		include("string.h");
-		this->stringSubstring = true;
-		write("FuString_Substring(");
-		writeStringPtrAdd(call->method->left.get(), isUTF8GetString(call), &call->arguments, true);
-		write(", ");
-		getStringSubstringLength(call)->accept(this, FuPriority::argument);
-		writeChar(')');
-	}
-	else if (expr->isNewString(false))
+	if (expr->isNewString(false))
 		expr->accept(this, FuPriority::argument);
 	else {
 		include("string.h");
@@ -10501,7 +10491,7 @@ void GenC::writeSubstringEqual(const FuCallExpr * call, std::string_view literal
 		writeChar('(');
 	include("string.h");
 	write("memcmp(");
-	writeStringPtrAdd(call->method->left.get(), isUTF8GetString(call), &call->arguments, false);
+	writeStringPtrAdd(call, false);
 	write(", ");
 	visitLiteralString(literal);
 	write(", ");
@@ -10852,17 +10842,14 @@ void GenC::writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<F
 	writeChar(')');
 }
 
-void GenC::writeStringSubstring(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenC::writeStringSubstringStart(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
-	if (std::ssize(*args) == 1) {
-		if (parent > FuPriority::add)
-			writeChar('(');
-		writeAdd(obj, (*args)[0].get());
-		if (parent > FuPriority::add)
-			writeChar(')');
-	}
-	else
-		notSupported(obj, "Substring");
+	assert(std::ssize(*args) == 1);
+	if (parent > FuPriority::add)
+		writeChar('(');
+	writeAdd(obj, (*args)[0].get());
+	if (parent > FuPriority::add)
+		writeChar(')');
 }
 
 void GenC::startArrayContains(const FuExpr * obj)
@@ -10988,7 +10975,17 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			break;
 		}
 	case FuId::stringSubstring:
-		writeStringSubstring(obj, args, parent);
+		if (std::ssize(*args) == 1)
+			writeStringSubstringStart(obj, args, parent);
+		else {
+			include("string.h");
+			this->stringSubstring = true;
+			write("FuString_Substring(");
+			writeArrayPtrAdd(obj, (*args)[0].get());
+			write(", ");
+			(*args)[1]->accept(this, FuPriority::argument);
+			writeChar(')');
+		}
 		break;
 	case FuId::stringToLower:
 		writeGlib("g_utf8_strdown(");
@@ -11295,6 +11292,15 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write(", strlen(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write("))");
+		break;
+	case FuId::uTF8GetString:
+		include("string.h");
+		this->stringSubstring = true;
+		write("FuString_Substring((const char *) ");
+		writeArrayPtrAdd((*args)[0].get(), (*args)[1].get());
+		write(", ");
+		(*args)[2]->accept(this, FuPriority::argument);
+		writeChar(')');
 		break;
 	case FuId::environmentGetEnvironmentVariable:
 		writeCall("getenv", (*args)[0].get());
@@ -12913,7 +12919,10 @@ void GenCl::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 			break;
 		}
 	case FuId::stringSubstring:
-		writeStringSubstring(obj, args, parent);
+		if (std::ssize(*args) == 1)
+			writeStringSubstringStart(obj, args, parent);
+		else
+			notSupported(obj, "Substring");
 		break;
 	case FuId::arrayCopyTo:
 		write("for (size_t _i = 0; _i < ");

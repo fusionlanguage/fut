@@ -9670,15 +9670,15 @@ export class GenC extends GenCCpp
 			this.#writeTemporaryOrExpr(expr, FuPriority.ARGUMENT);
 	}
 
-	#writeStringPtrAdd(obj, utf8GetString, args, cast)
+	#writeStringPtrAdd(call, cast)
 	{
-		if (utf8GetString) {
+		if (GenC.isUTF8GetString(call)) {
 			if (cast)
 				this.write("(const char *) ");
-			this.writeArrayPtrAdd(args[0], args[1]);
+			this.writeArrayPtrAdd(call.arguments_[0], call.arguments_[1]);
 		}
 		else
-			this.writeArrayPtrAdd(obj, args[0]);
+			this.writeArrayPtrAdd(call.method.left, call.arguments_[0]);
 	}
 
 	static #isDictionaryClassStgIndexing(expr)
@@ -9732,7 +9732,7 @@ export class GenC extends GenCCpp
 		if (call != null) {
 			GenC.#getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
-			this.#writeStringPtrAdd(call.method.left, GenC.isUTF8GetString(call), call.arguments_, true);
+			this.#writeStringPtrAdd(call, true);
 		}
 		else {
 			let klass;
@@ -10345,17 +10345,7 @@ export class GenC extends GenCCpp
 
 	#writeStringStorageValue(expr)
 	{
-		let call = GenC.isStringSubstring(expr);
-		if (call != null) {
-			this.include("string.h");
-			this.#stringSubstring = true;
-			this.write("FuString_Substring(");
-			this.#writeStringPtrAdd(call.method.left, GenC.isUTF8GetString(call), call.arguments_, true);
-			this.write(", ");
-			GenC.#getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
-		}
-		else if (expr.isNewString(false))
+		if (expr.isNewString(false))
 			expr.accept(this, FuPriority.ARGUMENT);
 		else {
 			this.include("string.h");
@@ -11157,7 +11147,7 @@ export class GenC extends GenCCpp
 			this.writeChar(40);
 		this.include("string.h");
 		this.write("memcmp(");
-		this.#writeStringPtrAdd(call.method.left, GenC.isUTF8GetString(call), call.arguments_, false);
+		this.#writeStringPtrAdd(call, false);
 		this.write(", ");
 		this.visitLiteralString(literal);
 		this.write(", ");
@@ -11517,17 +11507,14 @@ export class GenC extends GenCCpp
 		this.writeChar(41);
 	}
 
-	writeStringSubstring(obj, args, parent)
+	writeStringSubstringStart(obj, args, parent)
 	{
-		if (args.length == 1) {
-			if (parent > FuPriority.ADD)
-				this.writeChar(40);
-			this.writeAdd(obj, args[0]);
-			if (parent > FuPriority.ADD)
-				this.writeChar(41);
-		}
-		else
-			this.notSupported(obj, "Substring");
+		console.assert(args.length == 1);
+		if (parent > FuPriority.ADD)
+			this.writeChar(40);
+		this.writeAdd(obj, args[0]);
+		if (parent > FuPriority.ADD)
+			this.writeChar(41);
 	}
 
 	#startArrayContains(obj)
@@ -11649,7 +11636,17 @@ export class GenC extends GenCCpp
 				this.writeChar(41);
 			break;
 		case FuId.STRING_SUBSTRING:
-			this.writeStringSubstring(obj, args, parent);
+			if (args.length == 1)
+				this.writeStringSubstringStart(obj, args, parent);
+			else {
+				this.include("string.h");
+				this.#stringSubstring = true;
+				this.write("FuString_Substring(");
+				this.writeArrayPtrAdd(obj, args[0]);
+				this.write(", ");
+				args[1].accept(this, FuPriority.ARGUMENT);
+				this.writeChar(41);
+			}
 			break;
 		case FuId.STRING_TO_LOWER:
 			this.#writeGlib("g_utf8_strdown(");
@@ -11942,6 +11939,15 @@ export class GenC extends GenCCpp
 			this.write(", strlen(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write("))");
+			break;
+		case FuId.U_T_F8_GET_STRING:
+			this.include("string.h");
+			this.#stringSubstring = true;
+			this.write("FuString_Substring((const char *) ");
+			this.writeArrayPtrAdd(args[0], args[1]);
+			this.write(", ");
+			args[2].accept(this, FuPriority.ARGUMENT);
+			this.writeChar(41);
 			break;
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			this.writeCall("getenv", args[0]);
@@ -13592,7 +13598,10 @@ export class GenCl extends GenC
 			}
 			break;
 		case FuId.STRING_SUBSTRING:
-			this.writeStringSubstring(obj, args, parent);
+			if (args.length == 1)
+				this.writeStringSubstringStart(obj, args, parent);
+			else
+				this.notSupported(obj, "Substring");
 			break;
 		case FuId.ARRAY_COPY_TO:
 			this.write("for (size_t _i = 0; _i < ");

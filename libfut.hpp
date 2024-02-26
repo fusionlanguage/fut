@@ -2079,7 +2079,7 @@ protected:
 	void writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writePrintfNotInterpolated(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCCall(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeStringSubstring(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent);
+	void writeStringSubstringStart(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent);
 	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
@@ -2137,7 +2137,7 @@ private:
 	std::set<FuId> compares;
 	std::set<FuId> contains;
 	std::vector<const FuVar *> varsToDestruct;
-	void writeStringPtrAdd(const FuExpr * obj, bool utf8GetString, const std::vector<std::shared_ptr<FuExpr>> * args, bool cast);
+	void writeStringPtrAdd(const FuCallExpr * call, bool cast);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
 	void writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);

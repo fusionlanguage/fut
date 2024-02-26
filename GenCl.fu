@@ -199,7 +199,10 @@ public class GenCl : GenC
 			}
 			break;
 		case FuId.StringSubstring:
-			WriteStringSubstring(obj, args, parent);
+			if (args.Count == 1)
+				WriteStringSubstringStart(obj, args, parent);
+			else
+				NotSupported(obj, "Substring");
 			break;
 		case FuId.ArrayCopyTo:
 			Write("for (size_t _i = 0; _i < ");

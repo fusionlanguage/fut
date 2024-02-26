@@ -9344,15 +9344,15 @@ namespace Fusion
 				WriteTemporaryOrExpr(expr, FuPriority.Argument);
 		}
 
-		void WriteStringPtrAdd(FuExpr obj, bool utf8GetString, List<FuExpr> args, bool cast)
+		void WriteStringPtrAdd(FuCallExpr call, bool cast)
 		{
-			if (utf8GetString) {
+			if (IsUTF8GetString(call)) {
 				if (cast)
 					Write("(const char *) ");
-				WriteArrayPtrAdd(args[0], args[1]);
+				WriteArrayPtrAdd(call.Arguments[0], call.Arguments[1]);
 			}
 			else
-				WriteArrayPtrAdd(obj, args[0]);
+				WriteArrayPtrAdd(call.Method.Left, call.Arguments[0]);
 		}
 
 		static bool IsDictionaryClassStgIndexing(FuExpr expr)
@@ -9405,7 +9405,7 @@ namespace Fusion
 			if (call != null) {
 				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, true);
+				WriteStringPtrAdd(call, true);
 			}
 			else if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 				Write(this.Namespace);
@@ -10000,17 +10000,7 @@ namespace Fusion
 
 		void WriteStringStorageValue(FuExpr expr)
 		{
-			FuCallExpr call = IsStringSubstring(expr);
-			if (call != null) {
-				Include("string.h");
-				this.StringSubstring = true;
-				Write("FuString_Substring(");
-				WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, true);
-				Write(", ");
-				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
-				WriteChar(')');
-			}
-			else if (expr.IsNewString(false))
+			if (expr.IsNewString(false))
 				expr.Accept(this, FuPriority.Argument);
 			else {
 				Include("string.h");
@@ -10782,7 +10772,7 @@ namespace Fusion
 				WriteChar('(');
 			Include("string.h");
 			Write("memcmp(");
-			WriteStringPtrAdd(call.Method.Left, IsUTF8GetString(call), call.Arguments, false);
+			WriteStringPtrAdd(call, false);
 			Write(", ");
 			VisitLiteralString(literal);
 			Write(", ");
@@ -11132,17 +11122,14 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		protected void WriteStringSubstring(FuExpr obj, List<FuExpr> args, FuPriority parent)
+		protected void WriteStringSubstringStart(FuExpr obj, List<FuExpr> args, FuPriority parent)
 		{
-			if (args.Count == 1) {
-				if (parent > FuPriority.Add)
-					WriteChar('(');
-				WriteAdd(obj, args[0]);
-				if (parent > FuPriority.Add)
-					WriteChar(')');
-			}
-			else
-				NotSupported(obj, "Substring");
+			Debug.Assert(args.Count == 1);
+			if (parent > FuPriority.Add)
+				WriteChar('(');
+			WriteAdd(obj, args[0]);
+			if (parent > FuPriority.Add)
+				WriteChar(')');
 		}
 
 		void StartArrayContains(FuExpr obj)
@@ -11264,7 +11251,17 @@ namespace Fusion
 					WriteChar(')');
 				break;
 			case FuId.StringSubstring:
-				WriteStringSubstring(obj, args, parent);
+				if (args.Count == 1)
+					WriteStringSubstringStart(obj, args, parent);
+				else {
+					Include("string.h");
+					this.StringSubstring = true;
+					Write("FuString_Substring(");
+					WriteArrayPtrAdd(obj, args[0]);
+					Write(", ");
+					args[1].Accept(this, FuPriority.Argument);
+					WriteChar(')');
+				}
 				break;
 			case FuId.StringToLower:
 				WriteGlib("g_utf8_strdown(");
@@ -11555,6 +11552,15 @@ namespace Fusion
 				Write(", strlen(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write("))");
+				break;
+			case FuId.UTF8GetString:
+				Include("string.h");
+				this.StringSubstring = true;
+				Write("FuString_Substring((const char *) ");
+				WriteArrayPtrAdd(args[0], args[1]);
+				Write(", ");
+				args[2].Accept(this, FuPriority.Argument);
+				WriteChar(')');
 				break;
 			case FuId.EnvironmentGetEnvironmentVariable:
 				WriteCall("getenv", args[0]);
@@ -13171,7 +13177,10 @@ namespace Fusion
 				}
 				break;
 			case FuId.StringSubstring:
-				WriteStringSubstring(obj, args, parent);
+				if (args.Count == 1)
+					WriteStringSubstringStart(obj, args, parent);
+				else
+					NotSupported(obj, "Substring");
 				break;
 			case FuId.ArrayCopyTo:
 				Write("for (size_t _i = 0; _i < ");
