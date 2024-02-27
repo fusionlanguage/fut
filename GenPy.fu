@@ -484,9 +484,6 @@ public class GenPy : GenPySwift
 		case FuId.OrderedDictionaryCount:
 			WriteStringLength(expr.Left);
 			break;
-		case FuId.JsonElementValueKind:
-			WriteCall("JsonValueKind.get", expr.Left);
-			break;
 		case FuId.MathNaN:
 			Include("math");
 			Write("math.nan");
@@ -795,6 +792,15 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
+	void WriteJsonElementIs!(FuExpr obj, string name)
+	{
+		Write("isinstance(");
+		obj.Accept(this, FuPriority.Argument);
+		Write(", ");
+		Write(name);
+		WriteChar(')');
+	}
+
 	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
@@ -1066,8 +1072,30 @@ public class GenPy : GenPySwift
 			break;
 		case FuId.JsonElementParse:
 			Include("json");
-			obj.Accept(this, FuPriority.Assign);
-			WriteCall(" = json.loads", args[0]);
+			WriteCall("json.loads", args[0]);
+			break;
+		case FuId.JsonElementIsObject:
+			WriteJsonElementIs(obj, "dict");
+			break;
+		case FuId.JsonElementIsArray:
+			WriteJsonElementIs(obj, "list");
+			break;
+		case FuId.JsonElementIsString:
+			WriteJsonElementIs(obj, "str");
+			break;
+		case FuId.JsonElementIsNumber:
+			WriteJsonElementIs(obj, "float");
+			break;
+		case FuId.JsonElementIsBoolean:
+			WriteJsonElementIs(obj, "bool");
+			break;
+		case FuId.JsonElementIsNull:
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			obj.Accept(this, FuPriority.Equality);
+			Write(" is None");
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
 			break;
 		case FuId.JsonElementGetObject:
 		case FuId.JsonElementGetArray:
@@ -1590,41 +1618,6 @@ public class GenPy : GenPySwift
 		this.WrittenTypes.Clear();
 		this.SwitchBreak = false;
 		OpenStringWriter();
-		if (program.JsonValueKindEnum) {
-			WriteNewLine();
-			Include("enum");
-			Write("class JsonValueKind(enum.Enum)");
-			OpenChild();
-			WriteLine("OBJECT = 1");
-			WriteLine("ARRAY = 2");
-			WriteLine("STRING = 3");
-			WriteLine("NUMBER = 4");
-			WriteLine("TRUE = 5");
-			WriteLine("FALSE = 6");
-			WriteLine("NULL = 7");
-			WriteLine("@staticmethod");
-			Write("def get(e)");
-			OpenChild();
-			Write("match e");
-			OpenChild();
-			WriteLine("case dict():");
-			WriteLine("\treturn JsonValueKind.OBJECT");
-			WriteLine("case list():");
-			WriteLine("\treturn JsonValueKind.ARRAY");
-			WriteLine("case str():");
-			WriteLine("\treturn JsonValueKind.STRING");
-			WriteLine("case float():");
-			WriteLine("\treturn JsonValueKind.NUMBER");
-			WriteLine("case True:");
-			WriteLine("\treturn JsonValueKind.TRUE");
-			WriteLine("case False:");
-			WriteLine("\treturn JsonValueKind.FALSE");
-			WriteLine("case None:");
-			WriteLine("\treturn JsonValueKind.NULL");
-			CloseChild();
-			CloseChild();
-			CloseChild();
-		}
 		WriteTypes(program);
 		CreateOutputFile();
 		WriteTopLevelNatives(program);

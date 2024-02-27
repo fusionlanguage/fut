@@ -406,9 +406,6 @@ public class GenJsNoModule : GenBase
 		case FuId.MatchValue:
 			WritePostfix(expr.Left, "[0]");
 			break;
-		case FuId.JsonElementValueKind:
-			WriteCall("JsonValueKind.get", expr.Left);
-			break;
 		case FuId.MathNaN:
 			Write("NaN");
 			break;
@@ -504,6 +501,19 @@ public class GenJsNoModule : GenBase
 			WriteRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 			WriteChar(')');
 		}
+	}
+
+	void WriteTypeofEquals!(FuExpr obj, string name, FuPriority parent)
+	{
+		if (parent > FuPriority.Equality)
+			WriteChar('(');
+		Write("typeof(");
+		obj.Accept(this, FuPriority.Argument);
+		Write(") == \"");
+		Write(name);
+		WriteChar('"');
+		if (parent > FuPriority.Equality)
+			WriteChar(')');
 	}
 
 	static bool HasLong(List<FuExpr#> args) => args.Any(arg => arg.Type.Id == FuId.LongType);
@@ -851,8 +861,34 @@ public class GenJsNoModule : GenBase
 			WriteIndexing(obj, args[0]);
 			break;
 		case FuId.JsonElementParse:
-			obj.Accept(this, FuPriority.Assign);
-			WriteCall(" = JSON.parse", args[0]);
+			WriteCall("JSON.parse", args[0]);
+			break;
+		case FuId.JsonElementIsObject:
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			WritePostfix(obj, "?.constructor == Object");
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
+			break;
+		case FuId.JsonElementIsArray:
+			WriteCall("Array.isArray", obj);
+			break;
+		case FuId.JsonElementIsString:
+			WriteTypeofEquals(obj, "string", parent);
+			break;
+		case FuId.JsonElementIsNumber:
+			WriteTypeofEquals(obj, "number", parent);
+			break;
+		case FuId.JsonElementIsBoolean:
+			WriteTypeofEquals(obj, "boolean", parent);
+			break;
+		case FuId.JsonElementIsNull:
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			obj.Accept(this, FuPriority.Equality);
+			Write(" === null");
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
 			break;
 		case FuId.JsonElementGetObject:
 		case FuId.JsonElementGetArray:
@@ -1332,33 +1368,6 @@ public class GenJsNoModule : GenBase
 
 	protected void WriteLib!(FuProgram program)
 	{
-		if (program.JsonValueKindEnum) {
-			WriteNewLine();
-			Write("const JsonValueKind = ");
-			OpenBlock();
-			WriteLine("OBJECT : 1,");
-			WriteLine("ARRAY : 2,");
-			WriteLine("STRING : 3,");
-			WriteLine("NUMBER : 4,");
-			WriteLine("TRUE : 5,");
-			WriteLine("FALSE : 6,");
-			WriteLine("NULL : 7,");
-			Write("get : e => ");
-			OpenBlock();
-			Write("switch (typeof(e)) ");
-			OpenBlock();
-			WriteLine("case \"string\":");
-			WriteLine("\treturn JsonValueKind.STRING;");
-			WriteLine("case \"number\":");
-			WriteLine("\treturn JsonValueKind.NUMBER;");
-			WriteLine("case \"boolean\":");
-			WriteLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
-			WriteLine("default:");
-			WriteLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
-			CloseBlock();
-			CloseBlock();
-			CloseBlock();
-		}
 		if (this.StringWriter) {
 			WriteNewLine();
 			WriteLine("class StringWriter");

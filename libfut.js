@@ -1299,141 +1299,137 @@ export const FuId = {
 	REGEX_OPTIONS_ENUM : 34,
 	REGEX_CLASS : 35,
 	MATCH_CLASS : 36,
-	JSON_VALUE_KIND_ENUM : 37,
-	JSON_ELEMENT_CLASS : 38,
-	LOCK_CLASS : 39,
-	STRING_LENGTH : 40,
-	ARRAY_LENGTH : 41,
-	CONSOLE_ERROR : 42,
-	MAIN : 43,
-	CLASS_TO_STRING : 44,
-	MATCH_START : 45,
-	MATCH_END : 46,
-	MATCH_LENGTH : 47,
-	MATCH_VALUE : 48,
-	JSON_VALUE_KIND_OBJECT : 49,
-	JSON_VALUE_KIND_ARRAY : 50,
-	JSON_VALUE_KIND_STRING : 51,
-	JSON_VALUE_KIND_NUMBER : 52,
-	JSON_VALUE_KIND_TRUE : 53,
-	JSON_VALUE_KIND_FALSE : 54,
-	JSON_VALUE_KIND_NULL : 55,
-	JSON_ELEMENT_VALUE_KIND : 56,
-	MATH_NA_N : 57,
-	MATH_NEGATIVE_INFINITY : 58,
-	MATH_POSITIVE_INFINITY : 59,
-	ENUM_FROM_INT : 60,
-	ENUM_HAS_FLAG : 61,
-	INT_TRY_PARSE : 62,
-	LONG_TRY_PARSE : 63,
-	DOUBLE_TRY_PARSE : 64,
-	STRING_CONTAINS : 65,
-	STRING_ENDS_WITH : 66,
-	STRING_INDEX_OF : 67,
-	STRING_LAST_INDEX_OF : 68,
-	STRING_REPLACE : 69,
-	STRING_STARTS_WITH : 70,
-	STRING_SUBSTRING : 71,
-	STRING_TO_LOWER : 72,
-	STRING_TO_UPPER : 73,
-	ARRAY_BINARY_SEARCH_ALL : 74,
-	ARRAY_BINARY_SEARCH_PART : 75,
-	ARRAY_CONTAINS : 76,
-	ARRAY_COPY_TO : 77,
-	ARRAY_FILL_ALL : 78,
-	ARRAY_FILL_PART : 79,
-	ARRAY_SORT_ALL : 80,
-	ARRAY_SORT_PART : 81,
-	LIST_ADD : 82,
-	LIST_ADD_RANGE : 83,
-	LIST_ALL : 84,
-	LIST_ANY : 85,
-	LIST_CLEAR : 86,
-	LIST_CONTAINS : 87,
-	LIST_COPY_TO : 88,
-	LIST_COUNT : 89,
-	LIST_INDEX_OF : 90,
-	LIST_INSERT : 91,
-	LIST_LAST : 92,
-	LIST_REMOVE_AT : 93,
-	LIST_REMOVE_RANGE : 94,
-	LIST_SORT_ALL : 95,
-	LIST_SORT_PART : 96,
-	QUEUE_CLEAR : 97,
-	QUEUE_COUNT : 98,
-	QUEUE_DEQUEUE : 99,
-	QUEUE_ENQUEUE : 100,
-	QUEUE_PEEK : 101,
-	STACK_CLEAR : 102,
-	STACK_COUNT : 103,
-	STACK_PEEK : 104,
-	STACK_PUSH : 105,
-	STACK_POP : 106,
-	HASH_SET_ADD : 107,
-	HASH_SET_CLEAR : 108,
-	HASH_SET_CONTAINS : 109,
-	HASH_SET_COUNT : 110,
-	HASH_SET_REMOVE : 111,
-	SORTED_SET_ADD : 112,
-	SORTED_SET_CLEAR : 113,
-	SORTED_SET_CONTAINS : 114,
-	SORTED_SET_COUNT : 115,
-	SORTED_SET_REMOVE : 116,
-	DICTIONARY_ADD : 117,
-	DICTIONARY_CLEAR : 118,
-	DICTIONARY_CONTAINS_KEY : 119,
-	DICTIONARY_COUNT : 120,
-	DICTIONARY_REMOVE : 121,
-	SORTED_DICTIONARY_CLEAR : 122,
-	SORTED_DICTIONARY_CONTAINS_KEY : 123,
-	SORTED_DICTIONARY_COUNT : 124,
-	SORTED_DICTIONARY_REMOVE : 125,
-	ORDERED_DICTIONARY_CLEAR : 126,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 127,
-	ORDERED_DICTIONARY_COUNT : 128,
-	ORDERED_DICTIONARY_REMOVE : 129,
-	TEXT_WRITER_WRITE : 130,
-	TEXT_WRITER_WRITE_CHAR : 131,
-	TEXT_WRITER_WRITE_CODE_POINT : 132,
-	TEXT_WRITER_WRITE_LINE : 133,
-	CONSOLE_WRITE : 134,
-	CONSOLE_WRITE_LINE : 135,
-	STRING_WRITER_CLEAR : 136,
-	STRING_WRITER_TO_STRING : 137,
-	CONVERT_TO_BASE64_STRING : 138,
-	U_T_F8_GET_BYTE_COUNT : 139,
-	U_T_F8_GET_BYTES : 140,
-	U_T_F8_GET_STRING : 141,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 142,
-	REGEX_COMPILE : 143,
-	REGEX_ESCAPE : 144,
-	REGEX_IS_MATCH_STR : 145,
-	REGEX_IS_MATCH_REGEX : 146,
-	MATCH_FIND_STR : 147,
-	MATCH_FIND_REGEX : 148,
-	MATCH_GET_CAPTURE : 149,
-	JSON_ELEMENT_PARSE : 150,
-	JSON_ELEMENT_TRY_PARSE : 151,
-	JSON_ELEMENT_GET_OBJECT : 152,
-	JSON_ELEMENT_GET_ARRAY : 153,
-	JSON_ELEMENT_GET_STRING : 154,
-	JSON_ELEMENT_GET_DOUBLE : 155,
-	JSON_ELEMENT_GET_BOOLEAN : 156,
-	MATH_METHOD : 157,
-	MATH_ABS : 158,
-	MATH_CEILING : 159,
-	MATH_CLAMP : 160,
-	MATH_FUSED_MULTIPLY_ADD : 161,
-	MATH_IS_FINITE : 162,
-	MATH_IS_INFINITY : 163,
-	MATH_IS_NA_N : 164,
-	MATH_LOG2 : 165,
-	MATH_MAX_INT : 166,
-	MATH_MAX_DOUBLE : 167,
-	MATH_MIN_INT : 168,
-	MATH_MIN_DOUBLE : 169,
-	MATH_ROUND : 170,
-	MATH_TRUNCATE : 171
+	JSON_ELEMENT_CLASS : 37,
+	LOCK_CLASS : 38,
+	STRING_LENGTH : 39,
+	ARRAY_LENGTH : 40,
+	CONSOLE_ERROR : 41,
+	MAIN : 42,
+	CLASS_TO_STRING : 43,
+	MATCH_START : 44,
+	MATCH_END : 45,
+	MATCH_LENGTH : 46,
+	MATCH_VALUE : 47,
+	MATH_NA_N : 48,
+	MATH_NEGATIVE_INFINITY : 49,
+	MATH_POSITIVE_INFINITY : 50,
+	ENUM_FROM_INT : 51,
+	ENUM_HAS_FLAG : 52,
+	INT_TRY_PARSE : 53,
+	LONG_TRY_PARSE : 54,
+	DOUBLE_TRY_PARSE : 55,
+	STRING_CONTAINS : 56,
+	STRING_ENDS_WITH : 57,
+	STRING_INDEX_OF : 58,
+	STRING_LAST_INDEX_OF : 59,
+	STRING_REPLACE : 60,
+	STRING_STARTS_WITH : 61,
+	STRING_SUBSTRING : 62,
+	STRING_TO_LOWER : 63,
+	STRING_TO_UPPER : 64,
+	ARRAY_BINARY_SEARCH_ALL : 65,
+	ARRAY_BINARY_SEARCH_PART : 66,
+	ARRAY_CONTAINS : 67,
+	ARRAY_COPY_TO : 68,
+	ARRAY_FILL_ALL : 69,
+	ARRAY_FILL_PART : 70,
+	ARRAY_SORT_ALL : 71,
+	ARRAY_SORT_PART : 72,
+	LIST_ADD : 73,
+	LIST_ADD_RANGE : 74,
+	LIST_ALL : 75,
+	LIST_ANY : 76,
+	LIST_CLEAR : 77,
+	LIST_CONTAINS : 78,
+	LIST_COPY_TO : 79,
+	LIST_COUNT : 80,
+	LIST_INDEX_OF : 81,
+	LIST_INSERT : 82,
+	LIST_LAST : 83,
+	LIST_REMOVE_AT : 84,
+	LIST_REMOVE_RANGE : 85,
+	LIST_SORT_ALL : 86,
+	LIST_SORT_PART : 87,
+	QUEUE_CLEAR : 88,
+	QUEUE_COUNT : 89,
+	QUEUE_DEQUEUE : 90,
+	QUEUE_ENQUEUE : 91,
+	QUEUE_PEEK : 92,
+	STACK_CLEAR : 93,
+	STACK_COUNT : 94,
+	STACK_PEEK : 95,
+	STACK_PUSH : 96,
+	STACK_POP : 97,
+	HASH_SET_ADD : 98,
+	HASH_SET_CLEAR : 99,
+	HASH_SET_CONTAINS : 100,
+	HASH_SET_COUNT : 101,
+	HASH_SET_REMOVE : 102,
+	SORTED_SET_ADD : 103,
+	SORTED_SET_CLEAR : 104,
+	SORTED_SET_CONTAINS : 105,
+	SORTED_SET_COUNT : 106,
+	SORTED_SET_REMOVE : 107,
+	DICTIONARY_ADD : 108,
+	DICTIONARY_CLEAR : 109,
+	DICTIONARY_CONTAINS_KEY : 110,
+	DICTIONARY_COUNT : 111,
+	DICTIONARY_REMOVE : 112,
+	SORTED_DICTIONARY_CLEAR : 113,
+	SORTED_DICTIONARY_CONTAINS_KEY : 114,
+	SORTED_DICTIONARY_COUNT : 115,
+	SORTED_DICTIONARY_REMOVE : 116,
+	ORDERED_DICTIONARY_CLEAR : 117,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 118,
+	ORDERED_DICTIONARY_COUNT : 119,
+	ORDERED_DICTIONARY_REMOVE : 120,
+	TEXT_WRITER_WRITE : 121,
+	TEXT_WRITER_WRITE_CHAR : 122,
+	TEXT_WRITER_WRITE_CODE_POINT : 123,
+	TEXT_WRITER_WRITE_LINE : 124,
+	CONSOLE_WRITE : 125,
+	CONSOLE_WRITE_LINE : 126,
+	STRING_WRITER_CLEAR : 127,
+	STRING_WRITER_TO_STRING : 128,
+	CONVERT_TO_BASE64_STRING : 129,
+	U_T_F8_GET_BYTE_COUNT : 130,
+	U_T_F8_GET_BYTES : 131,
+	U_T_F8_GET_STRING : 132,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 133,
+	REGEX_COMPILE : 134,
+	REGEX_ESCAPE : 135,
+	REGEX_IS_MATCH_STR : 136,
+	REGEX_IS_MATCH_REGEX : 137,
+	MATCH_FIND_STR : 138,
+	MATCH_FIND_REGEX : 139,
+	MATCH_GET_CAPTURE : 140,
+	JSON_ELEMENT_PARSE : 141,
+	JSON_ELEMENT_IS_OBJECT : 142,
+	JSON_ELEMENT_IS_ARRAY : 143,
+	JSON_ELEMENT_IS_STRING : 144,
+	JSON_ELEMENT_IS_NUMBER : 145,
+	JSON_ELEMENT_IS_BOOLEAN : 146,
+	JSON_ELEMENT_IS_NULL : 147,
+	JSON_ELEMENT_GET_OBJECT : 148,
+	JSON_ELEMENT_GET_ARRAY : 149,
+	JSON_ELEMENT_GET_STRING : 150,
+	JSON_ELEMENT_GET_DOUBLE : 151,
+	JSON_ELEMENT_GET_BOOLEAN : 152,
+	MATH_METHOD : 153,
+	MATH_ABS : 154,
+	MATH_CEILING : 155,
+	MATH_CLAMP : 156,
+	MATH_FUSED_MULTIPLY_ADD : 157,
+	MATH_IS_FINITE : 158,
+	MATH_IS_INFINITY : 159,
+	MATH_IS_NA_N : 160,
+	MATH_LOG2 : 161,
+	MATH_MAX_INT : 162,
+	MATH_MAX_DOUBLE : 163,
+	MATH_MIN_INT : 164,
+	MATH_MIN_DOUBLE : 165,
+	MATH_ROUND : 166,
+	MATH_TRUNCATE : 167
 }
 
 class FuDocInline
@@ -2601,7 +2597,7 @@ export class FuNamedValue extends FuSymbol
 	isAssignableStorage()
 	{
 		let storage;
-		return (storage = this.type) instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && (this.value instanceof FuLiteralNull || storage.class.id == FuId.JSON_ELEMENT_CLASS);
+		return (storage = this.type) instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && this.value instanceof FuLiteralNull;
 	}
 }
 
@@ -3286,28 +3282,20 @@ export class FuSystem extends FuScope
 		matchClass.add(FuProperty.new(this.#uIntType, FuId.MATCH_LENGTH, "Length"));
 		matchClass.add(FuProperty.new(this.stringStorageType, FuId.MATCH_VALUE, "Value"));
 		this.add(matchClass);
-		let jsonValueKindEnum = this.newEnum(false);
-		jsonValueKindEnum.isPublic = true;
-		jsonValueKindEnum.id = FuId.JSON_VALUE_KIND_ENUM;
-		jsonValueKindEnum.name = "JsonValueKind";
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_OBJECT, name: "Object", visitStatus: FuVisitStatus.DONE }));
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_ARRAY, name: "Array", visitStatus: FuVisitStatus.DONE }));
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_STRING, name: "String", visitStatus: FuVisitStatus.DONE }));
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_NUMBER, name: "Number", visitStatus: FuVisitStatus.DONE }));
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_TRUE, name: "True", visitStatus: FuVisitStatus.DONE }));
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_FALSE, name: "False", visitStatus: FuVisitStatus.DONE }));
-		FuSystem.#addEnumValue(jsonValueKindEnum, Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, id: FuId.JSON_VALUE_KIND_NULL, name: "Null", visitStatus: FuVisitStatus.DONE }));
-		this.add(jsonValueKindEnum);
 		let jsonElementClass = FuClass.new(FuCallType.SEALED, FuId.JSON_ELEMENT_CLASS, "JsonElement");
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.JSON_ELEMENT_PARSE, "Parse", true, FuVar.new(this.stringPtrType, "value")));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
 		let jsonElementPtr = Object.assign(new FuDynamicPtrType(), { class: jsonElementClass });
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, jsonElementPtr, FuId.JSON_ELEMENT_PARSE, "Parse", false, FuVar.new(this.stringPtrType, "value")));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_OBJECT, "IsObject", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_ARRAY, "IsArray", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_STRING, "IsString", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_NUMBER, "IsNumber", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_BOOLEAN, "IsBoolean", false));
+		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_NULL, "IsNull", false));
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: dictionaryClass, typeArg0: this.stringStorageType, typeArg1: jsonElementPtr }), FuId.JSON_ELEMENT_GET_OBJECT, "GetObject", false));
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: listClass, typeArg0: jsonElementPtr }), FuId.JSON_ELEMENT_GET_ARRAY, "GetArray", false));
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.stringPtrType, FuId.JSON_ELEMENT_GET_STRING, "GetString", false));
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.doubleType, FuId.JSON_ELEMENT_GET_DOUBLE, "GetDouble", false));
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_GET_BOOLEAN, "GetBoolean", false));
-		jsonElementClass.add(FuProperty.new(jsonValueKindEnum, FuId.JSON_ELEMENT_VALUE_KIND, "ValueKind"));
 		this.add(jsonElementClass);
 		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
 		let mathClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Math");
@@ -3475,7 +3463,6 @@ export class FuProgram extends FuScope
 	main = null;
 	resources = {};
 	regexOptionsEnum = false;
-	jsonValueKindEnum = false;
 }
 
 export class FuParser extends FuLexer
@@ -4751,8 +4738,6 @@ export class FuSema
 				}
 				else if (symbol.symbol.id == FuId.REGEX_OPTIONS_ENUM)
 					this.program.regexOptionsEnum = true;
-				else if (symbol.symbol.id == FuId.JSON_VALUE_KIND_ENUM)
-					this.program.jsonValueKindEnum = true;
 			}
 			return resolved;
 		}
@@ -16246,6 +16231,16 @@ export class GenCs extends GenTyped
 		}
 	}
 
+	#writeJsonElementIs(obj, name, parent)
+	{
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(40);
+		this.writePostfix(obj, ".ValueKind == JsonValueKind.");
+		this.write(name);
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(41);
+	}
+
 	writeCallExpr(obj, method, args, parent)
 	{
 		switch (method.id) {
@@ -16474,10 +16469,32 @@ export class GenCs extends GenTyped
 			this.write("].Value");
 			break;
 		case FuId.JSON_ELEMENT_PARSE:
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" = JsonDocument.Parse(");
+			this.write("JsonDocument.Parse(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(").RootElement");
+			break;
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+			this.#writeJsonElementIs(obj, "Object", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+			this.#writeJsonElementIs(obj, "Array", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_STRING:
+			this.#writeJsonElementIs(obj, "String", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+			this.#writeJsonElementIs(obj, "Number", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+			if (parent > FuPriority.COND_OR)
+				this.writeChar(40);
+			this.writePostfix(obj, ".ValueKind == JsonValueKind.True || ");
+			this.writePostfix(obj, ".ValueKind == JsonValueKind.False");
+			if (parent > FuPriority.COND_OR)
+				this.writeChar(41);
+			break;
+		case FuId.JSON_ELEMENT_IS_NULL:
+			this.#writeJsonElementIs(obj, "Null", parent);
 			break;
 		case FuId.JSON_ELEMENT_GET_OBJECT:
 			this.include("System.Linq");
@@ -17281,14 +17298,8 @@ export class GenD extends GenCCppD
 				break;
 			}
 		}
-		else {
-			if (type.id == FuId.JSON_VALUE_KIND_ENUM) {
-				this.include("std.json");
-				this.write("JSONType");
-			}
-			else
-				this.write(type.name);
-		}
+		else
+			this.write(type.name);
 	}
 
 	writeTypeAndName(value)
@@ -17495,30 +17506,6 @@ export class GenD extends GenCCppD
 		case FuId.MATCH_VALUE:
 			this.writePostfix(expr.left, ".hit");
 			break;
-		case FuId.JSON_ELEMENT_VALUE_KIND:
-			this.writePostfix(expr.left, ".type");
-			break;
-		case FuId.JSON_VALUE_KIND_OBJECT:
-			this.write("JSONType.object");
-			break;
-		case FuId.JSON_VALUE_KIND_ARRAY:
-			this.write("JSONType.array");
-			break;
-		case FuId.JSON_VALUE_KIND_STRING:
-			this.write("JSONType.string");
-			break;
-		case FuId.JSON_VALUE_KIND_NUMBER:
-			this.write("JSONType.float_");
-			break;
-		case FuId.JSON_VALUE_KIND_TRUE:
-			this.write("JSONType.true_");
-			break;
-		case FuId.JSON_VALUE_KIND_FALSE:
-			this.write("JSONType.false_");
-			break;
-		case FuId.JSON_VALUE_KIND_NULL:
-			this.write("JSONType.null_");
-			break;
 		case FuId.MATH_NA_N:
 			this.write("double.nan");
 			break;
@@ -17578,6 +17565,16 @@ export class GenD extends GenCCppD
 		else
 			this.writeCoercedExpr(type, args[index]);
 		this.writeChar(41);
+	}
+
+	#writeJsonElementIs(obj, name, parent)
+	{
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(40);
+		this.writePostfix(obj, ".type == JSONType.");
+		this.write(name);
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(41);
 	}
 
 	writeCallExpr(obj, method, args, parent)
@@ -17919,8 +17916,30 @@ export class GenD extends GenCCppD
 			this.writeIndexing(obj, args[0]);
 			break;
 		case FuId.JSON_ELEMENT_PARSE:
-			obj.accept(this, FuPriority.ASSIGN);
-			this.writeCall(" = parseJSON", args[0]);
+			this.writeCall("parseJSON", args[0]);
+			break;
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+			this.#writeJsonElementIs(obj, "object", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+			this.#writeJsonElementIs(obj, "array", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_STRING:
+			this.#writeJsonElementIs(obj, "string", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+			this.#writeJsonElementIs(obj, "float_", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+			if (parent > FuPriority.COND_OR)
+				this.writeChar(40);
+			this.writePostfix(obj, ".type == JSONType.true_ || ");
+			this.writePostfix(obj, ".type == JSONType.false_");
+			if (parent > FuPriority.COND_OR)
+				this.writeChar(41);
+			break;
+		case FuId.JSON_ELEMENT_IS_NULL:
+			this.#writeJsonElementIs(obj, "null_", parent);
 			break;
 		case FuId.JSON_ELEMENT_GET_OBJECT:
 			this.writePostfix(obj, ".object");
@@ -20247,9 +20266,6 @@ export class GenJsNoModule extends GenBase
 		case FuId.MATCH_VALUE:
 			this.writePostfix(expr.left, "[0]");
 			break;
-		case FuId.JSON_ELEMENT_VALUE_KIND:
-			this.writeCall("JsonValueKind.get", expr.left);
-			break;
 		case FuId.MATH_NA_N:
 			this.write("NaN");
 			break;
@@ -20346,6 +20362,19 @@ export class GenJsNoModule extends GenBase
 			this.writeRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 			this.writeChar(41);
 		}
+	}
+
+	#writeTypeofEquals(obj, name, parent)
+	{
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(40);
+		this.write("typeof(");
+		obj.accept(this, FuPriority.ARGUMENT);
+		this.write(") == \"");
+		this.write(name);
+		this.writeChar(34);
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(41);
 	}
 
 	static #hasLong(args)
@@ -20696,8 +20725,34 @@ export class GenJsNoModule extends GenBase
 			this.writeIndexing(obj, args[0]);
 			break;
 		case FuId.JSON_ELEMENT_PARSE:
-			obj.accept(this, FuPriority.ASSIGN);
-			this.writeCall(" = JSON.parse", args[0]);
+			this.writeCall("JSON.parse", args[0]);
+			break;
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(40);
+			this.writePostfix(obj, "?.constructor == Object");
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(41);
+			break;
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+			this.writeCall("Array.isArray", obj);
+			break;
+		case FuId.JSON_ELEMENT_IS_STRING:
+			this.#writeTypeofEquals(obj, "string", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+			this.#writeTypeofEquals(obj, "number", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+			this.#writeTypeofEquals(obj, "boolean", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_NULL:
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(40);
+			obj.accept(this, FuPriority.EQUALITY);
+			this.write(" === null");
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(41);
 			break;
 		case FuId.JSON_ELEMENT_GET_OBJECT:
 		case FuId.JSON_ELEMENT_GET_ARRAY:
@@ -21166,33 +21221,6 @@ export class GenJsNoModule extends GenBase
 
 	writeLib(program)
 	{
-		if (program.jsonValueKindEnum) {
-			this.writeNewLine();
-			this.write("const JsonValueKind = ");
-			this.openBlock();
-			this.writeLine("OBJECT : 1,");
-			this.writeLine("ARRAY : 2,");
-			this.writeLine("STRING : 3,");
-			this.writeLine("NUMBER : 4,");
-			this.writeLine("TRUE : 5,");
-			this.writeLine("FALSE : 6,");
-			this.writeLine("NULL : 7,");
-			this.write("get : e => ");
-			this.openBlock();
-			this.write("switch (typeof(e)) ");
-			this.openBlock();
-			this.writeLine("case \"string\":");
-			this.writeLine("\treturn JsonValueKind.STRING;");
-			this.writeLine("case \"number\":");
-			this.writeLine("\treturn JsonValueKind.NUMBER;");
-			this.writeLine("case \"boolean\":");
-			this.writeLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
-			this.writeLine("default:");
-			this.writeLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
-			this.closeBlock();
-			this.closeBlock();
-			this.closeBlock();
-		}
 		if (this.#stringWriter) {
 			this.writeNewLine();
 			this.writeLine("class StringWriter");
@@ -24266,9 +24294,6 @@ export class GenPy extends GenPySwift
 		case FuId.ORDERED_DICTIONARY_COUNT:
 			this.writeStringLength(expr.left);
 			break;
-		case FuId.JSON_ELEMENT_VALUE_KIND:
-			this.writeCall("JsonValueKind.get", expr.left);
-			break;
 		case FuId.MATH_NA_N:
 			this.include("math");
 			this.write("math.nan");
@@ -24580,6 +24605,15 @@ export class GenPy extends GenPySwift
 		this.writeChar(41);
 	}
 
+	#writeJsonElementIs(obj, name)
+	{
+		this.write("isinstance(");
+		obj.accept(this, FuPriority.ARGUMENT);
+		this.write(", ");
+		this.write(name);
+		this.writeChar(41);
+	}
+
 	writeCallExpr(obj, method, args, parent)
 	{
 		switch (method.id) {
@@ -24852,8 +24886,30 @@ export class GenPy extends GenPySwift
 			break;
 		case FuId.JSON_ELEMENT_PARSE:
 			this.include("json");
-			obj.accept(this, FuPriority.ASSIGN);
-			this.writeCall(" = json.loads", args[0]);
+			this.writeCall("json.loads", args[0]);
+			break;
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+			this.#writeJsonElementIs(obj, "dict");
+			break;
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+			this.#writeJsonElementIs(obj, "list");
+			break;
+		case FuId.JSON_ELEMENT_IS_STRING:
+			this.#writeJsonElementIs(obj, "str");
+			break;
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+			this.#writeJsonElementIs(obj, "float");
+			break;
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+			this.#writeJsonElementIs(obj, "bool");
+			break;
+		case FuId.JSON_ELEMENT_IS_NULL:
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(40);
+			obj.accept(this, FuPriority.EQUALITY);
+			this.write(" is None");
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(41);
 			break;
 		case FuId.JSON_ELEMENT_GET_OBJECT:
 		case FuId.JSON_ELEMENT_GET_ARRAY:
@@ -25382,41 +25438,6 @@ export class GenPy extends GenPySwift
 		this.#writtenTypes.clear();
 		this.#switchBreak = false;
 		this.openStringWriter();
-		if (program.jsonValueKindEnum) {
-			this.writeNewLine();
-			this.include("enum");
-			this.write("class JsonValueKind(enum.Enum)");
-			this.openChild();
-			this.writeLine("OBJECT = 1");
-			this.writeLine("ARRAY = 2");
-			this.writeLine("STRING = 3");
-			this.writeLine("NUMBER = 4");
-			this.writeLine("TRUE = 5");
-			this.writeLine("FALSE = 6");
-			this.writeLine("NULL = 7");
-			this.writeLine("@staticmethod");
-			this.write("def get(e)");
-			this.openChild();
-			this.write("match e");
-			this.openChild();
-			this.writeLine("case dict():");
-			this.writeLine("\treturn JsonValueKind.OBJECT");
-			this.writeLine("case list():");
-			this.writeLine("\treturn JsonValueKind.ARRAY");
-			this.writeLine("case str():");
-			this.writeLine("\treturn JsonValueKind.STRING");
-			this.writeLine("case float():");
-			this.writeLine("\treturn JsonValueKind.NUMBER");
-			this.writeLine("case True:");
-			this.writeLine("\treturn JsonValueKind.TRUE");
-			this.writeLine("case False:");
-			this.writeLine("\treturn JsonValueKind.FALSE");
-			this.writeLine("case None:");
-			this.writeLine("\treturn JsonValueKind.NULL");
-			this.closeChild();
-			this.closeChild();
-			this.closeChild();
-		}
 		this.writeTypes(program);
 		this.createOutputFile();
 		this.writeTopLevelNatives(program);

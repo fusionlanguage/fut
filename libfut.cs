@@ -1316,7 +1316,6 @@ namespace Fusion
 		RegexOptionsEnum,
 		RegexClass,
 		MatchClass,
-		JsonValueKindEnum,
 		JsonElementClass,
 		LockClass,
 		StringLength,
@@ -1328,14 +1327,6 @@ namespace Fusion
 		MatchEnd,
 		MatchLength,
 		MatchValue,
-		JsonValueKindObject,
-		JsonValueKindArray,
-		JsonValueKindString,
-		JsonValueKindNumber,
-		JsonValueKindTrue,
-		JsonValueKindFalse,
-		JsonValueKindNull,
-		JsonElementValueKind,
 		MathNaN,
 		MathNegativeInfinity,
 		MathPositiveInfinity,
@@ -1430,7 +1421,12 @@ namespace Fusion
 		MatchFindRegex,
 		MatchGetCapture,
 		JsonElementParse,
-		JsonElementTryParse,
+		JsonElementIsObject,
+		JsonElementIsArray,
+		JsonElementIsString,
+		JsonElementIsNumber,
+		JsonElementIsBoolean,
+		JsonElementIsNull,
 		JsonElementGetObject,
 		JsonElementGetArray,
 		JsonElementGetString,
@@ -2558,7 +2554,7 @@ namespace Fusion
 
 		internal FuExpr Value;
 
-		public bool IsAssignableStorage() => this.Type is FuStorageType storage && !(this.Type is FuArrayStorageType) && (this.Value is FuLiteralNull || storage.Class.Id == FuId.JsonElementClass);
+		public bool IsAssignableStorage() => this.Type is FuStorageType storage && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
 	}
 
 	public abstract class FuMember : FuNamedValue
@@ -3127,28 +3123,20 @@ namespace Fusion
 			matchClass.Add(FuProperty.New(this.UIntType, FuId.MatchLength, "Length"));
 			matchClass.Add(FuProperty.New(this.StringStorageType, FuId.MatchValue, "Value"));
 			Add(matchClass);
-			FuEnum jsonValueKindEnum = NewEnum(false);
-			jsonValueKindEnum.IsPublic = true;
-			jsonValueKindEnum.Id = FuId.JsonValueKindEnum;
-			jsonValueKindEnum.Name = "JsonValueKind";
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindObject, Name = "Object", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindArray, Name = "Array", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindString, Name = "String", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindNumber, Name = "Number", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindTrue, Name = "True", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindFalse, Name = "False", VisitStatus = FuVisitStatus.Done });
-			AddEnumValue(jsonValueKindEnum, new FuConst { Visibility = FuVisibility.Public, Id = FuId.JsonValueKindNull, Name = "Null", VisitStatus = FuVisitStatus.Done });
-			Add(jsonValueKindEnum);
 			FuClass jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.JsonElementParse, "Parse", true, FuVar.New(this.StringPtrType, "value")));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
 			FuDynamicPtrType jsonElementPtr = new FuDynamicPtrType { Class = jsonElementClass };
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, jsonElementPtr, FuId.JsonElementParse, "Parse", false, FuVar.New(this.StringPtrType, "value")));
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsObject, "IsObject", false));
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsArray, "IsArray", false));
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsString, "IsString", false));
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsNumber, "IsNumber", false));
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsBoolean, "IsBoolean", false));
+			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsNull, "IsNull", false));
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = dictionaryClass, TypeArg0 = this.StringStorageType, TypeArg1 = jsonElementPtr }, FuId.JsonElementGetObject, "GetObject", false));
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = listClass, TypeArg0 = jsonElementPtr }, FuId.JsonElementGetArray, "GetArray", false));
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.StringPtrType, FuId.JsonElementGetString, "GetString", false));
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.DoubleType, FuId.JsonElementGetDouble, "GetDouble", false));
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementGetBoolean, "GetBoolean", false));
-			jsonElementClass.Add(FuProperty.New(jsonValueKindEnum, FuId.JsonElementValueKind, "ValueKind"));
 			Add(jsonElementClass);
 			FuFloatingType floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
 			FuClass mathClass = FuClass.New(FuCallType.Static, FuId.None, "Math");
@@ -3333,8 +3321,6 @@ namespace Fusion
 		internal readonly SortedDictionary<string, List<byte>> Resources = new SortedDictionary<string, List<byte>>();
 
 		internal bool RegexOptionsEnum = false;
-
-		internal bool JsonValueKindEnum = false;
 	}
 
 	public class FuParser : FuLexer
@@ -4600,8 +4586,6 @@ namespace Fusion
 					}
 					else if (symbol.Symbol.Id == FuId.RegexOptionsEnum)
 						this.Program.RegexOptionsEnum = true;
-					else if (symbol.Symbol.Id == FuId.JsonValueKindEnum)
-						this.Program.JsonValueKindEnum = true;
 				}
 				return resolved;
 			}
@@ -15789,6 +15773,16 @@ namespace Fusion
 			}
 		}
 
+		void WriteJsonElementIs(FuExpr obj, string name, FuPriority parent)
+		{
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			WritePostfix(obj, ".ValueKind == JsonValueKind.");
+			Write(name);
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
+		}
+
 		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
@@ -16014,10 +16008,32 @@ namespace Fusion
 				Write("].Value");
 				break;
 			case FuId.JsonElementParse:
-				obj.Accept(this, FuPriority.Assign);
-				Write(" = JsonDocument.Parse(");
+				Write("JsonDocument.Parse(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write(").RootElement");
+				break;
+			case FuId.JsonElementIsObject:
+				WriteJsonElementIs(obj, "Object", parent);
+				break;
+			case FuId.JsonElementIsArray:
+				WriteJsonElementIs(obj, "Array", parent);
+				break;
+			case FuId.JsonElementIsString:
+				WriteJsonElementIs(obj, "String", parent);
+				break;
+			case FuId.JsonElementIsNumber:
+				WriteJsonElementIs(obj, "Number", parent);
+				break;
+			case FuId.JsonElementIsBoolean:
+				if (parent > FuPriority.CondOr)
+					WriteChar('(');
+				WritePostfix(obj, ".ValueKind == JsonValueKind.True || ");
+				WritePostfix(obj, ".ValueKind == JsonValueKind.False");
+				if (parent > FuPriority.CondOr)
+					WriteChar(')');
+				break;
+			case FuId.JsonElementIsNull:
+				WriteJsonElementIs(obj, "Null", parent);
 				break;
 			case FuId.JsonElementGetObject:
 				Include("System.Linq");
@@ -16807,12 +16823,7 @@ namespace Fusion
 				}
 				break;
 			default:
-				if (type.Id == FuId.JsonValueKindEnum) {
-					Include("std.json");
-					Write("JSONType");
-				}
-				else
-					Write(type.Name);
+				Write(type.Name);
 				break;
 			}
 		}
@@ -17015,30 +17026,6 @@ namespace Fusion
 			case FuId.MatchValue:
 				WritePostfix(expr.Left, ".hit");
 				break;
-			case FuId.JsonElementValueKind:
-				WritePostfix(expr.Left, ".type");
-				break;
-			case FuId.JsonValueKindObject:
-				Write("JSONType.object");
-				break;
-			case FuId.JsonValueKindArray:
-				Write("JSONType.array");
-				break;
-			case FuId.JsonValueKindString:
-				Write("JSONType.string");
-				break;
-			case FuId.JsonValueKindNumber:
-				Write("JSONType.float_");
-				break;
-			case FuId.JsonValueKindTrue:
-				Write("JSONType.true_");
-				break;
-			case FuId.JsonValueKindFalse:
-				Write("JSONType.false_");
-				break;
-			case FuId.JsonValueKindNull:
-				Write("JSONType.null_");
-				break;
 			case FuId.MathNaN:
 				Write("double.nan");
 				break;
@@ -17095,6 +17082,16 @@ namespace Fusion
 			else
 				WriteCoercedExpr(type, args[index]);
 			WriteChar(')');
+		}
+
+		void WriteJsonElementIs(FuExpr obj, string name, FuPriority parent)
+		{
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			WritePostfix(obj, ".type == JSONType.");
+			Write(name);
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
 		}
 
 		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
@@ -17436,8 +17433,30 @@ namespace Fusion
 				WriteIndexing(obj, args[0]);
 				break;
 			case FuId.JsonElementParse:
-				obj.Accept(this, FuPriority.Assign);
-				WriteCall(" = parseJSON", args[0]);
+				WriteCall("parseJSON", args[0]);
+				break;
+			case FuId.JsonElementIsObject:
+				WriteJsonElementIs(obj, "object", parent);
+				break;
+			case FuId.JsonElementIsArray:
+				WriteJsonElementIs(obj, "array", parent);
+				break;
+			case FuId.JsonElementIsString:
+				WriteJsonElementIs(obj, "string", parent);
+				break;
+			case FuId.JsonElementIsNumber:
+				WriteJsonElementIs(obj, "float_", parent);
+				break;
+			case FuId.JsonElementIsBoolean:
+				if (parent > FuPriority.CondOr)
+					WriteChar('(');
+				WritePostfix(obj, ".type == JSONType.true_ || ");
+				WritePostfix(obj, ".type == JSONType.false_");
+				if (parent > FuPriority.CondOr)
+					WriteChar(')');
+				break;
+			case FuId.JsonElementIsNull:
+				WriteJsonElementIs(obj, "null_", parent);
 				break;
 			case FuId.JsonElementGetObject:
 				WritePostfix(obj, ".object");
@@ -19701,9 +19720,6 @@ namespace Fusion
 			case FuId.MatchValue:
 				WritePostfix(expr.Left, "[0]");
 				break;
-			case FuId.JsonElementValueKind:
-				WriteCall("JsonValueKind.get", expr.Left);
-				break;
 			case FuId.MathNaN:
 				Write("NaN");
 				break;
@@ -19799,6 +19815,19 @@ namespace Fusion
 				WriteRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 				WriteChar(')');
 			}
+		}
+
+		void WriteTypeofEquals(FuExpr obj, string name, FuPriority parent)
+		{
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			Write("typeof(");
+			obj.Accept(this, FuPriority.Argument);
+			Write(") == \"");
+			Write(name);
+			WriteChar('"');
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
 		}
 
 		static bool HasLong(List<FuExpr> args) => args.Exists(arg => arg.Type.Id == FuId.LongType);
@@ -20145,8 +20174,34 @@ namespace Fusion
 				WriteIndexing(obj, args[0]);
 				break;
 			case FuId.JsonElementParse:
-				obj.Accept(this, FuPriority.Assign);
-				WriteCall(" = JSON.parse", args[0]);
+				WriteCall("JSON.parse", args[0]);
+				break;
+			case FuId.JsonElementIsObject:
+				if (parent > FuPriority.Equality)
+					WriteChar('(');
+				WritePostfix(obj, "?.constructor == Object");
+				if (parent > FuPriority.Equality)
+					WriteChar(')');
+				break;
+			case FuId.JsonElementIsArray:
+				WriteCall("Array.isArray", obj);
+				break;
+			case FuId.JsonElementIsString:
+				WriteTypeofEquals(obj, "string", parent);
+				break;
+			case FuId.JsonElementIsNumber:
+				WriteTypeofEquals(obj, "number", parent);
+				break;
+			case FuId.JsonElementIsBoolean:
+				WriteTypeofEquals(obj, "boolean", parent);
+				break;
+			case FuId.JsonElementIsNull:
+				if (parent > FuPriority.Equality)
+					WriteChar('(');
+				obj.Accept(this, FuPriority.Equality);
+				Write(" === null");
+				if (parent > FuPriority.Equality)
+					WriteChar(')');
 				break;
 			case FuId.JsonElementGetObject:
 			case FuId.JsonElementGetArray:
@@ -20622,33 +20677,6 @@ namespace Fusion
 
 		protected void WriteLib(FuProgram program)
 		{
-			if (program.JsonValueKindEnum) {
-				WriteNewLine();
-				Write("const JsonValueKind = ");
-				OpenBlock();
-				WriteLine("OBJECT : 1,");
-				WriteLine("ARRAY : 2,");
-				WriteLine("STRING : 3,");
-				WriteLine("NUMBER : 4,");
-				WriteLine("TRUE : 5,");
-				WriteLine("FALSE : 6,");
-				WriteLine("NULL : 7,");
-				Write("get : e => ");
-				OpenBlock();
-				Write("switch (typeof(e)) ");
-				OpenBlock();
-				WriteLine("case \"string\":");
-				WriteLine("\treturn JsonValueKind.STRING;");
-				WriteLine("case \"number\":");
-				WriteLine("\treturn JsonValueKind.NUMBER;");
-				WriteLine("case \"boolean\":");
-				WriteLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
-				WriteLine("default:");
-				WriteLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
-				CloseBlock();
-				CloseBlock();
-				CloseBlock();
-			}
 			if (this.StringWriter) {
 				WriteNewLine();
 				WriteLine("class StringWriter");
@@ -23692,9 +23720,6 @@ namespace Fusion
 			case FuId.OrderedDictionaryCount:
 				WriteStringLength(expr.Left);
 				break;
-			case FuId.JsonElementValueKind:
-				WriteCall("JsonValueKind.get", expr.Left);
-				break;
 			case FuId.MathNaN:
 				Include("math");
 				Write("math.nan");
@@ -23998,6 +24023,15 @@ namespace Fusion
 			WriteChar(')');
 		}
 
+		void WriteJsonElementIs(FuExpr obj, string name)
+		{
+			Write("isinstance(");
+			obj.Accept(this, FuPriority.Argument);
+			Write(", ");
+			Write(name);
+			WriteChar(')');
+		}
+
 		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
@@ -24269,8 +24303,30 @@ namespace Fusion
 				break;
 			case FuId.JsonElementParse:
 				Include("json");
-				obj.Accept(this, FuPriority.Assign);
-				WriteCall(" = json.loads", args[0]);
+				WriteCall("json.loads", args[0]);
+				break;
+			case FuId.JsonElementIsObject:
+				WriteJsonElementIs(obj, "dict");
+				break;
+			case FuId.JsonElementIsArray:
+				WriteJsonElementIs(obj, "list");
+				break;
+			case FuId.JsonElementIsString:
+				WriteJsonElementIs(obj, "str");
+				break;
+			case FuId.JsonElementIsNumber:
+				WriteJsonElementIs(obj, "float");
+				break;
+			case FuId.JsonElementIsBoolean:
+				WriteJsonElementIs(obj, "bool");
+				break;
+			case FuId.JsonElementIsNull:
+				if (parent > FuPriority.Equality)
+					WriteChar('(');
+				obj.Accept(this, FuPriority.Equality);
+				Write(" is None");
+				if (parent > FuPriority.Equality)
+					WriteChar(')');
 				break;
 			case FuId.JsonElementGetObject:
 			case FuId.JsonElementGetArray:
@@ -24788,41 +24844,6 @@ namespace Fusion
 			this.WrittenTypes.Clear();
 			this.SwitchBreak = false;
 			OpenStringWriter();
-			if (program.JsonValueKindEnum) {
-				WriteNewLine();
-				Include("enum");
-				Write("class JsonValueKind(enum.Enum)");
-				OpenChild();
-				WriteLine("OBJECT = 1");
-				WriteLine("ARRAY = 2");
-				WriteLine("STRING = 3");
-				WriteLine("NUMBER = 4");
-				WriteLine("TRUE = 5");
-				WriteLine("FALSE = 6");
-				WriteLine("NULL = 7");
-				WriteLine("@staticmethod");
-				Write("def get(e)");
-				OpenChild();
-				Write("match e");
-				OpenChild();
-				WriteLine("case dict():");
-				WriteLine("\treturn JsonValueKind.OBJECT");
-				WriteLine("case list():");
-				WriteLine("\treturn JsonValueKind.ARRAY");
-				WriteLine("case str():");
-				WriteLine("\treturn JsonValueKind.STRING");
-				WriteLine("case float():");
-				WriteLine("\treturn JsonValueKind.NUMBER");
-				WriteLine("case True:");
-				WriteLine("\treturn JsonValueKind.TRUE");
-				WriteLine("case False:");
-				WriteLine("\treturn JsonValueKind.FALSE");
-				WriteLine("case None:");
-				WriteLine("\treturn JsonValueKind.NULL");
-				CloseChild();
-				CloseChild();
-				CloseChild();
-			}
 			WriteTypes(program);
 			CreateOutputFile();
 			WriteTopLevelNatives(program);

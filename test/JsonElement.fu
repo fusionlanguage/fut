@@ -2,35 +2,35 @@ public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement() json; //FAIL: c cpp java swift TODO; cl
-		json.Parse("\"foo\"");
-		if (json.ValueKind != JsonValueKind.String || json.GetString() != "foo")
+		JsonElement# json; //FAIL: c cpp java swift TODO; cl
+		json = JsonElement.Parse("\"foo\"");
+		if (!json.IsString() || json.GetString() != "foo")
 			return false;
-		json.Parse("10.5");
-		if (json.ValueKind != JsonValueKind.Number || json.GetDouble() != 10.5)
+		json = JsonElement.Parse("10.5");
+		if (!json.IsNumber() || json.GetDouble() != 10.5)
 			return false;
-		json.Parse("true");
-		if (json.ValueKind != JsonValueKind.True || !json.GetBoolean())
+		json = JsonElement.Parse("true");
+		if (!json.IsBoolean() || !json.GetBoolean())
 			return false;
-		json.Parse("false");
-		if (json.ValueKind != JsonValueKind.False || json.GetBoolean())
+		json = JsonElement.Parse("false");
+		if (!json.IsBoolean() || json.GetBoolean())
 			return false;
-		json.Parse("null");
-		if (json.ValueKind != JsonValueKind.Null)
+		json = JsonElement.Parse("null");
+		if (!json.IsNull())
 			return false;
 
-		json.Parse("[ 5, true ]");
-		if (json.ValueKind != JsonValueKind.Array)
+		json = JsonElement.Parse("[ 5, true ]");
+		if (!json.IsArray())
 			return false;
 		List<JsonElement#> list = json.GetArray(); //FAIL: d TODO
-		if (list.Count != 2 || list[0].GetDouble() != 5 || list[1].ValueKind != JsonValueKind.True)
+		if (list.Count != 2 || list[0].GetDouble() != 5 || !list[1].IsBoolean())
 			return false;
 
-		json.Parse("{ \"foo\": null, \"bar\": 42 }");
-		if (json.ValueKind != JsonValueKind.Object)
+		json = JsonElement.Parse("{ \"foo\": null, \"bar\": 42 }");
+		if (!json.IsObject())
 			return false;
 		Dictionary<string(), JsonElement#> dict = json.GetObject();
-		if (dict.Count != 2 || dict["foo"].ValueKind != JsonValueKind.Null || dict["bar"].GetDouble() != 42)
+		if (dict.Count != 2 || !dict["foo"].IsNull() || dict["bar"].GetDouble() != 42)
 			return false;
 
 		return true;

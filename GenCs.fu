@@ -438,6 +438,16 @@ public class GenCs : GenTyped
 		}
 	}
 
+	void WriteJsonElementIs!(FuExpr obj, string name, FuPriority parent)
+	{
+		if (parent > FuPriority.Equality)
+			WriteChar('(');
+		WritePostfix(obj, ".ValueKind == JsonValueKind.");
+		Write(name);
+		if (parent > FuPriority.Equality)
+			WriteChar(')');
+	}
+
 	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
@@ -664,10 +674,32 @@ public class GenCs : GenTyped
 			Write("].Value");
 			break;
 		case FuId.JsonElementParse:
-			obj.Accept(this, FuPriority.Assign);
-			Write(" = JsonDocument.Parse(");
+			Write("JsonDocument.Parse(");
 			args[0].Accept(this, FuPriority.Argument);
 			Write(").RootElement");
+			break;
+		case FuId.JsonElementIsObject:
+			WriteJsonElementIs(obj, "Object", parent);
+			break;
+		case FuId.JsonElementIsArray:
+			WriteJsonElementIs(obj, "Array", parent);
+			break;
+		case FuId.JsonElementIsString:
+			WriteJsonElementIs(obj, "String", parent);
+			break;
+		case FuId.JsonElementIsNumber:
+			WriteJsonElementIs(obj, "Number", parent);
+			break;
+		case FuId.JsonElementIsBoolean:
+			if (parent > FuPriority.CondOr)
+				WriteChar('(');
+			WritePostfix(obj, ".ValueKind == JsonValueKind.True || ");
+			WritePostfix(obj, ".ValueKind == JsonValueKind.False"); // FIXME: side effect
+			if (parent > FuPriority.CondOr)
+				WriteChar(')');
+			break;
+		case FuId.JsonElementIsNull:
+			WriteJsonElementIs(obj, "Null", parent);
 			break;
 		case FuId.JsonElementGetObject:
 			Include("System.Linq");

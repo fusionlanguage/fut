@@ -225,7 +225,6 @@ enum class FuId
 	regexOptionsEnum,
 	regexClass,
 	matchClass,
-	jsonValueKindEnum,
 	jsonElementClass,
 	lockClass,
 	stringLength,
@@ -237,14 +236,6 @@ enum class FuId
 	matchEnd,
 	matchLength,
 	matchValue,
-	jsonValueKindObject,
-	jsonValueKindArray,
-	jsonValueKindString,
-	jsonValueKindNumber,
-	jsonValueKindTrue,
-	jsonValueKindFalse,
-	jsonValueKindNull,
-	jsonElementValueKind,
 	mathNaN,
 	mathNegativeInfinity,
 	mathPositiveInfinity,
@@ -339,7 +330,12 @@ enum class FuId
 	matchFindRegex,
 	matchGetCapture,
 	jsonElementParse,
-	jsonElementTryParse,
+	jsonElementIsObject,
+	jsonElementIsArray,
+	jsonElementIsString,
+	jsonElementIsNumber,
+	jsonElementIsBoolean,
+	jsonElementIsNull,
 	jsonElementGetObject,
 	jsonElementGetArray,
 	jsonElementGetString,
@@ -1510,7 +1506,6 @@ public:
 	const FuMethod * main = nullptr;
 	std::map<std::string, std::vector<uint8_t>> resources;
 	bool regexOptionsEnum = false;
-	bool jsonValueKindEnum = false;
 };
 
 class FuParser : public FuLexer
@@ -2398,6 +2393,7 @@ private:
 	void writeVisibility(FuVisibility visibility);
 	void writeCallType(FuCallType callType, std::string_view sealedString);
 	void writeElementType(const FuType * elementType);
+	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	void writeOrderedDictionaryIndexing(const FuBinaryExpr * expr);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
 };
@@ -2469,6 +2465,7 @@ private:
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length);
 	void writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index = 0);
+	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	static bool isIsComparable(const FuExpr * expr);
 	void writeIsVar(const FuExpr * left, const FuExpr * right, FuPriority parent);
 	static bool isLong(const FuSymbolReference * expr);
@@ -2612,6 +2609,7 @@ private:
 	void writeSlice(const FuExpr * array, const FuExpr * offset, const FuExpr * length, FuPriority parent, std::string_view method);
 	static bool isIdentifier(std::string_view s);
 	void writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
+	void writeTypeofEquals(const FuExpr * obj, std::string_view name, FuPriority parent);
 	static bool hasLong(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeMathMaxMin(const FuMethod * method, std::string_view name, int op, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeBoolAndOrAssign(const FuBinaryExpr * expr, FuPriority parent);
@@ -2885,6 +2883,7 @@ private:
 	void writeAllAny(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writePyRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRegexSearch(const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeJsonElementIs(const FuExpr * obj, std::string_view name);
 	void writeInclusiveLimit(const FuExpr * limit, int increment, std::string_view incrementString);
 	void writePyCaseValue(const FuExpr * value);
 	void writePyCaseBody(const FuSwitch * statement, const std::vector<std::shared_ptr<FuStatement>> * body);

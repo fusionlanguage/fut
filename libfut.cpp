@@ -1962,7 +1962,7 @@ bool FuFloatingType::isAssignableFrom(const FuType * right) const
 bool FuNamedValue::isAssignableStorage() const
 {
 	const FuStorageType * storage;
-	return (storage = dynamic_cast<const FuStorageType *>(this->type.get())) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && (dynamic_cast<const FuLiteralNull *>(this->value.get()) || storage->class_->id == FuId::jsonElementClass);
+	return (storage = dynamic_cast<const FuStorageType *>(this->type.get())) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && dynamic_cast<const FuLiteralNull *>(this->value.get());
 }
 FuMember::FuMember()
 {
@@ -2593,71 +2593,28 @@ FuSystem::FuSystem()
 	matchClass->add(FuProperty::new_(this->uIntType, FuId::matchLength, "Length"));
 	matchClass->add(FuProperty::new_(this->stringStorageType, FuId::matchValue, "Value"));
 	add(matchClass);
-	std::shared_ptr<FuEnum> jsonValueKindEnum = newEnum(false);
-	jsonValueKindEnum->isPublic = true;
-	jsonValueKindEnum->id = FuId::jsonValueKindEnum;
-	jsonValueKindEnum->name = "JsonValueKind";
-	std::shared_ptr<FuConst> futemp9 = std::make_shared<FuConst>();
-	futemp9->visibility = FuVisibility::public_;
-	futemp9->id = FuId::jsonValueKindObject;
-	futemp9->name = "Object";
-	futemp9->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp9);
-	std::shared_ptr<FuConst> futemp10 = std::make_shared<FuConst>();
-	futemp10->visibility = FuVisibility::public_;
-	futemp10->id = FuId::jsonValueKindArray;
-	futemp10->name = "Array";
-	futemp10->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp10);
-	std::shared_ptr<FuConst> futemp11 = std::make_shared<FuConst>();
-	futemp11->visibility = FuVisibility::public_;
-	futemp11->id = FuId::jsonValueKindString;
-	futemp11->name = "String";
-	futemp11->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp11);
-	std::shared_ptr<FuConst> futemp12 = std::make_shared<FuConst>();
-	futemp12->visibility = FuVisibility::public_;
-	futemp12->id = FuId::jsonValueKindNumber;
-	futemp12->name = "Number";
-	futemp12->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp12);
-	std::shared_ptr<FuConst> futemp13 = std::make_shared<FuConst>();
-	futemp13->visibility = FuVisibility::public_;
-	futemp13->id = FuId::jsonValueKindTrue;
-	futemp13->name = "True";
-	futemp13->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp13);
-	std::shared_ptr<FuConst> futemp14 = std::make_shared<FuConst>();
-	futemp14->visibility = FuVisibility::public_;
-	futemp14->id = FuId::jsonValueKindFalse;
-	futemp14->name = "False";
-	futemp14->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp14);
-	std::shared_ptr<FuConst> futemp15 = std::make_shared<FuConst>();
-	futemp15->visibility = FuVisibility::public_;
-	futemp15->id = FuId::jsonValueKindNull;
-	futemp15->name = "Null";
-	futemp15->visitStatus = FuVisitStatus::done;
-	addEnumValue(jsonValueKindEnum, futemp15);
-	add(jsonValueKindEnum);
 	std::shared_ptr<FuClass> jsonElementClass = FuClass::new_(FuCallType::sealed, FuId::jsonElementClass, "JsonElement");
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->voidType, FuId::jsonElementParse, "Parse", true, FuVar::new_(this->stringPtrType, "value")));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
 	std::shared_ptr<FuDynamicPtrType> jsonElementPtr = std::make_shared<FuDynamicPtrType>();
 	jsonElementPtr->class_ = jsonElementClass.get();
-	std::shared_ptr<FuClassType> futemp16 = std::make_shared<FuClassType>();
-	futemp16->class_ = dictionaryClass;
-	futemp16->typeArg0 = this->stringStorageType;
-	futemp16->typeArg1 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp16, FuId::jsonElementGetObject, "GetObject", false));
-	std::shared_ptr<FuClassType> futemp17 = std::make_shared<FuClassType>();
-	futemp17->class_ = listClass;
-	futemp17->typeArg0 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp17, FuId::jsonElementGetArray, "GetArray", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, jsonElementPtr, FuId::jsonElementParse, "Parse", false, FuVar::new_(this->stringPtrType, "value")));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsObject, "IsObject", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsArray, "IsArray", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsString, "IsString", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNumber, "IsNumber", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsBoolean, "IsBoolean", false));
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNull, "IsNull", false));
+	std::shared_ptr<FuClassType> futemp9 = std::make_shared<FuClassType>();
+	futemp9->class_ = dictionaryClass;
+	futemp9->typeArg0 = this->stringStorageType;
+	futemp9->typeArg1 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp9, FuId::jsonElementGetObject, "GetObject", false));
+	std::shared_ptr<FuClassType> futemp10 = std::make_shared<FuClassType>();
+	futemp10->class_ = listClass;
+	futemp10->typeArg0 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp10, FuId::jsonElementGetArray, "GetArray", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->stringPtrType, FuId::jsonElementGetString, "GetString", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->doubleType, FuId::jsonElementGetDouble, "GetDouble", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementGetBoolean, "GetBoolean", false));
-	jsonElementClass->add(FuProperty::new_(jsonValueKindEnum, FuId::jsonElementValueKind, "ValueKind"));
 	add(jsonElementClass);
 	std::shared_ptr<FuFloatingType> floatIntType = std::make_shared<FuFloatingType>();
 	floatIntType->id = FuId::floatIntType;
@@ -4304,8 +4261,6 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 			}
 			else if (symbol->symbol->id == FuId::regexOptionsEnum)
 				this->program->regexOptionsEnum = true;
-			else if (symbol->symbol->id == FuId::jsonValueKindEnum)
-				this->program->jsonValueKindEnum = true;
 		}
 		return resolved;
 	}
@@ -15395,6 +15350,16 @@ void GenCs::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	}
 }
 
+void GenCs::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent)
+{
+	if (parent > FuPriority::equality)
+		writeChar('(');
+	writePostfix(obj, ".ValueKind == JsonValueKind.");
+	write(name);
+	if (parent > FuPriority::equality)
+		writeChar(')');
+}
+
 void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -15629,10 +15594,32 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		write("].Value");
 		break;
 	case FuId::jsonElementParse:
-		obj->accept(this, FuPriority::assign);
-		write(" = JsonDocument.Parse(");
+		write("JsonDocument.Parse(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write(").RootElement");
+		break;
+	case FuId::jsonElementIsObject:
+		writeJsonElementIs(obj, "Object", parent);
+		break;
+	case FuId::jsonElementIsArray:
+		writeJsonElementIs(obj, "Array", parent);
+		break;
+	case FuId::jsonElementIsString:
+		writeJsonElementIs(obj, "String", parent);
+		break;
+	case FuId::jsonElementIsNumber:
+		writeJsonElementIs(obj, "Number", parent);
+		break;
+	case FuId::jsonElementIsBoolean:
+		if (parent > FuPriority::condOr)
+			writeChar('(');
+		writePostfix(obj, ".ValueKind == JsonValueKind.True || ");
+		writePostfix(obj, ".ValueKind == JsonValueKind.False");
+		if (parent > FuPriority::condOr)
+			writeChar(')');
+		break;
+	case FuId::jsonElementIsNull:
+		writeJsonElementIs(obj, "Null", parent);
 		break;
 	case FuId::jsonElementGetObject:
 		include("System.Linq");
@@ -16239,14 +16226,8 @@ void GenD::writeType(const FuType * type, bool promote)
 			break;
 		}
 	}
-	else {
-		if (type->id == FuId::jsonValueKindEnum) {
-			include("std.json");
-			write("JSONType");
-		}
-		else
-			write(type->name);
-	}
+	else
+		write(type->name);
 }
 
 void GenD::writeTypeAndName(const FuNamedValue * value)
@@ -16447,30 +16428,6 @@ void GenD::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 	case FuId::matchValue:
 		writePostfix(expr->left.get(), ".hit");
 		break;
-	case FuId::jsonElementValueKind:
-		writePostfix(expr->left.get(), ".type");
-		break;
-	case FuId::jsonValueKindObject:
-		write("JSONType.object");
-		break;
-	case FuId::jsonValueKindArray:
-		write("JSONType.array");
-		break;
-	case FuId::jsonValueKindString:
-		write("JSONType.string");
-		break;
-	case FuId::jsonValueKindNumber:
-		write("JSONType.float_");
-		break;
-	case FuId::jsonValueKindTrue:
-		write("JSONType.true_");
-		break;
-	case FuId::jsonValueKindFalse:
-		write("JSONType.false_");
-		break;
-	case FuId::jsonValueKindNull:
-		write("JSONType.null_");
-		break;
 	case FuId::mathNaN:
 		write("double.nan");
 		break;
@@ -16527,6 +16484,16 @@ void GenD::writeInsertedArg(const FuType * type, const std::vector<std::shared_p
 	else
 		writeCoercedExpr(type, (*args)[index].get());
 	writeChar(')');
+}
+
+void GenD::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent)
+{
+	if (parent > FuPriority::equality)
+		writeChar('(');
+	writePostfix(obj, ".type == JSONType.");
+	write(name);
+	if (parent > FuPriority::equality)
+		writeChar(')');
 }
 
 void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
@@ -16868,8 +16835,30 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeIndexing(obj, (*args)[0].get());
 		break;
 	case FuId::jsonElementParse:
-		obj->accept(this, FuPriority::assign);
-		writeCall(" = parseJSON", (*args)[0].get());
+		writeCall("parseJSON", (*args)[0].get());
+		break;
+	case FuId::jsonElementIsObject:
+		writeJsonElementIs(obj, "object", parent);
+		break;
+	case FuId::jsonElementIsArray:
+		writeJsonElementIs(obj, "array", parent);
+		break;
+	case FuId::jsonElementIsString:
+		writeJsonElementIs(obj, "string", parent);
+		break;
+	case FuId::jsonElementIsNumber:
+		writeJsonElementIs(obj, "float_", parent);
+		break;
+	case FuId::jsonElementIsBoolean:
+		if (parent > FuPriority::condOr)
+			writeChar('(');
+		writePostfix(obj, ".type == JSONType.true_ || ");
+		writePostfix(obj, ".type == JSONType.false_");
+		if (parent > FuPriority::condOr)
+			writeChar(')');
+		break;
+	case FuId::jsonElementIsNull:
+		writeJsonElementIs(obj, "null_", parent);
 		break;
 	case FuId::jsonElementGetObject:
 		writePostfix(obj, ".object");
@@ -19053,9 +19042,6 @@ void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPrior
 	case FuId::matchValue:
 		writePostfix(expr->left.get(), "[0]");
 		break;
-	case FuId::jsonElementValueKind:
-		writeCall("JsonValueKind.get", expr->left.get());
-		break;
 	case FuId::mathNaN:
 		write("NaN");
 		break;
@@ -19151,6 +19137,19 @@ void GenJsNoModule::writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * a
 		writeRegexOptions(args, ", \"", "", "\"", "i", "m", "s");
 		writeChar(')');
 	}
+}
+
+void GenJsNoModule::writeTypeofEquals(const FuExpr * obj, std::string_view name, FuPriority parent)
+{
+	if (parent > FuPriority::equality)
+		writeChar('(');
+	write("typeof(");
+	obj->accept(this, FuPriority::argument);
+	write(") == \"");
+	write(name);
+	writeChar('"');
+	if (parent > FuPriority::equality)
+		writeChar(')');
 }
 
 bool GenJsNoModule::hasLong(const std::vector<std::shared_ptr<FuExpr>> * args)
@@ -19503,8 +19502,34 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		writeIndexing(obj, (*args)[0].get());
 		break;
 	case FuId::jsonElementParse:
-		obj->accept(this, FuPriority::assign);
-		writeCall(" = JSON.parse", (*args)[0].get());
+		writeCall("JSON.parse", (*args)[0].get());
+		break;
+	case FuId::jsonElementIsObject:
+		if (parent > FuPriority::equality)
+			writeChar('(');
+		writePostfix(obj, "?.constructor == Object");
+		if (parent > FuPriority::equality)
+			writeChar(')');
+		break;
+	case FuId::jsonElementIsArray:
+		writeCall("Array.isArray", obj);
+		break;
+	case FuId::jsonElementIsString:
+		writeTypeofEquals(obj, "string", parent);
+		break;
+	case FuId::jsonElementIsNumber:
+		writeTypeofEquals(obj, "number", parent);
+		break;
+	case FuId::jsonElementIsBoolean:
+		writeTypeofEquals(obj, "boolean", parent);
+		break;
+	case FuId::jsonElementIsNull:
+		if (parent > FuPriority::equality)
+			writeChar('(');
+		obj->accept(this, FuPriority::equality);
+		write(" === null");
+		if (parent > FuPriority::equality)
+			writeChar(')');
 		break;
 	case FuId::jsonElementGetObject:
 	case FuId::jsonElementGetArray:
@@ -19970,33 +19995,6 @@ void GenJsNoModule::writeMain(const FuMethod * main)
 
 void GenJsNoModule::writeLib(const FuProgram * program)
 {
-	if (program->jsonValueKindEnum) {
-		writeNewLine();
-		write("const JsonValueKind = ");
-		openBlock();
-		writeLine("OBJECT : 1,");
-		writeLine("ARRAY : 2,");
-		writeLine("STRING : 3,");
-		writeLine("NUMBER : 4,");
-		writeLine("TRUE : 5,");
-		writeLine("FALSE : 6,");
-		writeLine("NULL : 7,");
-		write("get : e => ");
-		openBlock();
-		write("switch (typeof(e)) ");
-		openBlock();
-		writeLine("case \"string\":");
-		writeLine("\treturn JsonValueKind.STRING;");
-		writeLine("case \"number\":");
-		writeLine("\treturn JsonValueKind.NUMBER;");
-		writeLine("case \"boolean\":");
-		writeLine("\treturn e ? JsonValueKind.TRUE : JsonValueKind.FALSE;");
-		writeLine("default:");
-		writeLine("\treturn Array.isArray(e) ? JsonValueKind.ARRAY: e === null ? JsonValueKind.NULL : JsonValueKind.OBJECT;");
-		closeBlock();
-		closeBlock();
-		closeBlock();
-	}
 	if (this->stringWriter) {
 		writeNewLine();
 		writeLine("class StringWriter");
@@ -22823,9 +22821,6 @@ void GenPy::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	case FuId::orderedDictionaryCount:
 		writeStringLength(expr->left.get());
 		break;
-	case FuId::jsonElementValueKind:
-		writeCall("JsonValueKind.get", expr->left.get());
-		break;
 	case FuId::mathNaN:
 		include("math");
 		write("math.nan");
@@ -23132,6 +23127,15 @@ void GenPy::writeRegexSearch(const std::vector<std::shared_ptr<FuExpr>> * args)
 	writeChar(')');
 }
 
+void GenPy::writeJsonElementIs(const FuExpr * obj, std::string_view name)
+{
+	write("isinstance(");
+	obj->accept(this, FuPriority::argument);
+	write(", ");
+	write(name);
+	writeChar(')');
+}
+
 void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -23406,8 +23410,30 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::jsonElementParse:
 		include("json");
-		obj->accept(this, FuPriority::assign);
-		writeCall(" = json.loads", (*args)[0].get());
+		writeCall("json.loads", (*args)[0].get());
+		break;
+	case FuId::jsonElementIsObject:
+		writeJsonElementIs(obj, "dict");
+		break;
+	case FuId::jsonElementIsArray:
+		writeJsonElementIs(obj, "list");
+		break;
+	case FuId::jsonElementIsString:
+		writeJsonElementIs(obj, "str");
+		break;
+	case FuId::jsonElementIsNumber:
+		writeJsonElementIs(obj, "float");
+		break;
+	case FuId::jsonElementIsBoolean:
+		writeJsonElementIs(obj, "bool");
+		break;
+	case FuId::jsonElementIsNull:
+		if (parent > FuPriority::equality)
+			writeChar('(');
+		obj->accept(this, FuPriority::equality);
+		write(" is None");
+		if (parent > FuPriority::equality)
+			writeChar(')');
 		break;
 	case FuId::jsonElementGetObject:
 	case FuId::jsonElementGetArray:
@@ -23932,41 +23958,6 @@ void GenPy::writeProgram(const FuProgram * program)
 	this->writtenTypes.clear();
 	this->switchBreak = false;
 	openStringWriter();
-	if (program->jsonValueKindEnum) {
-		writeNewLine();
-		include("enum");
-		write("class JsonValueKind(enum.Enum)");
-		openChild();
-		writeLine("OBJECT = 1");
-		writeLine("ARRAY = 2");
-		writeLine("STRING = 3");
-		writeLine("NUMBER = 4");
-		writeLine("TRUE = 5");
-		writeLine("FALSE = 6");
-		writeLine("NULL = 7");
-		writeLine("@staticmethod");
-		write("def get(e)");
-		openChild();
-		write("match e");
-		openChild();
-		writeLine("case dict():");
-		writeLine("\treturn JsonValueKind.OBJECT");
-		writeLine("case list():");
-		writeLine("\treturn JsonValueKind.ARRAY");
-		writeLine("case str():");
-		writeLine("\treturn JsonValueKind.STRING");
-		writeLine("case float():");
-		writeLine("\treturn JsonValueKind.NUMBER");
-		writeLine("case True:");
-		writeLine("\treturn JsonValueKind.TRUE");
-		writeLine("case False:");
-		writeLine("\treturn JsonValueKind.FALSE");
-		writeLine("case None:");
-		writeLine("\treturn JsonValueKind.NULL");
-		closeChild();
-		closeChild();
-		closeChild();
-	}
 	writeTypes(program);
 	createOutputFile();
 	writeTopLevelNatives(program);

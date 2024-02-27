@@ -490,12 +490,7 @@ public class GenD : GenCCppD
 			}
 			break;
 		default:
-			if (type.Id == FuId.JsonValueKindEnum) {
-				Include("std.json");
-				Write("JSONType");
-			}
-			else
-				Write(type.Name);
+			Write(type.Name);
 			break;
 		}
 	}
@@ -698,30 +693,6 @@ public class GenD : GenCCppD
 		case FuId.MatchValue:
 			WritePostfix(expr.Left, ".hit");
 			break;
-		case FuId.JsonElementValueKind:
-			WritePostfix(expr.Left, ".type");
-			break;
-		case FuId.JsonValueKindObject:
-			Write("JSONType.object");
-			break;
-		case FuId.JsonValueKindArray:
-			Write("JSONType.array");
-			break;
-		case FuId.JsonValueKindString:
-			Write("JSONType.string");
-			break;
-		case FuId.JsonValueKindNumber:
-			Write("JSONType.float_");
-			break;
-		case FuId.JsonValueKindTrue:
-			Write("JSONType.true_");
-			break;
-		case FuId.JsonValueKindFalse:
-			Write("JSONType.false_");
-			break;
-		case FuId.JsonValueKindNull:
-			Write("JSONType.null_");
-			break;
 		case FuId.MathNaN:
 			Write("double.nan");
 			break;
@@ -781,6 +752,16 @@ public class GenD : GenCCppD
 		else
 			WriteCoercedExpr(type, args[index]);
 		WriteChar(')');
+	}
+
+	void WriteJsonElementIs!(FuExpr obj, string name, FuPriority parent)
+	{
+		if (parent > FuPriority.Equality)
+			WriteChar('(');
+		WritePostfix(obj, ".type == JSONType.");
+		Write(name);
+		if (parent > FuPriority.Equality)
+			WriteChar(')');
 	}
 
 	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
@@ -1122,8 +1103,30 @@ public class GenD : GenCCppD
 			WriteIndexing(obj, args[0]);
 			break;
 		case FuId.JsonElementParse:
-			obj.Accept(this, FuPriority.Assign);
-			WriteCall(" = parseJSON", args[0]);
+			WriteCall("parseJSON", args[0]);
+			break;
+		case FuId.JsonElementIsObject:
+			WriteJsonElementIs(obj, "object", parent);
+			break;
+		case FuId.JsonElementIsArray:
+			WriteJsonElementIs(obj, "array", parent);
+			break;
+		case FuId.JsonElementIsString:
+			WriteJsonElementIs(obj, "string", parent);
+			break;
+		case FuId.JsonElementIsNumber:
+			WriteJsonElementIs(obj, "float_", parent);
+			break;
+		case FuId.JsonElementIsBoolean:
+			if (parent > FuPriority.CondOr)
+				WriteChar('(');
+			WritePostfix(obj, ".type == JSONType.true_ || ");
+			WritePostfix(obj, ".type == JSONType.false_"); // FIXME: side effect
+			if (parent > FuPriority.CondOr)
+				WriteChar(')');
+			break;
+		case FuId.JsonElementIsNull:
+			WriteJsonElementIs(obj, "null_", parent);
 			break;
 		case FuId.JsonElementGetObject:
 			WritePostfix(obj, ".object");

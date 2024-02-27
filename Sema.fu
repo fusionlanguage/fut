@@ -234,8 +234,6 @@ public class FuSema
 				}
 				else if (symbol.Symbol.Id == FuId.RegexOptionsEnum)
 					this.Program.RegexOptionsEnum = true;
-				else if (symbol.Symbol.Id == FuId.JsonValueKindEnum)
-					this.Program.JsonValueKindEnum = true;
 			}
 			return resolved;
 		}
