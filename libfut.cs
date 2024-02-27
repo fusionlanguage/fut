@@ -10014,6 +10014,7 @@ namespace Fusion
 			switch (klass.Class.Id) {
 			case FuId.None:
 			case FuId.ArrayPtrClass:
+			case FuId.JsonElementClass:
 				if (klass is FuDynamicPtrType) {
 					this.SharedRelease = true;
 					Write("FuShared_Release");

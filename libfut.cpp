@@ -9707,6 +9707,7 @@ bool GenC::writeDestructMethodName(const FuClassType * klass)
 	switch (klass->class_->id) {
 	case FuId::none:
 	case FuId::arrayPtrClass:
+	case FuId::jsonElementClass:
 		if (dynamic_cast<const FuDynamicPtrType *>(klass)) {
 			this->sharedRelease = true;
 			write("FuShared_Release");

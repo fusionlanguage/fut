@@ -10359,6 +10359,7 @@ export class GenC extends GenCCpp
 		switch (klass.class.id) {
 		case FuId.NONE:
 		case FuId.ARRAY_PTR_CLASS:
+		case FuId.JSON_ELEMENT_CLASS:
 			if (klass instanceof FuDynamicPtrType) {
 				this.#sharedRelease = true;
 				this.write("FuShared_Release");
