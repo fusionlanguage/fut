@@ -13760,6 +13760,7 @@ export class GenCpp extends GenCCpp
 {
 	#usingStringViewLiterals;
 	#hasEnumFlags;
+	#numberTryParse;
 	#stringReplace;
 	#stringToLower;
 	#stringToUpper;
@@ -14339,7 +14340,7 @@ export class GenCpp extends GenCCpp
 		if (expr instanceof FuLiteralString)
 			expr.accept(this, FuPriority.ARGUMENT);
 		else
-			this.writePostfix(expr, ".data()");
+			this.writePostfix(expr, ".c_str()");
 	}
 
 	#writeRegex(args, argIndex)
@@ -14497,25 +14498,11 @@ export class GenCpp extends GenCCpp
 			break;
 		case FuId.INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
-			this.include("cstdlib");
-			this.write("[&] { char *ciend; ");
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" = std::strtol");
-			if (method.id == FuId.LONG_TRY_PARSE)
-				this.writeChar(108);
-			this.writeChar(40);
-			this.#writeCString(args[0]);
-			this.write(", &ciend");
-			this.writeTryParseRadix(args);
-			this.write("); return *ciend == '\\0'; }()");
-			break;
 		case FuId.DOUBLE_TRY_PARSE:
-			this.include("cstdlib");
-			this.write("[&] { char *ciend; ");
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" = std::strtod(");
-			this.#writeCString(args[0]);
-			this.write(", &ciend); return *ciend == '\\0'; }()");
+			this.include("charconv");
+			this.include("string_view");
+			this.#numberTryParse = true;
+			this.writeCall("FuNumber_TryParse", obj, args[0], args.length == 2 ? args[1] : null);
 			break;
 		case FuId.STRING_CONTAINS:
 			if (parent > FuPriority.EQUALITY)
@@ -15304,9 +15291,7 @@ export class GenCpp extends GenCCpp
 	writeStronglyCoerced(type, expr)
 	{
 		if (type.id == FuId.STRING_STORAGE_TYPE && expr.type.id == FuId.STRING_PTR_TYPE && !(expr instanceof FuLiteral)) {
-			this.write("std::string(");
-			expr.accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeCall("std::string", expr);
 		}
 		else {
 			let call = GenCpp.isStringSubstring(expr);
@@ -15667,6 +15652,7 @@ export class GenCpp extends GenCCpp
 		this.inHeaderFile = true;
 		this.#usingStringViewLiterals = false;
 		this.#hasEnumFlags = false;
+		this.#numberTryParse = false;
 		this.#stringReplace = false;
 		this.#stringToLower = false;
 		this.#stringToUpper = false;
@@ -15716,6 +15702,16 @@ export class GenCpp extends GenCCpp
 		this.createImplementationFile(program, ".hpp");
 		if (this.#usingStringViewLiterals)
 			this.writeLine("using namespace std::string_view_literals;");
+		if (this.#numberTryParse) {
+			this.writeNewLine();
+			this.writeLine("template <class T, class... Args>");
+			this.writeLine("bool FuNumber_TryParse(T &number, std::string_view s, Args... args)");
+			this.openBlock();
+			this.writeLine("const char *end = s.begin() + s.size();");
+			this.writeLine("auto result = std::from_chars(s.begin(), end, number, args...);");
+			this.writeLine("return result.ec == std::errc{} && result.ptr == end;");
+			this.closeBlock();
+		}
 		if (this.#stringReplace) {
 			this.writeNewLine();
 			this.writeLine("static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");

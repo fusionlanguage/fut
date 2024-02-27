@@ -1,10 +1,19 @@
 // Generated automatically with "fut". Do not edit.
 #include <algorithm>
 #include <cassert>
+#include <charconv>
 #include <cmath>
 #include <cstdlib>
 #include <format>
 #include "libfut.hpp"
+
+template <class T, class... Args>
+bool FuNumber_TryParse(T &number, std::string_view s, Args... args)
+{
+	const char *end = s.begin() + s.size();
+	auto result = std::from_chars(s.begin(), end, number, args...);
+	return result.ec == std::errc{} && result.ptr == end;
+}
 
 static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
 {
@@ -2889,7 +2898,7 @@ void FuParser::checkXcrementParent()
 std::shared_ptr<FuLiteralDouble> FuParser::parseDouble()
 {
 	double d;
-	if (![&] { char *ciend; d = std::strtod(FuString_Replace(getLexeme(), "_", "").data(), &ciend); return *ciend == '\0'; }())
+	if (!FuNumber_TryParse(d, FuString_Replace(getLexeme(), "_", "")))
 		reportError("Invalid floating-point number");
 	std::shared_ptr<FuLiteralDouble> result = std::make_shared<FuLiteralDouble>();
 	result->line = this->line;
@@ -13526,7 +13535,7 @@ void GenCpp::writeCString(const FuExpr * expr)
 	if (dynamic_cast<const FuLiteralString *>(expr))
 		expr->accept(this, FuPriority::argument);
 	else
-		writePostfix(expr, ".data()");
+		writePostfix(expr, ".c_str()");
 }
 
 void GenCpp::writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex)
@@ -13683,25 +13692,11 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::intTryParse:
 	case FuId::longTryParse:
-		include("cstdlib");
-		write("[&] { char *ciend; ");
-		obj->accept(this, FuPriority::assign);
-		write(" = std::strtol");
-		if (method->id == FuId::longTryParse)
-			writeChar('l');
-		writeChar('(');
-		writeCString((*args)[0].get());
-		write(", &ciend");
-		writeTryParseRadix(args);
-		write("); return *ciend == '\\0'; }()");
-		break;
 	case FuId::doubleTryParse:
-		include("cstdlib");
-		write("[&] { char *ciend; ");
-		obj->accept(this, FuPriority::assign);
-		write(" = std::strtod(");
-		writeCString((*args)[0].get());
-		write(", &ciend); return *ciend == '\\0'; }()");
+		include("charconv");
+		include("string_view");
+		this->numberTryParse = true;
+		writeCall("FuNumber_TryParse", obj, (*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 		break;
 	case FuId::stringContains:
 		if (parent > FuPriority::equality)
@@ -14493,9 +14488,7 @@ void GenCpp::visitLock(const FuLock * statement)
 void GenCpp::writeStronglyCoerced(const FuType * type, const FuExpr * expr)
 {
 	if (type->id == FuId::stringStorageType && expr->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteral *>(expr)) {
-		write("std::string(");
-		expr->accept(this, FuPriority::argument);
-		writeChar(')');
+		writeCall("std::string", expr);
 	}
 	else {
 		const FuCallExpr * call = isStringSubstring(expr);
@@ -14839,6 +14832,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 	this->inHeaderFile = true;
 	this->usingStringViewLiterals = false;
 	this->hasEnumFlags = false;
+	this->numberTryParse = false;
 	this->stringReplace = false;
 	this->stringToLower = false;
 	this->stringToUpper = false;
@@ -14887,6 +14881,16 @@ void GenCpp::writeProgram(const FuProgram * program)
 	createImplementationFile(program, ".hpp");
 	if (this->usingStringViewLiterals)
 		writeLine("using namespace std::string_view_literals;");
+	if (this->numberTryParse) {
+		writeNewLine();
+		writeLine("template <class T, class... Args>");
+		writeLine("bool FuNumber_TryParse(T &number, std::string_view s, Args... args)");
+		openBlock();
+		writeLine("const char *end = s.begin() + s.size();");
+		writeLine("auto result = std::from_chars(s.begin(), end, number, args...);");
+		writeLine("return result.ec == std::errc{} && result.ptr == end;");
+		closeBlock();
+	}
 	if (this->stringReplace) {
 		writeNewLine();
 		writeLine("static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");

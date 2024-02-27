@@ -13341,6 +13341,8 @@ namespace Fusion
 
 		bool HasEnumFlags;
 
+		bool NumberTryParse;
+
 		bool StringReplace;
 
 		bool StringToLower;
@@ -13916,7 +13918,7 @@ namespace Fusion
 			if (expr is FuLiteralString)
 				expr.Accept(this, FuPriority.Argument);
 			else
-				WritePostfix(expr, ".data()");
+				WritePostfix(expr, ".c_str()");
 		}
 
 		void WriteRegex(List<FuExpr> args, int argIndex)
@@ -14072,25 +14074,11 @@ namespace Fusion
 				break;
 			case FuId.IntTryParse:
 			case FuId.LongTryParse:
-				Include("cstdlib");
-				Write("[&] { char *ciend; ");
-				obj.Accept(this, FuPriority.Assign);
-				Write(" = std::strtol");
-				if (method.Id == FuId.LongTryParse)
-					WriteChar('l');
-				WriteChar('(');
-				WriteCString(args[0]);
-				Write(", &ciend");
-				WriteTryParseRadix(args);
-				Write("); return *ciend == '\\0'; }()");
-				break;
 			case FuId.DoubleTryParse:
-				Include("cstdlib");
-				Write("[&] { char *ciend; ");
-				obj.Accept(this, FuPriority.Assign);
-				Write(" = std::strtod(");
-				WriteCString(args[0]);
-				Write(", &ciend); return *ciend == '\\0'; }()");
+				Include("charconv");
+				Include("string_view");
+				this.NumberTryParse = true;
+				WriteCall("FuNumber_TryParse", obj, args[0], args.Count == 2 ? args[1] : null);
 				break;
 			case FuId.StringContains:
 				if (parent > FuPriority.Equality)
@@ -14875,9 +14863,7 @@ namespace Fusion
 		protected override void WriteStronglyCoerced(FuType type, FuExpr expr)
 		{
 			if (type.Id == FuId.StringStorageType && expr.Type.Id == FuId.StringPtrType && !(expr is FuLiteral)) {
-				Write("std::string(");
-				expr.Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteCall("std::string", expr);
 			}
 			else {
 				FuCallExpr call = IsStringSubstring(expr);
@@ -15228,6 +15214,7 @@ namespace Fusion
 			this.InHeaderFile = true;
 			this.UsingStringViewLiterals = false;
 			this.HasEnumFlags = false;
+			this.NumberTryParse = false;
 			this.StringReplace = false;
 			this.StringToLower = false;
 			this.StringToUpper = false;
@@ -15276,6 +15263,16 @@ namespace Fusion
 			CreateImplementationFile(program, ".hpp");
 			if (this.UsingStringViewLiterals)
 				WriteLine("using namespace std::string_view_literals;");
+			if (this.NumberTryParse) {
+				WriteNewLine();
+				WriteLine("template <class T, class... Args>");
+				WriteLine("bool FuNumber_TryParse(T &number, std::string_view s, Args... args)");
+				OpenBlock();
+				WriteLine("const char *end = s.begin() + s.size();");
+				WriteLine("auto result = std::from_chars(s.begin(), end, number, args...);");
+				WriteLine("return result.ec == std::errc{} && result.ptr == end;");
+				CloseBlock();
+			}
 			if (this.StringReplace) {
 				WriteNewLine();
 				WriteLine("static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)");

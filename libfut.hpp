@@ -2306,6 +2306,7 @@ public:
 private:
 	bool usingStringViewLiterals;
 	bool hasEnumFlags;
+	bool numberTryParse;
 	bool stringReplace;
 	bool stringToLower;
 	bool stringToUpper;
