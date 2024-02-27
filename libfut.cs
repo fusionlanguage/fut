@@ -13913,14 +13913,6 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		void WriteCString(FuExpr expr)
-		{
-			if (expr is FuLiteralString)
-				expr.Accept(this, FuPriority.Argument);
-			else
-				WritePostfix(expr, ".c_str()");
-		}
-
 		void WriteRegex(List<FuExpr> args, int argIndex)
 		{
 			Include("regex");
@@ -14458,7 +14450,16 @@ namespace Fusion
 			case FuId.EnvironmentGetEnvironmentVariable:
 				Include("cstdlib");
 				Write("std::getenv(");
-				WriteCString(args[0]);
+				if (args[0].Type.Id == FuId.StringStorageType)
+					WritePostfix(args[0], ".c_str()");
+				else if (args[0] is FuLiteralString)
+					args[0].Accept(this, FuPriority.Argument);
+				else {
+					Include("string");
+					Write("std::string(");
+					args[0].Accept(this, FuPriority.Argument);
+					Write(").c_str()");
+				}
 				WriteChar(')');
 				break;
 			case FuId.RegexCompile:

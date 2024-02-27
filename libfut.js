@@ -14335,14 +14335,6 @@ export class GenCpp extends GenCCpp
 		this.writeChar(41);
 	}
 
-	#writeCString(expr)
-	{
-		if (expr instanceof FuLiteralString)
-			expr.accept(this, FuPriority.ARGUMENT);
-		else
-			this.writePostfix(expr, ".c_str()");
-	}
-
 	#writeRegex(args, argIndex)
 	{
 		this.include("regex");
@@ -14884,7 +14876,16 @@ export class GenCpp extends GenCCpp
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			this.include("cstdlib");
 			this.write("std::getenv(");
-			this.#writeCString(args[0]);
+			if (args[0].type.id == FuId.STRING_STORAGE_TYPE)
+				this.writePostfix(args[0], ".c_str()");
+			else if (args[0] instanceof FuLiteralString)
+				args[0].accept(this, FuPriority.ARGUMENT);
+			else {
+				this.include("string");
+				this.write("std::string(");
+				args[0].accept(this, FuPriority.ARGUMENT);
+				this.write(").c_str()");
+			}
 			this.writeChar(41);
 			break;
 		case FuId.REGEX_COMPILE:

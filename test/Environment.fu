@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "HOME";
-		string? homeDir = Environment.GetEnvironmentVariable(s); //FAIL: cpp TODO; cl
+		string? homeDir = Environment.GetEnvironmentVariable(s); //FAIL: cl
 		return homeDir != null
 			&& Environment.GetEnvironmentVariable("NOT_EXISTING_ENV_VAR") == null
 			&& Environment.GetEnvironmentVariable("") == null

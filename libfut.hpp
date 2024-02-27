@@ -2325,7 +2325,6 @@ private:
 	void writeStringMethod(const FuExpr * obj, std::string_view name, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeAllAnyContains(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeCollectionMethod(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeCString(const FuExpr * expr);
 	void writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeRegexArgument(const FuExpr * expr);

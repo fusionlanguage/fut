@@ -13530,14 +13530,6 @@ void GenCpp::writeCollectionMethod(const FuExpr * obj, std::string_view name, co
 	writeChar(')');
 }
 
-void GenCpp::writeCString(const FuExpr * expr)
-{
-	if (dynamic_cast<const FuLiteralString *>(expr))
-		expr->accept(this, FuPriority::argument);
-	else
-		writePostfix(expr, ".c_str()");
-}
-
 void GenCpp::writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex)
 {
 	include("regex");
@@ -14082,7 +14074,16 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 	case FuId::environmentGetEnvironmentVariable:
 		include("cstdlib");
 		write("std::getenv(");
-		writeCString((*args)[0].get());
+		if ((*args)[0]->type->id == FuId::stringStorageType)
+			writePostfix((*args)[0].get(), ".c_str()");
+		else if (dynamic_cast<const FuLiteralString *>((*args)[0].get()))
+			(*args)[0]->accept(this, FuPriority::argument);
+		else {
+			include("string");
+			write("std::string(");
+			(*args)[0]->accept(this, FuPriority::argument);
+			write(").c_str()");
+		}
 		writeChar(')');
 		break;
 	case FuId::regexCompile:
