@@ -17168,10 +17168,16 @@ export class GenD extends GenCCppD
 		return false;
 	}
 
+	static #isJsonElementList(list)
+	{
+		let json;
+		return (json = list.getElementType()) instanceof FuClassType && json.class.id == FuId.JSON_ELEMENT_CLASS;
+	}
+
 	static #isStructPtr(type)
 	{
 		let ptr;
-		return (ptr = type) instanceof FuClassType && (ptr.class.id == FuId.LIST_CLASS || ptr.class.id == FuId.STACK_CLASS || ptr.class.id == FuId.QUEUE_CLASS);
+		return (ptr = type) instanceof FuClassType && (ptr.class.id == FuId.LIST_CLASS || ptr.class.id == FuId.STACK_CLASS || ptr.class.id == FuId.QUEUE_CLASS) && !GenD.#isJsonElementList(ptr);
 	}
 
 	#writeElementType(type)
@@ -17230,10 +17236,16 @@ export class GenD extends GenCCppD
 				break;
 			case FuId.LIST_CLASS:
 			case FuId.STACK_CLASS:
-				this.include("std.container.array");
-				this.write("Array!(");
-				this.#writeElementType(klass.getElementType());
-				this.writeChar(41);
+				if (GenD.#isJsonElementList(klass)) {
+					this.include("std.json");
+					this.write("JSONValue[]");
+				}
+				else {
+					this.include("std.container.array");
+					this.write("Array!(");
+					this.#writeElementType(klass.getElementType());
+					this.writeChar(41);
+				}
 				break;
 			case FuId.QUEUE_CLASS:
 				this.include("std.container.dlist");
@@ -17952,7 +17964,7 @@ export class GenD extends GenCCppD
 			this.writePostfix(obj, ".str");
 			break;
 		case FuId.JSON_ELEMENT_GET_DOUBLE:
-			this.writePostfix(obj, ".floating");
+			this.writePostfix(obj, ".get!double");
 			break;
 		case FuId.JSON_ELEMENT_GET_BOOLEAN:
 			this.writePostfix(obj, ".boolean");

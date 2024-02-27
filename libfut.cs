@@ -16697,7 +16697,9 @@ namespace Fusion
 			return false;
 		}
 
-		static bool IsStructPtr(FuType type) => type is FuClassType ptr && (ptr.Class.Id == FuId.ListClass || ptr.Class.Id == FuId.StackClass || ptr.Class.Id == FuId.QueueClass);
+		static bool IsJsonElementList(FuClassType list) => list.GetElementType() is FuClassType json && json.Class.Id == FuId.JsonElementClass;
+
+		static bool IsStructPtr(FuType type) => type is FuClassType ptr && (ptr.Class.Id == FuId.ListClass || ptr.Class.Id == FuId.StackClass || ptr.Class.Id == FuId.QueueClass) && !IsJsonElementList(ptr);
 
 		void WriteElementType(FuType type)
 		{
@@ -16754,10 +16756,16 @@ namespace Fusion
 					break;
 				case FuId.ListClass:
 				case FuId.StackClass:
-					Include("std.container.array");
-					Write("Array!(");
-					WriteElementType(klass.GetElementType());
-					WriteChar(')');
+					if (IsJsonElementList(klass)) {
+						Include("std.json");
+						Write("JSONValue[]");
+					}
+					else {
+						Include("std.container.array");
+						Write("Array!(");
+						WriteElementType(klass.GetElementType());
+						WriteChar(')');
+					}
 					break;
 				case FuId.QueueClass:
 					Include("std.container.dlist");
@@ -17469,7 +17477,7 @@ namespace Fusion
 				WritePostfix(obj, ".str");
 				break;
 			case FuId.JsonElementGetDouble:
-				WritePostfix(obj, ".floating");
+				WritePostfix(obj, ".get!double");
 				break;
 			case FuId.JsonElementGetBoolean:
 				WritePostfix(obj, ".boolean");

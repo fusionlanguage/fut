@@ -2458,6 +2458,7 @@ private:
 	void writeCallType(FuCallType callType, std::string_view sealedString);
 	static bool isCreateWithNew(const FuType * type);
 	static bool isTransitiveConst(const FuClassType * array);
+	static bool isJsonElementList(const FuClassType * list);
 	static bool isStructPtr(const FuType * type);
 	void writeElementType(const FuType * type);
 	void writeStaticInitializer(const FuType * type);

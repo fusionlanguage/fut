@@ -22,7 +22,7 @@ public static class Test
 		json = JsonElement.Parse("[ 5, true ]");
 		if (!json.IsArray())
 			return false;
-		List<JsonElement#> list = json.GetArray(); //FAIL: d TODO
+		List<JsonElement#> list = json.GetArray();
 		if (list.Count != 2 || list[0].GetDouble() != 5 || !list[1].IsBoolean())
 			return false;
 

@@ -16098,10 +16098,16 @@ bool GenD::isTransitiveConst(const FuClassType * array)
 	return false;
 }
 
+bool GenD::isJsonElementList(const FuClassType * list)
+{
+	const FuClassType * json;
+	return (json = dynamic_cast<const FuClassType *>(list->getElementType().get())) && json->class_->id == FuId::jsonElementClass;
+}
+
 bool GenD::isStructPtr(const FuType * type)
 {
 	const FuClassType * ptr;
-	return (ptr = dynamic_cast<const FuClassType *>(type)) && (ptr->class_->id == FuId::listClass || ptr->class_->id == FuId::stackClass || ptr->class_->id == FuId::queueClass);
+	return (ptr = dynamic_cast<const FuClassType *>(type)) && (ptr->class_->id == FuId::listClass || ptr->class_->id == FuId::stackClass || ptr->class_->id == FuId::queueClass) && !isJsonElementList(ptr);
 }
 
 void GenD::writeElementType(const FuType * type)
@@ -16158,10 +16164,16 @@ void GenD::writeType(const FuType * type, bool promote)
 			break;
 		case FuId::listClass:
 		case FuId::stackClass:
-			include("std.container.array");
-			write("Array!(");
-			writeElementType(klass->getElementType().get());
-			writeChar(')');
+			if (isJsonElementList(klass)) {
+				include("std.json");
+				write("JSONValue[]");
+			}
+			else {
+				include("std.container.array");
+				write("Array!(");
+				writeElementType(klass->getElementType().get());
+				writeChar(')');
+			}
 			break;
 		case FuId::queueClass:
 			include("std.container.dlist");
@@ -16871,7 +16883,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writePostfix(obj, ".str");
 		break;
 	case FuId::jsonElementGetDouble:
-		writePostfix(obj, ".floating");
+		writePostfix(obj, ".get!double");
 		break;
 	case FuId::jsonElementGetBoolean:
 		writePostfix(obj, ".boolean");
