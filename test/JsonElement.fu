@@ -1,8 +1,358 @@
+#if CPP
+abstract class JsonElement
+{
+	public virtual bool IsObject() => false;
+	public virtual bool IsArray() => false;
+	public virtual bool IsString() => false;
+	public virtual bool IsNumber() => false;
+	public virtual bool IsBoolean() => false;
+	public virtual bool IsNull() => false;
+
+	public virtual Dictionary<string(), JsonElement#> GetObject()
+	{
+		assert false;
+	}
+
+	public virtual List<JsonElement#> GetArray()
+	{
+		assert false;
+	}
+
+	public virtual string GetString()
+	{
+		assert false;
+	}
+
+	public virtual double GetDouble()
+	{
+		assert false;
+	}
+
+	public virtual bool GetBoolean()
+	{
+		assert false;
+	}
+
+	public static JsonElement# Parse(string s)
+	{
+		JsonParser() parser;
+		return parser.TryParse(s);
+	}
+}
+
+class JsonObject : JsonElement
+{
+	internal Dictionary<string(), JsonElement#>() Value;
+	public override bool IsObject() => true;
+	public override Dictionary<string(), JsonElement#> GetObject() => Value;
+}
+
+class JsonArray : JsonElement
+{
+	internal List<JsonElement#>() Value;
+	public override bool IsArray() => true;
+	public override List<JsonElement#> GetArray() => Value;
+}
+
+class JsonString : JsonElement
+{
+	internal string() Value;
+	public override bool IsString() => true;
+	public override string GetString() => Value;
+}
+
+class JsonNumber : JsonElement
+{
+	internal double Value;
+	public override bool IsNumber() => true;
+	public override double GetDouble() => Value;
+}
+
+class JsonBoolean : JsonElement
+{
+	public override bool IsBoolean() => true;
+	public override bool GetBoolean() => false;
+}
+
+class JsonTrue : JsonBoolean
+{
+	public override bool GetBoolean() => true;
+}
+
+class JsonNull : JsonElement
+{
+	public override bool IsNull() => true;
+}
+
+class JsonParser
+{
+	string Input;
+	int Offset;
+	int InputLength;
+
+	bool SkipWhitespace!()
+	{
+		while (Offset < InputLength) {
+			switch (Input[Offset]) {
+			case '\t':
+			case '\n':
+			case '\r':
+			case ' ':
+				break;
+			default:
+				return true;
+			}
+			Offset++;
+		}
+		return false;
+	}
+
+	JsonObject#? ParseObject!()
+	{
+		Offset++;
+		if (!SkipWhitespace())
+			return null;
+		JsonObject# result = new JsonObject();
+		if (Input[Offset] == '}') {
+			Offset++;
+			return result;
+		}
+		while (Input[Offset] == '"') {
+			JsonString#? key = ParseString();
+			if (key == null || !SkipWhitespace() || Input[Offset] != ':')
+				return null;
+			Offset++;
+			JsonElement#? value = ParseWhitespaceAndElement();
+			if (value == null || !SkipWhitespace())
+				return null;
+			result.Value[key.Value] = value;
+			switch (Input[Offset++]) {
+			case ',':
+				break;
+			case '}':
+				return result;
+			default:
+				return null;
+			}
+			if (!SkipWhitespace())
+				return null;
+		}
+		return null;
+	}
+
+	JsonArray#? ParseArray!()
+	{
+		Offset++;
+		if (!SkipWhitespace())
+			return null;
+		JsonArray# result = new JsonArray();
+		if (Input[Offset] == ']') {
+			Offset++;
+			return result;
+		}
+		do {
+			JsonElement#? element = ParseElement();
+			if (element == null || !SkipWhitespace())
+				return null;
+			result.Value.Add(element);
+			switch (Input[Offset++]) {
+			case ',':
+				break;
+			case ']':
+				return result;
+			default:
+				return null;
+			}
+		} while (SkipWhitespace());
+		return null;
+	}
+
+	JsonString#? ParseString!()
+	{
+		Offset++;
+		StringWriter() result;
+		int startOffset = Offset;
+		while (Offset < InputLength) {
+			switch (Input[Offset]) {
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+			case 8:
+			case 9:
+			case 10:
+			case 11:
+			case 12:
+			case 13:
+			case 14:
+			case 15:
+			case 16:
+			case 17:
+			case 18:
+			case 19:
+			case 20:
+			case 21:
+			case 22:
+			case 23:
+			case 24:
+			case 25:
+			case 26:
+			case 27:
+			case 28:
+			case 29:
+			case 30:
+			case 31:
+				return null;
+			case '"':
+				result.Write(Input.Substring(startOffset, Offset++ - startOffset));
+				return new JsonString { Value = result.ToString() };
+			case '\\':
+				result.Write(Input.Substring(startOffset, Offset++ - startOffset));
+				if (Offset >= InputLength)
+					return null;
+				switch (Input[Offset]) {
+				case '"':
+				case '\\':
+				case '/':
+					startOffset = Offset++;
+					continue;
+				case 'b':
+					result.WriteChar(8);
+					break;
+				case 'f':
+					result.WriteChar(12);
+					break;
+				case 'n':
+					result.WriteChar('\n');
+					break;
+				case 'r':
+					result.WriteChar('\r');
+					break;
+				case 't':
+					result.WriteChar('\t');
+					break;
+				case 'u':
+					if (Offset + 5 >= InputLength)
+						return null;
+					int c;
+					if (!c.TryParse(Input.Substring(Offset + 1, 4), 16))
+						return null;
+					result.WriteCodePoint(c);
+					Offset += 4;
+					break;
+				default:
+					return null;
+				}
+				startOffset = ++Offset;
+				break;
+			default:
+				Offset++;
+				break;
+			}
+		}
+		return null;
+	}
+
+	bool SeeDigit() => Offset < InputLength && Input[Offset] >= '0' && Input[Offset] <= '9';
+
+	void ParseDigits!()
+	{
+		while (SeeDigit())
+			Offset++;
+	}
+
+	JsonNumber#? ParseNumber!()
+	{
+		int startOffset = Offset;
+		if (Input[Offset] == '-')
+			Offset++;
+		if (!SeeDigit())
+			return null;
+		if (Input[Offset++] > '0')
+			ParseDigits();
+		if (Offset < InputLength && Input[Offset] == '.') {
+			Offset++;
+			if (!SeeDigit())
+				return null;
+			ParseDigits();
+		}
+		if (Offset < InputLength && (Input[Offset] | 0x20) == 'e') {
+			if (++Offset < InputLength && (Input[Offset] == '+' || Input[Offset] == '-'))
+				Offset++;
+			if (!SeeDigit())
+				return null;
+			ParseDigits();
+		}
+		double d;
+		if (!d.TryParse(Input.Substring(startOffset, Offset - startOffset)))
+			return null;
+		return new JsonNumber { Value = d };
+	}
+
+	bool ParseKeyword!(string s)
+	{
+		foreach (int c in s) {
+			if (++Offset >= InputLength || Input[Offset] != c)
+				return false;
+		}
+		Offset++;
+		return true;
+	}
+
+	JsonElement#? ParseElement!()
+	{
+		switch (Input[Offset]) {
+		case '{':
+			return ParseObject();
+		case '[':
+			return ParseArray();
+		case '"':
+			return ParseString();
+		case '-':
+		case '0':
+		case '1':
+		case '2':
+		case '3':
+		case '4':
+		case '5':
+		case '6':
+		case '7':
+		case '8':
+		case '9':
+			return ParseNumber();
+		case 't':
+			return ParseKeyword("rue") ? new JsonTrue() : null;
+		case 'f':
+			return ParseKeyword("alse") ? new JsonBoolean() : null;
+		case 'n':
+			return ParseKeyword("ull") ? new JsonNull() : null;
+		default:
+			return null;
+		}
+	}
+
+	JsonElement#? ParseWhitespaceAndElement!() => SkipWhitespace() ? ParseElement() : null;
+
+	internal JsonElement#? TryParse!(string s)
+	{
+		Input = s;
+		Offset = 0;
+		InputLength = s.Length;
+		JsonElement#? result = ParseWhitespaceAndElement();
+		return SkipWhitespace() ? null : result;
+	}
+}
+#endif
+
 public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement# json; //FAIL: c cpp java swift TODO; cl
+		JsonElement# json; //FAIL: c java swift TODO; cl
 		json = JsonElement.Parse("\"foo\"");
 		if (!json.IsString() || json.GetString() != "foo")
 			return false;
