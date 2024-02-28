@@ -2788,6 +2788,8 @@ private:
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRange(const FuExpr * startIndex, const FuExpr * length);
 	bool addVar(std::string_view name);
+	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
+	void writeJsonElementGet(const FuExpr * obj, std::string_view name, FuPriority parent);
 	void writeDefaultValue(const FuType * type);
 	void writeEnumFlagsAnd(const FuExpr * left, std::string_view method, std::string_view notMethod, const FuExpr * right);
 	const FuExpr * writeAssignNested(const FuBinaryExpr * expr);

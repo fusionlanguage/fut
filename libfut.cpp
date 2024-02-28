@@ -20865,6 +20865,9 @@ void GenSwift::writeClassName(const FuClassType * klass)
 	case FuId::orderedDictionaryClass:
 		notSupported(klass, "OrderedDictionary");
 		break;
+	case FuId::jsonElementClass:
+		write("Any");
+		break;
 	case FuId::lockClass:
 		include("Foundation");
 		write("NSRecursiveLock");
@@ -21067,6 +21070,28 @@ bool GenSwift::addVar(std::string_view name)
 		return false;
 	vars->insert(name);
 	return true;
+}
+
+void GenSwift::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent)
+{
+	if (parent > FuPriority::equality)
+		writeChar('(');
+	obj->accept(this, FuPriority::equality);
+	write(" is ");
+	write(name);
+	if (parent > FuPriority::equality)
+		writeChar(')');
+}
+
+void GenSwift::writeJsonElementGet(const FuExpr * obj, std::string_view name, FuPriority parent)
+{
+	if (parent > FuPriority::equality)
+		writeChar('(');
+	obj->accept(this, FuPriority::equality);
+	write(" as! ");
+	write(name);
+	if (parent > FuPriority::equality)
+		writeChar(')');
 }
 
 void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
@@ -21374,6 +21399,44 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 		write("ProcessInfo.processInfo.environment[");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, false);
 		writeChar(']');
+		break;
+	case FuId::jsonElementParse:
+		include("Foundation");
+		write("try! JSONSerialization.jsonObject(with: ");
+		writePostfix((*args)[0].get(), ".data(using: .utf8)!, options: .fragmentsAllowed)");
+		break;
+	case FuId::jsonElementIsObject:
+		writeJsonElementIs(obj, "[String: Any]", parent);
+		break;
+	case FuId::jsonElementIsArray:
+		writeJsonElementIs(obj, "[Any]", parent);
+		break;
+	case FuId::jsonElementIsString:
+		writeJsonElementIs(obj, "String", parent);
+		break;
+	case FuId::jsonElementIsNumber:
+		writeJsonElementIs(obj, "Double", parent);
+		break;
+	case FuId::jsonElementIsBoolean:
+		writeJsonElementIs(obj, "Bool", parent);
+		break;
+	case FuId::jsonElementIsNull:
+		writeJsonElementIs(obj, "NSNull", parent);
+		break;
+	case FuId::jsonElementGetObject:
+		writeJsonElementGet(obj, "[String: Any]", parent);
+		break;
+	case FuId::jsonElementGetArray:
+		writeJsonElementGet(obj, "[Any]", parent);
+		break;
+	case FuId::jsonElementGetString:
+		writeJsonElementGet(obj, "String", parent);
+		break;
+	case FuId::jsonElementGetDouble:
+		writeJsonElementGet(obj, "Double", parent);
+		break;
+	case FuId::jsonElementGetBoolean:
+		writeJsonElementGet(obj, "Bool", parent);
 		break;
 	case FuId::mathMethod:
 	case FuId::mathLog2:

@@ -21668,6 +21668,9 @@ namespace Fusion
 			case FuId.OrderedDictionaryClass:
 				NotSupported(klass, "OrderedDictionary");
 				break;
+			case FuId.JsonElementClass:
+				Write("Any");
+				break;
 			case FuId.LockClass:
 				Include("Foundation");
 				Write("NSRecursiveLock");
@@ -21865,6 +21868,28 @@ namespace Fusion
 				return false;
 			vars.Add(name);
 			return true;
+		}
+
+		void WriteJsonElementIs(FuExpr obj, string name, FuPriority parent)
+		{
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			obj.Accept(this, FuPriority.Equality);
+			Write(" is ");
+			Write(name);
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
+		}
+
+		void WriteJsonElementGet(FuExpr obj, string name, FuPriority parent)
+		{
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			obj.Accept(this, FuPriority.Equality);
+			Write(" as! ");
+			Write(name);
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
 		}
 
 		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
@@ -22162,6 +22187,44 @@ namespace Fusion
 				Write("ProcessInfo.processInfo.environment[");
 				WriteUnwrapped(args[0], FuPriority.Argument, false);
 				WriteChar(']');
+				break;
+			case FuId.JsonElementParse:
+				Include("Foundation");
+				Write("try! JSONSerialization.jsonObject(with: ");
+				WritePostfix(args[0], ".data(using: .utf8)!, options: .fragmentsAllowed)");
+				break;
+			case FuId.JsonElementIsObject:
+				WriteJsonElementIs(obj, "[String: Any]", parent);
+				break;
+			case FuId.JsonElementIsArray:
+				WriteJsonElementIs(obj, "[Any]", parent);
+				break;
+			case FuId.JsonElementIsString:
+				WriteJsonElementIs(obj, "String", parent);
+				break;
+			case FuId.JsonElementIsNumber:
+				WriteJsonElementIs(obj, "Double", parent);
+				break;
+			case FuId.JsonElementIsBoolean:
+				WriteJsonElementIs(obj, "Bool", parent);
+				break;
+			case FuId.JsonElementIsNull:
+				WriteJsonElementIs(obj, "NSNull", parent);
+				break;
+			case FuId.JsonElementGetObject:
+				WriteJsonElementGet(obj, "[String: Any]", parent);
+				break;
+			case FuId.JsonElementGetArray:
+				WriteJsonElementGet(obj, "[Any]", parent);
+				break;
+			case FuId.JsonElementGetString:
+				WriteJsonElementGet(obj, "String", parent);
+				break;
+			case FuId.JsonElementGetDouble:
+				WriteJsonElementGet(obj, "Double", parent);
+				break;
+			case FuId.JsonElementGetBoolean:
+				WriteJsonElementGet(obj, "Bool", parent);
 				break;
 			case FuId.MathMethod:
 			case FuId.MathLog2:

@@ -22221,6 +22221,9 @@ export class GenSwift extends GenPySwift
 		case FuId.ORDERED_DICTIONARY_CLASS:
 			this.notSupported(klass, "OrderedDictionary");
 			break;
+		case FuId.JSON_ELEMENT_CLASS:
+			this.write("Any");
+			break;
 		case FuId.LOCK_CLASS:
 			this.include("Foundation");
 			this.write("NSRecursiveLock");
@@ -22425,6 +22428,28 @@ export class GenSwift extends GenPySwift
 			return false;
 		vars.add(name);
 		return true;
+	}
+
+	#writeJsonElementIs(obj, name, parent)
+	{
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(40);
+		obj.accept(this, FuPriority.EQUALITY);
+		this.write(" is ");
+		this.write(name);
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(41);
+	}
+
+	#writeJsonElementGet(obj, name, parent)
+	{
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(40);
+		obj.accept(this, FuPriority.EQUALITY);
+		this.write(" as! ");
+		this.write(name);
+		if (parent > FuPriority.EQUALITY)
+			this.writeChar(41);
 	}
 
 	writeCallExpr(obj, method, args, parent)
@@ -22724,6 +22749,44 @@ export class GenSwift extends GenPySwift
 			this.write("ProcessInfo.processInfo.environment[");
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, false);
 			this.writeChar(93);
+			break;
+		case FuId.JSON_ELEMENT_PARSE:
+			this.include("Foundation");
+			this.write("try! JSONSerialization.jsonObject(with: ");
+			this.writePostfix(args[0], ".data(using: .utf8)!, options: .fragmentsAllowed)");
+			break;
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+			this.#writeJsonElementIs(obj, "[String: Any]", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+			this.#writeJsonElementIs(obj, "[Any]", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_STRING:
+			this.#writeJsonElementIs(obj, "String", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+			this.#writeJsonElementIs(obj, "Double", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+			this.#writeJsonElementIs(obj, "Bool", parent);
+			break;
+		case FuId.JSON_ELEMENT_IS_NULL:
+			this.#writeJsonElementIs(obj, "NSNull", parent);
+			break;
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+			this.#writeJsonElementGet(obj, "[String: Any]", parent);
+			break;
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+			this.#writeJsonElementGet(obj, "[Any]", parent);
+			break;
+		case FuId.JSON_ELEMENT_GET_STRING:
+			this.#writeJsonElementGet(obj, "String", parent);
+			break;
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+			this.#writeJsonElementGet(obj, "Double", parent);
+			break;
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			this.#writeJsonElementGet(obj, "Bool", parent);
 			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:

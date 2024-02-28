@@ -352,7 +352,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement# json; //FAIL: c java swift TODO; cl
+		JsonElement# json; //FAIL: c java TODO; cl
 		json = JsonElement.Parse("\"foo\"");
 		if (!json.IsString() || json.GetString() != "foo")
 			return false;
