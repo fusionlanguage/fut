@@ -18135,6 +18135,10 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 			writeCall("System.err.print(Character.toChars", (*args)[0].get());
 			writeChar(')');
 		}
+		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
+			writeMethodCall(obj, "append(Character.toString", (*args)[0].get());
+			writeChar(')');
+		}
 		else {
 			write("try { ");
 			writeMethodCall(obj, "append(Character.toString", (*args)[0].get());

@@ -19301,6 +19301,10 @@ export class GenJava extends GenTyped
 				this.writeCall("System.err.print(Character.toChars", args[0]);
 				this.writeChar(41);
 			}
+			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
+				this.writeMethodCall(obj, "append(Character.toString", args[0]);
+				this.writeChar(41);
+			}
 			else {
 				this.write("try { ");
 				this.writeMethodCall(obj, "append(Character.toString", args[0]);

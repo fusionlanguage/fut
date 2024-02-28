@@ -18786,6 +18786,10 @@ namespace Fusion
 					WriteCall("System.err.print(Character.toChars", args[0]);
 					WriteChar(')');
 				}
+				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
+					WriteMethodCall(obj, "append(Character.toString", args[0]);
+					WriteChar(')');
+				}
 				else {
 					Write("try { ");
 					WriteMethodCall(obj, "append(Character.toString", args[0]);
