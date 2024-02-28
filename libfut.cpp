@@ -18441,6 +18441,50 @@ void GenJava::visitForeach(const FuForeach * statement)
 	writeChild(statement->body.get());
 }
 
+bool GenJava::isTryParse(FuId id)
+{
+	return id == FuId::intTryParse || id == FuId::longTryParse || id == FuId::doubleTryParse;
+}
+
+void GenJava::visitIf(const FuIf * statement)
+{
+	const FuPrefixExpr * not_;
+	const FuCallExpr * call;
+	if (statement->onFalse == nullptr && (not_ = dynamic_cast<const FuPrefixExpr *>(statement->cond.get())) && not_->op == FuToken::exclamationMark && (call = dynamic_cast<const FuCallExpr *>(not_->inner.get())) && isTryParse(call->method->symbol->id)) {
+		write("try ");
+		openBlock();
+		call->method->left->accept(this, FuPriority::assign);
+		write(" = ");
+		switch (call->method->symbol->id) {
+		case FuId::intTryParse:
+			write("Integer.parseInt");
+			break;
+		case FuId::longTryParse:
+			write("Long.parseLong");
+			break;
+		case FuId::doubleTryParse:
+			write("Double.parseDouble");
+			break;
+		default:
+			std::abort();
+		}
+		writeChar('(');
+		call->arguments[0]->accept(this, FuPriority::argument);
+		if (std::ssize(call->arguments) == 2) {
+			write(", ");
+			call->arguments[1]->accept(this, FuPriority::argument);
+		}
+		writeLine(");");
+		closeBlock();
+		write("catch (NumberFormatException e) ");
+		openBlock();
+		statement->onTrue->acceptStatement(this);
+		closeBlock();
+	}
+	else
+		GenBase::visitIf(statement);
+}
+
 void GenJava::visitLock(const FuLock * statement)
 {
 	writeCall("synchronized ", statement->lock.get());

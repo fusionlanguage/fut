@@ -1101,6 +1101,47 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
+	static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
+
+	internal override void VisitIf!(FuIf statement)
+	{
+		if (statement.OnFalse == null
+		 && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark
+		 && not.Inner is FuCallExpr call && IsTryParse(call.Method.Symbol.Id)) {
+			Write("try ");
+			OpenBlock();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			Write(" = ");
+			switch (call.Method.Symbol.Id) {
+			case FuId.IntTryParse:
+				Write("Integer.parseInt");
+				break;
+			case FuId.LongTryParse:
+				Write("Long.parseLong");
+				break;
+			case FuId.DoubleTryParse:
+				Write("Double.parseDouble");
+				break;
+			default:
+				assert false;
+			}
+			WriteChar('(');
+			call.Arguments[0].Accept(this, FuPriority.Argument);
+			if (call.Arguments.Count == 2) {
+				Write(", ");
+				call.Arguments[1].Accept(this, FuPriority.Argument);
+			}
+			WriteLine(");");
+			CloseBlock();
+			Write("catch (NumberFormatException e) ");
+			OpenBlock();
+			statement.OnTrue.AcceptStatement(this);
+			CloseBlock();
+		}
+		else
+			base.VisitIf(statement);
+	}
+
 	internal override void VisitLock!(FuLock statement)
 	{
 		WriteCall("synchronized ", statement.Lock);

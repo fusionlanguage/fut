@@ -2521,6 +2521,7 @@ public:
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitForeach(const FuForeach * statement) override;
+	void visitIf(const FuIf * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitReturn(const FuReturn * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
@@ -2540,6 +2541,7 @@ private:
 	void writeArrayBinarySearchFill(const FuExpr * obj, std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
+	static bool isTryParse(FuId id);
 	void createJavaFile(std::string_view className);
 	void writeSignature(const FuMethod * method, int paramCount);
 	void writeOverloads(const FuMethod * method, int paramCount);
