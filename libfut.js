@@ -22441,17 +22441,6 @@ export class GenSwift extends GenPySwift
 			this.writeChar(41);
 	}
 
-	#writeJsonElementGet(obj, name, parent)
-	{
-		if (parent > FuPriority.EQUALITY)
-			this.writeChar(40);
-		obj.accept(this, FuPriority.EQUALITY);
-		this.write(" as! ");
-		this.write(name);
-		if (parent > FuPriority.EQUALITY)
-			this.writeChar(41);
-	}
-
 	writeCallExpr(obj, method, args, parent)
 	{
 		switch (method.id) {
@@ -22774,19 +22763,17 @@ export class GenSwift extends GenPySwift
 			this.#writeJsonElementIs(obj, "NSNull", parent);
 			break;
 		case FuId.JSON_ELEMENT_GET_OBJECT:
-			this.#writeJsonElementGet(obj, "[String: Any]", parent);
-			break;
 		case FuId.JSON_ELEMENT_GET_ARRAY:
-			this.#writeJsonElementGet(obj, "[Any]", parent);
-			break;
 		case FuId.JSON_ELEMENT_GET_STRING:
-			this.#writeJsonElementGet(obj, "String", parent);
-			break;
 		case FuId.JSON_ELEMENT_GET_DOUBLE:
-			this.#writeJsonElementGet(obj, "Double", parent);
-			break;
 		case FuId.JSON_ELEMENT_GET_BOOLEAN:
-			this.#writeJsonElementGet(obj, "Bool", parent);
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(40);
+			obj.accept(this, FuPriority.EQUALITY);
+			this.write(" as! ");
+			this.#writeType(method.type);
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(41);
 			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:

@@ -21881,17 +21881,6 @@ namespace Fusion
 				WriteChar(')');
 		}
 
-		void WriteJsonElementGet(FuExpr obj, string name, FuPriority parent)
-		{
-			if (parent > FuPriority.Equality)
-				WriteChar('(');
-			obj.Accept(this, FuPriority.Equality);
-			Write(" as! ");
-			Write(name);
-			if (parent > FuPriority.Equality)
-				WriteChar(')');
-		}
-
 		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
@@ -22212,19 +22201,17 @@ namespace Fusion
 				WriteJsonElementIs(obj, "NSNull", parent);
 				break;
 			case FuId.JsonElementGetObject:
-				WriteJsonElementGet(obj, "[String: Any]", parent);
-				break;
 			case FuId.JsonElementGetArray:
-				WriteJsonElementGet(obj, "[Any]", parent);
-				break;
 			case FuId.JsonElementGetString:
-				WriteJsonElementGet(obj, "String", parent);
-				break;
 			case FuId.JsonElementGetDouble:
-				WriteJsonElementGet(obj, "Double", parent);
-				break;
 			case FuId.JsonElementGetBoolean:
-				WriteJsonElementGet(obj, "Bool", parent);
+				if (parent > FuPriority.Equality)
+					WriteChar('(');
+				obj.Accept(this, FuPriority.Equality);
+				Write(" as! ");
+				WriteType(method.Type);
+				if (parent > FuPriority.Equality)
+					WriteChar(')');
 				break;
 			case FuId.MathMethod:
 			case FuId.MathLog2:

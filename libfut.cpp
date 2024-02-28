@@ -21083,17 +21083,6 @@ void GenSwift::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuP
 		writeChar(')');
 }
 
-void GenSwift::writeJsonElementGet(const FuExpr * obj, std::string_view name, FuPriority parent)
-{
-	if (parent > FuPriority::equality)
-		writeChar('(');
-	obj->accept(this, FuPriority::equality);
-	write(" as! ");
-	write(name);
-	if (parent > FuPriority::equality)
-		writeChar(')');
-}
-
 void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -21424,19 +21413,17 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 		writeJsonElementIs(obj, "NSNull", parent);
 		break;
 	case FuId::jsonElementGetObject:
-		writeJsonElementGet(obj, "[String: Any]", parent);
-		break;
 	case FuId::jsonElementGetArray:
-		writeJsonElementGet(obj, "[Any]", parent);
-		break;
 	case FuId::jsonElementGetString:
-		writeJsonElementGet(obj, "String", parent);
-		break;
 	case FuId::jsonElementGetDouble:
-		writeJsonElementGet(obj, "Double", parent);
-		break;
 	case FuId::jsonElementGetBoolean:
-		writeJsonElementGet(obj, "Bool", parent);
+		if (parent > FuPriority::equality)
+			writeChar('(');
+		obj->accept(this, FuPriority::equality);
+		write(" as! ");
+		writeType(method->type.get());
+		if (parent > FuPriority::equality)
+			writeChar(')');
 		break;
 	case FuId::mathMethod:
 	case FuId::mathLog2:
