@@ -12775,14 +12775,14 @@ export class GenC extends GenCCpp
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
 			let konst;
 			let method;
-			if ((konst = symbol) instanceof FuConst && (konst.visibility == FuVisibility.PUBLIC) == pub) {
+			if ((konst = symbol) instanceof FuConst && (klass.isPublic && konst.visibility == FuVisibility.PUBLIC) == pub) {
 				if (pub) {
 					this.writeNewLine();
 					this.writeDoc(konst.documentation);
 				}
 				this.writeConst(konst);
 			}
-			else if ((method = symbol) instanceof FuMethod && method.isLive && (method.visibility == FuVisibility.PUBLIC) == pub && method.callType != FuCallType.ABSTRACT && method.id != FuId.MAIN) {
+			else if ((method = symbol) instanceof FuMethod && method.isLive && (klass.isPublic && method.visibility == FuVisibility.PUBLIC) == pub && method.callType != FuCallType.ABSTRACT && method.id != FuId.MAIN) {
 				this.writeNewLine();
 				this.writeMethodDoc(method);
 				this.#writeSignature(method);

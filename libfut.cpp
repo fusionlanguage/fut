@@ -12100,14 +12100,14 @@ void GenC::writeSignatures(const FuClass * klass, bool pub)
 	for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
 		const FuConst * konst;
 		const FuMethod * method;
-		if ((konst = dynamic_cast<const FuConst *>(symbol)) && (konst->visibility == FuVisibility::public_) == pub) {
+		if ((konst = dynamic_cast<const FuConst *>(symbol)) && (klass->isPublic && konst->visibility == FuVisibility::public_) == pub) {
 			if (pub) {
 				writeNewLine();
 				writeDoc(konst->documentation.get());
 			}
 			writeConst(konst);
 		}
-		else if ((method = dynamic_cast<const FuMethod *>(symbol)) && method->isLive && (method->visibility == FuVisibility::public_) == pub && method->callType != FuCallType::abstract && method->id != FuId::main) {
+		else if ((method = dynamic_cast<const FuMethod *>(symbol)) && method->isLive && (klass->isPublic && method->visibility == FuVisibility::public_) == pub && method->callType != FuCallType::abstract && method->id != FuId::main) {
 			writeNewLine();
 			writeMethodDoc(method);
 			writeSignature(method);

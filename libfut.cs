@@ -12360,14 +12360,14 @@ namespace Fusion
 		{
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				switch (symbol) {
-				case FuConst konst when (konst.Visibility == FuVisibility.Public) == pub:
+				case FuConst konst when (klass.IsPublic && konst.Visibility == FuVisibility.Public) == pub:
 					if (pub) {
 						WriteNewLine();
 						WriteDoc(konst.Documentation);
 					}
 					WriteConst(konst);
 					break;
-				case FuMethod method when method.IsLive && (method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract && method.Id != FuId.Main:
+				case FuMethod method when method.IsLive && (klass.IsPublic && method.Visibility == FuVisibility.Public) == pub && method.CallType != FuCallType.Abstract && method.Id != FuId.Main:
 					WriteNewLine();
 					WriteMethodDoc(method);
 					WriteSignature(method);
