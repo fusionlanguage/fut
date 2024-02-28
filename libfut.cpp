@@ -18482,6 +18482,10 @@ void GenJava::visitIf(const FuIf * statement)
 		closeBlock();
 		write("catch (NumberFormatException e) ");
 		openBlock();
+		if (!dynamic_cast<const FuReturn *>(statement->onTrue.get()) && !dynamic_cast<const FuThrow *>(statement->onTrue.get())) {
+			call->method->left->accept(this, FuPriority::assign);
+			writeLine(" = 0;");
+		}
 		statement->onTrue->acceptStatement(this);
 		closeBlock();
 	}

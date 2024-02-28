@@ -19653,6 +19653,10 @@ export class GenJava extends GenTyped
 			this.closeBlock();
 			this.write("catch (NumberFormatException e) ");
 			this.openBlock();
+			if (!(statement.onTrue instanceof FuReturn) && !(statement.onTrue instanceof FuThrow)) {
+				call.method.left.accept(this, FuPriority.ASSIGN);
+				this.writeLine(" = 0;");
+			}
 			statement.onTrue.acceptStatement(this);
 			this.closeBlock();
 		}

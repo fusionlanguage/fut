@@ -19116,6 +19116,10 @@ namespace Fusion
 				CloseBlock();
 				Write("catch (NumberFormatException e) ");
 				OpenBlock();
+				if (!(statement.OnTrue is FuReturn) && !(statement.OnTrue is FuThrow)) {
+					call.Method.Left.Accept(this, FuPriority.Assign);
+					WriteLine(" = 0;");
+				}
 				statement.OnTrue.AcceptStatement(this);
 				CloseBlock();
 			}
