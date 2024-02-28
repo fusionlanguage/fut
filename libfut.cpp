@@ -10696,11 +10696,11 @@ void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::share
 			write("g_string_append(");
 			obj->accept(this, FuPriority::argument);
 			write(", ");
-			(*args)[0]->accept(this, FuPriority::argument);
+			writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
 		}
 		else {
 			write("fputs(");
-			(*args)[0]->accept(this, FuPriority::argument);
+			writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
 			write(", ");
 			obj->accept(this, FuPriority::argument);
 		}
@@ -10725,7 +10725,7 @@ void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::share
 		write(obj->type->asClassType()->class_->id == FuId::stringWriterClass ? "g_string_append_printf(" : "fprintf(");
 		obj->accept(this, FuPriority::argument);
 		write(", \"%s\\n\", ");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
 		writeChar(')');
 	}
 }

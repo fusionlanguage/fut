@@ -10999,11 +10999,11 @@ namespace Fusion
 					Write("g_string_append(");
 					obj.Accept(this, FuPriority.Argument);
 					Write(", ");
-					args[0].Accept(this, FuPriority.Argument);
+					WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 				}
 				else {
 					Write("fputs(");
-					args[0].Accept(this, FuPriority.Argument);
+					WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 					Write(", ");
 					obj.Accept(this, FuPriority.Argument);
 				}
@@ -11028,7 +11028,7 @@ namespace Fusion
 				Write(obj.Type.AsClassType().Class.Id == FuId.StringWriterClass ? "g_string_append_printf(" : "fprintf(");
 				obj.Accept(this, FuPriority.Argument);
 				Write(", \"%s\\n\", ");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 				WriteChar(')');
 			}
 		}

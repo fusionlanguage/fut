@@ -11377,11 +11377,11 @@ export class GenC extends GenCCpp
 					this.write("g_string_append(");
 					obj.accept(this, FuPriority.ARGUMENT);
 					this.write(", ");
-					args[0].accept(this, FuPriority.ARGUMENT);
+					this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
 				}
 				else {
 					this.write("fputs(");
-					args[0].accept(this, FuPriority.ARGUMENT);
+					this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
 					this.write(", ");
 					obj.accept(this, FuPriority.ARGUMENT);
 				}
@@ -11408,7 +11408,7 @@ export class GenC extends GenCCpp
 					this.write(obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS ? "g_string_append_printf(" : "fprintf(");
 					obj.accept(this, FuPriority.ARGUMENT);
 					this.write(", \"%s\\n\", ");
-					args[0].accept(this, FuPriority.ARGUMENT);
+					this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
 					this.writeChar(41);
 				}
 			}
