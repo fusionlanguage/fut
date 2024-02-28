@@ -9388,6 +9388,9 @@ void GenC::writeClassType(const FuClassType * klass, bool space)
 		include("stdio.h");
 		write("FILE *");
 		break;
+	case FuId::stringWriterClass:
+		writeGlib("GString *");
+		break;
 	case FuId::regexClass:
 		if (!dynamic_cast<const FuReadWriteClassType *>(klass))
 			write("const ");
@@ -9531,6 +9534,7 @@ bool GenC::needToDestructType(const FuType * type)
 		case FuId::sortedSetClass:
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
+		case FuId::stringWriterClass:
 		case FuId::matchClass:
 		case FuId::lockClass:
 			return true;
@@ -9639,6 +9643,9 @@ void GenC::writeListFree(const FuClassType * elementType)
 	case FuId::sortedDictionaryClass:
 		addListFree(FuId::sortedDictionaryClass);
 		break;
+	case FuId::stringWriterClass:
+		addListFree(FuId::stringWriterClass);
+		break;
 	case FuId::regexClass:
 		addListFree(FuId::regexClass);
 		break;
@@ -9742,6 +9749,9 @@ bool GenC::writeDestructMethodName(const FuClassType * klass)
 	case FuId::sortedSetClass:
 	case FuId::sortedDictionaryClass:
 		write("g_tree_unref");
+		return false;
+	case FuId::stringWriterClass:
+		write("g_string_free");
 		return false;
 	case FuId::regexClass:
 		write("g_regex_unref");
@@ -9862,6 +9872,9 @@ void GenC::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 	case FuId::sortedDictionaryClass:
 		writeNewTree(klass->getKeyType(), klass->getValueType().get());
 		break;
+	case FuId::stringWriterClass:
+		write("g_string_new(NULL)");
+		break;
 	default:
 		this->sharedMake = true;
 		if (parent > FuPriority::mul)
@@ -9888,6 +9901,7 @@ bool GenC::isCollection(const FuClass * klass)
 	case FuId::sortedSetClass:
 	case FuId::dictionaryClass:
 	case FuId::sortedDictionaryClass:
+	case FuId::stringWriterClass:
 		return true;
 	default:
 		return false;
@@ -10252,6 +10266,8 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		write(", ");
 		writeDictionaryDestroy(klass->getElementType().get());
 	}
+	else if (klass->class_->id == FuId::stringWriterClass)
+		write(", TRUE");
 	writeLine(");");
 	this->indent -= nesting;
 }
@@ -10652,38 +10668,61 @@ void GenC::writePrintfNotInterpolated(const std::vector<std::shared_ptr<FuExpr>>
 void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	if (std::ssize(*args) == 0) {
-		write("putc('\\n', ");
-		obj->accept(this, FuPriority::argument);
+		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
+			write("g_string_append_c(");
+			obj->accept(this, FuPriority::argument);
+			write(", '\\n'");
+		}
+		else {
+			write("putc('\\n', ");
+			obj->accept(this, FuPriority::argument);
+		}
 		writeChar(')');
 	}
 	else if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get())) {
-		write("fprintf(");
+		write(obj->type->asClassType()->class_->id == FuId::stringWriterClass ? "g_string_append_printf(" : "fprintf(");
 		obj->accept(this, FuPriority::argument);
 		write(", ");
 		writePrintf(interpolated, newLine);
 	}
 	else if (dynamic_cast<const FuNumericType *>((*args)[0]->type.get())) {
-		write("fprintf(");
+		write(obj->type->asClassType()->class_->id == FuId::stringWriterClass ? "g_string_append_printf(" : "fprintf(");
 		obj->accept(this, FuPriority::argument);
 		write(", ");
 		writePrintfNotInterpolated(args, newLine);
 	}
 	else if (!newLine) {
-		write("fputs(");
-		(*args)[0]->accept(this, FuPriority::argument);
-		write(", ");
-		obj->accept(this, FuPriority::argument);
+		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
+			write("g_string_append(");
+			obj->accept(this, FuPriority::argument);
+			write(", ");
+			(*args)[0]->accept(this, FuPriority::argument);
+		}
+		else {
+			write("fputs(");
+			(*args)[0]->accept(this, FuPriority::argument);
+			write(", ");
+			obj->accept(this, FuPriority::argument);
+		}
 		writeChar(')');
 	}
 	else if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>((*args)[0].get())) {
-		write("fputs(");
-		writeStringLiteralWithNewLine(literal->value);
-		write(", ");
-		obj->accept(this, FuPriority::argument);
+		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
+			write("g_string_append(");
+			obj->accept(this, FuPriority::argument);
+			write(", ");
+			writeStringLiteralWithNewLine(literal->value);
+		}
+		else {
+			write("fputs(");
+			writeStringLiteralWithNewLine(literal->value);
+			write(", ");
+			obj->accept(this, FuPriority::argument);
+		}
 		writeChar(')');
 	}
 	else {
-		write("fprintf(");
+		write(obj->type->asClassType()->class_->id == FuId::stringWriterClass ? "g_string_append_printf(" : "fprintf(");
 		obj->accept(this, FuPriority::argument);
 		write(", \"%s\\n\", ");
 		(*args)[0]->accept(this, FuPriority::argument);
@@ -11227,7 +11266,16 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeTextWriterWrite(obj, args, false);
 		break;
 	case FuId::textWriterWriteChar:
-		writeCall("putc", (*args)[0].get(), obj);
+		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass)
+			writeCall("g_string_append_c", obj, (*args)[0].get());
+		else
+			writeCall("putc", (*args)[0].get(), obj);
+		break;
+	case FuId::textWriterWriteCodePoint:
+		if (obj->type->asClassType()->class_->id != FuId::stringWriterClass)
+			notSupported(obj, method->name);
+		else
+			writeCall("g_string_append_unichar", obj, (*args)[0].get());
 		break;
 	case FuId::textWriterWriteLine:
 		writeTextWriterWrite(obj, args, true);
@@ -11237,6 +11285,14 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::consoleWriteLine:
 		writeConsoleWrite(args, true);
+		break;
+	case FuId::stringWriterClear:
+		write("g_string_truncate(");
+		obj->accept(this, FuPriority::argument);
+		write(", 0)");
+		break;
+	case FuId::stringWriterToString:
+		writePostfix(obj, "->str");
 		break;
 	case FuId::convertToBase64String:
 		writeGlib("g_base64_encode(");
@@ -11584,6 +11640,8 @@ void GenC::visitExpr(const FuExpr * statement)
 			writeDestructMethodName(owning);
 			writeChar('(');
 			statement->accept(this, FuPriority::argument);
+			if (owning->class_->id == FuId::stringWriterClass)
+				write(", TRUE");
 			writeLine(");");
 			cleanupTemporaries();
 		}

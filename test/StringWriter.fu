@@ -2,17 +2,23 @@ public static class Test
 {
 	public static bool Run()
 	{
-		StringWriter() w; //FAIL: c d swift TODO; cl
+		StringWriter() w; //FAIL: d swift TODO; cl
 		w.Write("kill me");
 		w.Clear();
 		w.Write("Hello");
 		string s = "World";
 		w.Write(s);
+		long l = 5;
+#if C
+		w.Write(42);
+		w.Write(l);
+		w.Write('c');
+#else
 		TextWriter! tw = w; //FAIL: ts
 		tw.Write(42);
-		long l = 5;
 		w.Write(l);
 		tw.Write('c');
+#endif
 		w.WriteChar('c');
 		return w.ToString() == "HelloWorld42599c";
 	}

@@ -10023,6 +10023,9 @@ export class GenC extends GenCCpp
 			this.include("stdio.h");
 			this.write("FILE *");
 			break;
+		case FuId.STRING_WRITER_CLASS:
+			this.#writeGlib("GString *");
+			break;
 		case FuId.REGEX_CLASS:
 			if (!(klass instanceof FuReadWriteClassType))
 				this.write("const ");
@@ -10170,6 +10173,7 @@ export class GenC extends GenCCpp
 			case FuId.SORTED_SET_CLASS:
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
+			case FuId.STRING_WRITER_CLASS:
 			case FuId.MATCH_CLASS:
 			case FuId.LOCK_CLASS:
 				return true;
@@ -10279,6 +10283,9 @@ export class GenC extends GenCCpp
 		case FuId.SORTED_DICTIONARY_CLASS:
 			this.#addListFree(FuId.SORTED_DICTIONARY_CLASS);
 			break;
+		case FuId.STRING_WRITER_CLASS:
+			this.#addListFree(FuId.STRING_WRITER_CLASS);
+			break;
 		case FuId.REGEX_CLASS:
 			this.#addListFree(FuId.REGEX_CLASS);
 			break;
@@ -10385,6 +10392,9 @@ export class GenC extends GenCCpp
 		case FuId.SORTED_SET_CLASS:
 		case FuId.SORTED_DICTIONARY_CLASS:
 			this.write("g_tree_unref");
+			return false;
+		case FuId.STRING_WRITER_CLASS:
+			this.write("g_string_free");
 			return false;
 		case FuId.REGEX_CLASS:
 			this.write("g_regex_unref");
@@ -10506,6 +10516,9 @@ export class GenC extends GenCCpp
 		case FuId.SORTED_DICTIONARY_CLASS:
 			this.#writeNewTree(klass.getKeyType(), klass.getValueType());
 			break;
+		case FuId.STRING_WRITER_CLASS:
+			this.write("g_string_new(NULL)");
+			break;
 		default:
 			this.#sharedMake = true;
 			if (parent > FuPriority.MUL)
@@ -10532,6 +10545,7 @@ export class GenC extends GenCCpp
 		case FuId.SORTED_SET_CLASS:
 		case FuId.DICTIONARY_CLASS:
 		case FuId.SORTED_DICTIONARY_CLASS:
+		case FuId.STRING_WRITER_CLASS:
 			return true;
 		default:
 			return false;
@@ -10926,6 +10940,8 @@ export class GenC extends GenCCpp
 			this.write(", ");
 			this.#writeDictionaryDestroy(klass.getElementType());
 		}
+		else if (klass.class.id == FuId.STRING_WRITER_CLASS)
+			this.write(", TRUE");
 		this.writeLine(");");
 		this.indent -= nesting;
 	}
@@ -11331,42 +11347,65 @@ export class GenC extends GenCCpp
 	#writeTextWriterWrite(obj, args, newLine)
 	{
 		if (args.length == 0) {
-			this.write("putc('\\n', ");
-			obj.accept(this, FuPriority.ARGUMENT);
+			if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
+				this.write("g_string_append_c(");
+				obj.accept(this, FuPriority.ARGUMENT);
+				this.write(", '\\n'");
+			}
+			else {
+				this.write("putc('\\n', ");
+				obj.accept(this, FuPriority.ARGUMENT);
+			}
 			this.writeChar(41);
 		}
 		else {
 			let interpolated;
 			if ((interpolated = args[0]) instanceof FuInterpolatedString) {
-				this.write("fprintf(");
+				this.write(obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS ? "g_string_append_printf(" : "fprintf(");
 				obj.accept(this, FuPriority.ARGUMENT);
 				this.write(", ");
 				this.writePrintf(interpolated, newLine);
 			}
 			else if (args[0].type instanceof FuNumericType) {
-				this.write("fprintf(");
+				this.write(obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS ? "g_string_append_printf(" : "fprintf(");
 				obj.accept(this, FuPriority.ARGUMENT);
 				this.write(", ");
 				this.writePrintfNotInterpolated(args, newLine);
 			}
 			else if (!newLine) {
-				this.write("fputs(");
-				args[0].accept(this, FuPriority.ARGUMENT);
-				this.write(", ");
-				obj.accept(this, FuPriority.ARGUMENT);
+				if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
+					this.write("g_string_append(");
+					obj.accept(this, FuPriority.ARGUMENT);
+					this.write(", ");
+					args[0].accept(this, FuPriority.ARGUMENT);
+				}
+				else {
+					this.write("fputs(");
+					args[0].accept(this, FuPriority.ARGUMENT);
+					this.write(", ");
+					obj.accept(this, FuPriority.ARGUMENT);
+				}
 				this.writeChar(41);
 			}
 			else {
 				let literal;
 				if ((literal = args[0]) instanceof FuLiteralString) {
-					this.write("fputs(");
-					this.writeStringLiteralWithNewLine(literal.value);
-					this.write(", ");
-					obj.accept(this, FuPriority.ARGUMENT);
+					if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
+						this.write("g_string_append(");
+						obj.accept(this, FuPriority.ARGUMENT);
+						this.write(", ");
+						this.writeStringLiteralWithNewLine(literal.value);
+					}
+					else {
+						this.write("fputs(");
+						this.writeStringLiteralWithNewLine(literal.value);
+						this.write(", ");
+						obj.accept(this, FuPriority.ARGUMENT);
+					}
 					this.writeChar(41);
 				}
 				else {
-					this.write("fprintf(");
+					this.write(obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS ? "g_string_append_printf(" : "fprintf(");
 					obj.accept(this, FuPriority.ARGUMENT);
 					this.write(", \"%s\\n\", ");
 					args[0].accept(this, FuPriority.ARGUMENT);
@@ -11895,7 +11934,16 @@ export class GenC extends GenCCpp
 			this.#writeTextWriterWrite(obj, args, false);
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
-			this.writeCall("putc", args[0], obj);
+			if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS)
+				this.writeCall("g_string_append_c", obj, args[0]);
+			else
+				this.writeCall("putc", args[0], obj);
+			break;
+		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
+			if (obj.type.asClassType().class.id != FuId.STRING_WRITER_CLASS)
+				this.notSupported(obj, method.name);
+			else
+				this.writeCall("g_string_append_unichar", obj, args[0]);
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
 			this.#writeTextWriterWrite(obj, args, true);
@@ -11905,6 +11953,14 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.CONSOLE_WRITE_LINE:
 			this.#writeConsoleWrite(args, true);
+			break;
+		case FuId.STRING_WRITER_CLEAR:
+			this.write("g_string_truncate(");
+			obj.accept(this, FuPriority.ARGUMENT);
+			this.write(", 0)");
+			break;
+		case FuId.STRING_WRITER_TO_STRING:
+			this.writePostfix(obj, "->str");
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.#writeGlib("g_base64_encode(");
@@ -12252,6 +12308,8 @@ export class GenC extends GenCCpp
 				this.#writeDestructMethodName(owning);
 				this.writeChar(40);
 				statement.accept(this, FuPriority.ARGUMENT);
+				if (owning.class.id == FuId.STRING_WRITER_CLASS)
+					this.write(", TRUE");
 				this.writeLine(");");
 				this.cleanupTemporaries();
 			}

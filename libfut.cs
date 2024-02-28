@@ -9689,6 +9689,9 @@ namespace Fusion
 				Include("stdio.h");
 				Write("FILE *");
 				break;
+			case FuId.StringWriterClass:
+				WriteGlib("GString *");
+				break;
 			case FuId.RegexClass:
 				if (!(klass is FuReadWriteClassType))
 					Write("const ");
@@ -9829,6 +9832,7 @@ namespace Fusion
 				case FuId.SortedSetClass:
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
+				case FuId.StringWriterClass:
 				case FuId.MatchClass:
 				case FuId.LockClass:
 					return true;
@@ -9935,6 +9939,9 @@ namespace Fusion
 			case FuId.SortedDictionaryClass:
 				AddListFree(FuId.SortedDictionaryClass);
 				break;
+			case FuId.StringWriterClass:
+				AddListFree(FuId.StringWriterClass);
+				break;
 			case FuId.RegexClass:
 				AddListFree(FuId.RegexClass);
 				break;
@@ -10040,6 +10047,9 @@ namespace Fusion
 			case FuId.SortedSetClass:
 			case FuId.SortedDictionaryClass:
 				Write("g_tree_unref");
+				return false;
+			case FuId.StringWriterClass:
+				Write("g_string_free");
 				return false;
 			case FuId.RegexClass:
 				Write("g_regex_unref");
@@ -10164,6 +10174,9 @@ namespace Fusion
 			case FuId.SortedDictionaryClass:
 				WriteNewTree(klass.GetKeyType(), klass.GetValueType());
 				break;
+			case FuId.StringWriterClass:
+				Write("g_string_new(NULL)");
+				break;
 			default:
 				this.SharedMake = true;
 				if (parent > FuPriority.Mul)
@@ -10190,6 +10203,7 @@ namespace Fusion
 			case FuId.SortedSetClass:
 			case FuId.DictionaryClass:
 			case FuId.SortedDictionaryClass:
+			case FuId.StringWriterClass:
 				return true;
 			default:
 				return false;
@@ -10558,6 +10572,8 @@ namespace Fusion
 				Write(", ");
 				WriteDictionaryDestroy(klass.GetElementType());
 			}
+			else if (klass.Class.Id == FuId.StringWriterClass)
+				Write(", TRUE");
 			WriteLine(");");
 			this.Indent -= nesting;
 		}
@@ -10955,38 +10971,61 @@ namespace Fusion
 		void WriteTextWriterWrite(FuExpr obj, List<FuExpr> args, bool newLine)
 		{
 			if (args.Count == 0) {
-				Write("putc('\\n', ");
-				obj.Accept(this, FuPriority.Argument);
+				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
+					Write("g_string_append_c(");
+					obj.Accept(this, FuPriority.Argument);
+					Write(", '\\n'");
+				}
+				else {
+					Write("putc('\\n', ");
+					obj.Accept(this, FuPriority.Argument);
+				}
 				WriteChar(')');
 			}
 			else if (args[0] is FuInterpolatedString interpolated) {
-				Write("fprintf(");
+				Write(obj.Type.AsClassType().Class.Id == FuId.StringWriterClass ? "g_string_append_printf(" : "fprintf(");
 				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
 				WritePrintf(interpolated, newLine);
 			}
 			else if (args[0].Type is FuNumericType) {
-				Write("fprintf(");
+				Write(obj.Type.AsClassType().Class.Id == FuId.StringWriterClass ? "g_string_append_printf(" : "fprintf(");
 				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
 				WritePrintfNotInterpolated(args, newLine);
 			}
 			else if (!newLine) {
-				Write("fputs(");
-				args[0].Accept(this, FuPriority.Argument);
-				Write(", ");
-				obj.Accept(this, FuPriority.Argument);
+				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
+					Write("g_string_append(");
+					obj.Accept(this, FuPriority.Argument);
+					Write(", ");
+					args[0].Accept(this, FuPriority.Argument);
+				}
+				else {
+					Write("fputs(");
+					args[0].Accept(this, FuPriority.Argument);
+					Write(", ");
+					obj.Accept(this, FuPriority.Argument);
+				}
 				WriteChar(')');
 			}
 			else if (args[0] is FuLiteralString literal) {
-				Write("fputs(");
-				WriteStringLiteralWithNewLine(literal.Value);
-				Write(", ");
-				obj.Accept(this, FuPriority.Argument);
+				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
+					Write("g_string_append(");
+					obj.Accept(this, FuPriority.Argument);
+					Write(", ");
+					WriteStringLiteralWithNewLine(literal.Value);
+				}
+				else {
+					Write("fputs(");
+					WriteStringLiteralWithNewLine(literal.Value);
+					Write(", ");
+					obj.Accept(this, FuPriority.Argument);
+				}
 				WriteChar(')');
 			}
 			else {
-				Write("fprintf(");
+				Write(obj.Type.AsClassType().Class.Id == FuId.StringWriterClass ? "g_string_append_printf(" : "fprintf(");
 				obj.Accept(this, FuPriority.Argument);
 				Write(", \"%s\\n\", ");
 				args[0].Accept(this, FuPriority.Argument);
@@ -11507,7 +11546,16 @@ namespace Fusion
 				WriteTextWriterWrite(obj, args, false);
 				break;
 			case FuId.TextWriterWriteChar:
-				WriteCall("putc", args[0], obj);
+				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
+					WriteCall("g_string_append_c", obj, args[0]);
+				else
+					WriteCall("putc", args[0], obj);
+				break;
+			case FuId.TextWriterWriteCodePoint:
+				if (obj.Type.AsClassType().Class.Id != FuId.StringWriterClass)
+					NotSupported(obj, method.Name);
+				else
+					WriteCall("g_string_append_unichar", obj, args[0]);
 				break;
 			case FuId.TextWriterWriteLine:
 				WriteTextWriterWrite(obj, args, true);
@@ -11517,6 +11565,14 @@ namespace Fusion
 				break;
 			case FuId.ConsoleWriteLine:
 				WriteConsoleWrite(args, true);
+				break;
+			case FuId.StringWriterClear:
+				Write("g_string_truncate(");
+				obj.Accept(this, FuPriority.Argument);
+				Write(", 0)");
+				break;
+			case FuId.StringWriterToString:
+				WritePostfix(obj, "->str");
 				break;
 			case FuId.ConvertToBase64String:
 				WriteGlib("g_base64_encode(");
@@ -11859,6 +11915,8 @@ namespace Fusion
 				WriteDestructMethodName(owning);
 				WriteChar('(');
 				statement.Accept(this, FuPriority.Argument);
+				if (owning.Class.Id == FuId.StringWriterClass)
+					Write(", TRUE");
 				WriteLine(");");
 				CleanupTemporaries();
 			}
