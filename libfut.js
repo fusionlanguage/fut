@@ -2596,8 +2596,7 @@ export class FuNamedValue extends FuSymbol
 
 	isAssignableStorage()
 	{
-		let storage;
-		return (storage = this.type) instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && this.value instanceof FuLiteralNull;
+		return this.type instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && this.value instanceof FuLiteralNull;
 	}
 }
 

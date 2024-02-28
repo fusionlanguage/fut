@@ -2554,7 +2554,7 @@ namespace Fusion
 
 		internal FuExpr Value;
 
-		public bool IsAssignableStorage() => this.Type is FuStorageType storage && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
+		public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
 	}
 
 	public abstract class FuMember : FuNamedValue

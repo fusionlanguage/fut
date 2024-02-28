@@ -1970,8 +1970,7 @@ bool FuFloatingType::isAssignableFrom(const FuType * right) const
 
 bool FuNamedValue::isAssignableStorage() const
 {
-	const FuStorageType * storage;
-	return (storage = dynamic_cast<const FuStorageType *>(this->type.get())) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && dynamic_cast<const FuLiteralNull *>(this->value.get());
+	return dynamic_cast<const FuStorageType *>(this->type.get()) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && dynamic_cast<const FuLiteralNull *>(this->value.get());
 }
 FuMember::FuMember()
 {
