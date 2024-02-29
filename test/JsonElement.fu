@@ -352,7 +352,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement# json; //FAIL: cl
+		JsonElement# json; //FAIL: c leak TODO; cl
 		json = JsonElement.Parse("\"foo\"");
 		if (!json.IsString() || json.GetString() != "foo")
 			return false;

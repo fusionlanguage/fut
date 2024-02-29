@@ -11525,7 +11525,7 @@ export class GenC extends GenCCpp
 		this.write("_TryParse(&");
 		obj.accept(this, FuPriority.PRIMARY);
 		this.write(", ");
-		args[0].accept(this, FuPriority.ARGUMENT);
+		this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
 		if (obj.type instanceof FuIntegerType)
 			this.writeTryParseRadix(args);
 		this.writeChar(41);

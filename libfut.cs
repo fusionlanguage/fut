@@ -11140,7 +11140,7 @@ namespace Fusion
 			Write("_TryParse(&");
 			obj.Accept(this, FuPriority.Primary);
 			Write(", ");
-			args[0].Accept(this, FuPriority.Argument);
+			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
 			if (obj.Type is FuIntegerType)
 				WriteTryParseRadix(args);
 			WriteChar(')');

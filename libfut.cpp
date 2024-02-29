@@ -10839,7 +10839,7 @@ void GenC::writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<F
 	write("_TryParse(&");
 	obj->accept(this, FuPriority::primary);
 	write(", ");
-	(*args)[0]->accept(this, FuPriority::argument);
+	writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
 	if (dynamic_cast<const FuIntegerType *>(obj->type.get()))
 		writeTryParseRadix(args);
 	writeChar(')');
