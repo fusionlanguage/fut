@@ -12105,6 +12105,7 @@ namespace Fusion
 						return;
 					}
 					WriteCTemporaries(statement.Value);
+					WriteTemporaries(statement.Value);
 					EnsureChildBlock();
 					StartDefinition(this.CurrentMethod.Type, true, true);
 					Write("returnValue = ");

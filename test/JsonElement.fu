@@ -1,4 +1,4 @@
-#if CPP || JAVA
+#if C || CPP || JAVA
 abstract class JsonElement
 {
 	public virtual bool IsObject() => false;
@@ -352,7 +352,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		JsonElement# json; //FAIL: c TODO; cl
+		JsonElement# json; //FAIL: cl
 		json = JsonElement.Parse("\"foo\"");
 		if (!json.IsString() || json.GetString() != "foo")
 			return false;

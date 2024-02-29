@@ -12505,6 +12505,7 @@ export class GenC extends GenCCpp
 					return;
 				}
 				this.#writeCTemporaries(statement.value);
+				this.writeTemporaries(statement.value);
 				this.ensureChildBlock();
 				this.#startDefinition(this.currentMethod.type, true, true);
 				this.write("returnValue = ");

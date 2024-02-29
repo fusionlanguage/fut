@@ -11836,6 +11836,7 @@ void GenC::visitReturn(const FuReturn * statement)
 				return;
 			}
 			writeCTemporaries(statement->value.get());
+			writeTemporaries(statement->value.get());
 			ensureChildBlock();
 			startDefinition(this->currentMethod->type.get(), true, true);
 			write("returnValue = ");
