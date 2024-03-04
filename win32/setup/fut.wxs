@@ -1,5 +1,5 @@
 <Wix xmlns="http://wixtoolset.org/schemas/v4/wxs">
-	<Package Name="Fusion Transpiler" Version="3.1.1" Manufacturer="Piotr Fusik" Language="1033" UpgradeCode="0c3e3a72-72a5-4426-a1ce-f3ebd49fc8e3">
+	<Package Name="Fusion Transpiler" Version="3.1.2" Manufacturer="Piotr Fusik" Language="1033" UpgradeCode="0c3e3a72-72a5-4426-a1ce-f3ebd49fc8e3">
 		<MajorUpgrade DowngradeErrorMessage="Newer version of Fusion Transpiler is already installed!" />
 		<Media Id="1" Cabinet="fut.cab" CompressionLevel="high" EmbedCab="yes" />
 		<StandardDirectory Id="ProgramFiles6432Folder">
