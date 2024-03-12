@@ -15,6 +15,9 @@ public class Test
 		t.Value = 10;
 		list.Add(t);
 		List<int>() empty;
-		return list.Any(it => it.Value > 10) && !empty.Any(it => true); //FAIL: c
+		List<Test>() listRo;
+		return list.Any(it => it.Value > 10) //FAIL: c
+			&& !empty.Any(it => true)
+			&& !listRo.Any(it => true);
 	}
 }

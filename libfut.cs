@@ -14833,9 +14833,16 @@ namespace Fusion
 
 		internal override void VisitLambdaExpr(FuLambdaExpr expr)
 		{
-			Write("[](const ");
-			WriteType(expr.First.Type, false);
-			Write(" &");
+			Write("[](");
+			if (expr.First.Type is FuOwningType || expr.First.Type.Id == FuId.StringStorageType) {
+				Write("const ");
+				WriteType(expr.First.Type, false);
+				Write(" &");
+			}
+			else {
+				WriteType(expr.First.Type, false);
+				WriteChar(' ');
+			}
 			WriteName(expr.First);
 			Write(") { ");
 			WriteTemporaries(expr.Body);

@@ -15260,9 +15260,16 @@ export class GenCpp extends GenCCpp
 
 	visitLambdaExpr(expr)
 	{
-		this.write("[](const ");
-		this.writeType(expr.first.type, false);
-		this.write(" &");
+		this.write("[](");
+		if (expr.first.type instanceof FuOwningType || expr.first.type.id == FuId.STRING_STORAGE_TYPE) {
+			this.write("const ");
+			this.writeType(expr.first.type, false);
+			this.write(" &");
+		}
+		else {
+			this.writeType(expr.first.type, false);
+			this.writeChar(32);
+		}
 		this.writeName(expr.first);
 		this.write(") { ");
 		this.writeTemporaries(expr.body);

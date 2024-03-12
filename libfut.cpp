@@ -14459,9 +14459,16 @@ void GenCpp::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 
 void GenCpp::visitLambdaExpr(const FuLambdaExpr * expr)
 {
-	write("[](const ");
-	writeType(expr->first->type.get(), false);
-	write(" &");
+	write("[](");
+	if (dynamic_cast<const FuOwningType *>(expr->first->type.get()) || expr->first->type->id == FuId::stringStorageType) {
+		write("const ");
+		writeType(expr->first->type.get(), false);
+		write(" &");
+	}
+	else {
+		writeType(expr->first->type.get(), false);
+		writeChar(' ');
+	}
 	writeName(expr->first);
 	write(") { ");
 	writeTemporaries(expr->body.get());
