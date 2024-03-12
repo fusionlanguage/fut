@@ -10260,7 +10260,7 @@ namespace Fusion
 
 		void WriteStorageTemporary(FuExpr expr)
 		{
-			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType))
+			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuStorageType))
 				WriteCTemporary(expr.Type, expr);
 		}
 

@@ -9958,7 +9958,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 
 void GenC::writeStorageTemporary(const FuExpr * expr)
 {
-	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuOwningType *>(expr->type.get())))
+	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuStorageType *>(expr->type.get())))
 		writeCTemporary(expr->type.get(), expr);
 }
 

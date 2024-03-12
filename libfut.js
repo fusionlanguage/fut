@@ -10602,7 +10602,7 @@ export class GenC extends GenCCpp
 
 	#writeStorageTemporary(expr)
 	{
-		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuOwningType))
+		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuStorageType))
 			this.#writeCTemporary(expr.type, expr);
 	}
 

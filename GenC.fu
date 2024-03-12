@@ -1052,7 +1052,7 @@ public class GenC : GenCCpp
 	void WriteStorageTemporary!(FuExpr expr)
 	{
 		if (expr.IsNewString(false)
-		 || (expr is FuCallExpr && expr.Type is FuOwningType))
+		 || (expr is FuCallExpr && expr.Type is FuStorageType))
 			WriteCTemporary(expr.Type, expr);
 	}
 
