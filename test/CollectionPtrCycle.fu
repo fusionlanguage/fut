@@ -8,7 +8,7 @@ public class Test
 	public static bool Run()
 	{
 		Test() o;
-		o.ArrayStg[0] = o; //FAIL: swift TODO memleak
+		o.ArrayStg[0] = o;
 		o.ArrayPtr = o.ArrayStg;
 		o.ListStg.Add(o);
 		o.DictStg[5] = o;
