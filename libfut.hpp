@@ -1805,6 +1805,7 @@ protected:
 	void writeArrayElement(const FuNamedValue * def, int nesting);
 	void openLoop(std::string_view intString, int nesting, int count);
 	void writeTemporaryName(int id);
+	bool tryWriteTemporary(const FuExpr * expr);
 	void writeResourceName(std::string_view name);
 	virtual void writeResource(std::string_view name, int length) = 0;
 	bool isWholeArray(const FuExpr * array, const FuExpr * offset, const FuExpr * length) const;
@@ -2097,6 +2098,7 @@ public:
 	void visitLiteralNull() override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
+	void visitCallExpr(const FuCallExpr * expr, FuPriority parent) override;
 	void visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitBreak(const FuBreak * statement) override;
@@ -2134,7 +2136,6 @@ private:
 	std::vector<const FuVar *> varsToDestruct;
 	void writeStringPtrAdd(const FuCallExpr * call, bool cast);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
-	void writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);
 	void writeClassPtr(const FuClass * resultClass, const FuExpr * expr, FuPriority parent);
 	void writeForeachArrayIndexing(const FuForeach * forEach, const FuSymbol * symbol);

@@ -7446,6 +7446,15 @@ namespace Fusion
 			VisitLiteralLong(id);
 		}
 
+		protected bool TryWriteTemporary(FuExpr expr)
+		{
+			int id = this.CurrentTemporaries.IndexOf(expr);
+			if (id < 0)
+				return false;
+			WriteTemporaryName(id);
+			return true;
+		}
+
 		protected void WriteResourceName(string name)
 		{
 			foreach (int c in name)
@@ -7479,10 +7488,7 @@ namespace Fusion
 				if (dynamic.Class.Id == FuId.ArrayPtrClass)
 					WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
 				else if (expr.Inner is FuAggregateInitializer init) {
-					int tempId = this.CurrentTemporaries.IndexOf(expr);
-					if (tempId >= 0)
-						WriteTemporaryName(tempId);
-					else
+					if (!TryWriteTemporary(expr))
 						WriteNewWithFields(dynamic, init);
 				}
 				else
@@ -9325,7 +9331,7 @@ namespace Fusion
 				expr.Accept(this, FuPriority.Primary);
 			}
 			else
-				WriteTemporaryOrExpr(expr, FuPriority.Argument);
+				expr.Accept(this, FuPriority.Argument);
 		}
 
 		void WriteStringPtrAdd(FuCallExpr call, bool cast)
@@ -9349,15 +9355,6 @@ namespace Fusion
 			StartDefinition(type, true, true);
 		}
 
-		void WriteTemporaryOrExpr(FuExpr expr, FuPriority parent)
-		{
-			int id = this.CurrentTemporaries.IndexOf(expr);
-			if (id >= 0)
-				WriteTemporaryName(id);
-			else
-				expr.Accept(this, parent);
-		}
-
 		void WriteUpcast(FuClass resultClass, FuSymbol klass)
 		{
 			for (; klass != resultClass; klass = klass.Parent)
@@ -9369,7 +9366,7 @@ namespace Fusion
 			switch (expr.Type) {
 			case FuStorageType storage when storage.Class.Id == FuId.None && !IsDictionaryClassStgIndexing(expr):
 				WriteChar('&');
-				WriteTemporaryOrExpr(expr, FuPriority.Primary);
+				expr.Accept(this, FuPriority.Primary);
 				WriteUpcast(resultClass, storage.Class);
 				break;
 			case FuClassType ptr when ptr.Class != resultClass:
@@ -9404,6 +9401,8 @@ namespace Fusion
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
 		{
+			if (TryWriteTemporary(expr))
+				return;
 			Include("stdarg.h");
 			Include("stdio.h");
 			this.StringFormat = true;
@@ -9617,9 +9616,11 @@ namespace Fusion
 				WriteMatchProperty(expr, 2);
 				break;
 			case FuId.MatchValue:
-				Write("g_match_info_fetch(");
-				expr.Left.Accept(this, FuPriority.Argument);
-				Write(", 0)");
+				if (!TryWriteTemporary(expr)) {
+					Write("g_match_info_fetch(");
+					expr.Left.Accept(this, FuPriority.Argument);
+					Write(", 0)");
+				}
 				break;
 			default:
 				if (expr.Left == null || expr.Symbol is FuConst)
@@ -10259,7 +10260,7 @@ namespace Fusion
 
 		void WriteStorageTemporary(FuExpr expr)
 		{
-			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuStorageType))
+			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType))
 				WriteCTemporary(expr.Type, expr);
 		}
 
@@ -10353,11 +10354,12 @@ namespace Fusion
 
 		protected override void CleanupTemporary(int i, FuExpr temp)
 		{
-			if (temp.Type.Id == FuId.StringStorageType) {
-				Write("free(futemp");
-				VisitLiteralLong(i);
-				WriteLine(");");
-			}
+			if (!NeedToDestructType(temp.Type) || (temp is FuPrefixExpr dynamicObjectLiteral && dynamicObjectLiteral.Inner is FuAggregateInitializer))
+				return;
+			WriteDestructMethodName(temp.Type.AsClassType());
+			Write("(futemp");
+			VisitLiteralLong(i);
+			WriteLine(");");
 		}
 
 		protected override void WriteVar(FuNamedValue def)
@@ -10760,7 +10762,7 @@ namespace Fusion
 				if (type.Id == FuId.StringStorageType)
 					WriteStringStorageValue(expr);
 				else if (expr.Type.Id == FuId.StringStorageType)
-					WriteTemporaryOrExpr(expr, parent);
+					expr.Accept(this, parent);
 				else
 					base.WriteCoercedInternal(type, expr, parent);
 				break;
@@ -10791,9 +10793,9 @@ namespace Fusion
 				WriteChar('(');
 			Include("string.h");
 			Write("strcmp(");
-			WriteTemporaryOrExpr(left, FuPriority.Argument);
+			left.Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteTemporaryOrExpr(right, FuPriority.Argument);
+			right.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			Write(GetEqOp(not));
 			WriteChar('0');
@@ -10999,11 +11001,11 @@ namespace Fusion
 					Write("g_string_append(");
 					obj.Accept(this, FuPriority.Argument);
 					Write(", ");
-					WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+					args[0].Accept(this, FuPriority.Argument);
 				}
 				else {
 					Write("fputs(");
-					WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+					args[0].Accept(this, FuPriority.Argument);
 					Write(", ");
 					obj.Accept(this, FuPriority.Argument);
 				}
@@ -11028,7 +11030,7 @@ namespace Fusion
 				Write(obj.Type.AsClassType().Class.Id == FuId.StringWriterClass ? "g_string_append_printf(" : "fprintf(");
 				obj.Accept(this, FuPriority.Argument);
 				Write(", \"%s\\n\", ");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
 			}
 		}
@@ -11140,7 +11142,7 @@ namespace Fusion
 			Write("_TryParse(&");
 			obj.Accept(this, FuPriority.Primary);
 			Write(", ");
-			WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+			args[0].Accept(this, FuPriority.Argument);
 			if (obj.Type is FuIntegerType)
 				WriteTryParseRadix(args);
 			WriteChar(')');
@@ -11289,12 +11291,12 @@ namespace Fusion
 				break;
 			case FuId.StringToLower:
 				WriteGlib("g_utf8_strdown(");
-				WriteTemporaryOrExpr(obj, FuPriority.Argument);
+				obj.Accept(this, FuPriority.Argument);
 				Write(", -1)");
 				break;
 			case FuId.StringToUpper:
 				WriteGlib("g_utf8_strup(");
-				WriteTemporaryOrExpr(obj, FuPriority.Argument);
+				obj.Accept(this, FuPriority.Argument);
 				Write(", -1)");
 				break;
 			case FuId.ArrayBinarySearchAll:
@@ -11608,21 +11610,21 @@ namespace Fusion
 				break;
 			case FuId.RegexCompile:
 				WriteGlib("g_regex_new(");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
 				WriteCRegexOptions(args);
 				Write(", 0, NULL)");
 				break;
 			case FuId.RegexEscape:
 				WriteGlib("g_regex_escape_string(");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", -1)");
 				break;
 			case FuId.RegexIsMatchStr:
 				WriteGlib("g_regex_match_simple(");
-				WriteTemporaryOrExpr(args[1], FuPriority.Argument);
+				args[1].Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
 				WriteCRegexOptions(args);
 				Write(", 0)");
@@ -11631,7 +11633,7 @@ namespace Fusion
 				Write("g_regex_match(");
 				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", 0, NULL)");
 				break;
 			case FuId.MatchFindStr:
@@ -11639,9 +11641,9 @@ namespace Fusion
 				Write("FuMatch_Find(&");
 				obj.Accept(this, FuPriority.Primary);
 				Write(", ");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteTemporaryOrExpr(args[1], FuPriority.Argument);
+				args[1].Accept(this, FuPriority.Argument);
 				Write(", ");
 				WriteCRegexOptions(args);
 				WriteChar(')');
@@ -11650,7 +11652,7 @@ namespace Fusion
 				Write("g_regex_match(");
 				args[1].Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteTemporaryOrExpr(args[0], FuPriority.Argument);
+				args[0].Accept(this, FuPriority.Argument);
 				Write(", 0, &");
 				obj.Accept(this, FuPriority.Primary);
 				WriteChar(')');
@@ -11717,6 +11719,12 @@ namespace Fusion
 				NotSupported(obj, method.Name);
 				break;
 			}
+		}
+
+		internal override void VisitCallExpr(FuCallExpr expr, FuPriority parent)
+		{
+			if (!TryWriteTemporary(expr))
+				base.VisitCallExpr(expr, parent);
 		}
 
 		void WriteDictionaryIndexing(string function, FuBinaryExpr expr, FuPriority parent)
@@ -11787,13 +11795,15 @@ namespace Fusion
 			switch (expr.Op) {
 			case FuToken.Plus:
 				if (expr.Type.Id == FuId.StringStorageType) {
+					if (TryWriteTemporary(expr))
+						return;
 					this.StringFormat = true;
 					Include("stdarg.h");
 					Include("stdio.h");
 					Write("FuString_Format(\"%s%s\", ");
-					WriteTemporaryOrExpr(expr.Left, FuPriority.Argument);
+					expr.Left.Accept(this, FuPriority.Argument);
 					Write(", ");
-					WriteTemporaryOrExpr(expr.Right, FuPriority.Argument);
+					expr.Right.Accept(this, FuPriority.Argument);
 					WriteChar(')');
 					return;
 				}
@@ -11819,7 +11829,7 @@ namespace Fusion
 						Write(", FuString_Format(\"%s");
 						WritePrintfFormat(rightInterpolated);
 						Write("\", ");
-						WriteTemporaryOrExpr(expr.Left, FuPriority.Argument);
+						expr.Left.Accept(this, FuPriority.Argument);
 						WriteInterpolatedStringArgs(rightInterpolated);
 						WriteChar(')');
 					}

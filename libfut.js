@@ -7737,6 +7737,15 @@ export class GenBase extends FuVisitor
 		this.visitLiteralLong(BigInt(id));
 	}
 
+	tryWriteTemporary(expr)
+	{
+		let id = this.currentTemporaries.indexOf(expr);
+		if (id < 0)
+			return false;
+		this.writeTemporaryName(id);
+		return true;
+	}
+
 	writeResourceName(name)
 	{
 		for (const c of name)
@@ -7771,10 +7780,7 @@ export class GenBase extends FuVisitor
 			else {
 				let init;
 				if ((init = expr.inner) instanceof FuAggregateInitializer) {
-					let tempId = this.currentTemporaries.indexOf(expr);
-					if (tempId >= 0)
-						this.writeTemporaryName(tempId);
-					else
+					if (!this.tryWriteTemporary(expr))
 						this.writeNewWithFields(dynamic, init);
 				}
 				else
@@ -9651,7 +9657,7 @@ export class GenC extends GenCCpp
 			expr.accept(this, FuPriority.PRIMARY);
 		}
 		else
-			this.#writeTemporaryOrExpr(expr, FuPriority.ARGUMENT);
+			expr.accept(this, FuPriority.ARGUMENT);
 	}
 
 	#writeStringPtrAdd(call, cast)
@@ -9677,15 +9683,6 @@ export class GenC extends GenCCpp
 		this.#startDefinition(type, true, true);
 	}
 
-	#writeTemporaryOrExpr(expr, parent)
-	{
-		let id = this.currentTemporaries.indexOf(expr);
-		if (id >= 0)
-			this.writeTemporaryName(id);
-		else
-			expr.accept(this, parent);
-	}
-
 	#writeUpcast(resultClass, klass)
 	{
 		for (; klass != resultClass; klass = klass.parent)
@@ -9698,7 +9695,7 @@ export class GenC extends GenCCpp
 		let ptr;
 		if ((storage = expr.type) instanceof FuStorageType && storage.class.id == FuId.NONE && !GenC.#isDictionaryClassStgIndexing(expr)) {
 			this.writeChar(38);
-			this.#writeTemporaryOrExpr(expr, FuPriority.PRIMARY);
+			expr.accept(this, FuPriority.PRIMARY);
 			this.#writeUpcast(resultClass, storage.class);
 		}
 		else if ((ptr = expr.type) instanceof FuClassType && ptr.class != resultClass) {
@@ -9734,6 +9731,8 @@ export class GenC extends GenCCpp
 
 	visitInterpolatedString(expr, parent)
 	{
+		if (this.tryWriteTemporary(expr))
+			return;
 		this.include("stdarg.h");
 		this.include("stdio.h");
 		this.#stringFormat = true;
@@ -9945,9 +9944,11 @@ export class GenC extends GenCCpp
 			this.#writeMatchProperty(expr, 2);
 			break;
 		case FuId.MATCH_VALUE:
-			this.write("g_match_info_fetch(");
-			expr.left.accept(this, FuPriority.ARGUMENT);
-			this.write(", 0)");
+			if (!this.tryWriteTemporary(expr)) {
+				this.write("g_match_info_fetch(");
+				expr.left.accept(this, FuPriority.ARGUMENT);
+				this.write(", 0)");
+			}
 			break;
 		default:
 			if (expr.left == null || expr.symbol instanceof FuConst)
@@ -10601,7 +10602,7 @@ export class GenC extends GenCCpp
 
 	#writeStorageTemporary(expr)
 	{
-		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuStorageType))
+		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuOwningType))
 			this.#writeCTemporary(expr.type, expr);
 	}
 
@@ -10714,11 +10715,13 @@ export class GenC extends GenCCpp
 
 	cleanupTemporary(i, temp)
 	{
-		if (temp.type.id == FuId.STRING_STORAGE_TYPE) {
-			this.write("free(futemp");
-			this.visitLiteralLong(BigInt(i));
-			this.writeLine(");");
-		}
+		let dynamicObjectLiteral;
+		if (!GenC.#needToDestructType(temp.type) || ((dynamicObjectLiteral = temp) instanceof FuPrefixExpr && dynamicObjectLiteral.inner instanceof FuAggregateInitializer))
+			return;
+		this.#writeDestructMethodName(temp.type.asClassType());
+		this.write("(futemp");
+		this.visitLiteralLong(BigInt(i));
+		this.writeLine(");");
 	}
 
 	writeVar(def)
@@ -11136,7 +11139,7 @@ export class GenC extends GenCCpp
 			if (type.id == FuId.STRING_STORAGE_TYPE)
 				this.#writeStringStorageValue(expr);
 			else if (expr.type.id == FuId.STRING_STORAGE_TYPE)
-				this.#writeTemporaryOrExpr(expr, parent);
+				expr.accept(this, parent);
 			else
 				super.writeCoercedInternal(type, expr, parent);
 		}
@@ -11166,9 +11169,9 @@ export class GenC extends GenCCpp
 			this.writeChar(40);
 		this.include("string.h");
 		this.write("strcmp(");
-		this.#writeTemporaryOrExpr(left, FuPriority.ARGUMENT);
+		left.accept(this, FuPriority.ARGUMENT);
 		this.write(", ");
-		this.#writeTemporaryOrExpr(right, FuPriority.ARGUMENT);
+		right.accept(this, FuPriority.ARGUMENT);
 		this.writeChar(41);
 		this.write(GenC.getEqOp(not));
 		this.writeChar(48);
@@ -11376,11 +11379,11 @@ export class GenC extends GenCCpp
 					this.write("g_string_append(");
 					obj.accept(this, FuPriority.ARGUMENT);
 					this.write(", ");
-					this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+					args[0].accept(this, FuPriority.ARGUMENT);
 				}
 				else {
 					this.write("fputs(");
-					this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+					args[0].accept(this, FuPriority.ARGUMENT);
 					this.write(", ");
 					obj.accept(this, FuPriority.ARGUMENT);
 				}
@@ -11407,7 +11410,7 @@ export class GenC extends GenCCpp
 					this.write(obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS ? "g_string_append_printf(" : "fprintf(");
 					obj.accept(this, FuPriority.ARGUMENT);
 					this.write(", \"%s\\n\", ");
-					this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+					args[0].accept(this, FuPriority.ARGUMENT);
 					this.writeChar(41);
 				}
 			}
@@ -11525,7 +11528,7 @@ export class GenC extends GenCCpp
 		this.write("_TryParse(&");
 		obj.accept(this, FuPriority.PRIMARY);
 		this.write(", ");
-		this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+		args[0].accept(this, FuPriority.ARGUMENT);
 		if (obj.type instanceof FuIntegerType)
 			this.writeTryParseRadix(args);
 		this.writeChar(41);
@@ -11674,12 +11677,12 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.STRING_TO_LOWER:
 			this.#writeGlib("g_utf8_strdown(");
-			this.#writeTemporaryOrExpr(obj, FuPriority.ARGUMENT);
+			obj.accept(this, FuPriority.ARGUMENT);
 			this.write(", -1)");
 			break;
 		case FuId.STRING_TO_UPPER:
 			this.#writeGlib("g_utf8_strup(");
-			this.#writeTemporaryOrExpr(obj, FuPriority.ARGUMENT);
+			obj.accept(this, FuPriority.ARGUMENT);
 			this.write(", -1)");
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
@@ -11995,21 +11998,21 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.REGEX_COMPILE:
 			this.#writeGlib("g_regex_new(");
-			this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
 			this.#writeCRegexOptions(args);
 			this.write(", 0, NULL)");
 			break;
 		case FuId.REGEX_ESCAPE:
 			this.#writeGlib("g_regex_escape_string(");
-			this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", -1)");
 			break;
 		case FuId.REGEX_IS_MATCH_STR:
 			this.#writeGlib("g_regex_match_simple(");
-			this.#writeTemporaryOrExpr(args[1], FuPriority.ARGUMENT);
+			args[1].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
-			this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
 			this.#writeCRegexOptions(args);
 			this.write(", 0)");
@@ -12018,7 +12021,7 @@ export class GenC extends GenCCpp
 			this.write("g_regex_match(");
 			obj.accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
-			this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", 0, NULL)");
 			break;
 		case FuId.MATCH_FIND_STR:
@@ -12026,9 +12029,9 @@ export class GenC extends GenCCpp
 			this.write("FuMatch_Find(&");
 			obj.accept(this, FuPriority.PRIMARY);
 			this.write(", ");
-			this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
-			this.#writeTemporaryOrExpr(args[1], FuPriority.ARGUMENT);
+			args[1].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
 			this.#writeCRegexOptions(args);
 			this.writeChar(41);
@@ -12037,7 +12040,7 @@ export class GenC extends GenCCpp
 			this.write("g_regex_match(");
 			args[1].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
-			this.#writeTemporaryOrExpr(args[0], FuPriority.ARGUMENT);
+			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", 0, &");
 			obj.accept(this, FuPriority.PRIMARY);
 			this.writeChar(41);
@@ -12104,6 +12107,12 @@ export class GenC extends GenCCpp
 			this.notSupported(obj, method.name);
 			break;
 		}
+	}
+
+	visitCallExpr(expr, parent)
+	{
+		if (!this.tryWriteTemporary(expr))
+			super.visitCallExpr(expr, parent);
 	}
 
 	#writeDictionaryIndexing(function_, expr, parent)
@@ -12176,13 +12185,15 @@ export class GenC extends GenCCpp
 		switch (expr.op) {
 		case FuToken.PLUS:
 			if (expr.type.id == FuId.STRING_STORAGE_TYPE) {
+				if (this.tryWriteTemporary(expr))
+					return;
 				this.#stringFormat = true;
 				this.include("stdarg.h");
 				this.include("stdio.h");
 				this.write("FuString_Format(\"%s%s\", ");
-				this.#writeTemporaryOrExpr(expr.left, FuPriority.ARGUMENT);
+				expr.left.accept(this, FuPriority.ARGUMENT);
 				this.write(", ");
-				this.#writeTemporaryOrExpr(expr.right, FuPriority.ARGUMENT);
+				expr.right.accept(this, FuPriority.ARGUMENT);
 				this.writeChar(41);
 				return;
 			}
@@ -12209,7 +12220,7 @@ export class GenC extends GenCCpp
 					this.write(", FuString_Format(\"%s");
 					this.writePrintfFormat(rightInterpolated);
 					this.write("\", ");
-					this.#writeTemporaryOrExpr(expr.left, FuPriority.ARGUMENT);
+					expr.left.accept(this, FuPriority.ARGUMENT);
 					this.writeInterpolatedStringArgs(rightInterpolated);
 					this.writeChar(41);
 				}

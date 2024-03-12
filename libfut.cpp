@@ -7256,6 +7256,15 @@ void GenBase::writeTemporaryName(int id)
 	visitLiteralLong(id);
 }
 
+bool GenBase::tryWriteTemporary(const FuExpr * expr)
+{
+	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
+	if (id < 0)
+		return false;
+	writeTemporaryName(id);
+	return true;
+}
+
 void GenBase::writeResourceName(std::string_view name)
 {
 	for (int c : name)
@@ -7291,10 +7300,7 @@ void GenBase::visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent)
 			if (dynamic->class_->id == FuId::arrayPtrClass)
 				writeNewArray(dynamic->getElementType().get(), expr->inner.get(), parent);
 			else if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr->inner.get())) {
-				int tempId = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
-				if (tempId >= 0)
-					writeTemporaryName(tempId);
-				else
+				if (!tryWriteTemporary(expr))
 					writeNewWithFields(dynamic, init);
 			}
 			else
@@ -9079,7 +9085,7 @@ void GenC::writeInterpolatedStringArgBase(const FuExpr * expr)
 		expr->accept(this, FuPriority::primary);
 	}
 	else
-		writeTemporaryOrExpr(expr, FuPriority::argument);
+		expr->accept(this, FuPriority::argument);
 }
 
 void GenC::writeStringPtrAdd(const FuCallExpr * call, bool cast)
@@ -9105,15 +9111,6 @@ void GenC::startTemporaryVar(const FuType * type)
 	startDefinition(type, true, true);
 }
 
-void GenC::writeTemporaryOrExpr(const FuExpr * expr, FuPriority parent)
-{
-	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
-	if (id >= 0)
-		writeTemporaryName(id);
-	else
-		expr->accept(this, parent);
-}
-
 void GenC::writeUpcast(const FuClass * resultClass, const FuSymbol * klass)
 {
 	for (; klass != resultClass; klass = klass->parent)
@@ -9126,7 +9123,7 @@ void GenC::writeClassPtr(const FuClass * resultClass, const FuExpr * expr, FuPri
 	const FuClassType * ptr;
 	if ((storage = dynamic_cast<const FuStorageType *>(expr->type.get())) && storage->class_->id == FuId::none && !isDictionaryClassStgIndexing(expr)) {
 		writeChar('&');
-		writeTemporaryOrExpr(expr, FuPriority::primary);
+		expr->accept(this, FuPriority::primary);
 		writeUpcast(resultClass, storage->class_);
 	}
 	else if ((ptr = dynamic_cast<const FuClassType *>(expr->type.get())) && ptr->class_ != resultClass) {
@@ -9162,6 +9159,8 @@ void GenC::writeInterpolatedStringArg(const FuExpr * expr)
 
 void GenC::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
 {
+	if (tryWriteTemporary(expr))
+		return;
 	include("stdarg.h");
 	include("stdio.h");
 	this->stringFormat = true;
@@ -9310,9 +9309,11 @@ void GenC::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 		writeMatchProperty(expr, 2);
 		break;
 	case FuId::matchValue:
-		write("g_match_info_fetch(");
-		expr->left->accept(this, FuPriority::argument);
-		write(", 0)");
+		if (!tryWriteTemporary(expr)) {
+			write("g_match_info_fetch(");
+			expr->left->accept(this, FuPriority::argument);
+			write(", 0)");
+		}
 		break;
 	default:
 		if (expr->left == nullptr || dynamic_cast<const FuConst *>(expr->symbol))
@@ -9957,7 +9958,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 
 void GenC::writeStorageTemporary(const FuExpr * expr)
 {
-	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuStorageType *>(expr->type.get())))
+	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuOwningType *>(expr->type.get())))
 		writeCTemporary(expr->type.get(), expr);
 }
 
@@ -10045,11 +10046,13 @@ bool GenC::containsTemporariesToDestruct(const FuExpr * expr)
 
 void GenC::cleanupTemporary(int i, const FuExpr * temp)
 {
-	if (temp->type->id == FuId::stringStorageType) {
-		write("free(futemp");
-		visitLiteralLong(i);
-		writeLine(");");
-	}
+	const FuPrefixExpr * dynamicObjectLiteral;
+	if (!needToDestructType(temp->type.get()) || ((dynamicObjectLiteral = dynamic_cast<const FuPrefixExpr *>(temp)) && dynamic_cast<const FuAggregateInitializer *>(dynamicObjectLiteral->inner.get())))
+		return;
+	writeDestructMethodName(temp->type->asClassType());
+	write("(futemp");
+	visitLiteralLong(i);
+	writeLine(");");
 }
 
 void GenC::writeVar(const FuNamedValue * def)
@@ -10459,7 +10462,7 @@ void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPrio
 		if (type->id == FuId::stringStorageType)
 			writeStringStorageValue(expr);
 		else if (expr->type->id == FuId::stringStorageType)
-			writeTemporaryOrExpr(expr, parent);
+			expr->accept(this, parent);
 		else
 			GenTyped::writeCoercedInternal(type, expr, parent);
 	}
@@ -10489,9 +10492,9 @@ void GenC::writeEqualStringInternal(const FuExpr * left, const FuExpr * right, F
 		writeChar('(');
 	include("string.h");
 	write("strcmp(");
-	writeTemporaryOrExpr(left, FuPriority::argument);
+	left->accept(this, FuPriority::argument);
 	write(", ");
-	writeTemporaryOrExpr(right, FuPriority::argument);
+	right->accept(this, FuPriority::argument);
 	writeChar(')');
 	write(getEqOp(not_));
 	writeChar('0');
@@ -10695,11 +10698,11 @@ void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::share
 			write("g_string_append(");
 			obj->accept(this, FuPriority::argument);
 			write(", ");
-			writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+			(*args)[0]->accept(this, FuPriority::argument);
 		}
 		else {
 			write("fputs(");
-			writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+			(*args)[0]->accept(this, FuPriority::argument);
 			write(", ");
 			obj->accept(this, FuPriority::argument);
 		}
@@ -10724,7 +10727,7 @@ void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::share
 		write(obj->type->asClassType()->class_->id == FuId::stringWriterClass ? "g_string_append_printf(" : "fprintf(");
 		obj->accept(this, FuPriority::argument);
 		write(", \"%s\\n\", ");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
 	}
 }
@@ -10839,7 +10842,7 @@ void GenC::writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<F
 	write("_TryParse(&");
 	obj->accept(this, FuPriority::primary);
 	write(", ");
-	writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+	(*args)[0]->accept(this, FuPriority::argument);
 	if (dynamic_cast<const FuIntegerType *>(obj->type.get()))
 		writeTryParseRadix(args);
 	writeChar(')');
@@ -10992,12 +10995,12 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::stringToLower:
 		writeGlib("g_utf8_strdown(");
-		writeTemporaryOrExpr(obj, FuPriority::argument);
+		obj->accept(this, FuPriority::argument);
 		write(", -1)");
 		break;
 	case FuId::stringToUpper:
 		writeGlib("g_utf8_strup(");
-		writeTemporaryOrExpr(obj, FuPriority::argument);
+		obj->accept(this, FuPriority::argument);
 		write(", -1)");
 		break;
 	case FuId::arrayBinarySearchAll:
@@ -11327,21 +11330,21 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::regexCompile:
 		writeGlib("g_regex_new(");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		write(", ");
 		writeCRegexOptions(args);
 		write(", 0, NULL)");
 		break;
 	case FuId::regexEscape:
 		writeGlib("g_regex_escape_string(");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		write(", -1)");
 		break;
 	case FuId::regexIsMatchStr:
 		writeGlib("g_regex_match_simple(");
-		writeTemporaryOrExpr((*args)[1].get(), FuPriority::argument);
+		(*args)[1]->accept(this, FuPriority::argument);
 		write(", ");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		write(", ");
 		writeCRegexOptions(args);
 		write(", 0)");
@@ -11350,7 +11353,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write("g_regex_match(");
 		obj->accept(this, FuPriority::argument);
 		write(", ");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		write(", 0, NULL)");
 		break;
 	case FuId::matchFindStr:
@@ -11358,9 +11361,9 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write("FuMatch_Find(&");
 		obj->accept(this, FuPriority::primary);
 		write(", ");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		write(", ");
-		writeTemporaryOrExpr((*args)[1].get(), FuPriority::argument);
+		(*args)[1]->accept(this, FuPriority::argument);
 		write(", ");
 		writeCRegexOptions(args);
 		writeChar(')');
@@ -11369,7 +11372,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write("g_regex_match(");
 		(*args)[1]->accept(this, FuPriority::argument);
 		write(", ");
-		writeTemporaryOrExpr((*args)[0].get(), FuPriority::argument);
+		(*args)[0]->accept(this, FuPriority::argument);
 		write(", 0, &");
 		obj->accept(this, FuPriority::primary);
 		writeChar(')');
@@ -11436,6 +11439,12 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		notSupported(obj, method->name);
 		break;
 	}
+}
+
+void GenC::visitCallExpr(const FuCallExpr * expr, FuPriority parent)
+{
+	if (!tryWriteTemporary(expr))
+		GenBase::visitCallExpr(expr, parent);
 }
 
 void GenC::writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent)
@@ -11507,13 +11516,15 @@ void GenC::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	switch (expr->op) {
 	case FuToken::plus:
 		if (expr->type->id == FuId::stringStorageType) {
+			if (tryWriteTemporary(expr))
+				return;
 			this->stringFormat = true;
 			include("stdarg.h");
 			include("stdio.h");
 			write("FuString_Format(\"%s%s\", ");
-			writeTemporaryOrExpr(expr->left.get(), FuPriority::argument);
+			expr->left->accept(this, FuPriority::argument);
 			write(", ");
-			writeTemporaryOrExpr(expr->right.get(), FuPriority::argument);
+			expr->right->accept(this, FuPriority::argument);
 			writeChar(')');
 			return;
 		}
@@ -11541,7 +11552,7 @@ void GenC::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 				write(", FuString_Format(\"%s");
 				writePrintfFormat(rightInterpolated);
 				write("\", ");
-				writeTemporaryOrExpr(expr->left.get(), FuPriority::argument);
+				expr->left->accept(this, FuPriority::argument);
 				writeInterpolatedStringArgs(rightInterpolated);
 				writeChar(')');
 			}

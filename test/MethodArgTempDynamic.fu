@@ -1,0 +1,14 @@
+public class Test
+{
+	public static Test# Create() => new Test(); //FAIL: cl
+
+	public static void Consume(Test t)
+	{
+	}
+
+	public static bool Run()
+	{
+		Consume(Create());
+		return true;
+	}
+}

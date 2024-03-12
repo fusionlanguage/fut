@@ -876,6 +876,15 @@ public abstract class GenBase : FuVisitor
 		VisitLiteralLong(id);
 	}
 
+	protected bool TryWriteTemporary!(FuExpr expr)
+	{
+		int id = this.CurrentTemporaries.IndexOf(expr);
+		if (id < 0)
+			return false;
+		WriteTemporaryName(id);
+		return true;
+	}
+
 	protected void WriteResourceName!(string name)
 	{
 		foreach (int c in name)
@@ -910,10 +919,7 @@ public abstract class GenBase : FuVisitor
 			if (dynamic.Class.Id == FuId.ArrayPtrClass)
 				WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
 			else if (expr.Inner is FuAggregateInitializer init) {
-				int tempId = this.CurrentTemporaries.IndexOf(expr);
-				if (tempId >= 0)
-					WriteTemporaryName(tempId);
-				else
+				if (!TryWriteTemporary(expr))
 					WriteNewWithFields(dynamic, init);
 			}
 			else
