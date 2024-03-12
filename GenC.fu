@@ -2881,6 +2881,20 @@ public class GenC : GenCCpp
 			NotSupported(statement.Collection, statement.Collection.Type.ToString());
 	}
 
+	protected override void StartIf!(FuExpr expr)
+	{
+		WriteCTemporaries(expr);
+		if (this.CurrentTemporaries.Any(temp => !(temp is FuType))) {
+			Write("bool fucondition = "); // FIXME: already in scope
+			expr.Accept(this, FuPriority.Argument);
+			WriteCharLine(';');
+			CleanupTemporaries();
+			Write("if (fucondition)");
+		}
+		else
+			base.StartIf(expr);
+	}
+
 	internal override void VisitLock!(FuLock statement)
 	{
 		Write("mtx_lock(&");

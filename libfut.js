@@ -8537,10 +8537,15 @@ export class GenBase extends FuVisitor
 		this.writeChar(41);
 	}
 
-	#writeIf(statement)
+	startIf(expr)
 	{
 		this.write("if (");
-		this.#startIfWhile(statement.cond);
+		this.#startIfWhile(expr);
+	}
+
+	#writeIf(statement)
+	{
+		this.startIf(statement.cond);
 		this.writeChild(statement.onTrue);
 		if (statement.onFalse != null) {
 			this.write("else");
@@ -12463,6 +12468,20 @@ export class GenC extends GenCCpp
 		}
 		else
 			this.notSupported(statement.collection, statement.collection.type.toString());
+	}
+
+	startIf(expr)
+	{
+		this.#writeCTemporaries(expr);
+		if (this.currentTemporaries.some(temp => !(temp instanceof FuType))) {
+			this.write("bool fucondition = ");
+			expr.accept(this, FuPriority.ARGUMENT);
+			this.writeCharLine(59);
+			this.cleanupTemporaries();
+			this.write("if (fucondition)");
+		}
+		else
+			super.startIf(expr);
 	}
 
 	visitLock(statement)

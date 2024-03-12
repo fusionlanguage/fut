@@ -1650,10 +1650,15 @@ public abstract class GenBase : FuVisitor
 		WriteChar(')');
 	}
 
-	void WriteIf!(FuIf statement)
+	protected virtual void StartIf!(FuExpr expr)
 	{
 		Write("if (");
-		StartIfWhile(statement.Cond);
+		StartIfWhile(expr);
+	}
+
+	void WriteIf!(FuIf statement)
+	{
+		StartIf(statement.Cond);
 		WriteChild(statement.OnTrue);
 		if (statement.OnFalse != null) {
 			Write("else");

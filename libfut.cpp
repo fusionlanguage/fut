@@ -8026,10 +8026,15 @@ void GenBase::startIfWhile(const FuExpr * expr)
 	writeChar(')');
 }
 
-void GenBase::writeIf(const FuIf * statement)
+void GenBase::startIf(const FuExpr * expr)
 {
 	write("if (");
-	startIfWhile(statement->cond.get());
+	startIfWhile(expr);
+}
+
+void GenBase::writeIf(const FuIf * statement)
+{
+	startIf(statement->cond.get());
 	writeChild(statement->onTrue.get());
 	if (statement->onFalse != nullptr) {
 		write("else");
@@ -11795,6 +11800,20 @@ void GenC::visitForeach(const FuForeach * statement)
 	}
 	else
 		notSupported(statement->collection.get(), statement->collection->type->toString());
+}
+
+void GenC::startIf(const FuExpr * expr)
+{
+	writeCTemporaries(expr);
+	if (std::any_of(this->currentTemporaries.begin(), this->currentTemporaries.end(), [](const FuExpr * temp) { return !dynamic_cast<const FuType *>(temp); })) {
+		write("bool fucondition = ");
+		expr->accept(this, FuPriority::argument);
+		writeCharLine(';');
+		cleanupTemporaries();
+		write("if (fucondition)");
+	}
+	else
+		GenBase::startIf(expr);
 }
 
 void GenC::visitLock(const FuLock * statement)

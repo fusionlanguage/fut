@@ -8215,10 +8215,15 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		void WriteIf(FuIf statement)
+		protected virtual void StartIf(FuExpr expr)
 		{
 			Write("if (");
-			StartIfWhile(statement.Cond);
+			StartIfWhile(expr);
+		}
+
+		void WriteIf(FuIf statement)
+		{
+			StartIf(statement.Cond);
 			WriteChild(statement.OnTrue);
 			if (statement.OnFalse != null) {
 				Write("else");
@@ -12067,6 +12072,20 @@ namespace Fusion
 			}
 			else
 				NotSupported(statement.Collection, statement.Collection.Type.ToString());
+		}
+
+		protected override void StartIf(FuExpr expr)
+		{
+			WriteCTemporaries(expr);
+			if (this.CurrentTemporaries.Exists(temp => !(temp is FuType))) {
+				Write("bool fucondition = ");
+				expr.Accept(this, FuPriority.Argument);
+				WriteCharLine(';');
+				CleanupTemporaries();
+				Write("if (fucondition)");
+			}
+			else
+				base.StartIf(expr);
 		}
 
 		internal override void VisitLock(FuLock statement)

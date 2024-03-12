@@ -1857,6 +1857,7 @@ protected:
 	virtual void writeChild(FuStatement * statement);
 	virtual void startBreakGoto();
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
+	virtual void startIf(const FuExpr * expr);
 	void defineVar(const FuExpr * value);
 	virtual void writeSwitchCaseTypeVar(const FuExpr * value);
 	virtual void writeSwitchValue(const FuExpr * expr);
@@ -2080,6 +2081,7 @@ protected:
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
 	void cleanupBlock(const FuBlock * statement) override;
+	void startIf(const FuExpr * expr) override;
 	void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
 	void writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
 	void writeEnum(const FuEnum * enu) override;
