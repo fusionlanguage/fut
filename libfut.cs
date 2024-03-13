@@ -9264,6 +9264,8 @@ namespace Fusion
 
 		readonly List<FuVar> VarsToDestruct = new List<FuVar>();
 
+		bool ConditionVarInScope;
+
 		protected FuClass CurrentClass;
 
 		protected override FuContainerType GetCurrentContainer() => this.CurrentClass;
@@ -11898,6 +11900,13 @@ namespace Fusion
 			TrimVarsToDestruct(i);
 		}
 
+		internal override void VisitBlock(FuBlock statement)
+		{
+			bool wasConditionVarInScope = this.ConditionVarInScope;
+			base.VisitBlock(statement);
+			this.ConditionVarInScope = wasConditionVarInScope;
+		}
+
 		internal override void VisitBreak(FuBreak statement)
 		{
 			WriteDestructLoopOrSwitch(statement.LoopOrSwitch);
@@ -12078,7 +12087,11 @@ namespace Fusion
 		{
 			WriteCTemporaries(expr);
 			if (this.CurrentTemporaries.Exists(temp => !(temp is FuType))) {
-				Write("bool fucondition = ");
+				if (!this.ConditionVarInScope) {
+					this.ConditionVarInScope = true;
+					Write("bool ");
+				}
+				Write("fucondition = ");
 				expr.Accept(this, FuPriority.Argument);
 				WriteCharLine(';');
 				CleanupTemporaries();
@@ -12504,6 +12517,7 @@ namespace Fusion
 				}
 				WriteLine("&vtbl;");
 			}
+			this.ConditionVarInScope = false;
 			WriteConstructorBody(klass);
 			CloseBlock();
 		}
@@ -12628,6 +12642,7 @@ namespace Fusion
 			}
 			WriteNewLine();
 			this.CurrentMethod = method;
+			this.ConditionVarInScope = false;
 			OpenBlock();
 			if (method.Body is FuBlock block) {
 				List<FuStatement> statements = block.Statements;

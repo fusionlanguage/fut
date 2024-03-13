@@ -44,6 +44,7 @@ public class GenC : GenCCpp
 	SortedSet<FuId>() Compares;
 	SortedSet<FuId>() Contains;
 	List<FuVar>() VarsToDestruct;
+	bool ConditionVarInScope;
 	protected FuClass CurrentClass;
 
 	protected override FuContainerType GetCurrentContainer() => this.CurrentClass;
@@ -2705,6 +2706,13 @@ public class GenC : GenCCpp
 		TrimVarsToDestruct(i);
 	}
 
+	internal override void VisitBlock!(FuBlock statement)
+	{
+		bool wasConditionVarInScope = this.ConditionVarInScope;
+		base.VisitBlock(statement);
+		this.ConditionVarInScope = wasConditionVarInScope;
+	}
+
 	internal override void VisitBreak!(FuBreak statement)
 	{
 		WriteDestructLoopOrSwitch(statement.LoopOrSwitch);
@@ -2885,7 +2893,11 @@ public class GenC : GenCCpp
 	{
 		WriteCTemporaries(expr);
 		if (this.CurrentTemporaries.Any(temp => !(temp is FuType))) {
-			Write("bool fucondition = "); // FIXME: already in scope
+			if (!this.ConditionVarInScope) {
+				this.ConditionVarInScope = true;
+				Write("bool ");
+			}
+			Write("fucondition = ");
 			expr.Accept(this, FuPriority.Argument);
 			WriteCharLine(';');
 			CleanupTemporaries();
@@ -3323,6 +3335,7 @@ public class GenC : GenCCpp
 			}
 			WriteLine("&vtbl;");
 		}
+		this.ConditionVarInScope = false;
 		WriteConstructorBody(klass);
 		CloseBlock();
 	}
@@ -3449,6 +3462,7 @@ public class GenC : GenCCpp
 		}
 		WriteNewLine();
 		this.CurrentMethod = method;
+		this.ConditionVarInScope = false;
 		OpenBlock();
 		if (method.Body is FuBlock block) {
 			List<FuStatement#> statements = block.Statements;

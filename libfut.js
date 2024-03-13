@@ -9584,6 +9584,7 @@ export class GenC extends GenCCpp
 	#compares = new Set();
 	#contains = new Set();
 	#varsToDestruct = [];
+	#conditionVarInScope;
 	currentClass;
 
 	getCurrentContainer()
@@ -12289,6 +12290,13 @@ export class GenC extends GenCCpp
 		this.#trimVarsToDestruct(i);
 	}
 
+	visitBlock(statement)
+	{
+		let wasConditionVarInScope = this.#conditionVarInScope;
+		super.visitBlock(statement);
+		this.#conditionVarInScope = wasConditionVarInScope;
+	}
+
 	visitBreak(statement)
 	{
 		this.#writeDestructLoopOrSwitch(statement.loopOrSwitch);
@@ -12474,7 +12482,11 @@ export class GenC extends GenCCpp
 	{
 		this.#writeCTemporaries(expr);
 		if (this.currentTemporaries.some(temp => !(temp instanceof FuType))) {
-			this.write("bool fucondition = ");
+			if (!this.#conditionVarInScope) {
+				this.#conditionVarInScope = true;
+				this.write("bool ");
+			}
+			this.write("fucondition = ");
 			expr.accept(this, FuPriority.ARGUMENT);
 			this.writeCharLine(59);
 			this.cleanupTemporaries();
@@ -12920,6 +12932,7 @@ export class GenC extends GenCCpp
 			}
 			this.writeLine("&vtbl;");
 		}
+		this.#conditionVarInScope = false;
 		this.writeConstructorBody(klass);
 		this.closeBlock();
 	}
@@ -13044,6 +13057,7 @@ export class GenC extends GenCCpp
 		}
 		this.writeNewLine();
 		this.currentMethod = method;
+		this.#conditionVarInScope = false;
 		this.openBlock();
 		let block;
 		if ((block = method.body) instanceof FuBlock) {

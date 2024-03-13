@@ -2103,6 +2103,7 @@ public:
 	void visitCallExpr(const FuCallExpr * expr, FuPriority parent) override;
 	void visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
+	void visitBlock(const FuBlock * statement) override;
 	void visitBreak(const FuBreak * statement) override;
 	void visitContinue(const FuContinue * statement) override;
 	void visitExpr(const FuExpr * statement) override;
@@ -2136,6 +2137,7 @@ private:
 	std::set<FuId> compares;
 	std::set<FuId> contains;
 	std::vector<const FuVar *> varsToDestruct;
+	bool conditionVarInScope;
 	void writeStringPtrAdd(const FuCallExpr * call, bool cast);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);

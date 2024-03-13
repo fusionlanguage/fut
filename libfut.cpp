@@ -11621,6 +11621,13 @@ void GenC::cleanupBlock(const FuBlock * statement)
 	trimVarsToDestruct(i);
 }
 
+void GenC::visitBlock(const FuBlock * statement)
+{
+	bool wasConditionVarInScope = this->conditionVarInScope;
+	GenBase::visitBlock(statement);
+	this->conditionVarInScope = wasConditionVarInScope;
+}
+
 void GenC::visitBreak(const FuBreak * statement)
 {
 	writeDestructLoopOrSwitch(statement->loopOrSwitch);
@@ -11806,7 +11813,11 @@ void GenC::startIf(const FuExpr * expr)
 {
 	writeCTemporaries(expr);
 	if (std::any_of(this->currentTemporaries.begin(), this->currentTemporaries.end(), [](const FuExpr * temp) { return !dynamic_cast<const FuType *>(temp); })) {
-		write("bool fucondition = ");
+		if (!this->conditionVarInScope) {
+			this->conditionVarInScope = true;
+			write("bool ");
+		}
+		write("fucondition = ");
 		expr->accept(this, FuPriority::argument);
 		writeCharLine(';');
 		cleanupTemporaries();
@@ -12243,6 +12254,7 @@ void GenC::writeConstructor(const FuClass * klass)
 		}
 		writeLine("&vtbl;");
 	}
+	this->conditionVarInScope = false;
 	writeConstructorBody(klass);
 	closeBlock();
 }
@@ -12366,6 +12378,7 @@ void GenC::writeMethod(const FuMethod * method)
 	}
 	writeNewLine();
 	this->currentMethod = method;
+	this->conditionVarInScope = false;
 	openBlock();
 	if (const FuBlock *block = dynamic_cast<const FuBlock *>(method->body.get())) {
 		const std::vector<std::shared_ptr<FuStatement>> * statements = &block->statements;

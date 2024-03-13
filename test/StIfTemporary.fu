@@ -1,0 +1,22 @@
+public static class Test
+{
+	static bool Foo()
+	{
+		string s = "foo";
+		if (s.Substring(1, 1).Substring(0, 1) != "o") //FAIL: cl
+			return false;
+		if (s.Substring(0, 2).Substring(0, 1) != "f")
+			return false;
+		return true;
+	}
+
+	public static bool Run()
+	{
+		string s = "foo";
+		if (s.Substring(1, 1).Substring(0, 1) != "o")
+			return false;
+		if (s.Substring(0, 2).Substring(0, 1) != "f")
+			return false;
+		return Foo();
+	}
+}
