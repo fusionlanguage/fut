@@ -1446,6 +1446,19 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
+	protected virtual void WriteTemporariesNotSubstring!(FuExpr expr)
+	{
+		WriteTemporaries(expr);
+	}
+
+	protected virtual void WriteOwningTemporary!(FuExpr expr)
+	{
+	}
+
+	protected virtual void WriteArgTemporary!(FuMethod method, FuVar param, FuExpr arg)
+	{
+	}
+
 	protected void WriteTemporaries!(FuExpr expr)
 	{
 		switch (expr) {
@@ -1468,11 +1481,13 @@ public abstract class GenBase : FuVisitor
 			break;
 		case FuInterpolatedString interp:
 			foreach (FuInterpolatedPart part in interp.Parts)
-				WriteTemporaries(part.Argument);
+				WriteTemporariesNotSubstring(part.Argument);
 			break;
 		case FuSymbolReference symbol:
-			if (symbol.Left != null)
+			if (symbol.Left != null) {
 				WriteTemporaries(symbol.Left);
+				WriteOwningTemporary(symbol.Left);
+			}
 			break;
 		case FuUnaryExpr unary:
 			if (unary.Inner != null) {
@@ -1481,11 +1496,14 @@ public abstract class GenBase : FuVisitor
 			}
 			break;
 		case FuBinaryExpr binary:
-			WriteTemporaries(binary.Left);
+			WriteTemporariesNotSubstring(binary.Left);
 			if (binary.Op == FuToken.Is)
 				DefineIsVar(binary);
-			else
+			else {
 				WriteTemporaries(binary.Right);
+				if (binary.Op != FuToken.Assign)
+					WriteOwningTemporary(binary.Right);
+			}
 			break;
 		case FuSelectExpr select:
 			WriteTemporaries(select.Cond);
@@ -1494,8 +1512,13 @@ public abstract class GenBase : FuVisitor
 			break;
 		case FuCallExpr call:
 			WriteTemporaries(call.Method);
-			foreach (FuExpr arg in call.Arguments)
+			assert call.Method.Symbol is FuMethod method;
+			FuVar? param = method.FirstParameter();
+			foreach (FuExpr arg in call.Arguments) {
 				WriteTemporaries(arg);
+				WriteArgTemporary(method, param, arg);
+				param = param.NextVar();
+			}
 			break;
 		default:
 			assert false;

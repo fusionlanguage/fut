@@ -1846,6 +1846,9 @@ protected:
 	static bool hasTemporaries(const FuExpr * expr);
 	virtual void startTemporaryVar(const FuType * type) = 0;
 	virtual void defineObjectLiteralTemporary(const FuUnaryExpr * expr);
+	virtual void writeTemporariesNotSubstring(const FuExpr * expr);
+	virtual void writeOwningTemporary(const FuExpr * expr);
+	virtual void writeArgTemporary(const FuMethod * method, const FuVar * param, const FuExpr * arg);
 	void writeTemporaries(const FuExpr * expr);
 	virtual void cleanupTemporary(int i, const FuExpr * temp);
 	void cleanupTemporaries();
@@ -2061,6 +2064,9 @@ protected:
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;
 	void writeStorageInit(const FuNamedValue * def) override;
 	void writeVarInit(const FuNamedValue * def) override;
+	void writeOwningTemporary(const FuExpr * expr) override;
+	void writeTemporariesNotSubstring(const FuExpr * expr) override;
+	void writeArgTemporary(const FuMethod * method, const FuVar * param, const FuExpr * arg) override;
 	void cleanupTemporary(int i, const FuExpr * temp) override;
 	void writeVar(const FuNamedValue * def) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
@@ -2172,8 +2178,7 @@ private:
 	static bool isCollection(const FuClass * klass);
 	void writeAssignTemporary(const FuType * type, const FuExpr * expr);
 	int writeCTemporary(const FuType * type, const FuExpr * expr);
-	void writeStorageTemporary(const FuExpr * expr);
-	void writeCTemporaries(const FuExpr * expr);
+	static bool needsOwningTemporary(const FuExpr * expr);
 	static bool hasTemporariesToDestruct(const FuExpr * expr);
 	static bool containsTemporariesToDestruct(const FuExpr * expr);
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);

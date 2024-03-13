@@ -1058,72 +1058,26 @@ public class GenC : GenCCpp
 		return id;
 	}
 
-	void WriteStorageTemporary!(FuExpr expr)
+	static bool NeedsOwningTemporary(FuExpr expr) => expr.IsNewString(false)
+		 || (expr is FuCallExpr && expr.Type is FuOwningType);
+
+	protected override void WriteOwningTemporary!(FuExpr expr)
 	{
-		if (expr.IsNewString(false)
-		 || (expr is FuCallExpr && expr.Type is FuOwningType))
+		if (NeedsOwningTemporary(expr))
 			WriteCTemporary(expr.Type, expr);
 	}
 
-	void WriteCTemporaries!(FuExpr expr)
+	protected override void WriteTemporariesNotSubstring!(FuExpr expr)
 	{
-		switch (expr) {
-		case FuVar def:
-			if (def.Value != null)
-				WriteCTemporaries(def.Value);
-			break;
-		case FuAggregateInitializer init:
-			foreach (FuExpr item in init.Items) {
-				assert item is FuBinaryExpr assign;
-				WriteCTemporaries(assign.Right);
-			}
-			break;
-		case FuLiteral:
-		case FuLambdaExpr:
-			break;
-		case FuInterpolatedString interp:
-			foreach (FuInterpolatedPart part in interp.Parts) {
-				WriteCTemporaries(part.Argument);
-				if (IsStringSubstring(part.Argument) == null)
-					WriteStorageTemporary(part.Argument);
-			}
-			break;
-		case FuSymbolReference symbol:
-			if (symbol.Left != null)
-				WriteCTemporaries(symbol.Left);
-			break;
-		case FuUnaryExpr unary:
-			if (unary.Inner != null) // new C()
-				WriteCTemporaries(unary.Inner);
-			break;
-		case FuBinaryExpr binary:
-			WriteCTemporaries(binary.Left);
-			if (IsStringSubstring(binary.Left) == null)
-				WriteStorageTemporary(binary.Left);
-			WriteCTemporaries(binary.Right);
-			if (binary.Op != FuToken.Assign)
-				WriteStorageTemporary(binary.Right);
-			break;
-		case FuSelectExpr select:
-			WriteCTemporaries(select.Cond);
-			break;
-		case FuCallExpr call:
-			if (call.Method.Left != null) {
-				WriteCTemporaries(call.Method.Left);
-				WriteStorageTemporary(call.Method.Left);
-			}
-			assert call.Method.Symbol is FuMethod method;
-			FuVar? param = method.FirstParameter();
-			foreach (FuExpr arg in call.Arguments) {
-				WriteCTemporaries(arg);
-				if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && param.Type.Id != FuId.TypeParam0NotFinal && !(param.Type is FuOwningType))
-					WriteStorageTemporary(arg);
-				param = param.NextVar();
-			}
-			break;
-		default:
-			assert false;
-		}
+		WriteTemporaries(expr);
+		if (IsStringSubstring(expr) == null)
+			WriteOwningTemporary(expr);
+	}
+
+	protected override void WriteArgTemporary!(FuMethod method, FuVar param, FuExpr arg)
+	{
+		if (method.Id != FuId.ConsoleWrite && method.Id != FuId.ConsoleWriteLine && param.Type.Id != FuId.TypeParam0NotFinal && !(param.Type is FuOwningType))
+			WriteOwningTemporary(arg);
 	}
 
 	static bool HasTemporariesToDestruct(FuExpr expr) => ContainsTemporariesToDestruct(expr) || expr.IsNewString(false);
@@ -2713,25 +2667,21 @@ public class GenC : GenCCpp
 
 	internal override void VisitExpr!(FuExpr statement)
 	{
-		WriteCTemporaries(statement);
 		FuMethod? throwingMethod = GetThrowingMethod(statement);
 		if (throwingMethod != null) {
+			WriteTemporaries(statement);
 			EnsureChildBlock();
 			statement.Accept(this, StartForwardThrow(throwingMethod));
 			EndForwardThrow(throwingMethod);
 			CleanupTemporaries();
 		}
-		else if (statement.IsNewString(false)) {
-			Write("free(");
-			statement.Accept(this, FuPriority.Argument);
-			WriteLine(");");
-			CleanupTemporaries();
-		}
-		else if (statement is FuCallExpr && statement.Type is FuOwningType owning) {
-			WriteDestructMethodName(owning);
+		else if (NeedsOwningTemporary(statement)) {
+			assert statement.Type is FuClassType klass;
+			WriteTemporaries(statement);
+			WriteDestructMethodName(klass);
 			WriteChar('(');
 			statement.Accept(this, FuPriority.Argument);
-			if (owning.Class.Id == FuId.StringWriterClass)
+			if (klass.Class.Id == FuId.StringWriterClass)
 				Write(", TRUE");
 			WriteLine(");");
 			CleanupTemporaries();
@@ -2877,7 +2827,6 @@ public class GenC : GenCCpp
 
 	protected override void StartIf!(FuExpr expr)
 	{
-		WriteCTemporaries(expr);
 		if (this.CurrentTemporaries.Any(temp => !(temp is FuType))) {
 			if (!this.ConditionVarInScope) {
 				this.ConditionVarInScope = true;
@@ -2924,7 +2873,6 @@ public class GenC : GenCCpp
 			if (statement.Value is FuLiteral
 			 || (throwingMethod == null && this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
 				WriteDestructAll();
-				WriteCTemporaries(statement.Value);
 				base.VisitReturn(statement);
 			}
 			else {
@@ -2945,7 +2893,6 @@ public class GenC : GenCCpp
 					base.VisitReturn(statement);
 					return;
 				}
-				WriteCTemporaries(statement.Value);
 				WriteTemporaries(statement.Value);
 				EnsureChildBlock();
 				StartDefinition(this.CurrentMethod.Type, true, true);

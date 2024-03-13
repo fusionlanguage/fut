@@ -8325,6 +8325,19 @@ export class GenBase extends FuVisitor
 		}
 	}
 
+	writeTemporariesNotSubstring(expr)
+	{
+		this.writeTemporaries(expr);
+	}
+
+	writeOwningTemporary(expr)
+	{
+	}
+
+	writeArgTemporary(method, param, arg)
+	{
+	}
+
 	writeTemporaries(expr)
 	{
 		if (expr instanceof FuVar) {
@@ -8349,12 +8362,14 @@ export class GenBase extends FuVisitor
 		else if (expr instanceof FuInterpolatedString) {
 			const interp = expr;
 			for (const part of interp.parts)
-				this.writeTemporaries(part.argument);
+				this.writeTemporariesNotSubstring(part.argument);
 		}
 		else if (expr instanceof FuSymbolReference) {
 			const symbol = expr;
-			if (symbol.left != null)
+			if (symbol.left != null) {
 				this.writeTemporaries(symbol.left);
+				this.writeOwningTemporary(symbol.left);
+			}
 		}
 		else if (expr instanceof FuUnaryExpr) {
 			const unary = expr;
@@ -8365,11 +8380,14 @@ export class GenBase extends FuVisitor
 		}
 		else if (expr instanceof FuBinaryExpr) {
 			const binary = expr;
-			this.writeTemporaries(binary.left);
+			this.writeTemporariesNotSubstring(binary.left);
 			if (binary.op == FuToken.IS)
 				this.defineIsVar(binary);
-			else
+			else {
 				this.writeTemporaries(binary.right);
+				if (binary.op != FuToken.ASSIGN)
+					this.writeOwningTemporary(binary.right);
+			}
 		}
 		else if (expr instanceof FuSelectExpr) {
 			const select = expr;
@@ -8380,8 +8398,13 @@ export class GenBase extends FuVisitor
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			this.writeTemporaries(call.method);
-			for (const arg of call.arguments_)
+			let method = call.method.symbol;
+			let param = method.firstParameter();
+			for (const arg of call.arguments_) {
 				this.writeTemporaries(arg);
+				this.writeArgTemporary(method, param, arg);
+				param = param.nextVar();
+			}
 		}
 		else
 			throw new Error();
@@ -10614,76 +10637,28 @@ export class GenC extends GenCCpp
 		return id;
 	}
 
-	#writeStorageTemporary(expr)
+	static #needsOwningTemporary(expr)
 	{
-		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuOwningType))
+		return expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuOwningType);
+	}
+
+	writeOwningTemporary(expr)
+	{
+		if (GenC.#needsOwningTemporary(expr))
 			this.#writeCTemporary(expr.type, expr);
 	}
 
-	#writeCTemporaries(expr)
+	writeTemporariesNotSubstring(expr)
 	{
-		if (expr instanceof FuVar) {
-			const def = expr;
-			if (def.value != null)
-				this.#writeCTemporaries(def.value);
-		}
-		else if (expr instanceof FuAggregateInitializer) {
-			const init = expr;
-			for (const item of init.items) {
-				let assign = item;
-				this.#writeCTemporaries(assign.right);
-			}
-		}
-		else if (expr instanceof FuLiteral || expr instanceof FuLambdaExpr) {
-		}
-		else if (expr instanceof FuInterpolatedString) {
-			const interp = expr;
-			for (const part of interp.parts) {
-				this.#writeCTemporaries(part.argument);
-				if (GenC.isStringSubstring(part.argument) == null)
-					this.#writeStorageTemporary(part.argument);
-			}
-		}
-		else if (expr instanceof FuSymbolReference) {
-			const symbol = expr;
-			if (symbol.left != null)
-				this.#writeCTemporaries(symbol.left);
-		}
-		else if (expr instanceof FuUnaryExpr) {
-			const unary = expr;
-			if (unary.inner != null)
-				this.#writeCTemporaries(unary.inner);
-		}
-		else if (expr instanceof FuBinaryExpr) {
-			const binary = expr;
-			this.#writeCTemporaries(binary.left);
-			if (GenC.isStringSubstring(binary.left) == null)
-				this.#writeStorageTemporary(binary.left);
-			this.#writeCTemporaries(binary.right);
-			if (binary.op != FuToken.ASSIGN)
-				this.#writeStorageTemporary(binary.right);
-		}
-		else if (expr instanceof FuSelectExpr) {
-			const select = expr;
-			this.#writeCTemporaries(select.cond);
-		}
-		else if (expr instanceof FuCallExpr) {
-			const call = expr;
-			if (call.method.left != null) {
-				this.#writeCTemporaries(call.method.left);
-				this.#writeStorageTemporary(call.method.left);
-			}
-			let method = call.method.symbol;
-			let param = method.firstParameter();
-			for (const arg of call.arguments_) {
-				this.#writeCTemporaries(arg);
-				if (call.method.symbol.id != FuId.CONSOLE_WRITE && call.method.symbol.id != FuId.CONSOLE_WRITE_LINE && param.type.id != FuId.TYPE_PARAM0_NOT_FINAL && !(param.type instanceof FuOwningType))
-					this.#writeStorageTemporary(arg);
-				param = param.nextVar();
-			}
-		}
-		else
-			throw new Error();
+		this.writeTemporaries(expr);
+		if (GenC.isStringSubstring(expr) == null)
+			this.writeOwningTemporary(expr);
+	}
+
+	writeArgTemporary(method, param, arg)
+	{
+		if (method.id != FuId.CONSOLE_WRITE && method.id != FuId.CONSOLE_WRITE_LINE && param.type.id != FuId.TYPE_PARAM0_NOT_FINAL && !(param.type instanceof FuOwningType))
+			this.writeOwningTemporary(arg);
 	}
 
 	static #hasTemporariesToDestruct(expr)
@@ -12297,34 +12272,27 @@ export class GenC extends GenCCpp
 
 	visitExpr(statement)
 	{
-		this.#writeCTemporaries(statement);
 		let throwingMethod = GenC.#getThrowingMethod(statement);
 		if (throwingMethod != null) {
+			this.writeTemporaries(statement);
 			this.ensureChildBlock();
 			statement.accept(this, this.#startForwardThrow(throwingMethod));
 			this.#endForwardThrow(throwingMethod);
 			this.cleanupTemporaries();
 		}
-		else if (statement.isNewString(false)) {
-			this.write("free(");
+		else if (GenC.#needsOwningTemporary(statement)) {
+			let klass = statement.type;
+			this.writeTemporaries(statement);
+			this.#writeDestructMethodName(klass);
+			this.writeChar(40);
 			statement.accept(this, FuPriority.ARGUMENT);
+			if (klass.class.id == FuId.STRING_WRITER_CLASS)
+				this.write(", TRUE");
 			this.writeLine(");");
 			this.cleanupTemporaries();
 		}
-		else {
-			let owning;
-			if (statement instanceof FuCallExpr && (owning = statement.type) instanceof FuOwningType) {
-				this.#writeDestructMethodName(owning);
-				this.writeChar(40);
-				statement.accept(this, FuPriority.ARGUMENT);
-				if (owning.class.id == FuId.STRING_WRITER_CLASS)
-					this.write(", TRUE");
-				this.writeLine(");");
-				this.cleanupTemporaries();
-			}
-			else
-				super.visitExpr(statement);
-		}
+		else
+			super.visitExpr(statement);
 	}
 
 	#startForeachHashTable(statement)
@@ -12466,7 +12434,6 @@ export class GenC extends GenCCpp
 
 	startIf(expr)
 	{
-		this.#writeCTemporaries(expr);
 		if (this.currentTemporaries.some(temp => !(temp instanceof FuType))) {
 			if (!this.#conditionVarInScope) {
 				this.#conditionVarInScope = true;
@@ -12510,7 +12477,6 @@ export class GenC extends GenCCpp
 				throwingMethod = null;
 			if (statement.value instanceof FuLiteral || (throwingMethod == null && this.#varsToDestruct.length == 0 && !GenC.#containsTemporariesToDestruct(statement.value))) {
 				this.#writeDestructAll();
-				this.#writeCTemporaries(statement.value);
 				super.visitReturn(statement);
 			}
 			else {
@@ -12532,7 +12498,6 @@ export class GenC extends GenCCpp
 					super.visitReturn(statement);
 					return;
 				}
-				this.#writeCTemporaries(statement.value);
 				this.writeTemporaries(statement.value);
 				this.ensureChildBlock();
 				this.#startDefinition(this.currentMethod.type, true, true);

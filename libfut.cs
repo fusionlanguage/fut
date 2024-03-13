@@ -8011,6 +8011,19 @@ namespace Fusion
 			}
 		}
 
+		protected virtual void WriteTemporariesNotSubstring(FuExpr expr)
+		{
+			WriteTemporaries(expr);
+		}
+
+		protected virtual void WriteOwningTemporary(FuExpr expr)
+		{
+		}
+
+		protected virtual void WriteArgTemporary(FuMethod method, FuVar param, FuExpr arg)
+		{
+		}
+
 		protected void WriteTemporaries(FuExpr expr)
 		{
 			switch (expr) {
@@ -8033,11 +8046,13 @@ namespace Fusion
 				break;
 			case FuInterpolatedString interp:
 				foreach (FuInterpolatedPart part in interp.Parts)
-					WriteTemporaries(part.Argument);
+					WriteTemporariesNotSubstring(part.Argument);
 				break;
 			case FuSymbolReference symbol:
-				if (symbol.Left != null)
+				if (symbol.Left != null) {
 					WriteTemporaries(symbol.Left);
+					WriteOwningTemporary(symbol.Left);
+				}
 				break;
 			case FuUnaryExpr unary:
 				if (unary.Inner != null) {
@@ -8046,11 +8061,14 @@ namespace Fusion
 				}
 				break;
 			case FuBinaryExpr binary:
-				WriteTemporaries(binary.Left);
+				WriteTemporariesNotSubstring(binary.Left);
 				if (binary.Op == FuToken.Is)
 					DefineIsVar(binary);
-				else
+				else {
 					WriteTemporaries(binary.Right);
+					if (binary.Op != FuToken.Assign)
+						WriteOwningTemporary(binary.Right);
+				}
 				break;
 			case FuSelectExpr select:
 				WriteTemporaries(select.Cond);
@@ -8059,8 +8077,13 @@ namespace Fusion
 				break;
 			case FuCallExpr call:
 				WriteTemporaries(call.Method);
-				foreach (FuExpr arg in call.Arguments)
+				FuMethod method = (FuMethod) call.Method.Symbol;
+				FuVar param = method.FirstParameter();
+				foreach (FuExpr arg in call.Arguments) {
 					WriteTemporaries(arg);
+					WriteArgTemporary(method, param, arg);
+					param = param.NextVar();
+				}
 				break;
 			default:
 				throw new NotImplementedException();
@@ -10273,71 +10296,25 @@ namespace Fusion
 			return id;
 		}
 
-		void WriteStorageTemporary(FuExpr expr)
+		static bool NeedsOwningTemporary(FuExpr expr) => expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType);
+
+		protected override void WriteOwningTemporary(FuExpr expr)
 		{
-			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType))
+			if (NeedsOwningTemporary(expr))
 				WriteCTemporary(expr.Type, expr);
 		}
 
-		void WriteCTemporaries(FuExpr expr)
+		protected override void WriteTemporariesNotSubstring(FuExpr expr)
 		{
-			switch (expr) {
-			case FuVar def:
-				if (def.Value != null)
-					WriteCTemporaries(def.Value);
-				break;
-			case FuAggregateInitializer init:
-				foreach (FuExpr item in init.Items) {
-					FuBinaryExpr assign = (FuBinaryExpr) item;
-					WriteCTemporaries(assign.Right);
-				}
-				break;
-			case FuLiteral:
-			case FuLambdaExpr:
-				break;
-			case FuInterpolatedString interp:
-				foreach (FuInterpolatedPart part in interp.Parts) {
-					WriteCTemporaries(part.Argument);
-					if (IsStringSubstring(part.Argument) == null)
-						WriteStorageTemporary(part.Argument);
-				}
-				break;
-			case FuSymbolReference symbol:
-				if (symbol.Left != null)
-					WriteCTemporaries(symbol.Left);
-				break;
-			case FuUnaryExpr unary:
-				if (unary.Inner != null)
-					WriteCTemporaries(unary.Inner);
-				break;
-			case FuBinaryExpr binary:
-				WriteCTemporaries(binary.Left);
-				if (IsStringSubstring(binary.Left) == null)
-					WriteStorageTemporary(binary.Left);
-				WriteCTemporaries(binary.Right);
-				if (binary.Op != FuToken.Assign)
-					WriteStorageTemporary(binary.Right);
-				break;
-			case FuSelectExpr select:
-				WriteCTemporaries(select.Cond);
-				break;
-			case FuCallExpr call:
-				if (call.Method.Left != null) {
-					WriteCTemporaries(call.Method.Left);
-					WriteStorageTemporary(call.Method.Left);
-				}
-				FuMethod method = (FuMethod) call.Method.Symbol;
-				FuVar param = method.FirstParameter();
-				foreach (FuExpr arg in call.Arguments) {
-					WriteCTemporaries(arg);
-					if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && param.Type.Id != FuId.TypeParam0NotFinal && !(param.Type is FuOwningType))
-						WriteStorageTemporary(arg);
-					param = param.NextVar();
-				}
-				break;
-			default:
-				throw new NotImplementedException();
-			}
+			WriteTemporaries(expr);
+			if (IsStringSubstring(expr) == null)
+				WriteOwningTemporary(expr);
+		}
+
+		protected override void WriteArgTemporary(FuMethod method, FuVar param, FuExpr arg)
+		{
+			if (method.Id != FuId.ConsoleWrite && method.Id != FuId.ConsoleWriteLine && param.Type.Id != FuId.TypeParam0NotFinal && !(param.Type is FuOwningType))
+				WriteOwningTemporary(arg);
 		}
 
 		static bool HasTemporariesToDestruct(FuExpr expr) => ContainsTemporariesToDestruct(expr) || expr.IsNewString(false);
@@ -11907,25 +11884,21 @@ namespace Fusion
 
 		internal override void VisitExpr(FuExpr statement)
 		{
-			WriteCTemporaries(statement);
 			FuMethod throwingMethod = GetThrowingMethod(statement);
 			if (throwingMethod != null) {
+				WriteTemporaries(statement);
 				EnsureChildBlock();
 				statement.Accept(this, StartForwardThrow(throwingMethod));
 				EndForwardThrow(throwingMethod);
 				CleanupTemporaries();
 			}
-			else if (statement.IsNewString(false)) {
-				Write("free(");
-				statement.Accept(this, FuPriority.Argument);
-				WriteLine(");");
-				CleanupTemporaries();
-			}
-			else if (statement is FuCallExpr && statement.Type is FuOwningType owning) {
-				WriteDestructMethodName(owning);
+			else if (NeedsOwningTemporary(statement)) {
+				FuClassType klass = (FuClassType) statement.Type;
+				WriteTemporaries(statement);
+				WriteDestructMethodName(klass);
 				WriteChar('(');
 				statement.Accept(this, FuPriority.Argument);
-				if (owning.Class.Id == FuId.StringWriterClass)
+				if (klass.Class.Id == FuId.StringWriterClass)
 					Write(", TRUE");
 				WriteLine(");");
 				CleanupTemporaries();
@@ -12071,7 +12044,6 @@ namespace Fusion
 
 		protected override void StartIf(FuExpr expr)
 		{
-			WriteCTemporaries(expr);
 			if (this.CurrentTemporaries.Exists(temp => !(temp is FuType))) {
 				if (!this.ConditionVarInScope) {
 					this.ConditionVarInScope = true;
@@ -12113,7 +12085,6 @@ namespace Fusion
 					throwingMethod = null;
 				if (statement.Value is FuLiteral || (throwingMethod == null && this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
 					WriteDestructAll();
-					WriteCTemporaries(statement.Value);
 					base.VisitReturn(statement);
 				}
 				else {
@@ -12132,7 +12103,6 @@ namespace Fusion
 						base.VisitReturn(statement);
 						return;
 					}
-					WriteCTemporaries(statement.Value);
 					WriteTemporaries(statement.Value);
 					EnsureChildBlock();
 					StartDefinition(this.CurrentMethod.Type, true, true);
