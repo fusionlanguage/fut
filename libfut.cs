@@ -10275,7 +10275,7 @@ namespace Fusion
 
 		void WriteStorageTemporary(FuExpr expr)
 		{
-			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuStorageType))
+			if (expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType))
 				WriteCTemporary(expr.Type, expr);
 		}
 
@@ -10330,7 +10330,7 @@ namespace Fusion
 				FuVar param = method.FirstParameter();
 				foreach (FuExpr arg in call.Arguments) {
 					WriteCTemporaries(arg);
-					if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && !(param.Type is FuStorageType))
+					if (call.Method.Symbol.Id != FuId.ConsoleWrite && call.Method.Symbol.Id != FuId.ConsoleWriteLine && param.Type.Id != FuId.TypeParam0NotFinal && !(param.Type is FuOwningType))
 						WriteStorageTemporary(arg);
 					param = param.NextVar();
 				}
@@ -10748,7 +10748,6 @@ namespace Fusion
 		{
 			switch (type) {
 			case FuDynamicPtrType dynamic when expr is FuSymbolReference && parent != FuPriority.Equality:
-				this.SharedAddRef = true;
 				if (dynamic.Class.Id == FuId.ArrayPtrClass)
 					WriteDynamicArrayCast(dynamic.GetElementType());
 				else {
@@ -10756,6 +10755,7 @@ namespace Fusion
 					WriteName(dynamic.Class);
 					Write(" *) ");
 				}
+				this.SharedAddRef = true;
 				WriteCall("FuShared_AddRef", expr);
 				break;
 			case FuClassType klass when klass.Class.Id != FuId.StringClass && klass.Class.Id != FuId.ArrayPtrClass && !(klass is FuStorageType):

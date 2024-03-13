@@ -10616,7 +10616,7 @@ export class GenC extends GenCCpp
 
 	#writeStorageTemporary(expr)
 	{
-		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuStorageType))
+		if (expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuOwningType))
 			this.#writeCTemporary(expr.type, expr);
 	}
 
@@ -10677,7 +10677,7 @@ export class GenC extends GenCCpp
 			let param = method.firstParameter();
 			for (const arg of call.arguments_) {
 				this.#writeCTemporaries(arg);
-				if (call.method.symbol.id != FuId.CONSOLE_WRITE && call.method.symbol.id != FuId.CONSOLE_WRITE_LINE && !(param.type instanceof FuStorageType))
+				if (call.method.symbol.id != FuId.CONSOLE_WRITE && call.method.symbol.id != FuId.CONSOLE_WRITE_LINE && param.type.id != FuId.TYPE_PARAM0_NOT_FINAL && !(param.type instanceof FuOwningType))
 					this.#writeStorageTemporary(arg);
 				param = param.nextVar();
 			}
@@ -11124,7 +11124,6 @@ export class GenC extends GenCCpp
 		let dynamic;
 		let klass;
 		if ((dynamic = type) instanceof FuDynamicPtrType && expr instanceof FuSymbolReference && parent != FuPriority.EQUALITY) {
-			this.#sharedAddRef = true;
 			if (dynamic.class.id == FuId.ARRAY_PTR_CLASS)
 				this.#writeDynamicArrayCast(dynamic.getElementType());
 			else {
@@ -11132,6 +11131,7 @@ export class GenC extends GenCCpp
 				this.writeName(dynamic.class);
 				this.write(" *) ");
 			}
+			this.#sharedAddRef = true;
 			this.writeCall("FuShared_AddRef", expr);
 		}
 		else if ((klass = type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && klass.class.id != FuId.ARRAY_PTR_CLASS && !(klass instanceof FuStorageType)) {

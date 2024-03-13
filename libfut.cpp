@@ -9971,7 +9971,7 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 
 void GenC::writeStorageTemporary(const FuExpr * expr)
 {
-	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuStorageType *>(expr->type.get())))
+	if (expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuOwningType *>(expr->type.get())))
 		writeCTemporary(expr->type.get(), expr);
 }
 
@@ -10021,7 +10021,7 @@ void GenC::writeCTemporaries(const FuExpr * expr)
 		const FuVar * param = method->firstParameter();
 		for (const std::shared_ptr<FuExpr> &arg : call->arguments) {
 			writeCTemporaries(arg.get());
-			if (call->method->symbol->id != FuId::consoleWrite && call->method->symbol->id != FuId::consoleWriteLine && !dynamic_cast<const FuStorageType *>(param->type.get()))
+			if (call->method->symbol->id != FuId::consoleWrite && call->method->symbol->id != FuId::consoleWriteLine && param->type->id != FuId::typeParam0NotFinal && !dynamic_cast<const FuOwningType *>(param->type.get()))
 				writeStorageTemporary(arg.get());
 			param = param->nextVar();
 		}
@@ -10446,7 +10446,6 @@ void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPrio
 	const FuDynamicPtrType * dynamic;
 	const FuClassType * klass;
 	if ((dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) && dynamic_cast<const FuSymbolReference *>(expr) && parent != FuPriority::equality) {
-		this->sharedAddRef = true;
 		if (dynamic->class_->id == FuId::arrayPtrClass)
 			writeDynamicArrayCast(dynamic->getElementType().get());
 		else {
@@ -10454,6 +10453,7 @@ void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPrio
 			writeName(dynamic->class_);
 			write(" *) ");
 		}
+		this->sharedAddRef = true;
 		writeCall("FuShared_AddRef", expr);
 	}
 	else if ((klass = dynamic_cast<const FuClassType *>(type)) && klass->class_->id != FuId::stringClass && klass->class_->id != FuId::arrayPtrClass && !dynamic_cast<const FuStorageType *>(klass)) {

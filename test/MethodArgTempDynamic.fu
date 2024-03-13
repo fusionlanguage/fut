@@ -8,7 +8,7 @@ public class Test
 
 	public static bool Run()
 	{
-		Consume(Create()); //FAIL: c leak TODO
+		Consume(Create());
 		return true;
 	}
 }
