@@ -618,9 +618,7 @@ public class GenCs : GenTyped
 			break;
 		case FuId.UTF8GetByteCount:
 			Include("System.Text");
-			Write("Encoding.UTF8.GetByteCount(");
-			args[0].Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteCall("Encoding.UTF8.GetByteCount", args[0]);
 			break;
 		case FuId.UTF8GetBytes:
 			Include("System.Text");

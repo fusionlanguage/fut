@@ -10078,11 +10078,8 @@ void GenC::writeVar(const FuNamedValue * def)
 
 void GenC::writeGPointerCast(const FuType * type, const FuExpr * expr)
 {
-	if (dynamic_cast<const FuNumericType *>(type) || dynamic_cast<const FuEnum *>(type)) {
-		write("GINT_TO_POINTER(");
-		expr->accept(this, FuPriority::argument);
-		writeChar(')');
-	}
+	if (dynamic_cast<const FuNumericType *>(type) || dynamic_cast<const FuEnum *>(type))
+		writeCall("GINT_TO_POINTER", expr);
 	else if (type->id == FuId::stringPtrType && expr->type->id == FuId::stringPtrType) {
 		write("(gpointer) ");
 		expr->accept(this, FuPriority::primary);
@@ -10186,9 +10183,7 @@ void GenC::writeAssign(const FuBinaryExpr * expr, FuPriority parent)
 			write(", ");
 			if (dynamic_cast<const FuSymbolReference *>(expr->right.get())) {
 				this->sharedAddRef = true;
-				write("FuShared_AddRef(");
-				expr->right->accept(this, FuPriority::argument);
-				writeChar(')');
+				writeCall("FuShared_AddRef", expr->right.get());
 			}
 			else
 				expr->right->accept(this, FuPriority::argument);
@@ -10500,11 +10495,7 @@ void GenC::writeEqualStringInternal(const FuExpr * left, const FuExpr * right, F
 	if (parent > FuPriority::equality)
 		writeChar('(');
 	include("string.h");
-	write("strcmp(");
-	left->accept(this, FuPriority::argument);
-	write(", ");
-	right->accept(this, FuPriority::argument);
-	writeChar(')');
+	writeCall("strcmp", left, right);
 	write(getEqOp(not_));
 	writeChar('0');
 	if (parent > FuPriority::equality)
@@ -10703,19 +10694,10 @@ void GenC::writeTextWriterWrite(const FuExpr * obj, const std::vector<std::share
 		writePrintfNotInterpolated(args, newLine);
 	}
 	else if (!newLine) {
-		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
-			write("g_string_append(");
-			obj->accept(this, FuPriority::argument);
-			write(", ");
-			(*args)[0]->accept(this, FuPriority::argument);
-		}
-		else {
-			write("fputs(");
-			(*args)[0]->accept(this, FuPriority::argument);
-			write(", ");
-			obj->accept(this, FuPriority::argument);
-		}
-		writeChar(')');
+		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass)
+			writeCall("g_string_append", obj, (*args)[0].get());
+		else
+			writeCall("fputs", (*args)[0].get(), obj);
 	}
 	else if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>((*args)[0].get())) {
 		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
@@ -11948,9 +11930,7 @@ bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>>
 		}
 		else {
 			includeMath();
-			write("!isnan(");
-			call->accept(this, FuPriority::argument);
-			writeChar(')');
+			writeCall("!isnan", call);
 		}
 	}
 	else if (throwingMethod->type->id == FuId::voidType)
@@ -13386,9 +13366,7 @@ void GenCpp::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr
 	include("memory");
 	write("std::make_shared<");
 	writeType(elementType, false);
-	write("[]>(");
-	lengthExpr->accept(this, FuPriority::argument);
-	writeChar(')');
+	writeCall("[]>", lengthExpr);
 }
 
 void GenCpp::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
@@ -13555,9 +13533,7 @@ void GenCpp::writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol
 
 void GenCpp::writeEnumAsInt(const FuExpr * expr, FuPriority parent)
 {
-	write("static_cast<int>(");
-	expr->accept(this, FuPriority::argument);
-	writeChar(')');
+	writeCall("static_cast<int>", expr);
 }
 
 void GenCpp::writeCollectionObject(const FuExpr * obj, FuPriority priority)
@@ -14324,9 +14300,7 @@ void GenCpp::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPr
 				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
 					write("const ");
 				writeName(klass->class_);
-				write(" &>(");
-				expr->accept(this, FuPriority::argument);
-				writeChar(')');
+				writeCall(" &>", expr);
 			}
 			else
 				expr->accept(this, FuPriority::primary);
@@ -15657,9 +15631,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::uTF8GetByteCount:
 		include("System.Text");
-		write("Encoding.UTF8.GetByteCount(");
-		(*args)[0]->accept(this, FuPriority::argument);
-		writeChar(')');
+		writeCall("Encoding.UTF8.GetByteCount", (*args)[0].get());
 		break;
 	case FuId::uTF8GetBytes:
 		include("System.Text");

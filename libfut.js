@@ -10748,11 +10748,8 @@ export class GenC extends GenCCpp
 
 	#writeGPointerCast(type, expr)
 	{
-		if (type instanceof FuNumericType || type instanceof FuEnum) {
-			this.write("GINT_TO_POINTER(");
-			expr.accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
-		}
+		if (type instanceof FuNumericType || type instanceof FuEnum)
+			this.writeCall("GINT_TO_POINTER", expr);
 		else if (type.id == FuId.STRING_PTR_TYPE && expr.type.id == FuId.STRING_PTR_TYPE) {
 			this.write("(gpointer) ");
 			expr.accept(this, FuPriority.PRIMARY);
@@ -10858,9 +10855,7 @@ export class GenC extends GenCCpp
 					this.write(", ");
 					if (expr.right instanceof FuSymbolReference) {
 						this.#sharedAddRef = true;
-						this.write("FuShared_AddRef(");
-						expr.right.accept(this, FuPriority.ARGUMENT);
-						this.writeChar(41);
+						this.writeCall("FuShared_AddRef", expr.right);
 					}
 					else
 						expr.right.accept(this, FuPriority.ARGUMENT);
@@ -11178,11 +11173,7 @@ export class GenC extends GenCCpp
 		if (parent > FuPriority.EQUALITY)
 			this.writeChar(40);
 		this.include("string.h");
-		this.write("strcmp(");
-		left.accept(this, FuPriority.ARGUMENT);
-		this.write(", ");
-		right.accept(this, FuPriority.ARGUMENT);
-		this.writeChar(41);
+		this.writeCall("strcmp", left, right);
 		this.write(GenC.getEqOp(not));
 		this.writeChar(48);
 		if (parent > FuPriority.EQUALITY)
@@ -11385,19 +11376,10 @@ export class GenC extends GenCCpp
 				this.writePrintfNotInterpolated(args, newLine);
 			}
 			else if (!newLine) {
-				if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
-					this.write("g_string_append(");
-					obj.accept(this, FuPriority.ARGUMENT);
-					this.write(", ");
-					args[0].accept(this, FuPriority.ARGUMENT);
-				}
-				else {
-					this.write("fputs(");
-					args[0].accept(this, FuPriority.ARGUMENT);
-					this.write(", ");
-					obj.accept(this, FuPriority.ARGUMENT);
-				}
-				this.writeChar(41);
+				if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS)
+					this.writeCall("g_string_append", obj, args[0]);
+				else
+					this.writeCall("fputs", args[0], obj);
 			}
 			else {
 				let literal;
@@ -12618,9 +12600,7 @@ export class GenC extends GenCCpp
 			}
 			else {
 				this.includeMath();
-				this.write("!isnan(");
-				call.accept(this, FuPriority.ARGUMENT);
-				this.writeChar(41);
+				this.writeCall("!isnan", call);
 			}
 		}
 		else if (throwingMethod.type.id == FuId.VOID_TYPE)
@@ -14190,9 +14170,7 @@ export class GenCpp extends GenCCpp
 		this.include("memory");
 		this.write("std::make_shared<");
 		this.writeType(elementType, false);
-		this.write("[]>(");
-		lengthExpr.accept(this, FuPriority.ARGUMENT);
-		this.writeChar(41);
+		this.writeCall("[]>", lengthExpr);
 	}
 
 	writeNew(klass, parent)
@@ -14360,9 +14338,7 @@ export class GenCpp extends GenCCpp
 
 	writeEnumAsInt(expr, parent)
 	{
-		this.write("static_cast<int>(");
-		expr.accept(this, FuPriority.ARGUMENT);
-		this.writeChar(41);
+		this.writeCall("static_cast<int>", expr);
 	}
 
 	#writeCollectionObject(obj, priority)
@@ -15126,9 +15102,7 @@ export class GenCpp extends GenCCpp
 					if (!(klass instanceof FuReadWriteClassType))
 						this.write("const ");
 					this.writeName(klass.class);
-					this.write(" &>(");
-					expr.accept(this, FuPriority.ARGUMENT);
-					this.writeChar(41);
+					this.writeCall(" &>", expr);
 				}
 				else
 					expr.accept(this, FuPriority.PRIMARY);
@@ -16524,9 +16498,7 @@ export class GenCs extends GenTyped
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.include("System.Text");
-			this.write("Encoding.UTF8.GetByteCount(");
-			args[0].accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeCall("Encoding.UTF8.GetByteCount", args[0]);
 			break;
 		case FuId.U_T_F8_GET_BYTES:
 			this.include("System.Text");

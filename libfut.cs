@@ -10387,11 +10387,8 @@ namespace Fusion
 
 		void WriteGPointerCast(FuType type, FuExpr expr)
 		{
-			if (type is FuNumericType || type is FuEnum) {
-				Write("GINT_TO_POINTER(");
-				expr.Accept(this, FuPriority.Argument);
-				WriteChar(')');
-			}
+			if (type is FuNumericType || type is FuEnum)
+				WriteCall("GINT_TO_POINTER", expr);
 			else if (type.Id == FuId.StringPtrType && expr.Type.Id == FuId.StringPtrType) {
 				Write("(gpointer) ");
 				expr.Accept(this, FuPriority.Primary);
@@ -10497,9 +10494,7 @@ namespace Fusion
 					Write(", ");
 					if (expr.Right is FuSymbolReference) {
 						this.SharedAddRef = true;
-						Write("FuShared_AddRef(");
-						expr.Right.Accept(this, FuPriority.Argument);
-						WriteChar(')');
+						WriteCall("FuShared_AddRef", expr.Right);
 					}
 					else
 						expr.Right.Accept(this, FuPriority.Argument);
@@ -10803,11 +10798,7 @@ namespace Fusion
 			if (parent > FuPriority.Equality)
 				WriteChar('(');
 			Include("string.h");
-			Write("strcmp(");
-			left.Accept(this, FuPriority.Argument);
-			Write(", ");
-			right.Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteCall("strcmp", left, right);
 			Write(GetEqOp(not));
 			WriteChar('0');
 			if (parent > FuPriority.Equality)
@@ -11008,19 +10999,10 @@ namespace Fusion
 				WritePrintfNotInterpolated(args, newLine);
 			}
 			else if (!newLine) {
-				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
-					Write("g_string_append(");
-					obj.Accept(this, FuPriority.Argument);
-					Write(", ");
-					args[0].Accept(this, FuPriority.Argument);
-				}
-				else {
-					Write("fputs(");
-					args[0].Accept(this, FuPriority.Argument);
-					Write(", ");
-					obj.Accept(this, FuPriority.Argument);
-				}
-				WriteChar(')');
+				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
+					WriteCall("g_string_append", obj, args[0]);
+				else
+					WriteCall("fputs", args[0], obj);
 			}
 			else if (args[0] is FuLiteralString literal) {
 				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
@@ -12214,9 +12196,7 @@ namespace Fusion
 				}
 				else {
 					IncludeMath();
-					Write("!isnan(");
-					call.Accept(this, FuPriority.Argument);
-					WriteChar(')');
+					WriteCall("!isnan", call);
 				}
 			}
 			else if (throwingMethod.Type.Id == FuId.VoidType)
@@ -13777,9 +13757,7 @@ namespace Fusion
 			Include("memory");
 			Write("std::make_shared<");
 			WriteType(elementType, false);
-			Write("[]>(");
-			lengthExpr.Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteCall("[]>", lengthExpr);
 		}
 
 		protected override void WriteNew(FuReadWriteClassType klass, FuPriority parent)
@@ -13939,9 +13917,7 @@ namespace Fusion
 
 		protected override void WriteEnumAsInt(FuExpr expr, FuPriority parent)
 		{
-			Write("static_cast<int>(");
-			expr.Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteCall("static_cast<int>", expr);
 		}
 
 		void WriteCollectionObject(FuExpr obj, FuPriority priority)
@@ -14705,9 +14681,7 @@ namespace Fusion
 						if (!(klass is FuReadWriteClassType))
 							Write("const ");
 						WriteName(klass.Class);
-						Write(" &>(");
-						expr.Accept(this, FuPriority.Argument);
-						WriteChar(')');
+						WriteCall(" &>", expr);
 					}
 					else
 						expr.Accept(this, FuPriority.Primary);
@@ -16065,9 +16039,7 @@ namespace Fusion
 				break;
 			case FuId.UTF8GetByteCount:
 				Include("System.Text");
-				Write("Encoding.UTF8.GetByteCount(");
-				args[0].Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteCall("Encoding.UTF8.GetByteCount", args[0]);
 				break;
 			case FuId.UTF8GetBytes:
 				Include("System.Text");

@@ -1175,11 +1175,8 @@ public class GenC : GenCCpp
 
 	void WriteGPointerCast!(FuType type, FuExpr expr)
 	{
-		if (type is FuNumericType || type is FuEnum) {
-			Write("GINT_TO_POINTER(");
-			expr.Accept(this, FuPriority.Argument);
-			WriteChar(')');
-		}
+		if (type is FuNumericType || type is FuEnum)
+			WriteCall("GINT_TO_POINTER", expr);
 		else if (type.Id == FuId.StringPtrType && expr.Type.Id == FuId.StringPtrType) {
 			Write("(gpointer) ");
 			expr.Accept(this, FuPriority.Primary);
@@ -1292,9 +1289,7 @@ public class GenC : GenCCpp
 				Write(", ");
 				if (expr.Right is FuSymbolReference) {
 					this.SharedAddRef = true;
-					Write("FuShared_AddRef(");
-					expr.Right.Accept(this, FuPriority.Argument);
-					WriteChar(')');
+					WriteCall("FuShared_AddRef", expr.Right);
 				}
 				else
 					expr.Right.Accept(this, FuPriority.Argument);
@@ -1604,11 +1599,7 @@ public class GenC : GenCCpp
 		if (parent > FuPriority.Equality)
 			WriteChar('(');
 		Include("string.h");
-		Write("strcmp("); // TODO: WriteCall("strcmp", left, right);
-		left.Accept(this, FuPriority.Argument);
-		Write(", ");
-		right.Accept(this, FuPriority.Argument);
-		WriteChar(')');
+		WriteCall("strcmp", left, right);
 		Write(GetEqOp(not));
 		WriteChar('0');
 		if (parent > FuPriority.Equality)
@@ -1810,19 +1801,10 @@ public class GenC : GenCCpp
 			WritePrintfNotInterpolated(args, newLine);
 		}
 		else if (!newLine) {
-			if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
-				Write("g_string_append(");
-				obj.Accept(this, FuPriority.Argument);
-				Write(", ");
-				args[0].Accept(this, FuPriority.Argument);
-			}
-			else {
-				Write("fputs(");
-				args[0].Accept(this, FuPriority.Argument);
-				Write(", ");
-				obj.Accept(this, FuPriority.Argument);
-			}
-			WriteChar(')');
+			if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
+				WriteCall("g_string_append", obj, args[0]);
+			else
+				WriteCall("fputs", args[0], obj);
 		}
 		else if (args[0] is FuLiteralString literal) {
 			if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
@@ -3029,9 +3011,7 @@ public class GenC : GenCCpp
 			}
 			else {
 				IncludeMath();
-				Write("!isnan(");
-				call.Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteCall("!isnan", call);
 			}
 		}
 		else if (throwingMethod.Type.Id == FuId.VoidType)

@@ -348,9 +348,7 @@ public class GenCpp : GenCCpp
 		Include("memory");
 		Write("std::make_shared<");
 		WriteType(elementType, false);
-		Write("[]>(");
-		lengthExpr.Accept(this, FuPriority.Argument);
-		WriteChar(')');
+		WriteCall("[]>", lengthExpr);
 	}
 
 	protected override void WriteNew!(FuReadWriteClassType klass, FuPriority parent)
@@ -514,9 +512,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteEnumAsInt!(FuExpr expr, FuPriority parent)
 	{
-		Write("static_cast<int>(");
-		expr.Accept(this, FuPriority.Argument);
-		WriteChar(')');
+		WriteCall("static_cast<int>", expr);
 	}
 
 	void WriteCollectionObject!(FuExpr obj, FuPriority priority)
@@ -1286,9 +1282,7 @@ public class GenCpp : GenCCpp
 					if (!(klass is FuReadWriteClassType))
 						Write("const ");
 					WriteName(klass.Class);
-					Write(" &>(");
-					expr.Accept(this, FuPriority.Argument);
-					WriteChar(')');
+					WriteCall(" &>", expr);
 				}
 				else
 					expr.Accept(this, FuPriority.Primary);
