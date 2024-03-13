@@ -9772,6 +9772,14 @@ bool GenC::writeDestructMethodName(const FuClassType * klass)
 	}
 }
 
+void GenC::startDestructCall(const FuClassType * klass)
+{
+	bool addressOf = writeDestructMethodName(klass);
+	writeChar('(');
+	if (addressOf)
+		writeChar('&');
+}
+
 bool GenC::hasDictionaryDestroy(const FuType * type)
 {
 	return dynamic_cast<const FuOwningType *>(type) || dynamic_cast<const FuStringStorageType *>(type);
@@ -10054,9 +10062,8 @@ void GenC::cleanupTemporary(int i, const FuExpr * temp)
 	const FuPrefixExpr * dynamicObjectLiteral;
 	if (!needToDestructType(temp->type.get()) || ((dynamicObjectLiteral = dynamic_cast<const FuPrefixExpr *>(temp)) && dynamic_cast<const FuAggregateInitializer *>(dynamicObjectLiteral->inner.get())))
 		return;
-	writeDestructMethodName(temp->type->asClassType());
-	write("(futemp");
-	visitLiteralLong(i);
+	startDestructCall(temp->type->asClassType());
+	writeTemporaryName(i);
 	writeLine(");");
 }
 
@@ -10259,10 +10266,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 		type = array->getElementType().get();
 	}
 	const FuClassType * klass = static_cast<const FuClassType *>(type);
-	bool addressOf = writeDestructMethodName(klass);
-	writeChar('(');
-	if (addressOf)
-		writeChar('&');
+	startDestructCall(klass);
 	writeLocalName(symbol, FuPriority::primary);
 	for (int i = 0; i < nesting; i++) {
 		write("[_i");

@@ -858,6 +858,14 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void StartDestructCall!(FuClassType klass)
+	{
+		bool addressOf = WriteDestructMethodName(klass);
+		WriteChar('(');
+		if (addressOf)
+			WriteChar('&');
+	}
+
 	static bool HasDictionaryDestroy(FuType? type) => type is FuOwningType || type is FuStringStorageType;
 
 	void WriteDictionaryDestroy!(FuType? type)
@@ -1151,9 +1159,8 @@ public class GenC : GenCCpp
 		if (!NeedToDestructType(temp.Type)
 		 || (temp is FuPrefixExpr dynamicObjectLiteral && dynamicObjectLiteral.Inner is FuAggregateInitializer)) // FIXME: if temporary, still needs to be destructed
 			return;
-		WriteDestructMethodName(temp.Type.AsClassType());
-		Write("(futemp");
-		VisitLiteralLong(i);
+		StartDestructCall(temp.Type.AsClassType());
+		WriteTemporaryName(i);
 		WriteLine(");");
 	}
 
@@ -1368,10 +1375,7 @@ public class GenC : GenCCpp
 			type = array.GetElementType();
 		}
 		assert type is FuClassType klass;
-		bool addressOf = WriteDestructMethodName(klass);
-		WriteChar('(');
-		if (addressOf)
-			WriteChar('&');
+		StartDestructCall(klass);
 		WriteLocalName(symbol, FuPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");

@@ -1,0 +1,24 @@
+class Data
+{
+	internal string() S; //FAIL: cl
+}
+
+public static class Test
+{
+	static Data() ReturnStorage()
+	{
+		Data() o;
+		o.S = "foo";
+		return o; //FAIL: c TODO
+	}
+
+	static string AcceptPtr(Data d)
+	{
+		return d.S;
+	}
+
+	public static bool Run()
+	{
+		return AcceptPtr(ReturnStorage()) == "foo";
+	}
+}

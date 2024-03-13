@@ -10416,6 +10416,14 @@ export class GenC extends GenCCpp
 		}
 	}
 
+	#startDestructCall(klass)
+	{
+		let addressOf = this.#writeDestructMethodName(klass);
+		this.writeChar(40);
+		if (addressOf)
+			this.writeChar(38);
+	}
+
 	static #hasDictionaryDestroy(type)
 	{
 		return type instanceof FuOwningType || type instanceof FuStringStorageType;
@@ -10724,9 +10732,8 @@ export class GenC extends GenCCpp
 		let dynamicObjectLiteral;
 		if (!GenC.#needToDestructType(temp.type) || ((dynamicObjectLiteral = temp) instanceof FuPrefixExpr && dynamicObjectLiteral.inner instanceof FuAggregateInitializer))
 			return;
-		this.#writeDestructMethodName(temp.type.asClassType());
-		this.write("(futemp");
-		this.visitLiteralLong(BigInt(i));
+		this.#startDestructCall(temp.type.asClassType());
+		this.writeTemporaryName(i);
 		this.writeLine(");");
 	}
 
@@ -10934,10 +10941,7 @@ export class GenC extends GenCCpp
 			type = array.getElementType();
 		}
 		let klass = type;
-		let addressOf = this.#writeDestructMethodName(klass);
-		this.writeChar(40);
-		if (addressOf)
-			this.writeChar(38);
+		this.#startDestructCall(klass);
 		this.writeLocalName(symbol, FuPriority.PRIMARY);
 		for (let i = 0; i < nesting; i++) {
 			this.write("[_i");

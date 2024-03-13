@@ -10073,6 +10073,14 @@ namespace Fusion
 			}
 		}
 
+		void StartDestructCall(FuClassType klass)
+		{
+			bool addressOf = WriteDestructMethodName(klass);
+			WriteChar('(');
+			if (addressOf)
+				WriteChar('&');
+		}
+
 		static bool HasDictionaryDestroy(FuType type) => type is FuOwningType || type is FuStringStorageType;
 
 		void WriteDictionaryDestroy(FuType type)
@@ -10363,9 +10371,8 @@ namespace Fusion
 		{
 			if (!NeedToDestructType(temp.Type) || (temp is FuPrefixExpr dynamicObjectLiteral && dynamicObjectLiteral.Inner is FuAggregateInitializer))
 				return;
-			WriteDestructMethodName(temp.Type.AsClassType());
-			Write("(futemp");
-			VisitLiteralLong(i);
+			StartDestructCall(temp.Type.AsClassType());
+			WriteTemporaryName(i);
 			WriteLine(");");
 		}
 
@@ -10567,10 +10574,7 @@ namespace Fusion
 				type = array.GetElementType();
 			}
 			FuClassType klass = (FuClassType) type;
-			bool addressOf = WriteDestructMethodName(klass);
-			WriteChar('(');
-			if (addressOf)
-				WriteChar('&');
+			StartDestructCall(klass);
 			WriteLocalName(symbol, FuPriority.Primary);
 			for (int i = 0; i < nesting; i++) {
 				Write("[_i");
