@@ -11869,7 +11869,8 @@ void GenC::visitReturn(const FuReturn * statement)
 				if (std::find(this->varsToDestruct.begin(), this->varsToDestruct.end(), local) != this->varsToDestruct.end()) {
 					writeDestructAll(local);
 					write("return ");
-					if (const FuClassType *resultPtr = dynamic_cast<const FuClassType *>(this->currentMethod->type.get()))
+					const FuClassType * resultPtr;
+					if ((resultPtr = dynamic_cast<const FuClassType *>(this->currentMethod->type.get())) && !dynamic_cast<const FuStorageType *>(resultPtr))
 						writeClassPtr(resultPtr->class_, symbol, FuPriority::argument);
 					else
 						symbol->accept(this, FuPriority::argument);

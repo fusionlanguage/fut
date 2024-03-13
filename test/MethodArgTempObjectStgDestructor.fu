@@ -9,7 +9,7 @@ public static class Test
 	{
 		Data() o;
 		o.S = "foo";
-		return o; //FAIL: c TODO
+		return o;
 	}
 
 	static string AcceptPtr(Data d)
@@ -19,6 +19,6 @@ public static class Test
 
 	public static bool Run()
 	{
-		return AcceptPtr(ReturnStorage()) == "foo";
+		return AcceptPtr(ReturnStorage()) == "foo"; //FAIL: c TODO
 	}
 }

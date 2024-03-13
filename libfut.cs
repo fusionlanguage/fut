@@ -12139,7 +12139,7 @@ namespace Fusion
 						if (this.VarsToDestruct.Contains(local)) {
 							WriteDestructAll(local);
 							Write("return ");
-							if (this.CurrentMethod.Type is FuClassType resultPtr)
+							if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
 								WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
 							else
 								symbol.Accept(this, FuPriority.Argument);

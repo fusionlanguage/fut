@@ -12539,7 +12539,7 @@ export class GenC extends GenCCpp
 						this.#writeDestructAll(local);
 						this.write("return ");
 						let resultPtr;
-						if ((resultPtr = this.currentMethod.type) instanceof FuClassType)
+						if ((resultPtr = this.currentMethod.type) instanceof FuClassType && !(resultPtr instanceof FuStorageType))
 							this.#writeClassPtr(resultPtr.class, symbol, FuPriority.ARGUMENT);
 						else
 							symbol.accept(this, FuPriority.ARGUMENT);
