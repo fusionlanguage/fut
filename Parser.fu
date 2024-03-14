@@ -170,12 +170,11 @@ public class FuParser : FuLexer
 		return result;
 	}
 
-	FuSymbolReference# ParseSymbolReference!(FuExpr#? left)
+	void ParseSymbolReference!(FuSymbolReference! result)
 	{
-		Check(FuToken.Id);
-		FuSymbolReference# result = new FuSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
-		NextToken();
-		return result;
+		result.Line = this.Line;
+		result.Name = this.StringValue;
+		Expect(FuToken.Id);
 	}
 
 	void ParseCollection!(List<FuExpr#>! result, FuToken closing)
@@ -241,7 +240,8 @@ public class FuParser : FuLexer
 			result = ParseParenthesized();
 			break;
 		case FuToken.Id:
-			FuSymbolReference# symbol = ParseSymbolReference(null);
+			FuSymbolReference# symbol = new FuSymbolReference();
+			ParseSymbolReference(symbol);
 			if (Eat(FuToken.FatArrow)) {
 				FuLambdaExpr# lambda = new FuLambdaExpr { Line = symbol.Line };
 				lambda.Add(FuVar.New(null, symbol.Name));
@@ -284,7 +284,9 @@ public class FuParser : FuLexer
 			switch (this.CurrentToken) {
 			case FuToken.Dot:
 				NextToken();
-				result = ParseSymbolReference(result);
+				FuSymbolReference# path = new FuSymbolReference { Left = result };
+				ParseSymbolReference(path);
+				result = path;
 				break;
 			case FuToken.LeftParenthesis:
 				NextToken();
@@ -473,7 +475,8 @@ public class FuParser : FuLexer
 		FuAggregateInitializer# result = new FuAggregateInitializer { Line = this.Line };
 		do {
 			int line = this.Line;
-			FuExpr# field = ParseSymbolReference(null);
+			FuSymbolReference# field = new FuSymbolReference();
+			ParseSymbolReference(field);
 			Expect(FuToken.Assign);
 			result.Items.Add(new FuBinaryExpr { Line = line, Left = field, Op = FuToken.Assign, Right = ParseExpr() });
 		} while (Eat(FuToken.Comma));
@@ -770,7 +773,8 @@ public class FuParser : FuLexer
 	{
 		FuThrow# result = new FuThrow { Line = this.Line };
 		Expect(FuToken.Throw);
-		result.Class = ParseSymbolReference(null);
+		result.Class = new FuSymbolReference();
+		ParseSymbolReference(result.Class);
 		ExpectOrSkip(FuToken.LeftParenthesis);
 		result.Message = See(FuToken.RightParenthesis) ? null : ParseExpr();
 		Expect(FuToken.RightParenthesis);
@@ -859,18 +863,27 @@ public class FuParser : FuLexer
 		ExpectOrSkip(FuToken.LeftParenthesis);
 		if (!See(FuToken.RightParenthesis)) {
 			do {
-				FuCodeDoc# doc = ParseDoc();
+				FuCodeDoc#? doc = ParseDoc();
 				FuVar# param = ParseVar(ParseType(), true);
 				param.Documentation = doc;
 				AddSymbol(method.Parameters, param);
 			} while (Eat(FuToken.Comma));
 		}
 		Expect(FuToken.RightParenthesis);
-		ParseDoc(); // TODO
+		FuCodeDoc#? throwsDoc = ParseDoc();
 		if (Eat(FuToken.Throws)) {
 			do {
-				ParseDoc(); // TODO
-				method.Throws.Add(ParseSymbolReference(null));
+				FuThrowsDeclaration# decl = new FuThrowsDeclaration();
+				if (throwsDoc == null)
+					decl.Documentation = ParseDoc();
+				else if (method.Throws.Count > 0) {
+					ReportError("Exception documentation must follow the 'throws' keyword");
+					decl.Documentation = null;
+				}
+				else
+					decl.Documentation = throwsDoc;
+				ParseSymbolReference(decl);
+				method.Throws.Add(decl);
 			} while (Eat(FuToken.Comma));
 		}
 		if (method.CallType == FuCallType.Abstract)

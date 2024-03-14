@@ -68,6 +68,10 @@ public class GenC : GenCCpp
 		WriteLine("</code> on error.");
 	}
 
+	protected override void WriteThrowsDoc!(FuThrowsDeclaration decl)
+	{
+	}
+
 	protected override void IncludeStdInt!()
 	{
 		Include("stdint.h");

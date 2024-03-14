@@ -2950,15 +2950,11 @@ std::shared_ptr<FuExpr> FuParser::parseParenthesized()
 	return result;
 }
 
-std::shared_ptr<FuSymbolReference> FuParser::parseSymbolReference(std::shared_ptr<FuExpr> left)
+void FuParser::parseSymbolReference(FuSymbolReference * result)
 {
-	check(FuToken::id);
-	std::shared_ptr<FuSymbolReference> result = std::make_shared<FuSymbolReference>();
 	result->line = this->line;
-	result->left = left;
 	result->name = this->stringValue;
-	nextToken();
-	return result;
+	expect(FuToken::id);
 }
 
 void FuParser::parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, FuToken closing)
@@ -3062,7 +3058,8 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		break;
 	case FuToken::id:
 		{
-			std::shared_ptr<FuSymbolReference> symbol = parseSymbolReference(nullptr);
+			std::shared_ptr<FuSymbolReference> symbol = std::make_shared<FuSymbolReference>();
+			parseSymbolReference(symbol.get());
 			if (eat(FuToken::fatArrow)) {
 				std::shared_ptr<FuLambdaExpr> lambda = std::make_shared<FuLambdaExpr>();
 				lambda->line = symbol->line;
@@ -3108,8 +3105,13 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		switch (this->currentToken) {
 		case FuToken::dot:
 			nextToken();
-			result = parseSymbolReference(result);
-			break;
+			{
+				std::shared_ptr<FuSymbolReference> path = std::make_shared<FuSymbolReference>();
+				path->left = result;
+				parseSymbolReference(path.get());
+				result = path;
+				break;
+			}
 		case FuToken::leftParenthesis:
 			nextToken();
 			if (std::shared_ptr<FuSymbolReference>method = std::dynamic_pointer_cast<FuSymbolReference>(result)) {
@@ -3400,7 +3402,8 @@ std::shared_ptr<FuAggregateInitializer> FuParser::parseObjectLiteral()
 	result->line = this->line;
 	do {
 		int line = this->line;
-		std::shared_ptr<FuExpr> field = parseSymbolReference(nullptr);
+		std::shared_ptr<FuSymbolReference> field = std::make_shared<FuSymbolReference>();
+		parseSymbolReference(field.get());
 		expect(FuToken::assign);
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
 		futemp0->line = line;
@@ -3737,7 +3740,8 @@ std::shared_ptr<FuThrow> FuParser::parseThrow()
 	std::shared_ptr<FuThrow> result = std::make_shared<FuThrow>();
 	result->line = this->line;
 	expect(FuToken::throw_);
-	result->class_ = parseSymbolReference(nullptr);
+	result->class_ = std::make_shared<FuSymbolReference>();
+	parseSymbolReference(result->class_.get());
 	expectOrSkip(FuToken::leftParenthesis);
 	result->message = see(FuToken::rightParenthesis) ? nullptr : parseExpr();
 	expect(FuToken::rightParenthesis);
@@ -3837,11 +3841,20 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 		while (eat(FuToken::comma));
 	}
 	expect(FuToken::rightParenthesis);
-	parseDoc();
+	std::shared_ptr<FuCodeDoc> throwsDoc = parseDoc();
 	if (eat(FuToken::throws)) {
 		do {
-			parseDoc();
-			method->throws.push_back(parseSymbolReference(nullptr));
+			std::shared_ptr<FuThrowsDeclaration> decl = std::make_shared<FuThrowsDeclaration>();
+			if (throwsDoc == nullptr)
+				decl->documentation = parseDoc();
+			else if (std::ssize(method->throws) > 0) {
+				reportError("Exception documentation must follow the 'throws' keyword");
+				decl->documentation = nullptr;
+			}
+			else
+				decl->documentation = throwsDoc;
+			parseSymbolReference(decl.get());
+			method->throws.push_back(decl);
 		}
 		while (eat(FuToken::comma));
 	}
@@ -5389,7 +5402,7 @@ bool FuSema::canCall(const FuExpr * obj, const FuMethod * method, const std::vec
 
 bool FuSema::methodHasThrows(const FuMethodBase * method, const FuClass * exception)
 {
-	for (const std::shared_ptr<FuSymbolReference> &symbol : method->throws) {
+	for (const std::shared_ptr<FuThrowsDeclaration> &symbol : method->throws) {
 		const FuClass * klass;
 		if ((klass = dynamic_cast<const FuClass *>(symbol->symbol)) && klass->isSameOrBaseOf(exception))
 			return true;
@@ -5470,7 +5483,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	}
 	if (i < std::ssize(*arguments))
 		return poisonError((*arguments)[i].get(), std::format("Too many arguments for '{}'", method->name));
-	for (const std::shared_ptr<FuSymbolReference> &exceptionDecl : method->throws) {
+	for (const std::shared_ptr<FuThrowsDeclaration> &exceptionDecl : method->throws) {
 		if (this->currentMethod == nullptr) {
 			reportError(expr.get(), std::format("Cannot call method '{}' here because it is marked 'throws'", method->name));
 			break;
@@ -6306,7 +6319,7 @@ void FuSema::resolveTypes(FuClass * klass)
 					this->program->main = method;
 				}
 			}
-			for (const std::shared_ptr<FuSymbolReference> &exception : method->throws)
+			for (const std::shared_ptr<FuThrowsDeclaration> &exception : method->throws)
 				resolveException(exception);
 		}
 	}
@@ -6817,7 +6830,20 @@ void GenBase::writeParameterDoc(const FuVar * param, bool first)
 	writeNewLine();
 }
 
-void GenBase::writeParametersDoc(const FuMethod * method)
+void GenBase::writeReturnDoc(const FuMethod * method)
+{
+}
+
+void GenBase::writeThrowsDoc(const FuThrowsDeclaration * decl)
+{
+	write(" * @throws ");
+	writeExceptionClass(decl->symbol);
+	writeChar(' ');
+	writeDocPara(&decl->documentation->summary, false);
+	writeNewLine();
+}
+
+void GenBase::writeParametersAndThrowsDoc(const FuMethod * method)
 {
 	bool first = true;
 	for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
@@ -6826,10 +6852,11 @@ void GenBase::writeParametersDoc(const FuMethod * method)
 			first = false;
 		}
 	}
-}
-
-void GenBase::writeReturnDoc(const FuMethod * method)
-{
+	writeReturnDoc(method);
+	for (const std::shared_ptr<FuThrowsDeclaration> &decl : method->throws) {
+		if (decl->documentation != nullptr)
+			writeThrowsDoc(decl.get());
+	}
 }
 
 void GenBase::writeMethodDoc(const FuMethod * method)
@@ -6839,8 +6866,7 @@ void GenBase::writeMethodDoc(const FuMethod * method)
 	writeLine("/**");
 	writeContent(method->documentation.get());
 	writeSelfDoc(method);
-	writeParametersDoc(method);
-	writeReturnDoc(method);
+	writeParametersAndThrowsDoc(method);
 	writeLine(" */");
 }
 
@@ -9066,6 +9092,10 @@ void GenC::writeReturnDoc(const FuMethod * method)
 	write(" * @return <code>");
 	writeThrowReturnValue(method->type.get(), false);
 	writeLine("</code> on error.");
+}
+
+void GenC::writeThrowsDoc(const FuThrowsDeclaration * decl)
+{
 }
 
 void GenC::includeStdInt()
@@ -15900,6 +15930,15 @@ void GenCs::writeParameterDoc(const FuVar * param, bool first)
 	writeLine("</param>");
 }
 
+void GenCs::writeThrowsDoc(const FuThrowsDeclaration * decl)
+{
+	write("/// <exception cref=\"");
+	writeExceptionClass(decl->symbol);
+	write("\">");
+	writeDocPara(&decl->documentation->summary, false);
+	writeLine("</exception>");
+}
+
 bool GenCs::isShortMethod(const FuMethod * method) const
 {
 	return dynamic_cast<const FuReturn *>(method->body.get());
@@ -15911,7 +15950,7 @@ void GenCs::writeMethod(const FuMethod * method)
 		return;
 	writeNewLine();
 	writeDoc(method->documentation.get());
-	writeParametersDoc(method);
+	writeParametersAndThrowsDoc(method);
 	writeVisibility(method->visibility);
 	if (method->id == FuId::classToString)
 		write("override ");
@@ -16032,6 +16071,15 @@ void GenD::writeParameterDoc(const FuVar * param, bool first)
 	writeName(param);
 	write(" = ");
 	writeDocPara(&param->documentation->summary, false);
+	writeNewLine();
+}
+
+void GenD::writeThrowsDoc(const FuThrowsDeclaration * decl)
+{
+	write("/// Throws: ");
+	writeExceptionClass(decl->symbol);
+	writeChar(' ');
+	writeDocPara(&decl->documentation->summary, false);
 	writeNewLine();
 }
 
@@ -17229,7 +17277,7 @@ void GenD::writeMethod(const FuMethod * method)
 		return;
 	writeNewLine();
 	writeDoc(method->documentation.get());
-	writeParametersDoc(method);
+	writeParametersAndThrowsDoc(method);
 	writeVisibility(method->visibility);
 	if (method->id == FuId::classToString)
 		write("override ");
@@ -18638,7 +18686,7 @@ void GenJava::writeSignature(const FuMethod * method, int paramCount)
 	}
 	writeChar(')');
 	std::string_view separator = " throws ";
-	for (const std::shared_ptr<FuSymbolReference> &exception : method->throws) {
+	for (const std::shared_ptr<FuThrowsDeclaration> &exception : method->throws) {
 		write(separator);
 		writeExceptionClass(exception->symbol);
 		separator = ", ";
@@ -22359,11 +22407,20 @@ void GenSwift::writeParameterDoc(const FuVar * param, bool first)
 	writeNewLine();
 }
 
+void GenSwift::writeThrowsDoc(const FuThrowsDeclaration * decl)
+{
+	write("/// - Throws: `");
+	writeExceptionClass(decl->symbol);
+	write("` ");
+	writeDocPara(&decl->documentation->summary, false);
+	writeNewLine();
+}
+
 void GenSwift::writeMethod(const FuMethod * method)
 {
 	writeNewLine();
 	writeDoc(method->documentation.get());
-	writeParametersDoc(method);
+	writeParametersAndThrowsDoc(method);
 	switch (method->callType) {
 	case FuCallType::static_:
 		writeVisibility(method->visibility);
@@ -22667,12 +22724,21 @@ void GenPy::writeParameterDoc(const FuVar * param, bool first)
 	writeNewLine();
 }
 
+void GenPy::writeThrowsDoc(const FuThrowsDeclaration * decl)
+{
+	write(":raises ");
+	writeExceptionClass(decl->symbol);
+	write(": ");
+	writeDocPara(&decl->documentation->summary, false);
+	writeNewLine();
+}
+
 void GenPy::writePyDoc(const FuMethod * method)
 {
 	if (method->documentation == nullptr)
 		return;
 	startDoc(method->documentation.get());
-	writeParametersDoc(method);
+	writeParametersAndThrowsDoc(method);
 	writeLine("\"\"\"");
 }
 

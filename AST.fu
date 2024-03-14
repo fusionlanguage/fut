@@ -578,7 +578,7 @@ class FuImplicitEnumValue : FuExpr
 
 public class FuSymbolReference : FuExpr
 {
-	internal FuExpr#? Left;
+	internal FuExpr#? Left = null;
 	internal string() Name;
 	internal FuSymbol!? Symbol;
 	public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
@@ -1113,10 +1113,15 @@ class FuStaticProperty : FuMember
 		=> new FuStaticProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 }
 
+class FuThrowsDeclaration : FuSymbolReference
+{
+	internal FuCodeDoc#? Documentation;
+}
+
 public class FuMethodBase : FuMember
 {
 	internal FuParameters() Parameters;
-	internal List<FuSymbolReference#>() Throws;
+	internal List<FuThrowsDeclaration#>() Throws;
 	internal FuStatement#? Body;
 	internal bool IsLive = false;
 	internal HashSet<FuMethod!>() Calls;

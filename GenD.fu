@@ -76,6 +76,15 @@ public class GenD : GenCCppD
 		WriteNewLine();
 	}
 
+	protected override void WriteThrowsDoc!(FuThrowsDeclaration decl)
+	{
+		Write("/// Throws: ");
+		WriteExceptionClass(decl.Symbol);
+		WriteChar(' ');
+		WriteDocPara(decl.Documentation.Summary, false);
+		WriteNewLine();
+	}
+
 	protected override void WriteDocList!(FuDocList list)
 	{
 		WriteLine("///");
@@ -1440,7 +1449,7 @@ public class GenD : GenCCppD
 			return;
 		WriteNewLine();
 		WriteDoc(method.Documentation);
-		WriteParametersDoc(method);
+		WriteParametersAndThrowsDoc(method);
 		WriteVisibility(method.Visibility);
 		if (method.Id == FuId.ClassToString)
 			Write("override ");

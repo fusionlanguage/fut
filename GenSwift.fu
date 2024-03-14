@@ -1645,11 +1645,20 @@ public class GenSwift : GenPySwift
 		WriteNewLine();
 	}
 
+	protected override void WriteThrowsDoc!(FuThrowsDeclaration decl)
+	{
+		Write("/// - Throws: `");
+		WriteExceptionClass(decl.Symbol);
+		Write("` ");
+		WriteDocPara(decl.Documentation.Summary, false);
+		WriteNewLine();
+	}
+
 	protected override void WriteMethod!(FuMethod method)
 	{
 		WriteNewLine();
 		WriteDoc(method.Documentation);
-		WriteParametersDoc(method);
+		WriteParametersAndThrowsDoc(method);
 		switch (method.CallType) {
 		case FuCallType.Static:
 			WriteVisibility(method.Visibility);

@@ -930,6 +930,15 @@ public class GenCs : GenTyped
 		WriteLine("</param>");
 	}
 
+	protected override void WriteThrowsDoc!(FuThrowsDeclaration decl)
+	{
+		Write("/// <exception cref=\"");
+		WriteExceptionClass(decl.Symbol);
+		Write("\">");
+		WriteDocPara(decl.Documentation.Summary, false);
+		WriteLine("</exception>");
+	}
+
 	protected override bool IsShortMethod(FuMethod method) => method.Body is FuReturn;
 
 	protected override void WriteMethod!(FuMethod method)
@@ -938,7 +947,7 @@ public class GenCs : GenTyped
 			return;
 		WriteNewLine();
 		WriteDoc(method.Documentation);
-		WriteParametersDoc(method);
+		WriteParametersAndThrowsDoc(method);
 		WriteVisibility(method.Visibility);
 		if (method.Id == FuId.ClassToString)
 			Write("override ");

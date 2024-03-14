@@ -89,12 +89,21 @@ public class GenPy : GenPySwift
 		WriteNewLine();
 	}
 
+	protected override void WriteThrowsDoc!(FuThrowsDeclaration decl)
+	{
+		Write(":raises ");
+		WriteExceptionClass(decl.Symbol);
+		Write(": ");
+		WriteDocPara(decl.Documentation.Summary, false);
+		WriteNewLine();
+	}
+
 	void WritePyDoc!(FuMethod method)
 	{
 		if (method.Documentation == null)
 			return;
 		StartDoc(method.Documentation);
-		WriteParametersDoc(method);
+		WriteParametersAndThrowsDoc(method);
 		WriteLine("\"\"\"");
 	}
 

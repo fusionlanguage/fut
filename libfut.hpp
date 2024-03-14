@@ -427,6 +427,7 @@ class FuConst;
 class FuField;
 class FuProperty;
 class FuStaticProperty;
+class FuThrowsDeclaration;
 class FuMethodBase;
 class FuMethod;
 class FuMethodGroup;
@@ -853,6 +854,7 @@ class FuSymbolReference : public FuExpr
 {
 public:
 	FuSymbolReference() = default;
+	virtual ~FuSymbolReference() = default;
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
@@ -860,7 +862,7 @@ public:
 	bool isNewString(bool substringOffset) const override;
 	std::string toString() const override;
 public:
-	std::shared_ptr<FuExpr> left;
+	std::shared_ptr<FuExpr> left = nullptr;
 	std::string name;
 	FuSymbol * symbol;
 };
@@ -1259,6 +1261,14 @@ public:
 	static std::shared_ptr<FuStaticProperty> new_(std::shared_ptr<FuType> type, FuId id, std::string_view name);
 };
 
+class FuThrowsDeclaration : public FuSymbolReference
+{
+public:
+	FuThrowsDeclaration() = default;
+public:
+	std::shared_ptr<FuCodeDoc> documentation;
+};
+
 class FuMethodBase : public FuMember
 {
 public:
@@ -1269,7 +1279,7 @@ public:
 	bool isMutator() const;
 public:
 	FuParameters parameters;
-	std::vector<std::shared_ptr<FuSymbolReference>> throws;
+	std::vector<std::shared_ptr<FuThrowsDeclaration>> throws;
 	std::shared_ptr<FuStatement> body;
 	bool isLive = false;
 	std::unordered_set<FuMethod *> calls;
@@ -1527,7 +1537,7 @@ private:
 	bool seeDigit() const;
 	std::shared_ptr<FuInterpolatedString> parseInterpolatedString();
 	std::shared_ptr<FuExpr> parseParenthesized();
-	std::shared_ptr<FuSymbolReference> parseSymbolReference(std::shared_ptr<FuExpr> left);
+	void parseSymbolReference(FuSymbolReference * result);
 	void parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, FuToken closing);
 	std::shared_ptr<FuExpr> parsePrimaryExpr(bool type);
 	std::shared_ptr<FuExpr> parseMulExpr();
@@ -1757,8 +1767,9 @@ protected:
 	virtual void writeDoc(const FuCodeDoc * doc);
 	virtual void writeSelfDoc(const FuMethod * method);
 	virtual void writeParameterDoc(const FuVar * param, bool first);
-	void writeParametersDoc(const FuMethod * method);
 	virtual void writeReturnDoc(const FuMethod * method);
+	virtual void writeThrowsDoc(const FuThrowsDeclaration * decl);
+	void writeParametersAndThrowsDoc(const FuMethod * method);
 	void writeMethodDoc(const FuMethod * method);
 	void writeTopLevelNatives(const FuProgram * program);
 	void openBlock();
@@ -2043,6 +2054,7 @@ protected:
 	std::string_view getTargetName() const override;
 	void writeSelfDoc(const FuMethod * method) override;
 	void writeReturnDoc(const FuMethod * method) override;
+	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	void includeStdInt() override;
 	void includeAssert() override;
 	void includeMath() override;
@@ -2389,6 +2401,7 @@ protected:
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
 	void writeParameterDoc(const FuVar * param, bool first) override;
+	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	bool isShortMethod(const FuMethod * method) const override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
@@ -2418,6 +2431,7 @@ protected:
 	void startDocLine() override;
 	void writeDocPara(const FuDocPara * para, bool many) override;
 	void writeParameterDoc(const FuVar * param, bool first) override;
+	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	void writeDocList(const FuDocList * list) override;
 	void writeDoc(const FuCodeDoc * doc) override;
 	void writeName(const FuSymbol * symbol) override;
@@ -2765,6 +2779,7 @@ protected:
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
 	void writeParameterDoc(const FuVar * param, bool first) override;
+	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 public:
@@ -2830,6 +2845,7 @@ protected:
 	std::string_view getDocBullet() const override;
 	void writeDoc(const FuCodeDoc * doc) override;
 	void writeParameterDoc(const FuVar * param, bool first) override;
+	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	void writeName(const FuSymbol * symbol) override;
 	void writeTypeAndName(const FuNamedValue * value) override;
 	void writeLocalName(const FuSymbol * symbol, FuPriority parent) override;

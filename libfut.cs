@@ -1916,7 +1916,7 @@ namespace Fusion
 	public class FuSymbolReference : FuExpr
 	{
 
-		internal FuExpr Left;
+		internal FuExpr Left = null;
 
 		internal string Name;
 
@@ -2631,12 +2631,18 @@ namespace Fusion
 		public static FuStaticProperty New(FuType type, FuId id, string name) => new FuStaticProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 	}
 
+	class FuThrowsDeclaration : FuSymbolReference
+	{
+
+		internal FuCodeDoc Documentation;
+	}
+
 	public class FuMethodBase : FuMember
 	{
 
 		internal readonly FuParameters Parameters = new FuParameters();
 
-		internal readonly List<FuSymbolReference> Throws = new List<FuSymbolReference>();
+		internal readonly List<FuThrowsDeclaration> Throws = new List<FuThrowsDeclaration>();
 
 		internal FuStatement Body;
 
@@ -3483,12 +3489,11 @@ namespace Fusion
 			return result;
 		}
 
-		FuSymbolReference ParseSymbolReference(FuExpr left)
+		void ParseSymbolReference(FuSymbolReference result)
 		{
-			Check(FuToken.Id);
-			FuSymbolReference result = new FuSymbolReference { Line = this.Line, Left = left, Name = this.StringValue };
-			NextToken();
-			return result;
+			result.Line = this.Line;
+			result.Name = this.StringValue;
+			Expect(FuToken.Id);
 		}
 
 		void ParseCollection(List<FuExpr> result, FuToken closing)
@@ -3554,7 +3559,8 @@ namespace Fusion
 				result = ParseParenthesized();
 				break;
 			case FuToken.Id:
-				FuSymbolReference symbol = ParseSymbolReference(null);
+				FuSymbolReference symbol = new FuSymbolReference();
+				ParseSymbolReference(symbol);
 				if (Eat(FuToken.FatArrow)) {
 					FuLambdaExpr lambda = new FuLambdaExpr { Line = symbol.Line };
 					lambda.Add(FuVar.New(null, symbol.Name));
@@ -3592,7 +3598,9 @@ namespace Fusion
 				switch (this.CurrentToken) {
 				case FuToken.Dot:
 					NextToken();
-					result = ParseSymbolReference(result);
+					FuSymbolReference path = new FuSymbolReference { Left = result };
+					ParseSymbolReference(path);
+					result = path;
 					break;
 				case FuToken.LeftParenthesis:
 					NextToken();
@@ -3781,7 +3789,8 @@ namespace Fusion
 			FuAggregateInitializer result = new FuAggregateInitializer { Line = this.Line };
 			do {
 				int line = this.Line;
-				FuExpr field = ParseSymbolReference(null);
+				FuSymbolReference field = new FuSymbolReference();
+				ParseSymbolReference(field);
 				Expect(FuToken.Assign);
 				result.Items.Add(new FuBinaryExpr { Line = line, Left = field, Op = FuToken.Assign, Right = ParseExpr() });
 			}
@@ -4077,7 +4086,8 @@ namespace Fusion
 		{
 			FuThrow result = new FuThrow { Line = this.Line };
 			Expect(FuToken.Throw);
-			result.Class = ParseSymbolReference(null);
+			result.Class = new FuSymbolReference();
+			ParseSymbolReference(result.Class);
 			ExpectOrSkip(FuToken.LeftParenthesis);
 			result.Message = See(FuToken.RightParenthesis) ? null : ParseExpr();
 			Expect(FuToken.RightParenthesis);
@@ -4174,11 +4184,20 @@ namespace Fusion
 				while (Eat(FuToken.Comma));
 			}
 			Expect(FuToken.RightParenthesis);
-			ParseDoc();
+			FuCodeDoc throwsDoc = ParseDoc();
 			if (Eat(FuToken.Throws)) {
 				do {
-					ParseDoc();
-					method.Throws.Add(ParseSymbolReference(null));
+					FuThrowsDeclaration decl = new FuThrowsDeclaration();
+					if (throwsDoc == null)
+						decl.Documentation = ParseDoc();
+					else if (method.Throws.Count > 0) {
+						ReportError("Exception documentation must follow the 'throws' keyword");
+						decl.Documentation = null;
+					}
+					else
+						decl.Documentation = throwsDoc;
+					ParseSymbolReference(decl);
+					method.Throws.Add(decl);
 				}
 				while (Eat(FuToken.Comma));
 			}
@@ -7000,7 +7019,20 @@ namespace Fusion
 			WriteNewLine();
 		}
 
-		protected void WriteParametersDoc(FuMethod method)
+		protected virtual void WriteReturnDoc(FuMethod method)
+		{
+		}
+
+		protected virtual void WriteThrowsDoc(FuThrowsDeclaration decl)
+		{
+			Write(" * @throws ");
+			WriteExceptionClass(decl.Symbol);
+			WriteChar(' ');
+			WriteDocPara(decl.Documentation.Summary, false);
+			WriteNewLine();
+		}
+
+		protected void WriteParametersAndThrowsDoc(FuMethod method)
 		{
 			bool first = true;
 			for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
@@ -7009,10 +7041,11 @@ namespace Fusion
 					first = false;
 				}
 			}
-		}
-
-		protected virtual void WriteReturnDoc(FuMethod method)
-		{
+			WriteReturnDoc(method);
+			foreach (FuThrowsDeclaration decl in method.Throws) {
+				if (decl.Documentation != null)
+					WriteThrowsDoc(decl);
+			}
 		}
 
 		protected void WriteMethodDoc(FuMethod method)
@@ -7022,8 +7055,7 @@ namespace Fusion
 			WriteLine("/**");
 			WriteContent(method.Documentation);
 			WriteSelfDoc(method);
-			WriteParametersDoc(method);
-			WriteReturnDoc(method);
+			WriteParametersAndThrowsDoc(method);
 			WriteLine(" */");
 		}
 
@@ -9314,6 +9346,10 @@ namespace Fusion
 			Write(" * @return <code>");
 			WriteThrowReturnValue(method.Type, false);
 			WriteLine("</code> on error.");
+		}
+
+		protected override void WriteThrowsDoc(FuThrowsDeclaration decl)
+		{
 		}
 
 		protected override void IncludeStdInt()
@@ -16298,6 +16334,15 @@ namespace Fusion
 			WriteLine("</param>");
 		}
 
+		protected override void WriteThrowsDoc(FuThrowsDeclaration decl)
+		{
+			Write("/// <exception cref=\"");
+			WriteExceptionClass(decl.Symbol);
+			Write("\">");
+			WriteDocPara(decl.Documentation.Summary, false);
+			WriteLine("</exception>");
+		}
+
 		protected override bool IsShortMethod(FuMethod method) => method.Body is FuReturn;
 
 		protected override void WriteMethod(FuMethod method)
@@ -16306,7 +16351,7 @@ namespace Fusion
 				return;
 			WriteNewLine();
 			WriteDoc(method.Documentation);
-			WriteParametersDoc(method);
+			WriteParametersAndThrowsDoc(method);
 			WriteVisibility(method.Visibility);
 			if (method.Id == FuId.ClassToString)
 				Write("override ");
@@ -16443,6 +16488,15 @@ namespace Fusion
 			WriteName(param);
 			Write(" = ");
 			WriteDocPara(param.Documentation.Summary, false);
+			WriteNewLine();
+		}
+
+		protected override void WriteThrowsDoc(FuThrowsDeclaration decl)
+		{
+			Write("/// Throws: ");
+			WriteExceptionClass(decl.Symbol);
+			WriteChar(' ');
+			WriteDocPara(decl.Documentation.Summary, false);
 			WriteNewLine();
 		}
 
@@ -17803,7 +17857,7 @@ namespace Fusion
 				return;
 			WriteNewLine();
 			WriteDoc(method.Documentation);
-			WriteParametersDoc(method);
+			WriteParametersAndThrowsDoc(method);
 			WriteVisibility(method.Visibility);
 			if (method.Id == FuId.ClassToString)
 				Write("override ");
@@ -23148,11 +23202,20 @@ namespace Fusion
 			WriteNewLine();
 		}
 
+		protected override void WriteThrowsDoc(FuThrowsDeclaration decl)
+		{
+			Write("/// - Throws: `");
+			WriteExceptionClass(decl.Symbol);
+			Write("` ");
+			WriteDocPara(decl.Documentation.Summary, false);
+			WriteNewLine();
+		}
+
 		protected override void WriteMethod(FuMethod method)
 		{
 			WriteNewLine();
 			WriteDoc(method.Documentation);
-			WriteParametersDoc(method);
+			WriteParametersAndThrowsDoc(method);
 			switch (method.CallType) {
 			case FuCallType.Static:
 				WriteVisibility(method.Visibility);
@@ -23466,12 +23529,21 @@ namespace Fusion
 			WriteNewLine();
 		}
 
+		protected override void WriteThrowsDoc(FuThrowsDeclaration decl)
+		{
+			Write(":raises ");
+			WriteExceptionClass(decl.Symbol);
+			Write(": ");
+			WriteDocPara(decl.Documentation.Summary, false);
+			WriteNewLine();
+		}
+
 		void WritePyDoc(FuMethod method)
 		{
 			if (method.Documentation == null)
 				return;
 			StartDoc(method.Documentation);
-			WriteParametersDoc(method);
+			WriteParametersAndThrowsDoc(method);
 			WriteLine("\"\"\"");
 		}
 

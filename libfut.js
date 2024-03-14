@@ -1883,7 +1883,7 @@ class FuImplicitEnumValue extends FuExpr
 
 export class FuSymbolReference extends FuExpr
 {
-	left;
+	left = null;
 	name;
 	symbol;
 
@@ -2687,6 +2687,11 @@ class FuStaticProperty extends FuMember
 	{
 		return Object.assign(new FuStaticProperty(), { visibility: FuVisibility.PUBLIC, type: type, id: id, name: name });
 	}
+}
+
+class FuThrowsDeclaration extends FuSymbolReference
+{
+	documentation;
 }
 
 export class FuMethodBase extends FuMember
@@ -3620,12 +3625,11 @@ export class FuParser extends FuLexer
 		return result;
 	}
 
-	#parseSymbolReference(left)
+	#parseSymbolReference(result)
 	{
-		this.check(FuToken.ID);
-		let result = Object.assign(new FuSymbolReference(), { line: this.line, left: left, name: this.stringValue });
-		this.nextToken();
-		return result;
+		result.line = this.line;
+		result.name = this.stringValue;
+		this.expect(FuToken.ID);
 	}
 
 	#parseCollection(result, closing)
@@ -3691,7 +3695,8 @@ export class FuParser extends FuLexer
 			result = this.#parseParenthesized();
 			break;
 		case FuToken.ID:
-			let symbol = this.#parseSymbolReference(null);
+			let symbol = new FuSymbolReference();
+			this.#parseSymbolReference(symbol);
 			if (this.eat(FuToken.FAT_ARROW)) {
 				let lambda = Object.assign(new FuLambdaExpr(), { line: symbol.line });
 				lambda.add(FuVar.new(null, symbol.name));
@@ -3729,7 +3734,9 @@ export class FuParser extends FuLexer
 			switch (this.currentToken) {
 			case FuToken.DOT:
 				this.nextToken();
-				result = this.#parseSymbolReference(result);
+				let path = Object.assign(new FuSymbolReference(), { left: result });
+				this.#parseSymbolReference(path);
+				result = path;
 				break;
 			case FuToken.LEFT_PARENTHESIS:
 				this.nextToken();
@@ -3919,7 +3926,8 @@ export class FuParser extends FuLexer
 		let result = Object.assign(new FuAggregateInitializer(), { line: this.line });
 		do {
 			let line = this.line;
-			let field = this.#parseSymbolReference(null);
+			let field = new FuSymbolReference();
+			this.#parseSymbolReference(field);
 			this.expect(FuToken.ASSIGN);
 			result.items.push(Object.assign(new FuBinaryExpr(), { line: line, left: field, op: FuToken.ASSIGN, right: this.#parseExpr() }));
 		}
@@ -4216,7 +4224,8 @@ export class FuParser extends FuLexer
 	{
 		let result = Object.assign(new FuThrow(), { line: this.line });
 		this.expect(FuToken.THROW);
-		result.class = this.#parseSymbolReference(null);
+		result.class = new FuSymbolReference();
+		this.#parseSymbolReference(result.class);
 		this.expectOrSkip(FuToken.LEFT_PARENTHESIS);
 		result.message = this.see(FuToken.RIGHT_PARENTHESIS) ? null : this.#parseExpr();
 		this.expect(FuToken.RIGHT_PARENTHESIS);
@@ -4313,11 +4322,20 @@ export class FuParser extends FuLexer
 			while (this.eat(FuToken.COMMA));
 		}
 		this.expect(FuToken.RIGHT_PARENTHESIS);
-		this.#parseDoc();
+		let throwsDoc = this.#parseDoc();
 		if (this.eat(FuToken.THROWS)) {
 			do {
-				this.#parseDoc();
-				method.throws.push(this.#parseSymbolReference(null));
+				let decl = new FuThrowsDeclaration();
+				if (throwsDoc == null)
+					decl.documentation = this.#parseDoc();
+				else if (method.throws.length > 0) {
+					this.reportError("Exception documentation must follow the 'throws' keyword");
+					decl.documentation = null;
+				}
+				else
+					decl.documentation = throwsDoc;
+				this.#parseSymbolReference(decl);
+				method.throws.push(decl);
 			}
 			while (this.eat(FuToken.COMMA));
 		}
@@ -7287,7 +7305,20 @@ export class GenBase extends FuVisitor
 		this.writeNewLine();
 	}
 
-	writeParametersDoc(method)
+	writeReturnDoc(method)
+	{
+	}
+
+	writeThrowsDoc(decl)
+	{
+		this.write(" * @throws ");
+		this.writeExceptionClass(decl.symbol);
+		this.writeChar(32);
+		this.writeDocPara(decl.documentation.summary, false);
+		this.writeNewLine();
+	}
+
+	writeParametersAndThrowsDoc(method)
 	{
 		let first = true;
 		for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
@@ -7296,10 +7327,11 @@ export class GenBase extends FuVisitor
 				first = false;
 			}
 		}
-	}
-
-	writeReturnDoc(method)
-	{
+		this.writeReturnDoc(method);
+		for (const decl of method.throws) {
+			if (decl.documentation != null)
+				this.writeThrowsDoc(decl);
+		}
 	}
 
 	writeMethodDoc(method)
@@ -7309,8 +7341,7 @@ export class GenBase extends FuVisitor
 		this.writeLine("/**");
 		this.writeContent(method.documentation);
 		this.writeSelfDoc(method);
-		this.writeParametersDoc(method);
-		this.writeReturnDoc(method);
+		this.writeParametersAndThrowsDoc(method);
 		this.writeLine(" */");
 	}
 
@@ -9639,6 +9670,10 @@ export class GenC extends GenCCpp
 		this.write(" * @return <code>");
 		this.#writeThrowReturnValue(method.type, false);
 		this.writeLine("</code> on error.");
+	}
+
+	writeThrowsDoc(decl)
+	{
 	}
 
 	includeStdInt()
@@ -16742,6 +16777,15 @@ export class GenCs extends GenTyped
 		this.writeLine("</param>");
 	}
 
+	writeThrowsDoc(decl)
+	{
+		this.write("/// <exception cref=\"");
+		this.writeExceptionClass(decl.symbol);
+		this.write("\">");
+		this.writeDocPara(decl.documentation.summary, false);
+		this.writeLine("</exception>");
+	}
+
 	isShortMethod(method)
 	{
 		return method.body instanceof FuReturn;
@@ -16753,7 +16797,7 @@ export class GenCs extends GenTyped
 			return;
 		this.writeNewLine();
 		this.writeDoc(method.documentation);
-		this.writeParametersDoc(method);
+		this.writeParametersAndThrowsDoc(method);
 		this.#writeVisibility(method.visibility);
 		if (method.id == FuId.CLASS_TO_STRING)
 			this.write("override ");
@@ -16887,6 +16931,15 @@ export class GenD extends GenCCppD
 		this.writeName(param);
 		this.write(" = ");
 		this.writeDocPara(param.documentation.summary, false);
+		this.writeNewLine();
+	}
+
+	writeThrowsDoc(decl)
+	{
+		this.write("/// Throws: ");
+		this.writeExceptionClass(decl.symbol);
+		this.writeChar(32);
+		this.writeDocPara(decl.documentation.summary, false);
 		this.writeNewLine();
 	}
 
@@ -18278,7 +18331,7 @@ export class GenD extends GenCCppD
 			return;
 		this.writeNewLine();
 		this.writeDoc(method.documentation);
-		this.writeParametersDoc(method);
+		this.writeParametersAndThrowsDoc(method);
 		this.#writeVisibility(method.visibility);
 		if (method.id == FuId.CLASS_TO_STRING)
 			this.write("override ");
@@ -23703,11 +23756,20 @@ export class GenSwift extends GenPySwift
 		this.writeNewLine();
 	}
 
+	writeThrowsDoc(decl)
+	{
+		this.write("/// - Throws: `");
+		this.writeExceptionClass(decl.symbol);
+		this.write("` ");
+		this.writeDocPara(decl.documentation.summary, false);
+		this.writeNewLine();
+	}
+
 	writeMethod(method)
 	{
 		this.writeNewLine();
 		this.writeDoc(method.documentation);
-		this.writeParametersDoc(method);
+		this.writeParametersAndThrowsDoc(method);
 		switch (method.callType) {
 		case FuCallType.STATIC:
 			this.#writeVisibility(method.visibility);
@@ -24024,12 +24086,21 @@ export class GenPy extends GenPySwift
 		this.writeNewLine();
 	}
 
+	writeThrowsDoc(decl)
+	{
+		this.write(":raises ");
+		this.writeExceptionClass(decl.symbol);
+		this.write(": ");
+		this.writeDocPara(decl.documentation.summary, false);
+		this.writeNewLine();
+	}
+
 	#writePyDoc(method)
 	{
 		if (method.documentation == null)
 			return;
 		this.#startDoc(method.documentation);
-		this.writeParametersDoc(method);
+		this.writeParametersAndThrowsDoc(method);
 		this.writeLine("\"\"\"");
 	}
 

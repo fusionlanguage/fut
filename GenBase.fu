@@ -426,7 +426,20 @@ public abstract class GenBase : FuVisitor
 		WriteNewLine();
 	}
 
-	protected void WriteParametersDoc!(FuMethod method)
+	protected virtual void WriteReturnDoc!(FuMethod method)
+	{
+	}
+
+	protected virtual void WriteThrowsDoc!(FuThrowsDeclaration decl)
+	{
+		Write(" * @throws ");
+		WriteExceptionClass(decl.Symbol);
+		WriteChar(' ');
+		WriteDocPara(decl.Documentation.Summary, false);
+		WriteNewLine();
+	}
+
+	protected void WriteParametersAndThrowsDoc!(FuMethod method)
 	{
 		bool first = true;
 		for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar()) {
@@ -435,10 +448,11 @@ public abstract class GenBase : FuVisitor
 				first = false;
 			}
 		}
-	}
-
-	protected virtual void WriteReturnDoc!(FuMethod method)
-	{
+		WriteReturnDoc(method);
+		foreach (FuThrowsDeclaration# decl in method.Throws) {
+			if (decl.Documentation != null)
+				WriteThrowsDoc(decl);
+		}
 	}
 
 	protected void WriteMethodDoc!(FuMethod method)
@@ -448,8 +462,7 @@ public abstract class GenBase : FuVisitor
 		WriteLine("/**");
 		WriteContent(method.Documentation);
 		WriteSelfDoc(method);
-		WriteParametersDoc(method);
-		WriteReturnDoc(method);
+		WriteParametersAndThrowsDoc(method);
 		WriteLine(" */");
 	}
 

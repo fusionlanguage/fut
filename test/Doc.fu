@@ -42,7 +42,7 @@ public class Test
 		/// Some number.
 		float x)
 		throws
-			/// Overflow.
+			/// on overflow
 			Exception
 	{
 		return x * x;
