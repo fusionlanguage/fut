@@ -5,6 +5,16 @@ public static class Test
 		return;
 	}
 
+	public static byte GetByte() throws Exception
+	{
+		return 42;
+	}
+
+	public static float GetFloat() throws Exception
+	{
+		return GetByte();
+	}
+
 	public static bool Run()
 	{
 		return true;
