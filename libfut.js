@@ -23696,9 +23696,9 @@ export class GenSwift extends GenPySwift
 
 	writeParameterDoc(param, first)
 	{
-		this.write("/// - parameter ");
+		this.write("/// - Parameter ");
 		this.writeName(param);
-		this.writeChar(32);
+		this.write(": ");
 		this.writeDocPara(param.documentation.summary, false);
 		this.writeNewLine();
 	}

@@ -22352,9 +22352,9 @@ void GenSwift::writeField(const FuField * field)
 
 void GenSwift::writeParameterDoc(const FuVar * param, bool first)
 {
-	write("/// - parameter ");
+	write("/// - Parameter ");
 	writeName(param);
-	writeChar(' ');
+	write(": ");
 	writeDocPara(&param->documentation->summary, false);
 	writeNewLine();
 }

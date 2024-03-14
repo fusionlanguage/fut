@@ -23141,9 +23141,9 @@ namespace Fusion
 
 		protected override void WriteParameterDoc(FuVar param, bool first)
 		{
-			Write("/// - parameter ");
+			Write("/// - Parameter ");
 			WriteName(param);
-			WriteChar(' ');
+			Write(": ");
 			WriteDocPara(param.Documentation.Summary, false);
 			WriteNewLine();
 		}
