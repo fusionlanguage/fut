@@ -41,7 +41,9 @@ public class Test
 	public static float Square(
 		/// Some number.
 		float x)
-		throws Exception
+		throws
+			/// Overflow.
+			Exception
 	{
 		return x * x;
 	}

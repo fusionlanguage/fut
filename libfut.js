@@ -4313,9 +4313,12 @@ export class FuParser extends FuLexer
 			while (this.eat(FuToken.COMMA));
 		}
 		this.expect(FuToken.RIGHT_PARENTHESIS);
+		this.#parseDoc();
 		if (this.eat(FuToken.THROWS)) {
-			do
+			do {
+				this.#parseDoc();
 				method.throws.push(this.#parseSymbolReference(null));
+			}
 			while (this.eat(FuToken.COMMA));
 		}
 		if (method.callType == FuCallType.ABSTRACT)

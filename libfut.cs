@@ -4174,9 +4174,12 @@ namespace Fusion
 				while (Eat(FuToken.Comma));
 			}
 			Expect(FuToken.RightParenthesis);
+			ParseDoc();
 			if (Eat(FuToken.Throws)) {
-				do
+				do {
+					ParseDoc();
 					method.Throws.Add(ParseSymbolReference(null));
+				}
 				while (Eat(FuToken.Comma));
 			}
 			if (method.CallType == FuCallType.Abstract)

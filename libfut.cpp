@@ -3837,9 +3837,12 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 		while (eat(FuToken::comma));
 	}
 	expect(FuToken::rightParenthesis);
+	parseDoc();
 	if (eat(FuToken::throws)) {
-		do
+		do {
+			parseDoc();
 			method->throws.push_back(parseSymbolReference(nullptr));
+		}
 		while (eat(FuToken::comma));
 	}
 	if (method->callType == FuCallType::abstract)
