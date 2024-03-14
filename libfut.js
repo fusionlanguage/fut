@@ -12495,26 +12495,28 @@ export class GenC extends GenCCpp
 						else
 							symbol.accept(this, FuPriority.ARGUMENT);
 						this.writeCharLine(59);
-						return;
 					}
+					else {
+						this.#writeDestructAll();
+						super.visitReturn(statement);
+					}
+				}
+				else {
+					this.writeTemporaries(statement.value);
+					this.ensureChildBlock();
+					this.#startDefinition(this.currentMethod.type, true, true);
+					this.write("returnValue = ");
+					this.writeCoerced(this.currentMethod.type, statement.value, FuPriority.ARGUMENT);
+					this.writeCharLine(59);
+					this.cleanupTemporaries();
 					this.#writeDestructAll();
-					super.visitReturn(statement);
-					return;
+					if (throwingMethod != null) {
+						this.#startForwardThrow(throwingMethod);
+						this.write("returnValue");
+						this.#endForwardThrow(throwingMethod);
+					}
+					this.writeLine("return returnValue;");
 				}
-				this.writeTemporaries(statement.value);
-				this.ensureChildBlock();
-				this.#startDefinition(this.currentMethod.type, true, true);
-				this.write("returnValue = ");
-				this.writeCoerced(this.currentMethod.type, statement.value, FuPriority.ARGUMENT);
-				this.writeCharLine(59);
-				this.cleanupTemporaries();
-				this.#writeDestructAll();
-				if (throwingMethod != null) {
-					this.#startForwardThrow(throwingMethod);
-					this.write("returnValue");
-					this.#endForwardThrow(throwingMethod);
-				}
-				this.writeLine("return returnValue;");
 			}
 		}
 	}

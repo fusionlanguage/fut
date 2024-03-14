@@ -11837,26 +11837,28 @@ void GenC::visitReturn(const FuReturn * statement)
 					else
 						symbol->accept(this, FuPriority::argument);
 					writeCharLine(';');
-					return;
 				}
+				else {
+					writeDestructAll();
+					GenCCpp::visitReturn(statement);
+				}
+			}
+			else {
+				writeTemporaries(statement->value.get());
+				ensureChildBlock();
+				startDefinition(this->currentMethod->type.get(), true, true);
+				write("returnValue = ");
+				writeCoerced(this->currentMethod->type.get(), statement->value.get(), FuPriority::argument);
+				writeCharLine(';');
+				cleanupTemporaries();
 				writeDestructAll();
-				GenCCpp::visitReturn(statement);
-				return;
+				if (throwingMethod != nullptr) {
+					startForwardThrow(throwingMethod);
+					write("returnValue");
+					endForwardThrow(throwingMethod);
+				}
+				writeLine("return returnValue;");
 			}
-			writeTemporaries(statement->value.get());
-			ensureChildBlock();
-			startDefinition(this->currentMethod->type.get(), true, true);
-			write("returnValue = ");
-			writeCoerced(this->currentMethod->type.get(), statement->value.get(), FuPriority::argument);
-			writeCharLine(';');
-			cleanupTemporaries();
-			writeDestructAll();
-			if (throwingMethod != nullptr) {
-				startForwardThrow(throwingMethod);
-				write("returnValue");
-				endForwardThrow(throwingMethod);
-			}
-			writeLine("return returnValue;");
 		}
 	}
 }

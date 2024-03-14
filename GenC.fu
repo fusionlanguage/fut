@@ -2875,24 +2875,24 @@ public class GenC : GenCCpp
 				WriteDestructAll();
 				base.VisitReturn(statement);
 			}
-			else {
-				if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
-					if (this.VarsToDestruct.Contains(local)) {
-						// Optimization: avoid copy
-						WriteDestructAll(local);
-						Write("return ");
-						if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
-							WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument); // upcast, but don't AddRef
-						else
-							symbol.Accept(this, FuPriority.Argument);
-						WriteCharLine(';');
-						return;
-					}
+			else if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
+				if (this.VarsToDestruct.Contains(local)) {
+					// Optimization: avoid copy
+					WriteDestructAll(local);
+					Write("return ");
+					if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
+						WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument); // upcast, but don't AddRef
+					else
+						symbol.Accept(this, FuPriority.Argument);
+					WriteCharLine(';');
+				}
+				else {
 					// Local variable value doesn't depend on destructed variables
 					WriteDestructAll();
 					base.VisitReturn(statement);
-					return;
 				}
+			}
+			else {
 				WriteTemporaries(statement.Value);
 				EnsureChildBlock();
 				StartDefinition(this.CurrentMethod.Type, true, true);

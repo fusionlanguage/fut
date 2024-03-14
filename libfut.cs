@@ -12090,22 +12090,22 @@ namespace Fusion
 					WriteDestructAll();
 					base.VisitReturn(statement);
 				}
-				else {
-					if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
-						if (this.VarsToDestruct.Contains(local)) {
-							WriteDestructAll(local);
-							Write("return ");
-							if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
-								WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
-							else
-								symbol.Accept(this, FuPriority.Argument);
-							WriteCharLine(';');
-							return;
-						}
+				else if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
+					if (this.VarsToDestruct.Contains(local)) {
+						WriteDestructAll(local);
+						Write("return ");
+						if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
+							WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
+						else
+							symbol.Accept(this, FuPriority.Argument);
+						WriteCharLine(';');
+					}
+					else {
 						WriteDestructAll();
 						base.VisitReturn(statement);
-						return;
 					}
+				}
+				else {
 					WriteTemporaries(statement.Value);
 					EnsureChildBlock();
 					StartDefinition(this.CurrentMethod.Type, true, true);
