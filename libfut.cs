@@ -12050,14 +12050,16 @@ namespace Fusion
 
 		internal override void VisitReturn(FuReturn statement)
 		{
-			if (statement.Value == null || statement.Value is FuLiteral) {
+			switch (statement.Value) {
+			case null:
+			case FuLiteral:
 				WriteDestructAll();
 				if (statement.Value == null && this.CurrentMethod.Throws.Count > 0)
 					WriteLine("return true;");
 				else
 					base.VisitReturn(statement);
-			}
-			else if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
+				break;
+			case FuSymbolReference symbol when symbol.Symbol is FuVar local:
 				if (this.VarsToDestruct.Contains(local)) {
 					WriteDestructAll(local);
 					Write("return ");
@@ -12071,8 +12073,8 @@ namespace Fusion
 					WriteDestructAll();
 					base.VisitReturn(statement);
 				}
-			}
-			else {
+				break;
+			default:
 				WriteTemporaries(statement.Value);
 				FuMethod throwingMethod = this.CurrentMethod.Type is FuNumericType ? GetThrowingMethod(statement.Value) : null;
 				if (throwingMethod != null && (this.CurrentMethod.Type is FuRangeType methodRange ? throwingMethod.Type is FuRangeType throwingRange && methodRange.Min == throwingRange.Min : throwingMethod.Type is FuFloatingType))
@@ -12096,6 +12098,7 @@ namespace Fusion
 					}
 					WriteLine("return returnValue;");
 				}
+				break;
 			}
 		}
 

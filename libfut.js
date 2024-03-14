@@ -12429,6 +12429,8 @@ export class GenC extends GenCCpp
 
 	visitReturn(statement)
 	{
+		let symbol;
+		let local;
 		if (statement.value == null || statement.value instanceof FuLiteral) {
 			this.#writeDestructAll();
 			if (statement.value == null && this.currentMethod.throws.length > 0)
@@ -12436,51 +12438,47 @@ export class GenC extends GenCCpp
 			else
 				super.visitReturn(statement);
 		}
-		else {
-			let symbol;
-			let local;
-			if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar) {
-				if (this.#varsToDestruct.includes(local)) {
-					this.#writeDestructAll(local);
-					this.write("return ");
-					let resultPtr;
-					if ((resultPtr = this.currentMethod.type) instanceof FuClassType && !(resultPtr instanceof FuStorageType))
-						this.#writeClassPtr(resultPtr.class, symbol, FuPriority.ARGUMENT);
-					else
-						symbol.accept(this, FuPriority.ARGUMENT);
-					this.writeCharLine(59);
-				}
-				else {
-					this.#writeDestructAll();
-					super.visitReturn(statement);
-				}
+		else if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar) {
+			if (this.#varsToDestruct.includes(local)) {
+				this.#writeDestructAll(local);
+				this.write("return ");
+				let resultPtr;
+				if ((resultPtr = this.currentMethod.type) instanceof FuClassType && !(resultPtr instanceof FuStorageType))
+					this.#writeClassPtr(resultPtr.class, symbol, FuPriority.ARGUMENT);
+				else
+					symbol.accept(this, FuPriority.ARGUMENT);
+				this.writeCharLine(59);
 			}
 			else {
-				this.writeTemporaries(statement.value);
-				let throwingMethod = this.currentMethod.type instanceof FuNumericType ? GenC.#getThrowingMethod(statement.value) : null;
-				let methodRange;
-				let throwingRange;
-				if (throwingMethod != null && ((methodRange = this.currentMethod.type) instanceof FuRangeType ? (throwingRange = throwingMethod.type) instanceof FuRangeType && methodRange.min == throwingRange.min : throwingMethod.type instanceof FuFloatingType))
-					throwingMethod = null;
-				if (throwingMethod == null && this.#varsToDestruct.length == 0 && !this.#hasTemporariesToDestruct()) {
-					this.#writeDestructAll();
-					super.visitReturn(statement);
+				this.#writeDestructAll();
+				super.visitReturn(statement);
+			}
+		}
+		else {
+			this.writeTemporaries(statement.value);
+			let throwingMethod = this.currentMethod.type instanceof FuNumericType ? GenC.#getThrowingMethod(statement.value) : null;
+			let methodRange;
+			let throwingRange;
+			if (throwingMethod != null && ((methodRange = this.currentMethod.type) instanceof FuRangeType ? (throwingRange = throwingMethod.type) instanceof FuRangeType && methodRange.min == throwingRange.min : throwingMethod.type instanceof FuFloatingType))
+				throwingMethod = null;
+			if (throwingMethod == null && this.#varsToDestruct.length == 0 && !this.#hasTemporariesToDestruct()) {
+				this.#writeDestructAll();
+				super.visitReturn(statement);
+			}
+			else {
+				this.ensureChildBlock();
+				this.#startDefinition(this.currentMethod.type, true, true);
+				this.write("returnValue = ");
+				this.writeCoerced(this.currentMethod.type, statement.value, FuPriority.ARGUMENT);
+				this.writeCharLine(59);
+				this.cleanupTemporaries();
+				this.#writeDestructAll();
+				if (throwingMethod != null) {
+					this.#startForwardThrow(throwingMethod);
+					this.write("returnValue");
+					this.#endForwardThrow(throwingMethod);
 				}
-				else {
-					this.ensureChildBlock();
-					this.#startDefinition(this.currentMethod.type, true, true);
-					this.write("returnValue = ");
-					this.writeCoerced(this.currentMethod.type, statement.value, FuPriority.ARGUMENT);
-					this.writeCharLine(59);
-					this.cleanupTemporaries();
-					this.#writeDestructAll();
-					if (throwingMethod != null) {
-						this.#startForwardThrow(throwingMethod);
-						this.write("returnValue");
-						this.#endForwardThrow(throwingMethod);
-					}
-					this.writeLine("return returnValue;");
-				}
+				this.writeLine("return returnValue;");
 			}
 		}
 	}
