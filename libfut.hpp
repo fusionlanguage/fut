@@ -2179,8 +2179,7 @@ private:
 	void writeAssignTemporary(const FuType * type, const FuExpr * expr);
 	int writeCTemporary(const FuType * type, const FuExpr * expr);
 	static bool needsOwningTemporary(const FuExpr * expr);
-	static bool hasTemporariesToDestruct(const FuExpr * expr);
-	static bool containsTemporariesToDestruct(const FuExpr * expr);
+	bool hasTemporariesToDestruct() const;
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);
 	void writeAddressOf(const FuExpr * expr);
 	void writeGConstPointerCast(const FuExpr * expr);

@@ -10320,32 +10320,7 @@ namespace Fusion
 				WriteOwningTemporary(arg);
 		}
 
-		static bool HasTemporariesToDestruct(FuExpr expr) => ContainsTemporariesToDestruct(expr) || expr.IsNewString(false);
-
-		static bool ContainsTemporariesToDestruct(FuExpr expr)
-		{
-			switch (expr) {
-			case FuAggregateInitializer init:
-				return init.Items.Exists(field => HasTemporariesToDestruct(field));
-			case FuLiteral:
-			case FuLambdaExpr:
-				return false;
-			case FuInterpolatedString interp:
-				return interp.Parts.Exists(part => HasTemporariesToDestruct(part.Argument));
-			case FuSymbolReference symbol:
-				return symbol.Left != null && HasTemporariesToDestruct(symbol.Left);
-			case FuUnaryExpr unary:
-				return unary.Inner != null && ContainsTemporariesToDestruct(unary.Inner);
-			case FuBinaryExpr binary:
-				return HasTemporariesToDestruct(binary.Left) || (binary.Op != FuToken.Is && HasTemporariesToDestruct(binary.Right));
-			case FuSelectExpr select:
-				return ContainsTemporariesToDestruct(select.Cond);
-			case FuCallExpr call:
-				return (call.Method.Left != null && HasTemporariesToDestruct(call.Method.Left)) || call.Arguments.Exists(arg => HasTemporariesToDestruct(arg));
-			default:
-				throw new NotImplementedException();
-			}
-		}
+		bool HasTemporariesToDestruct() => this.CurrentTemporaries.Exists(temp => !(temp is FuType));
 
 		protected override void CleanupTemporary(int i, FuExpr temp)
 		{
@@ -12047,7 +12022,7 @@ namespace Fusion
 
 		protected override void StartIf(FuExpr expr)
 		{
-			if (this.CurrentTemporaries.Exists(temp => !(temp is FuType))) {
+			if (HasTemporariesToDestruct()) {
 				if (!this.ConditionVarInScope) {
 					this.ConditionVarInScope = true;
 					Write("bool ");
@@ -12075,38 +12050,38 @@ namespace Fusion
 
 		internal override void VisitReturn(FuReturn statement)
 		{
-			if (statement.Value == null) {
+			if (statement.Value == null || statement.Value is FuLiteral) {
 				WriteDestructAll();
-				if (this.CurrentMethod.Throws.Count > 0)
+				if (statement.Value == null && this.CurrentMethod.Throws.Count > 0)
 					WriteLine("return true;");
 				else
 					base.VisitReturn(statement);
 			}
-			else {
-				FuMethod throwingMethod = this.CurrentMethod.Type is FuNumericType ? GetThrowingMethod(statement.Value) : null;
-				if (throwingMethod != null && (this.CurrentMethod.Type is FuRangeType methodRange ? throwingMethod.Type is FuRangeType throwingRange && methodRange.Min == throwingRange.Min : throwingMethod.Type is FuFloatingType))
-					throwingMethod = null;
-				if (statement.Value is FuLiteral || (throwingMethod == null && this.VarsToDestruct.Count == 0 && !ContainsTemporariesToDestruct(statement.Value))) {
+			else if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
+				if (this.VarsToDestruct.Contains(local)) {
+					WriteDestructAll(local);
+					Write("return ");
+					if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
+						WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
+					else
+						symbol.Accept(this, FuPriority.Argument);
+					WriteCharLine(';');
+				}
+				else {
 					WriteDestructAll();
 					base.VisitReturn(statement);
 				}
-				else if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local) {
-					if (this.VarsToDestruct.Contains(local)) {
-						WriteDestructAll(local);
-						Write("return ");
-						if (this.CurrentMethod.Type is FuClassType resultPtr && !(resultPtr is FuStorageType))
-							WriteClassPtr(resultPtr.Class, symbol, FuPriority.Argument);
-						else
-							symbol.Accept(this, FuPriority.Argument);
-						WriteCharLine(';');
-					}
-					else {
-						WriteDestructAll();
-						base.VisitReturn(statement);
-					}
+			}
+			else {
+				WriteTemporaries(statement.Value);
+				FuMethod throwingMethod = this.CurrentMethod.Type is FuNumericType ? GetThrowingMethod(statement.Value) : null;
+				if (throwingMethod != null && (this.CurrentMethod.Type is FuRangeType methodRange ? throwingMethod.Type is FuRangeType throwingRange && methodRange.Min == throwingRange.Min : throwingMethod.Type is FuFloatingType))
+					throwingMethod = null;
+				if (throwingMethod == null && this.VarsToDestruct.Count == 0 && !HasTemporariesToDestruct()) {
+					WriteDestructAll();
+					base.VisitReturn(statement);
 				}
 				else {
-					WriteTemporaries(statement.Value);
 					EnsureChildBlock();
 					StartDefinition(this.CurrentMethod.Type, true, true);
 					Write("returnValue = ");

@@ -10019,31 +10019,9 @@ void GenC::writeArgTemporary(const FuMethod * method, const FuVar * param, const
 		writeOwningTemporary(arg);
 }
 
-bool GenC::hasTemporariesToDestruct(const FuExpr * expr)
+bool GenC::hasTemporariesToDestruct() const
 {
-	return containsTemporariesToDestruct(expr) || expr->isNewString(false);
-}
-
-bool GenC::containsTemporariesToDestruct(const FuExpr * expr)
-{
-	if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr))
-		return std::any_of(init->items.begin(), init->items.end(), [](const std::shared_ptr<FuExpr> &field) { return hasTemporariesToDestruct(field.get()); });
-	else if (dynamic_cast<const FuLiteral *>(expr) || dynamic_cast<const FuLambdaExpr *>(expr))
-		return false;
-	else if (const FuInterpolatedString *interp = dynamic_cast<const FuInterpolatedString *>(expr))
-		return std::any_of(interp->parts.begin(), interp->parts.end(), [](const FuInterpolatedPart &part) { return hasTemporariesToDestruct(part.argument.get()); });
-	else if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr))
-		return symbol->left != nullptr && hasTemporariesToDestruct(symbol->left.get());
-	else if (const FuUnaryExpr *unary = dynamic_cast<const FuUnaryExpr *>(expr))
-		return unary->inner != nullptr && containsTemporariesToDestruct(unary->inner.get());
-	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr))
-		return hasTemporariesToDestruct(binary->left.get()) || (binary->op != FuToken::is && hasTemporariesToDestruct(binary->right.get()));
-	else if (const FuSelectExpr *select = dynamic_cast<const FuSelectExpr *>(expr))
-		return containsTemporariesToDestruct(select->cond.get());
-	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr))
-		return (call->method->left != nullptr && hasTemporariesToDestruct(call->method->left.get())) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return hasTemporariesToDestruct(arg.get()); });
-	else
-		std::abort();
+	return std::any_of(this->currentTemporaries.begin(), this->currentTemporaries.end(), [](const FuExpr * temp) { return !dynamic_cast<const FuType *>(temp); });
 }
 
 void GenC::cleanupTemporary(int i, const FuExpr * temp)
@@ -11779,7 +11757,7 @@ void GenC::visitForeach(const FuForeach * statement)
 
 void GenC::startIf(const FuExpr * expr)
 {
-	if (std::any_of(this->currentTemporaries.begin(), this->currentTemporaries.end(), [](const FuExpr * temp) { return !dynamic_cast<const FuType *>(temp); })) {
+	if (hasTemporariesToDestruct()) {
 		if (!this->conditionVarInScope) {
 			this->conditionVarInScope = true;
 			write("bool ");
@@ -11807,44 +11785,44 @@ void GenC::visitLock(const FuLock * statement)
 
 void GenC::visitReturn(const FuReturn * statement)
 {
-	if (statement->value == nullptr) {
+	if (statement->value == nullptr || dynamic_cast<const FuLiteral *>(statement->value.get())) {
 		writeDestructAll();
-		if (std::ssize(this->currentMethod->throws) > 0)
+		if (statement->value == nullptr && std::ssize(this->currentMethod->throws) > 0)
 			writeLine("return true;");
 		else
 			GenCCpp::visitReturn(statement);
 	}
 	else {
-		const FuMethod * throwingMethod = dynamic_cast<const FuNumericType *>(this->currentMethod->type.get()) ? getThrowingMethod(statement->value.get()) : nullptr;
-		const FuRangeType * methodRange;
-		const FuRangeType * throwingRange;
-		if (throwingMethod != nullptr && ((methodRange = dynamic_cast<const FuRangeType *>(this->currentMethod->type.get())) ? (throwingRange = dynamic_cast<const FuRangeType *>(throwingMethod->type.get())) && methodRange->min == throwingRange->min : !!dynamic_cast<const FuFloatingType *>(throwingMethod->type.get())))
-			throwingMethod = nullptr;
-		if (dynamic_cast<const FuLiteral *>(statement->value.get()) || (throwingMethod == nullptr && std::ssize(this->varsToDestruct) == 0 && !containsTemporariesToDestruct(statement->value.get()))) {
-			writeDestructAll();
-			GenCCpp::visitReturn(statement);
-		}
-		else {
-			const FuSymbolReference * symbol;
-			const FuVar * local;
-			if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol))) {
-				if (std::find(this->varsToDestruct.begin(), this->varsToDestruct.end(), local) != this->varsToDestruct.end()) {
-					writeDestructAll(local);
-					write("return ");
-					const FuClassType * resultPtr;
-					if ((resultPtr = dynamic_cast<const FuClassType *>(this->currentMethod->type.get())) && !dynamic_cast<const FuStorageType *>(resultPtr))
-						writeClassPtr(resultPtr->class_, symbol, FuPriority::argument);
-					else
-						symbol->accept(this, FuPriority::argument);
-					writeCharLine(';');
-				}
-				else {
-					writeDestructAll();
-					GenCCpp::visitReturn(statement);
-				}
+		const FuSymbolReference * symbol;
+		const FuVar * local;
+		if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol))) {
+			if (std::find(this->varsToDestruct.begin(), this->varsToDestruct.end(), local) != this->varsToDestruct.end()) {
+				writeDestructAll(local);
+				write("return ");
+				const FuClassType * resultPtr;
+				if ((resultPtr = dynamic_cast<const FuClassType *>(this->currentMethod->type.get())) && !dynamic_cast<const FuStorageType *>(resultPtr))
+					writeClassPtr(resultPtr->class_, symbol, FuPriority::argument);
+				else
+					symbol->accept(this, FuPriority::argument);
+				writeCharLine(';');
 			}
 			else {
-				writeTemporaries(statement->value.get());
+				writeDestructAll();
+				GenCCpp::visitReturn(statement);
+			}
+		}
+		else {
+			writeTemporaries(statement->value.get());
+			const FuMethod * throwingMethod = dynamic_cast<const FuNumericType *>(this->currentMethod->type.get()) ? getThrowingMethod(statement->value.get()) : nullptr;
+			const FuRangeType * methodRange;
+			const FuRangeType * throwingRange;
+			if (throwingMethod != nullptr && ((methodRange = dynamic_cast<const FuRangeType *>(this->currentMethod->type.get())) ? (throwingRange = dynamic_cast<const FuRangeType *>(throwingMethod->type.get())) && methodRange->min == throwingRange->min : !!dynamic_cast<const FuFloatingType *>(throwingMethod->type.get())))
+				throwingMethod = nullptr;
+			if (throwingMethod == nullptr && std::ssize(this->varsToDestruct) == 0 && !hasTemporariesToDestruct()) {
+				writeDestructAll();
+				GenCCpp::visitReturn(statement);
+			}
+			else {
 				ensureChildBlock();
 				startDefinition(this->currentMethod->type.get(), true, true);
 				write("returnValue = ");

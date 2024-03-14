@@ -19,6 +19,6 @@ public static class Test
 
 	public static bool Run()
 	{
-		return AcceptPtr(ReturnStorage()) == "foo"; //FAIL: c TODO
+		return AcceptPtr(ReturnStorage()) == "foo";
 	}
 }
