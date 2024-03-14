@@ -2689,7 +2689,7 @@ class FuStaticProperty extends FuMember
 	}
 }
 
-class FuThrowsDeclaration extends FuSymbolReference
+export class FuThrowsDeclaration extends FuSymbolReference
 {
 	documentation;
 }

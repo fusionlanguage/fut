@@ -2631,7 +2631,7 @@ namespace Fusion
 		public static FuStaticProperty New(FuType type, FuId id, string name) => new FuStaticProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 	}
 
-	class FuThrowsDeclaration : FuSymbolReference
+	public class FuThrowsDeclaration : FuSymbolReference
 	{
 
 		internal FuCodeDoc Documentation;
