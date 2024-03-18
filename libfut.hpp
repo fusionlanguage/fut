@@ -472,7 +472,7 @@ class FuParserHost
 {
 public:
 	virtual ~FuParserHost() = default;
-	virtual void reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message) = 0;
+	virtual void reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message) = 0;
 protected:
 	FuParserHost() = default;
 };
@@ -489,8 +489,6 @@ protected:
 	int charOffset;
 	std::string filename;
 	int line;
-	int column;
-	int tokenColumn;
 	int lexemeOffset;
 	FuToken currentToken;
 	int64_t longValue;
@@ -517,6 +515,8 @@ private:
 	int nextOffset;
 	int nextChar;
 	FuParserHost * host;
+	int utf16Column;
+	int tokenUtf16Column;
 	std::unordered_set<std::string> preSymbols;
 	bool atLineStart = true;
 	bool lineMode = false;
@@ -1604,7 +1604,7 @@ protected:
 class FuConsoleHost : public GenHost
 {
 public:
-	void reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message) override;
+	void reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message) override;
 protected:
 	FuConsoleHost() = default;
 public:

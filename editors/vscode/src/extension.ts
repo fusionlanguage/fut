@@ -1,3 +1,23 @@
+// extension.ts - Visual Studio Code extension
+//
+// Copyright (C) 2023-2024  Piotr Fusik
+//
+// This file is part of Fusion Transpiler,
+// see https://github.com/fusionlanguage/fut
+//
+// Fusion Transpiler is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Fusion Transpiler is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
+
 import * as vscode from "vscode";
 import { FuParser, FuProgram, FuSystem, FuParserHost } from "./parser.js";
 
@@ -6,9 +26,9 @@ class VsCodeHost extends FuParserHost
 	#system = FuSystem.new();
 	#diagnostics: vscode.Diagnostic[] = [];
 
-	reportError(filename: string, startLine: number, startColumn: number, endLine: number, endColumn: number, message: string) : void
+	reportError(filename: string, startLine: number, startUtf16Column: number, endLine: number, endUtf16Column: number, message: string) : void
 	{
-		this.#diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine - 1, startColumn - 1, endLine - 1, endColumn - 1), message));
+		this.#diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine - 1, startUtf16Column, endLine - 1, endUtf16Column), message));
 	}
 
 	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void

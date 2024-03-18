@@ -48,7 +48,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	this->inputLength = inputLength;
 	this->nextOffset = 0;
 	this->line = 1;
-	this->column = 1;
+	this->utf16Column = 0;
 	fillNextChar();
 	if (this->nextChar == 65279)
 		fillNextChar();
@@ -57,7 +57,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 
 void FuLexer::reportError(std::string_view message) const
 {
-	this->host->reportError(this->filename, this->line, this->tokenColumn, this->line, this->column, message);
+	this->host->reportError(this->filename, this->line, this->tokenUtf16Column, this->line, this->utf16Column, message);
 }
 
 int FuLexer::readByte()
@@ -124,15 +124,15 @@ int FuLexer::readChar()
 	switch (c) {
 	case '\t':
 	case ' ':
-		this->column++;
+		this->utf16Column++;
 		break;
 	case '\n':
 		this->line++;
-		this->column = 1;
+		this->utf16Column = 0;
 		this->atLineStart = true;
 		break;
 	default:
-		this->column++;
+		this->utf16Column += c < 65536 ? 1 : 2;
 		this->atLineStart = false;
 		break;
 	}
@@ -370,7 +370,7 @@ FuToken FuLexer::readPreToken()
 {
 	for (;;) {
 		bool atLineStart = this->atLineStart;
-		this->tokenColumn = this->column;
+		this->tokenUtf16Column = this->utf16Column;
 		this->lexemeOffset = this->charOffset;
 		int c = readChar();
 		switch (c) {
@@ -4065,7 +4065,7 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 	}
 }
 
-void FuConsoleHost::reportError(std::string_view filename, int startLine, int startColumn, int endLine, int endColumn, std::string_view message)
+void FuConsoleHost::reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message)
 {
 	this->hasErrors = true;
 	std::cerr << filename << "(" << startLine << "): ERROR: " << message << '\n';

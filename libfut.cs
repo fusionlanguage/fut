@@ -11,7 +11,7 @@ namespace Fusion
 	public abstract class FuParserHost
 	{
 
-		public abstract void ReportError(string filename, int startLine, int startColumn, int endLine, int endColumn, string message);
+		public abstract void ReportError(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message);
 	}
 
 	public enum FuToken
@@ -145,9 +145,9 @@ namespace Fusion
 
 		protected int Line;
 
-		protected int Column;
+		int Utf16Column;
 
-		protected int TokenColumn;
+		int TokenUtf16Column;
 
 		protected int LexemeOffset;
 
@@ -186,7 +186,7 @@ namespace Fusion
 			this.InputLength = inputLength;
 			this.NextOffset = 0;
 			this.Line = 1;
-			this.Column = 1;
+			this.Utf16Column = 0;
 			FillNextChar();
 			if (this.NextChar == 65279)
 				FillNextChar();
@@ -195,7 +195,7 @@ namespace Fusion
 
 		protected void ReportError(string message)
 		{
-			this.Host.ReportError(this.Filename, this.Line, this.TokenColumn, this.Line, this.Column, message);
+			this.Host.ReportError(this.Filename, this.Line, this.TokenUtf16Column, this.Line, this.Utf16Column, message);
 		}
 
 		int ReadByte()
@@ -261,15 +261,15 @@ namespace Fusion
 			switch (c) {
 			case '\t':
 			case ' ':
-				this.Column++;
+				this.Utf16Column++;
 				break;
 			case '\n':
 				this.Line++;
-				this.Column = 1;
+				this.Utf16Column = 0;
 				this.AtLineStart = true;
 				break;
 			default:
-				this.Column++;
+				this.Utf16Column += c < 65536 ? 1 : 2;
 				this.AtLineStart = false;
 				break;
 			}
@@ -501,7 +501,7 @@ namespace Fusion
 		{
 			for (;;) {
 				bool atLineStart = this.AtLineStart;
-				this.TokenColumn = this.Column;
+				this.TokenUtf16Column = this.Utf16Column;
 				this.LexemeOffset = this.CharOffset;
 				int c = ReadChar();
 				switch (c) {
@@ -4381,7 +4381,7 @@ namespace Fusion
 
 		internal bool HasErrors = false;
 
-		public override void ReportError(string filename, int startLine, int startColumn, int endLine, int endColumn, string message)
+		public override void ReportError(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message)
 		{
 			this.HasErrors = true;
 			Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");

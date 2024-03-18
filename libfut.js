@@ -131,8 +131,8 @@ export class FuLexer
 	#host;
 	filename;
 	line;
-	column;
-	tokenColumn;
+	#utf16Column;
+	#tokenUtf16Column;
 	lexemeOffset;
 	currentToken;
 	longValue;
@@ -161,7 +161,7 @@ export class FuLexer
 		this.#inputLength = inputLength;
 		this.#nextOffset = 0;
 		this.line = 1;
-		this.column = 1;
+		this.#utf16Column = 0;
 		this.#fillNextChar();
 		if (this.#nextChar == 65279)
 			this.#fillNextChar();
@@ -170,7 +170,7 @@ export class FuLexer
 
 	reportError(message)
 	{
-		this.#host.reportError(this.filename, this.line, this.tokenColumn, this.line, this.column, message);
+		this.#host.reportError(this.filename, this.line, this.#tokenUtf16Column, this.line, this.#utf16Column, message);
 	}
 
 	#readByte()
@@ -237,15 +237,15 @@ export class FuLexer
 		switch (c) {
 		case 9:
 		case 32:
-			this.column++;
+			this.#utf16Column++;
 			break;
 		case 10:
 			this.line++;
-			this.column = 1;
+			this.#utf16Column = 0;
 			this.#atLineStart = true;
 			break;
 		default:
-			this.column++;
+			this.#utf16Column += c < 65536 ? 1 : 2;
 			this.#atLineStart = false;
 			break;
 		}
@@ -483,7 +483,7 @@ export class FuLexer
 	{
 		for (;;) {
 			let atLineStart = this.#atLineStart;
-			this.tokenColumn = this.column;
+			this.#tokenUtf16Column = this.#utf16Column;
 			this.lexemeOffset = this.charOffset;
 			let c = this.readChar();
 			switch (c) {
@@ -4527,7 +4527,7 @@ export class FuConsoleHost extends GenHost
 {
 	hasErrors = false;
 
-	reportError(filename, startLine, startColumn, endLine, endColumn, message)
+	reportError(filename, startLine, startUtf16Column, endLine, endUtf16Column, message)
 	{
 		this.hasErrors = true;
 		console.error(`${filename}(${startLine}): ERROR: ${message}`);

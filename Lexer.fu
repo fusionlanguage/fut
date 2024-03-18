@@ -1,6 +1,6 @@
 // Lexer.fu - Fusion lexer
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -20,7 +20,7 @@
 
 public abstract class FuParserHost
 {
-	public abstract void ReportError!(string filename, int startLine, int startColumn, int endLine, int endColumn, string message);
+	public abstract void ReportError!(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message);
 }
 
 public enum FuToken
@@ -145,8 +145,8 @@ public abstract class FuLexer
 	FuParserHost! Host;
 	protected string() Filename;
 	protected int Line;
-	protected int Column;
-	protected int TokenColumn;
+	int Utf16Column;
+	int TokenUtf16Column;
 	protected int LexemeOffset;
 	protected FuToken CurrentToken;
 	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralChar
@@ -175,7 +175,7 @@ public abstract class FuLexer
 		this.InputLength = inputLength;
 		this.NextOffset = 0;
 		this.Line = 1;
-		this.Column = 1;
+		this.Utf16Column = 0;
 		FillNextChar();
 		if (this.NextChar == 0xfeff) // BOM
 			FillNextChar();
@@ -184,7 +184,7 @@ public abstract class FuLexer
 
 	protected void ReportError(string message)
 	{
-		this.Host.ReportError(this.Filename, this.Line, this.TokenColumn, this.Line, this.Column, message);
+		this.Host.ReportError(this.Filename, this.Line, this.TokenUtf16Column, this.Line, this.Utf16Column, message);
 	}
 
 	int ReadByte!()
@@ -247,15 +247,15 @@ public abstract class FuLexer
 		switch (c) {
 		case '\t':
 		case ' ':
-			this.Column++;
+			this.Utf16Column++;
 			break;
 		case '\n':
 			this.Line++;
-			this.Column = 1;
+			this.Utf16Column = 0;
 			this.AtLineStart = true;
 			break;
 		default:
-			this.Column++;
+			this.Utf16Column += c < 0x10000 ? 1 : 2;
 			this.AtLineStart = false;
 			break;
 		}
@@ -485,7 +485,7 @@ public abstract class FuLexer
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
-			this.TokenColumn = this.Column;
+			this.TokenUtf16Column = this.Utf16Column;
 			this.LexemeOffset = this.CharOffset;
 			int c = ReadChar();
 			switch (c) {
