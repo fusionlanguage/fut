@@ -4556,7 +4556,7 @@ export class FuSema
 
 	reportError(statement, message)
 	{
-		this.#host.reportError(this.#getCurrentContainer().filename, statement.line, 1, statement.line, 1, message);
+		this.#host.reportError(this.#getCurrentContainer().filename, statement.line, 0, statement.line, 0, message);
 	}
 
 	#poisonError(statement, message)
@@ -6922,7 +6922,7 @@ export class GenBase extends FuVisitor
 
 	#reportError(statement, message)
 	{
-		this.#host.reportError(this.getCurrentContainer().filename, statement.line, 1, statement.line, 1, message);
+		this.#host.reportError(this.getCurrentContainer().filename, statement.line, 0, statement.line, 0, message);
 	}
 
 	notSupported(statement, feature)

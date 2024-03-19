@@ -4087,7 +4087,7 @@ const FuContainerType * FuSema::getCurrentContainer() const
 
 void FuSema::reportError(const FuStatement * statement, std::string_view message) const
 {
-	this->host->reportError(getCurrentContainer()->filename, statement->line, 1, statement->line, 1, message);
+	this->host->reportError(getCurrentContainer()->filename, statement->line, 0, statement->line, 0, message);
 }
 
 std::shared_ptr<FuType> FuSema::poisonError(const FuStatement * statement, std::string_view message) const
@@ -6448,7 +6448,7 @@ const FuContainerType * GenBase::getCurrentContainer() const
 
 void GenBase::reportError(const FuStatement * statement, std::string_view message) const
 {
-	this->host->reportError(getCurrentContainer()->filename, statement->line, 1, statement->line, 1, message);
+	this->host->reportError(getCurrentContainer()->filename, statement->line, 0, statement->line, 0, message);
 }
 
 void GenBase::notSupported(const FuStatement * statement, std::string_view feature) const

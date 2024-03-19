@@ -4418,7 +4418,7 @@ namespace Fusion
 
 		protected void ReportError(FuStatement statement, string message)
 		{
-			this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1, message);
+			this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 0, statement.Line, 0, message);
 		}
 
 		FuType PoisonError(FuStatement statement, string message)
@@ -6638,7 +6638,7 @@ namespace Fusion
 
 		void ReportError(FuStatement statement, string message)
 		{
-			this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 1, statement.Line, 1, message);
+			this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 0, statement.Line, 0, message);
 		}
 
 		protected void NotSupported(FuStatement statement, string feature)
