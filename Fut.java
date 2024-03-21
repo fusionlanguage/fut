@@ -30,9 +30,11 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Locale;
 
-class FileResourceSema extends FuSema
+class FileGenHost extends FuConsoleHost
 {
 	private final ArrayList<String> resourceDirs = new ArrayList<String>();
+	private File filename;
+	private FileWriter currentFile;
 
 	public void addResourceDir(String path)
 	{
@@ -64,7 +66,7 @@ class FileResourceSema extends FuSema
 		File path = new File(name);
 		if (path.isFile())
 			return readAllBytes(path);
-		reportError(expr, String.format("File %s not found", name));
+		reportStatementError(expr, String.format("File %s not found", name));
 		return new ArrayList<Byte>();
 	}
 
@@ -77,12 +79,6 @@ class FileResourceSema extends FuSema
 		}
 		return content.size();
 	}
-}
-
-class FileGenHost extends FuConsoleHost
-{
-	private File filename;
-	private FileWriter currentFile;
 
 	public @Override Appendable createFile(String directory, String filename)
 	{
@@ -135,21 +131,21 @@ public class Fut
 		System.out.println("--version  Display version information");
 	}
 
-	private static FuProgram parseAndResolve(FuParser parser, FuSystem system, FuScope parent, ArrayList<String> files, FileResourceSema sema, FuConsoleHost host) throws IOException
+	private static FuProgram parseAndResolve(FuParser parser, FuSystem system, FuScope parent, ArrayList<String> files, FuSema sema, FuConsoleHost host) throws IOException
 	{
-		parser.program = new FuProgram();
-		parser.program.parent = parent;
-		parser.program.system = system;
+		host.program = new FuProgram();
+		host.program.parent = parent;
+		host.program.system = system;
 		for (String file : files) {
 			byte[] input = Files.readAllBytes(Paths.get(file));
 			parser.parse(file, input, input.length);
 		}
 		if (host.hasErrors)
 			System.exit(1);
-		sema.process(parser.program);
+		sema.process();
 		if (host.hasErrors)
 			System.exit(1);
-		return parser.program;
+		return host.program;
 	}
 
 	private static void emit(FuProgram program, String lang, String namespace, String outputFile, FileGenHost host)
@@ -207,10 +203,10 @@ public class Fut
 	public static void main(String[] args)
 	{
 		Locale.setDefault(Locale.US);
+		final FileGenHost host = new FileGenHost();
 		final FuParser parser = new FuParser();
 		final ArrayList<String> inputFiles = new ArrayList<String>();
 		final ArrayList<String> referencedFiles = new ArrayList<String>();
-		final FileResourceSema sema = new FileResourceSema();
 		String lang = null;
 		String outputFile = null;
 		String namespace = "";
@@ -249,7 +245,7 @@ public class Fut
 					referencedFiles.add(args[++i]);
 					break;
 				case 'I':
-					sema.addResourceDir(args[++i]);
+					host.addResourceDir(args[++i]);
 					break;
 				default:
 					System.err.format("fut: ERROR: Unknown option: %s\n", arg);
@@ -266,7 +262,7 @@ public class Fut
 			System.exit(1);
 		}
 
-		final FileGenHost host = new FileGenHost();
+		final FuSema sema = new FuSema();
 		parser.setHost(host);
 		sema.setHost(host);
 		final FuSystem system = FuSystem.new_();
