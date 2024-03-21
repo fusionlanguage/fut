@@ -129,6 +129,8 @@ namespace Fusion
 	public abstract class FuLexer
 	{
 
+		internal FuProgram Program;
+
 		protected byte[] Input;
 
 		int InputLength;
@@ -145,9 +147,7 @@ namespace Fusion
 
 		protected int Loc;
 
-		int Utf16Column;
-
-		int TokenUtf16Column;
+		int TokenLoc;
 
 		protected int LexemeOffset;
 
@@ -185,8 +185,8 @@ namespace Fusion
 			this.Input = input;
 			this.InputLength = inputLength;
 			this.NextOffset = 0;
-			this.Loc = 1;
-			this.Utf16Column = 0;
+			this.Loc = 0;
+			this.Program.LineLocs.Add(0);
 			FillNextChar();
 			if (this.NextChar == 65279)
 				FillNextChar();
@@ -195,7 +195,9 @@ namespace Fusion
 
 		protected void ReportError(string message)
 		{
-			this.Host.ReportError(this.Filename, this.Loc, this.TokenUtf16Column, this.Loc, this.Utf16Column, message);
+			int line = this.Program.LineLocs.Count - 1;
+			int lineLoc = this.Program.LineLocs[^1];
+			this.Host.ReportError(this.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
 		}
 
 		int ReadByte()
@@ -261,15 +263,14 @@ namespace Fusion
 			switch (c) {
 			case '\t':
 			case ' ':
-				this.Utf16Column++;
+				this.Loc++;
 				break;
 			case '\n':
-				this.Loc++;
-				this.Utf16Column = 0;
+				this.Program.LineLocs.Add(this.Loc);
 				this.AtLineStart = true;
 				break;
 			default:
-				this.Utf16Column += c < 65536 ? 1 : 2;
+				this.Loc += c < 65536 ? 1 : 2;
 				this.AtLineStart = false;
 				break;
 			}
@@ -501,7 +502,7 @@ namespace Fusion
 		{
 			for (;;) {
 				bool atLineStart = this.AtLineStart;
-				this.TokenUtf16Column = this.Utf16Column;
+				this.TokenLoc = this.Loc;
 				this.LexemeOffset = this.CharOffset;
 				int c = ReadChar();
 				switch (c) {
@@ -611,7 +612,7 @@ namespace Fusion
 						break;
 					}
 					if (EatChar('*')) {
-						int startLine = this.Loc;
+						int startLine = this.Program.LineLocs.Count;
 						do {
 							c = ReadChar();
 							if (c < 0) {
@@ -3327,12 +3328,26 @@ namespace Fusion
 		internal readonly SortedDictionary<string, List<byte>> Resources = new SortedDictionary<string, List<byte>>();
 
 		internal bool RegexOptionsEnum = false;
+
+		internal readonly List<int> LineLocs = new List<int>();
+
+		internal int GetLine(int loc)
+		{
+			int l = 0;
+			int r = this.LineLocs.Count - 1;
+			while (l < r) {
+				int m = (l + r + 1) >> 1;
+				if (this.LineLocs[m] > loc)
+					r = m - 1;
+				else
+					l = m;
+			}
+			return l;
+		}
 	}
 
 	public class FuParser : FuLexer
 	{
-
-		internal FuProgram Program;
 
 		string XcrementParent = null;
 
@@ -4279,7 +4294,7 @@ namespace Fusion
 						if (call.Arguments.Count != 0)
 							ReportError("Constructor parameters not supported");
 						if (klass.Constructor != null)
-							ReportError($"Duplicate constructor, already defined in line {klass.Constructor.Loc}");
+							ReportError($"Duplicate constructor, already defined in line {this.Program.GetLine(klass.Constructor.Loc) + 1}");
 					}
 					if (visibility == FuVisibility.Private)
 						visibility = FuVisibility.Internal;
@@ -4384,7 +4399,7 @@ namespace Fusion
 		public override void ReportError(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message)
 		{
 			this.HasErrors = true;
-			Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");
+			Console.Error.WriteLine($"{filename}({startLine + 1}): ERROR: {message}");
 		}
 	}
 
@@ -4418,7 +4433,9 @@ namespace Fusion
 
 		protected void ReportError(FuStatement statement, string message)
 		{
-			this.Host.ReportError(GetCurrentContainer().Filename, statement.Loc, 0, statement.Loc, 0, message);
+			int line = this.Program.GetLine(statement.Loc);
+			int column = statement.Loc - this.Program.LineLocs[line];
+			this.Host.ReportError(GetCurrentContainer().Filename, line, column, line, column, message);
 		}
 
 		FuType PoisonError(FuStatement statement, string message)

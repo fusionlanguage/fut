@@ -20,7 +20,6 @@
 
 public class FuParser : FuLexer
 {
-	internal FuProgram! Program;
 	string? XcrementParent = null;
 	FuLoop? CurrentLoop = null;
 	FuCondCompletionStatement!? CurrentLoopOrSwitch = null;
@@ -963,7 +962,7 @@ public class FuParser : FuLexer
 					if (call.Arguments.Count != 0)
 						ReportError("Constructor parameters not supported");
 					if (klass.Constructor != null)
-						ReportError($"Duplicate constructor, already defined in line {klass.Constructor.Loc}");
+						ReportError($"Duplicate constructor, already defined in line {this.Program.GetLine(klass.Constructor.Loc) + 1}");
 				}
 				if (visibility == FuVisibility.Private)
 					visibility = FuVisibility.Internal; // TODO

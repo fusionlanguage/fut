@@ -123,6 +123,7 @@ const FuPreState = {
 
 export class FuLexer
 {
+	program;
 	input;
 	#inputLength;
 	#nextOffset;
@@ -131,8 +132,7 @@ export class FuLexer
 	#host;
 	filename;
 	loc;
-	#utf16Column;
-	#tokenUtf16Column;
+	#tokenLoc;
 	lexemeOffset;
 	currentToken;
 	longValue;
@@ -160,8 +160,8 @@ export class FuLexer
 		this.input = input;
 		this.#inputLength = inputLength;
 		this.#nextOffset = 0;
-		this.loc = 1;
-		this.#utf16Column = 0;
+		this.loc = 0;
+		this.program.lineLocs.push(0);
 		this.#fillNextChar();
 		if (this.#nextChar == 65279)
 			this.#fillNextChar();
@@ -170,7 +170,9 @@ export class FuLexer
 
 	reportError(message)
 	{
-		this.#host.reportError(this.filename, this.loc, this.#tokenUtf16Column, this.loc, this.#utf16Column, message);
+		let line = this.program.lineLocs.length - 1;
+		let lineLoc = this.program.lineLocs.at(-1);
+		this.#host.reportError(this.filename, line, this.#tokenLoc - lineLoc, line, this.loc - lineLoc, message);
 	}
 
 	#readByte()
@@ -237,15 +239,14 @@ export class FuLexer
 		switch (c) {
 		case 9:
 		case 32:
-			this.#utf16Column++;
+			this.loc++;
 			break;
 		case 10:
-			this.loc++;
-			this.#utf16Column = 0;
+			this.program.lineLocs.push(this.loc);
 			this.#atLineStart = true;
 			break;
 		default:
-			this.#utf16Column += c < 65536 ? 1 : 2;
+			this.loc += c < 65536 ? 1 : 2;
 			this.#atLineStart = false;
 			break;
 		}
@@ -483,7 +484,7 @@ export class FuLexer
 	{
 		for (;;) {
 			let atLineStart = this.#atLineStart;
-			this.#tokenUtf16Column = this.#utf16Column;
+			this.#tokenLoc = this.loc;
 			this.lexemeOffset = this.charOffset;
 			let c = this.readChar();
 			switch (c) {
@@ -593,7 +594,7 @@ export class FuLexer
 					break;
 				}
 				if (this.#eatChar(42)) {
-					let startLine = this.loc;
+					let startLine = this.program.lineLocs.length;
 					do {
 						c = this.readChar();
 						if (c < 0) {
@@ -3467,11 +3468,25 @@ export class FuProgram extends FuScope
 	main = null;
 	resources = {};
 	regexOptionsEnum = false;
+	lineLocs = [];
+
+	getLine(loc)
+	{
+		let l = 0;
+		let r = this.lineLocs.length - 1;
+		while (l < r) {
+			let m = (l + r + 1) >> 1;
+			if (this.lineLocs[m] > loc)
+				r = m - 1;
+			else
+				l = m;
+		}
+		return l;
+	}
 }
 
 export class FuParser extends FuLexer
 {
-	program;
 	#xcrementParent = null;
 	#currentLoop = null;
 	#currentLoopOrSwitch = null;
@@ -4418,7 +4433,7 @@ export class FuParser extends FuLexer
 					if (call.arguments_.length != 0)
 						this.reportError("Constructor parameters not supported");
 					if (klass.constructor_ != null)
-						this.reportError(`Duplicate constructor, already defined in line ${klass.constructor_.loc}`);
+						this.reportError(`Duplicate constructor, already defined in line ${this.program.getLine(klass.constructor_.loc) + 1}`);
 				}
 				if (visibility == FuVisibility.PRIVATE)
 					visibility = FuVisibility.INTERNAL;
@@ -4530,7 +4545,7 @@ export class FuConsoleHost extends GenHost
 	reportError(filename, startLine, startUtf16Column, endLine, endUtf16Column, message)
 	{
 		this.hasErrors = true;
-		console.error(`${filename}(${startLine}): ERROR: ${message}`);
+		console.error(`${filename}(${startLine + 1}): ERROR: ${message}`);
 	}
 }
 
@@ -4556,7 +4571,9 @@ export class FuSema
 
 	reportError(statement, message)
 	{
-		this.#host.reportError(this.#getCurrentContainer().filename, statement.loc, 0, statement.loc, 0, message);
+		let line = this.program.getLine(statement.loc);
+		let column = statement.loc - this.program.lineLocs[line];
+		this.#host.reportError(this.#getCurrentContainer().filename, line, column, line, column, message);
 	}
 
 	#poisonError(statement, message)

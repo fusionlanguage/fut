@@ -28,7 +28,7 @@ class VsCodeHost extends FuSemaHost
 
 	reportError(filename: string, startLine: number, startUtf16Column: number, endLine: number, endUtf16Column: number, message: string) : void
 	{
-		this.#diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine - 1, startUtf16Column, endLine - 1, endUtf16Column), message));
+		this.#diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine, startUtf16Column, endLine, endUtf16Column), message));
 	}
 
 	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void

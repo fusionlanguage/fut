@@ -41,7 +41,9 @@ public class FuSema
 
 	protected void ReportError(FuStatement statement, string message)
 	{
-		this.Host.ReportError(GetCurrentContainer().Filename, statement.Loc, 0, statement.Loc, 0,message);
+		int line = this.Program.GetLine(statement.Loc);
+		int column = statement.Loc - this.Program.LineLocs[line];
+		this.Host.ReportError(GetCurrentContainer().Filename, line, column, line, column, message);
 	}
 
 	FuType# PoisonError(FuStatement statement, string message)

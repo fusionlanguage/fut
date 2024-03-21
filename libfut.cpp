@@ -47,8 +47,8 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	this->input = input;
 	this->inputLength = inputLength;
 	this->nextOffset = 0;
-	this->loc = 1;
-	this->utf16Column = 0;
+	this->loc = 0;
+	this->program->lineLocs.push_back(0);
 	fillNextChar();
 	if (this->nextChar == 65279)
 		fillNextChar();
@@ -57,7 +57,9 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 
 void FuLexer::reportError(std::string_view message) const
 {
-	this->host->reportError(this->filename, this->loc, this->tokenUtf16Column, this->loc, this->utf16Column, message);
+	int line = std::ssize(this->program->lineLocs) - 1;
+	int lineLoc = this->program->lineLocs.back();
+	this->host->reportError(this->filename, line, this->tokenLoc - lineLoc, line, this->loc - lineLoc, message);
 }
 
 int FuLexer::readByte()
@@ -124,15 +126,14 @@ int FuLexer::readChar()
 	switch (c) {
 	case '\t':
 	case ' ':
-		this->utf16Column++;
+		this->loc++;
 		break;
 	case '\n':
-		this->loc++;
-		this->utf16Column = 0;
+		this->program->lineLocs.push_back(this->loc);
 		this->atLineStart = true;
 		break;
 	default:
-		this->utf16Column += c < 65536 ? 1 : 2;
+		this->loc += c < 65536 ? 1 : 2;
 		this->atLineStart = false;
 		break;
 	}
@@ -370,7 +371,7 @@ FuToken FuLexer::readPreToken()
 {
 	for (;;) {
 		bool atLineStart = this->atLineStart;
-		this->tokenUtf16Column = this->utf16Column;
+		this->tokenLoc = this->loc;
 		this->lexemeOffset = this->charOffset;
 		int c = readChar();
 		switch (c) {
@@ -480,7 +481,7 @@ FuToken FuLexer::readPreToken()
 				break;
 			}
 			if (eatChar('*')) {
-				int startLine = this->loc;
+				int startLine = std::ssize(this->program->lineLocs);
 				do {
 					c = readChar();
 					if (c < 0) {
@@ -2784,6 +2785,20 @@ std::shared_ptr<FuSystem> FuSystem::new_()
 	return std::make_shared<FuSystem>();
 }
 
+int FuProgram::getLine(int loc) const
+{
+	int l = 0;
+	int r = std::ssize(this->lineLocs) - 1;
+	while (l < r) {
+		int m = (l + r + 1) >> 1;
+		if (this->lineLocs[m] > loc)
+			r = m - 1;
+		else
+			l = m;
+	}
+	return l;
+}
+
 bool FuParser::docParseLine(FuDocPara * para)
 {
 	if (std::ssize(para->children) > 0)
@@ -3943,7 +3958,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 				if (std::ssize(call->arguments) != 0)
 					reportError("Constructor parameters not supported");
 				if (klass->constructor != nullptr)
-					reportError(std::format("Duplicate constructor, already defined in line {}", klass->constructor->loc));
+					reportError(std::format("Duplicate constructor, already defined in line {}", this->program->getLine(klass->constructor->loc) + 1));
 			}
 			if (visibility == FuVisibility::private_)
 				visibility = FuVisibility::internal;
@@ -4068,7 +4083,7 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 void FuConsoleHost::reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message)
 {
 	this->hasErrors = true;
-	std::cerr << filename << "(" << startLine << "): ERROR: " << message << '\n';
+	std::cerr << filename << "(" << (startLine + 1) << "): ERROR: " << message << '\n';
 }
 FuSema::FuSema()
 {
@@ -4087,7 +4102,9 @@ const FuContainerType * FuSema::getCurrentContainer() const
 
 void FuSema::reportError(const FuStatement * statement, std::string_view message) const
 {
-	this->host->reportError(getCurrentContainer()->filename, statement->loc, 0, statement->loc, 0, message);
+	int line = this->program->getLine(statement->loc);
+	int column = statement->loc - this->program->lineLocs[line];
+	this->host->reportError(getCurrentContainer()->filename, line, column, line, column, message);
 }
 
 std::shared_ptr<FuType> FuSema::poisonError(const FuStatement * statement, std::string_view message) const

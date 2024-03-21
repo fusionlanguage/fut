@@ -25,6 +25,6 @@ public abstract class FuConsoleHost : GenHost
 	public override void ReportError!(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message)
 	{
 		this.HasErrors = true;
-		Console.Error.WriteLine($"{filename}({startLine}): ERROR: {message}");
+		Console.Error.WriteLine($"{filename}({startLine + 1}): ERROR: {message}");
 	}
 }

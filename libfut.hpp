@@ -507,6 +507,7 @@ protected:
 	bool expect(FuToken expected);
 	void expectOrSkip(FuToken expected);
 public:
+	FuProgram * program;
 	static bool isLetterOrDigit(int c);
 	static int getEscapedChar(int c);
 	static std::string_view tokenToString(FuToken token);
@@ -515,8 +516,7 @@ private:
 	int nextOffset;
 	int nextChar;
 	FuParserHost * host;
-	int utf16Column;
-	int tokenUtf16Column;
+	int tokenLoc;
 	std::unordered_set<std::string> preSymbols;
 	bool atLineStart = true;
 	bool lineMode = false;
@@ -1516,6 +1516,8 @@ public:
 	const FuMethod * main = nullptr;
 	std::map<std::string, std::vector<uint8_t>> resources;
 	bool regexOptionsEnum = false;
+	std::vector<int> lineLocs;
+	int getLine(int loc) const;
 };
 
 class FuParser : public FuLexer
@@ -1523,8 +1525,6 @@ class FuParser : public FuLexer
 public:
 	FuParser() = default;
 	void parse(std::string_view filename, uint8_t const * input, int inputLength);
-public:
-	FuProgram * program;
 private:
 	std::string_view xcrementParent = std::string_view();
 	const FuLoop * currentLoop = nullptr;

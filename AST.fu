@@ -1749,4 +1749,19 @@ public class FuProgram : FuScope
 	internal FuMethod? Main = null;
 	internal SortedDictionary<string(), List<byte>()>() Resources;
 	internal bool RegexOptionsEnum = false;
+	internal List<int>() LineLocs;
+
+	internal int GetLine(int loc)
+	{
+		int l = 0;
+		int r = this.LineLocs.Count - 1;
+		while (l < r) {
+			int m = l + r + 1 >> 1;
+			if (this.LineLocs[m] > loc)
+				r = m - 1;
+			else
+				l = m;
+		}
+		return l;
+	}
 }

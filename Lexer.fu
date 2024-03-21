@@ -137,6 +137,7 @@ enum FuPreState
 
 public abstract class FuLexer
 {
+	internal FuProgram! Program;
 	protected byte[] Input;
 	int InputLength;
 	int NextOffset;
@@ -145,8 +146,7 @@ public abstract class FuLexer
 	FuParserHost! Host;
 	protected string() Filename;
 	protected int Loc;
-	int Utf16Column;
-	int TokenUtf16Column;
+	int TokenLoc;
 	protected int LexemeOffset;
 	protected FuToken CurrentToken;
 	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralChar
@@ -174,8 +174,8 @@ public abstract class FuLexer
 		this.Input = input;
 		this.InputLength = inputLength;
 		this.NextOffset = 0;
-		this.Loc = 1;
-		this.Utf16Column = 0;
+		this.Loc = 0;
+		this.Program.LineLocs.Add(0);
 		FillNextChar();
 		if (this.NextChar == 0xfeff) // BOM
 			FillNextChar();
@@ -184,7 +184,9 @@ public abstract class FuLexer
 
 	protected void ReportError(string message)
 	{
-		this.Host.ReportError(this.Filename, this.Loc, this.TokenUtf16Column, this.Loc, this.Utf16Column, message);
+		int line = this.Program.LineLocs.Count - 1;
+		int lineLoc = this.Program.LineLocs.Last();
+		this.Host.ReportError(this.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
 	}
 
 	int ReadByte!()
@@ -247,15 +249,14 @@ public abstract class FuLexer
 		switch (c) {
 		case '\t':
 		case ' ':
-			this.Utf16Column++;
+			this.Loc++;
 			break;
 		case '\n':
-			this.Loc++;
-			this.Utf16Column = 0;
+			this.Program.LineLocs.Add(this.Loc);
 			this.AtLineStart = true;
 			break;
 		default:
-			this.Utf16Column += c < 0x10000 ? 1 : 2;
+			this.Loc += c < 0x10000 ? 1 : 2;
 			this.AtLineStart = false;
 			break;
 		}
@@ -485,7 +486,7 @@ public abstract class FuLexer
 	{
 		for (;;) {
 			bool atLineStart = this.AtLineStart;
-			this.TokenUtf16Column = this.Utf16Column;
+			this.TokenLoc = this.Loc;
 			this.LexemeOffset = this.CharOffset;
 			int c = ReadChar();
 			switch (c) {
@@ -577,7 +578,7 @@ public abstract class FuLexer
 					break;
 				}
 				if (EatChar('*')) {
-					int startLine = this.Loc;
+					int startLine = this.Program.LineLocs.Count;
 					do {
 						c = ReadChar();
 						if (c < 0) {
