@@ -475,6 +475,8 @@ public:
 	virtual void reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message) = 0;
 protected:
 	FuParserHost() = default;
+public:
+	FuProgram * program;
 };
 
 class FuLexer
@@ -487,6 +489,7 @@ protected:
 	FuLexer() = default;
 	uint8_t const * input;
 	int charOffset;
+	FuParserHost * host;
 	std::string filename;
 	int loc;
 	int lexemeOffset;
@@ -507,7 +510,6 @@ protected:
 	bool expect(FuToken expected);
 	void expectOrSkip(FuToken expected);
 public:
-	FuProgram * program;
 	static bool isLetterOrDigit(int c);
 	static int getEscapedChar(int c);
 	static std::string_view tokenToString(FuToken token);
@@ -515,7 +517,6 @@ private:
 	int inputLength;
 	int nextOffset;
 	int nextChar;
-	FuParserHost * host;
 	int tokenLoc;
 	std::unordered_set<std::string> preSymbols;
 	bool lineMode = false;

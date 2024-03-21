@@ -11,6 +11,8 @@ namespace Fusion
 	public abstract class FuParserHost
 	{
 
+		internal FuProgram Program;
+
 		public abstract void ReportError(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message);
 	}
 
@@ -129,8 +131,6 @@ namespace Fusion
 	public abstract class FuLexer
 	{
 
-		internal FuProgram Program;
-
 		protected byte[] Input;
 
 		int InputLength;
@@ -141,7 +141,7 @@ namespace Fusion
 
 		int NextChar;
 
-		FuParserHost Host;
+		protected FuParserHost Host;
 
 		protected string Filename;
 
@@ -184,7 +184,7 @@ namespace Fusion
 			this.InputLength = inputLength;
 			this.NextOffset = 0;
 			this.Loc = 0;
-			this.Program.LineLocs.Add(0);
+			this.Host.Program.LineLocs.Add(0);
 			FillNextChar();
 			if (this.NextChar == 65279)
 				FillNextChar();
@@ -193,8 +193,8 @@ namespace Fusion
 
 		protected void ReportError(string message)
 		{
-			int line = this.Program.LineLocs.Count - 1;
-			int lineLoc = this.Program.LineLocs[^1];
+			int line = this.Host.Program.LineLocs.Count - 1;
+			int lineLoc = this.Host.Program.LineLocs[^1];
 			this.Host.ReportError(this.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
 		}
 
@@ -264,7 +264,7 @@ namespace Fusion
 				this.Loc++;
 				break;
 			case '\n':
-				this.Program.LineLocs.Add(this.Loc);
+				this.Host.Program.LineLocs.Add(this.Loc);
 				break;
 			default:
 				this.Loc += c < 65536 ? 1 : 2;
@@ -512,7 +512,7 @@ namespace Fusion
 						return FuToken.EndOfLine;
 					break;
 				case '#':
-					if (this.TokenLoc != this.Program.LineLocs[^1])
+					if (this.TokenLoc != this.Host.Program.LineLocs[^1])
 						return FuToken.Hash;
 					switch (PeekChar()) {
 					case 'i':
@@ -607,7 +607,7 @@ namespace Fusion
 						break;
 					}
 					if (EatChar('*')) {
-						int startLine = this.Program.LineLocs.Count;
+						int startLine = this.Host.Program.LineLocs.Count;
 						do {
 							c = ReadChar();
 							if (c < 0) {
@@ -3452,7 +3452,7 @@ namespace Fusion
 			double d;
 			if (!double.TryParse(GetLexeme().Replace("_", ""), out d))
 				ReportError("Invalid floating-point number");
-			FuLiteralDouble result = new FuLiteralDouble { Loc = this.Loc, Type = this.Program.System.DoubleType, Value = d };
+			FuLiteralDouble result = new FuLiteralDouble { Loc = this.Loc, Type = this.Host.Program.System.DoubleType, Value = d };
 			NextToken();
 			return result;
 		}
@@ -3536,7 +3536,7 @@ namespace Fusion
 				newResult.Inner = result;
 				return newResult;
 			case FuToken.LiteralLong:
-				result = this.Program.System.NewLiteralLong(this.LongValue, this.Loc);
+				result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.Loc);
 				NextToken();
 				break;
 			case FuToken.LiteralDouble:
@@ -3547,19 +3547,19 @@ namespace Fusion
 				NextToken();
 				break;
 			case FuToken.LiteralString:
-				result = this.Program.System.NewLiteralString(this.StringValue, this.Loc);
+				result = this.Host.Program.System.NewLiteralString(this.StringValue, this.Loc);
 				NextToken();
 				break;
 			case FuToken.False:
-				result = new FuLiteralFalse { Loc = this.Loc, Type = this.Program.System.BoolType };
+				result = new FuLiteralFalse { Loc = this.Loc, Type = this.Host.Program.System.BoolType };
 				NextToken();
 				break;
 			case FuToken.True:
-				result = new FuLiteralTrue { Loc = this.Loc, Type = this.Program.System.BoolType };
+				result = new FuLiteralTrue { Loc = this.Loc, Type = this.Host.Program.System.BoolType };
 				NextToken();
 				break;
 			case FuToken.Null:
-				result = new FuLiteralNull { Loc = this.Loc, Type = this.Program.System.NullType };
+				result = new FuLiteralNull { Loc = this.Loc, Type = this.Host.Program.System.NullType };
 				NextToken();
 				break;
 			case FuToken.InterpolatedString:
@@ -4244,7 +4244,7 @@ namespace Fusion
 			Expect(FuToken.Class);
 			FuClass klass = new FuClass { Filename = this.Filename, Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 			if (Expect(FuToken.Id))
-				AddSymbol(this.Program, klass);
+				AddSymbol(this.Host.Program, klass);
 			if (Eat(FuToken.Colon)) {
 				klass.BaseClassName = this.StringValue;
 				Expect(FuToken.Id);
@@ -4277,7 +4277,7 @@ namespace Fusion
 					continue;
 				}
 				callType = ParseCallType();
-				FuExpr type = Eat(FuToken.Void) ? this.Program.System.VoidType : ParseType();
+				FuExpr type = Eat(FuToken.Void) ? this.Host.Program.System.VoidType : ParseType();
 				if (See(FuToken.LeftBrace) && type is FuCallExpr call) {
 					if (call.Method.Name != klass.Name)
 						ReportError("Method with no return type");
@@ -4289,11 +4289,11 @@ namespace Fusion
 						if (call.Arguments.Count != 0)
 							ReportError("Constructor parameters not supported");
 						if (klass.Constructor != null)
-							ReportError($"Duplicate constructor, already defined in line {this.Program.GetLine(klass.Constructor.Loc) + 1}");
+							ReportError($"Duplicate constructor, already defined in line {this.Host.Program.GetLine(klass.Constructor.Loc) + 1}");
 					}
 					if (visibility == FuVisibility.Private)
 						visibility = FuVisibility.Internal;
-					klass.Constructor = new FuMethodBase { Loc = call.Loc, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+					klass.Constructor = new FuMethodBase { Loc = call.Loc, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Host.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
 					klass.Constructor.Parameters.Parent = klass;
 					klass.Constructor.AddThis(klass, true);
 					continue;
@@ -4321,7 +4321,7 @@ namespace Fusion
 					ReportError("Field cannot be public");
 				if (callType != FuCallType.Normal)
 					ReportError($"Field cannot be {CallTypeToString(callType)}");
-				if (type == this.Program.System.VoidType)
+				if (type == this.Host.Program.System.VoidType)
 					ReportError("Field cannot be void");
 				FuField field = new FuField { Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 				AddSymbol(klass, field);
@@ -4334,14 +4334,14 @@ namespace Fusion
 		{
 			Expect(FuToken.Enum);
 			bool flags = Eat(FuToken.Asterisk);
-			FuEnum enu = this.Program.System.NewEnum(flags);
+			FuEnum enu = this.Host.Program.System.NewEnum(flags);
 			enu.Filename = this.Filename;
 			enu.Loc = this.Loc;
 			enu.Documentation = doc;
 			enu.IsPublic = isPublic;
 			enu.Name = this.StringValue;
 			if (Expect(FuToken.Id))
-				AddSymbol(this.Program, enu);
+				AddSymbol(this.Host.Program, enu);
 			Expect(FuToken.LeftBrace);
 			do {
 				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.Loc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
@@ -4375,7 +4375,7 @@ namespace Fusion
 					ParseEnum(doc, isPublic);
 					break;
 				case FuToken.Native:
-					this.Program.TopLevelNatives.Add(ParseNative().Content);
+					this.Host.Program.TopLevelNatives.Add(ParseNative().Content);
 					break;
 				default:
 					ReportError("Expected class or enum");

@@ -112,19 +112,19 @@ function usage()
 
 function parseAndResolve(parser, system, parent, files, sema, host)
 {
-	parser.program = new FuProgram();
-	parser.program.parent = parent;
-	parser.program.system = system;
+	host.program = new FuProgram();
+	host.program.parent = parent;
+	host.program.system = system;
 	for (const file of files) {
 		const input = fs.readFileSync(file);
 		parser.parse(file, input, input.length);
 	}
 	if (host.hasErrors)
 		process.exit(1);
-	sema.process(parser.program);
+	sema.process(host.program);
 	if (host.hasErrors)
 		process.exit(1);
-	return parser.program;
+	return host.program;
 }
 
 function isDirectory(filename)

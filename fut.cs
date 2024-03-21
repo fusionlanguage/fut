@@ -110,17 +110,17 @@ public static class Fut
 
 	static FuProgram ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FileResourceSema sema, FuConsoleHost host)
 	{
-		parser.Program = new FuProgram { Parent = parent, System = system };
+		host.Program = new FuProgram { Parent = parent, System = system };
 		foreach (string file in files) {
 			byte[] input = File.ReadAllBytes(file);
 			parser.Parse(file, input, input.Length);
 		}
 		if (host.HasErrors)
 			return null;
-		sema.Process(parser.Program);
+		sema.Process(host.Program);
 		if (host.HasErrors)
 			return null;
-		return parser.Program;
+		return host.Program;
 	}
 
 	static void Emit(FuProgram program, string lang, string namespace_, string outputFile, FileGenHost host)

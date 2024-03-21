@@ -123,7 +123,7 @@ public class FuParser : FuLexer
 		double d;
 		if (!d.TryParse(GetLexeme().Replace("_", "")))
 			ReportError("Invalid floating-point number");
-		FuLiteralDouble# result = new FuLiteralDouble { Loc = this.Loc, Type = this.Program.System.DoubleType, Value = d };
+		FuLiteralDouble# result = new FuLiteralDouble { Loc = this.Loc, Type = this.Host.Program.System.DoubleType, Value = d };
 		NextToken();
 		return result;
 	}
@@ -206,7 +206,7 @@ public class FuParser : FuLexer
 			newResult.Inner = result;
 			return newResult;
 		case FuToken.LiteralLong:
-			result = this.Program.System.NewLiteralLong(this.LongValue, this.Loc);
+			result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.Loc);
 			NextToken();
 			break;
 		case FuToken.LiteralDouble:
@@ -217,19 +217,19 @@ public class FuParser : FuLexer
 			NextToken();
 			break;
 		case FuToken.LiteralString:
-			result = this.Program.System.NewLiteralString(this.StringValue, this.Loc);
+			result = this.Host.Program.System.NewLiteralString(this.StringValue, this.Loc);
 			NextToken();
 			break;
 		case FuToken.False:
-			result = new FuLiteralFalse { Loc = this.Loc, Type = this.Program.System.BoolType };
+			result = new FuLiteralFalse { Loc = this.Loc, Type = this.Host.Program.System.BoolType };
 			NextToken();
 			break;
 		case FuToken.True:
-			result = new FuLiteralTrue { Loc = this.Loc, Type = this.Program.System.BoolType };
+			result = new FuLiteralTrue { Loc = this.Loc, Type = this.Host.Program.System.BoolType };
 			NextToken();
 			break;
 		case FuToken.Null:
-			result = new FuLiteralNull { Loc = this.Loc, Type = this.Program.System.NullType };
+			result = new FuLiteralNull { Loc = this.Loc, Type = this.Host.Program.System.NullType };
 			NextToken();
 			break;
 		case FuToken.InterpolatedString:
@@ -911,7 +911,7 @@ public class FuParser : FuLexer
 		Expect(FuToken.Class);
 		FuClass# klass = new FuClass { Filename = this.Filename, Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 		if (Expect(FuToken.Id))
-			AddSymbol(this.Program, klass);
+			AddSymbol(this.Host.Program, klass);
 		if (Eat(FuToken.Colon)) {
 			klass.BaseClassName = this.StringValue;
 			Expect(FuToken.Id);
@@ -949,7 +949,7 @@ public class FuParser : FuLexer
 			}
 
 			callType = ParseCallType();
-			FuExpr# type = Eat(FuToken.Void) ? this.Program.System.VoidType : ParseType();
+			FuExpr# type = Eat(FuToken.Void) ? this.Host.Program.System.VoidType : ParseType();
 			if (See(FuToken.LeftBrace) && type is FuCallExpr call) {
 				// constructor
 				if (call.Method.Name != klass.Name)
@@ -962,12 +962,12 @@ public class FuParser : FuLexer
 					if (call.Arguments.Count != 0)
 						ReportError("Constructor parameters not supported");
 					if (klass.Constructor != null)
-						ReportError($"Duplicate constructor, already defined in line {this.Program.GetLine(klass.Constructor.Loc) + 1}");
+						ReportError($"Duplicate constructor, already defined in line {this.Host.Program.GetLine(klass.Constructor.Loc) + 1}");
 				}
 				if (visibility == FuVisibility.Private)
 					visibility = FuVisibility.Internal; // TODO
 				klass.Constructor = new FuMethodBase { Loc = call.Loc, Documentation = doc, Visibility = visibility, Parent = klass,
-					Type = this.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+					Type = this.Host.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
 				klass.Constructor.Parameters.Parent = klass;
 				klass.Constructor.AddThis(klass, true);
 				continue;
@@ -1011,7 +1011,7 @@ public class FuParser : FuLexer
 				ReportError("Field cannot be public");
 			if (callType != FuCallType.Normal)
 				ReportError($"Field cannot be {CallTypeToString(callType)}");
-			if (type == this.Program.System.VoidType)
+			if (type == this.Host.Program.System.VoidType)
 				ReportError("Field cannot be void");
 			FuField# field = new FuField { Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 			AddSymbol(klass, field);
@@ -1024,14 +1024,14 @@ public class FuParser : FuLexer
 	{
 		Expect(FuToken.Enum);
 		bool flags = Eat(FuToken.Asterisk);
-		FuEnum# enu = this.Program.System.NewEnum(flags);
+		FuEnum# enu = this.Host.Program.System.NewEnum(flags);
 		enu.Filename = this.Filename;
 		enu.Loc = this.Loc;
 		enu.Documentation = doc;
 		enu.IsPublic = isPublic;
 		enu.Name = this.StringValue;
 		if (Expect(FuToken.Id))
-			AddSymbol(this.Program, enu);
+			AddSymbol(this.Host.Program, enu);
 		Expect(FuToken.LeftBrace);
 		do {
 			FuConst# konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.Loc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
@@ -1069,7 +1069,7 @@ public class FuParser : FuLexer
 
 			// native
 			case FuToken.Native:
-				this.Program.TopLevelNatives.Add(ParseNative().Content);
+				this.Host.Program.TopLevelNatives.Add(ParseNative().Content);
 				break;
 
 			default:

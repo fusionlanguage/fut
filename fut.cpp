@@ -129,9 +129,9 @@ public:
 };
 
 static bool parseAndResolve(FuParser *parser, FuProgram *program,
-	const std::vector<const char *> &files, FileResourceSema *sema, const FuConsoleHost *host)
+	const std::vector<const char *> &files, FileResourceSema *sema, FuConsoleHost *host)
 {
-	parser->program = program;
+	host->program = program;
 	for (const char *file : files) {
 		std::ifstream stream(file);
 		std::string input = slurp(stream);

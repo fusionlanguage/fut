@@ -48,7 +48,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	this->inputLength = inputLength;
 	this->nextOffset = 0;
 	this->loc = 0;
-	this->program->lineLocs.push_back(0);
+	this->host->program->lineLocs.push_back(0);
 	fillNextChar();
 	if (this->nextChar == 65279)
 		fillNextChar();
@@ -57,8 +57,8 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 
 void FuLexer::reportError(std::string_view message) const
 {
-	int line = std::ssize(this->program->lineLocs) - 1;
-	int lineLoc = this->program->lineLocs.back();
+	int line = std::ssize(this->host->program->lineLocs) - 1;
+	int lineLoc = this->host->program->lineLocs.back();
 	this->host->reportError(this->filename, line, this->tokenLoc - lineLoc, line, this->loc - lineLoc, message);
 }
 
@@ -129,7 +129,7 @@ int FuLexer::readChar()
 		this->loc++;
 		break;
 	case '\n':
-		this->program->lineLocs.push_back(this->loc);
+		this->host->program->lineLocs.push_back(this->loc);
 		break;
 	default:
 		this->loc += c < 65536 ? 1 : 2;
@@ -383,7 +383,7 @@ FuToken FuLexer::readPreToken()
 				return FuToken::endOfLine;
 			break;
 		case '#':
-			if (this->tokenLoc != this->program->lineLocs.back())
+			if (this->tokenLoc != this->host->program->lineLocs.back())
 				return FuToken::hash;
 			switch (peekChar()) {
 			case 'i':
@@ -478,7 +478,7 @@ FuToken FuLexer::readPreToken()
 				break;
 			}
 			if (eatChar('*')) {
-				int startLine = std::ssize(this->program->lineLocs);
+				int startLine = std::ssize(this->host->program->lineLocs);
 				do {
 					c = readChar();
 					if (c < 0) {
@@ -2913,7 +2913,7 @@ std::shared_ptr<FuLiteralDouble> FuParser::parseDouble()
 		reportError("Invalid floating-point number");
 	std::shared_ptr<FuLiteralDouble> result = std::make_shared<FuLiteralDouble>();
 	result->loc = this->loc;
-	result->type = this->program->system->doubleType;
+	result->type = this->host->program->system->doubleType;
 	result->value = d;
 	nextToken();
 	return result;
@@ -3021,7 +3021,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			return newResult;
 		}
 	case FuToken::literalLong:
-		result = this->program->system->newLiteralLong(this->longValue, this->loc);
+		result = this->host->program->system->newLiteralLong(this->longValue, this->loc);
 		nextToken();
 		break;
 	case FuToken::literalDouble:
@@ -3032,14 +3032,14 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		nextToken();
 		break;
 	case FuToken::literalString:
-		result = this->program->system->newLiteralString(this->stringValue, this->loc);
+		result = this->host->program->system->newLiteralString(this->stringValue, this->loc);
 		nextToken();
 		break;
 	case FuToken::false_:
 		{
 			std::shared_ptr<FuLiteralFalse> futemp3 = std::make_shared<FuLiteralFalse>();
 			futemp3->loc = this->loc;
-			futemp3->type = this->program->system->boolType;
+			futemp3->type = this->host->program->system->boolType;
 			result = futemp3;
 			nextToken();
 			break;
@@ -3048,7 +3048,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		{
 			std::shared_ptr<FuLiteralTrue> futemp4 = std::make_shared<FuLiteralTrue>();
 			futemp4->loc = this->loc;
-			futemp4->type = this->program->system->boolType;
+			futemp4->type = this->host->program->system->boolType;
 			result = futemp4;
 			nextToken();
 			break;
@@ -3057,7 +3057,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		{
 			std::shared_ptr<FuLiteralNull> futemp5 = std::make_shared<FuLiteralNull>();
 			futemp5->loc = this->loc;
-			futemp5->type = this->program->system->nullType;
+			futemp5->type = this->host->program->system->nullType;
 			result = futemp5;
 			nextToken();
 			break;
@@ -3909,7 +3909,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 	klass->callType = callType;
 	klass->name = this->stringValue;
 	if (expect(FuToken::id))
-		addSymbol(this->program, klass);
+		addSymbol(this->host->program, klass);
 	if (eat(FuToken::colon)) {
 		klass->baseClassName = this->stringValue;
 		expect(FuToken::id);
@@ -3942,7 +3942,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			continue;
 		}
 		callType = parseCallType();
-		std::shared_ptr<FuExpr> type = eat(FuToken::void_) ? this->program->system->voidType : parseType();
+		std::shared_ptr<FuExpr> type = eat(FuToken::void_) ? this->host->program->system->voidType : parseType();
 		const FuCallExpr * call;
 		if (see(FuToken::leftBrace) && (call = dynamic_cast<const FuCallExpr *>(type.get()))) {
 			if (call->method->name != klass->name)
@@ -3955,7 +3955,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 				if (std::ssize(call->arguments) != 0)
 					reportError("Constructor parameters not supported");
 				if (klass->constructor != nullptr)
-					reportError(std::format("Duplicate constructor, already defined in line {}", this->program->getLine(klass->constructor->loc) + 1));
+					reportError(std::format("Duplicate constructor, already defined in line {}", this->host->program->getLine(klass->constructor->loc) + 1));
 			}
 			if (visibility == FuVisibility::private_)
 				visibility = FuVisibility::internal;
@@ -3964,7 +3964,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			futemp0->documentation = doc;
 			futemp0->visibility = visibility;
 			futemp0->parent = klass.get();
-			futemp0->type = this->program->system->voidType;
+			futemp0->type = this->host->program->system->voidType;
 			futemp0->name = klass->name;
 			futemp0->body = parseBlock();
 			klass->constructor = futemp0;
@@ -4001,7 +4001,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			reportError("Field cannot be public");
 		if (callType != FuCallType::normal)
 			reportError(std::format("Field cannot be {}", callTypeToString(callType)));
-		if (type == this->program->system->voidType)
+		if (type == this->host->program->system->voidType)
 			reportError("Field cannot be void");
 		std::shared_ptr<FuField> field = std::make_shared<FuField>();
 		field->loc = loc;
@@ -4020,14 +4020,14 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
 {
 	expect(FuToken::enum_);
 	bool flags = eat(FuToken::asterisk);
-	std::shared_ptr<FuEnum> enu = this->program->system->newEnum(flags);
+	std::shared_ptr<FuEnum> enu = this->host->program->system->newEnum(flags);
 	enu->filename = this->filename;
 	enu->loc = this->loc;
 	enu->documentation = doc;
 	enu->isPublic = isPublic;
 	enu->name = this->stringValue;
 	if (expect(FuToken::id))
-		addSymbol(this->program, enu);
+		addSymbol(this->host->program, enu);
 	expect(FuToken::leftBrace);
 	do {
 		std::shared_ptr<FuConst> konst = std::make_shared<FuConst>();
@@ -4067,7 +4067,7 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 			parseEnum(doc, isPublic);
 			break;
 		case FuToken::native:
-			this->program->topLevelNatives.push_back(parseNative()->content);
+			this->host->program->topLevelNatives.push_back(parseNative()->content);
 			break;
 		default:
 			reportError("Expected class or enum");

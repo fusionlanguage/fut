@@ -9,6 +9,7 @@ export const RegexOptions = {
 
 export class FuParserHost
 {
+	program;
 }
 
 export const FuToken = {
@@ -123,13 +124,12 @@ const FuPreState = {
 
 export class FuLexer
 {
-	program;
 	input;
 	#inputLength;
 	#nextOffset;
 	charOffset;
 	#nextChar;
-	#host;
+	host;
 	filename;
 	loc;
 	#tokenLoc;
@@ -145,7 +145,7 @@ export class FuLexer
 
 	setHost(host)
 	{
-		this.#host = host;
+		this.host = host;
 	}
 
 	addPreSymbol(symbol)
@@ -160,7 +160,7 @@ export class FuLexer
 		this.#inputLength = inputLength;
 		this.#nextOffset = 0;
 		this.loc = 0;
-		this.program.lineLocs.push(0);
+		this.host.program.lineLocs.push(0);
 		this.#fillNextChar();
 		if (this.#nextChar == 65279)
 			this.#fillNextChar();
@@ -169,9 +169,9 @@ export class FuLexer
 
 	reportError(message)
 	{
-		let line = this.program.lineLocs.length - 1;
-		let lineLoc = this.program.lineLocs.at(-1);
-		this.#host.reportError(this.filename, line, this.#tokenLoc - lineLoc, line, this.loc - lineLoc, message);
+		let line = this.host.program.lineLocs.length - 1;
+		let lineLoc = this.host.program.lineLocs.at(-1);
+		this.host.reportError(this.filename, line, this.#tokenLoc - lineLoc, line, this.loc - lineLoc, message);
 	}
 
 	#readByte()
@@ -241,7 +241,7 @@ export class FuLexer
 			this.loc++;
 			break;
 		case 10:
-			this.program.lineLocs.push(this.loc);
+			this.host.program.lineLocs.push(this.loc);
 			break;
 		default:
 			this.loc += c < 65536 ? 1 : 2;
@@ -495,7 +495,7 @@ export class FuLexer
 					return FuToken.END_OF_LINE;
 				break;
 			case 35:
-				if (this.#tokenLoc != this.program.lineLocs.at(-1))
+				if (this.#tokenLoc != this.host.program.lineLocs.at(-1))
 					return FuToken.HASH;
 				switch (this.peekChar()) {
 				case 105:
@@ -590,7 +590,7 @@ export class FuLexer
 					break;
 				}
 				if (this.#eatChar(42)) {
-					let startLine = this.program.lineLocs.length;
+					let startLine = this.host.program.lineLocs.length;
 					do {
 						c = this.readChar();
 						if (c < 0) {
@@ -3589,7 +3589,7 @@ export class FuParser extends FuLexer
 		let d;
 		if (!!isNaN(d = parseFloat(this.getLexeme().replaceAll("_", ""))))
 			this.reportError("Invalid floating-point number");
-		let result = Object.assign(new FuLiteralDouble(), { loc: this.loc, type: this.program.system.doubleType, value: d });
+		let result = Object.assign(new FuLiteralDouble(), { loc: this.loc, type: this.host.program.system.doubleType, value: d });
 		this.nextToken();
 		return result;
 	}
@@ -3673,7 +3673,7 @@ export class FuParser extends FuLexer
 			newResult.inner = result;
 			return newResult;
 		case FuToken.LITERAL_LONG:
-			result = this.program.system.newLiteralLong(this.longValue, this.loc);
+			result = this.host.program.system.newLiteralLong(this.longValue, this.loc);
 			this.nextToken();
 			break;
 		case FuToken.LITERAL_DOUBLE:
@@ -3684,19 +3684,19 @@ export class FuParser extends FuLexer
 			this.nextToken();
 			break;
 		case FuToken.LITERAL_STRING:
-			result = this.program.system.newLiteralString(this.stringValue, this.loc);
+			result = this.host.program.system.newLiteralString(this.stringValue, this.loc);
 			this.nextToken();
 			break;
 		case FuToken.FALSE:
-			result = Object.assign(new FuLiteralFalse(), { loc: this.loc, type: this.program.system.boolType });
+			result = Object.assign(new FuLiteralFalse(), { loc: this.loc, type: this.host.program.system.boolType });
 			this.nextToken();
 			break;
 		case FuToken.TRUE:
-			result = Object.assign(new FuLiteralTrue(), { loc: this.loc, type: this.program.system.boolType });
+			result = Object.assign(new FuLiteralTrue(), { loc: this.loc, type: this.host.program.system.boolType });
 			this.nextToken();
 			break;
 		case FuToken.NULL:
-			result = Object.assign(new FuLiteralNull(), { loc: this.loc, type: this.program.system.nullType });
+			result = Object.assign(new FuLiteralNull(), { loc: this.loc, type: this.host.program.system.nullType });
 			this.nextToken();
 			break;
 		case FuToken.INTERPOLATED_STRING:
@@ -4383,7 +4383,7 @@ export class FuParser extends FuLexer
 		this.expect(FuToken.CLASS);
 		let klass = Object.assign(new FuClass(), { filename: this.filename, loc: this.loc, documentation: doc, isPublic: isPublic, callType: callType, name: this.stringValue });
 		if (this.expect(FuToken.ID))
-			this.#addSymbol(this.program, klass);
+			this.#addSymbol(this.host.program, klass);
 		if (this.eat(FuToken.COLON)) {
 			klass.baseClassName = this.stringValue;
 			this.expect(FuToken.ID);
@@ -4416,7 +4416,7 @@ export class FuParser extends FuLexer
 				continue;
 			}
 			callType = this.#parseCallType();
-			let type = this.eat(FuToken.VOID) ? this.program.system.voidType : this.#parseType();
+			let type = this.eat(FuToken.VOID) ? this.host.program.system.voidType : this.#parseType();
 			let call;
 			if (this.see(FuToken.LEFT_BRACE) && (call = type) instanceof FuCallExpr) {
 				if (call.method.name != klass.name)
@@ -4429,11 +4429,11 @@ export class FuParser extends FuLexer
 					if (call.arguments_.length != 0)
 						this.reportError("Constructor parameters not supported");
 					if (klass.constructor_ != null)
-						this.reportError(`Duplicate constructor, already defined in line ${this.program.getLine(klass.constructor_.loc) + 1}`);
+						this.reportError(`Duplicate constructor, already defined in line ${this.host.program.getLine(klass.constructor_.loc) + 1}`);
 				}
 				if (visibility == FuVisibility.PRIVATE)
 					visibility = FuVisibility.INTERNAL;
-				klass.constructor_ = Object.assign(new FuMethodBase(), { loc: call.loc, documentation: doc, visibility: visibility, parent: klass, type: this.program.system.voidType, name: klass.name, body: this.#parseBlock() });
+				klass.constructor_ = Object.assign(new FuMethodBase(), { loc: call.loc, documentation: doc, visibility: visibility, parent: klass, type: this.host.program.system.voidType, name: klass.name, body: this.#parseBlock() });
 				klass.constructor_.parameters.parent = klass;
 				klass.constructor_.addThis(klass, true);
 				continue;
@@ -4461,7 +4461,7 @@ export class FuParser extends FuLexer
 				this.reportError("Field cannot be public");
 			if (callType != FuCallType.NORMAL)
 				this.reportError(`Field cannot be ${FuParser.#callTypeToString(callType)}`);
-			if (type == this.program.system.voidType)
+			if (type == this.host.program.system.voidType)
 				this.reportError("Field cannot be void");
 			let field = Object.assign(new FuField(), { loc: loc, documentation: doc, visibility: visibility, typeExpr: type, name: name, value: this.#parseInitializer() });
 			this.#addSymbol(klass, field);
@@ -4474,14 +4474,14 @@ export class FuParser extends FuLexer
 	{
 		this.expect(FuToken.ENUM);
 		let flags = this.eat(FuToken.ASTERISK);
-		let enu = this.program.system.newEnum(flags);
+		let enu = this.host.program.system.newEnum(flags);
 		enu.filename = this.filename;
 		enu.loc = this.loc;
 		enu.documentation = doc;
 		enu.isPublic = isPublic;
 		enu.name = this.stringValue;
 		if (this.expect(FuToken.ID))
-			this.#addSymbol(this.program, enu);
+			this.#addSymbol(this.host.program, enu);
 		this.expect(FuToken.LEFT_BRACE);
 		do {
 			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), loc: this.loc, name: this.stringValue, type: enu, visitStatus: FuVisitStatus.NOT_YET });
@@ -4515,7 +4515,7 @@ export class FuParser extends FuLexer
 				this.#parseEnum(doc, isPublic);
 				break;
 			case FuToken.NATIVE:
-				this.program.topLevelNatives.push(this.#parseNative().content);
+				this.host.program.topLevelNatives.push(this.#parseNative().content);
 				break;
 			default:
 				this.reportError("Expected class or enum");
