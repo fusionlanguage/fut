@@ -38,15 +38,15 @@ class VsCodeHost extends FuSemaHost
 		this.#diagnostics.length = 0;
 		const parser = new FuParser();
 		parser.setHost(this);
-		parser.program = new FuProgram();
-		parser.program.parent = this.#system;
-		parser.program.system = this.#system;
+		this.program = new FuProgram();
+		this.program.parent = this.#system;
+		this.program.system = this.#system;
 		const input = new TextEncoder().encode(document.getText());
 		parser.parse(document.fileName, input, input.length);
 		if (this.#diagnostics.length == 0) {
 			const sema = new FuSema();
 			sema.setHost(this);
-			sema.process(parser.program);
+			sema.process();
 		}
 		diagnosticCollection.set(document.uri, this.#diagnostics);
 	}

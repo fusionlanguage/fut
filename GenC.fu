@@ -47,7 +47,6 @@ public class GenC : GenCCpp
 	bool ConditionVarInScope;
 	protected FuClass CurrentClass;
 
-	protected override FuContainerType GetCurrentContainer() => this.CurrentClass;
 	protected override string GetTargetName() => "C";
 
 	protected override void WriteSelfDoc!(FuMethod method)

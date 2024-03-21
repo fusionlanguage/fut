@@ -31,9 +31,11 @@ using System.Reflection;
 namespace Fusion
 {
 
-class FileResourceSema : FuSema
+class FileGenHost : FuConsoleHost
 {
 	readonly List<string> ResourceDirs = new List<string>();
+	string Filename;
+	TextWriter CurrentFile;
 
 	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
 
@@ -46,11 +48,11 @@ class FileResourceSema : FuSema
 		}
 		if (File.Exists(name))
 			return File.ReadAllBytes(name).ToList();
-		ReportError(expr, $"File {name} not found");
+		ReportStatementError(expr, $"File '{name}' not found");
 		return new List<byte>();
 	}
 
-	protected override int GetResourceLength(string name, FuPrefixExpr expr)
+	internal override int GetResourceLength(string name, FuPrefixExpr expr)
 	{
 		if (!this.Program.Resources.TryGetValue(name, out List<byte> content)) {
 			content = ReadResource(name, expr);
@@ -58,12 +60,6 @@ class FileResourceSema : FuSema
 		}
 		return content.Count;
 	}
-}
-
-class FileGenHost : FuConsoleHost
-{
-	string Filename;
-	TextWriter CurrentFile;
 
 	public override TextWriter CreateFile(string directory, string filename)
 	{
@@ -108,7 +104,7 @@ public static class Fut
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static FuProgram ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FileResourceSema sema, FuConsoleHost host)
+	static FuProgram ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FuSema sema, FuConsoleHost host)
 	{
 		host.Program = new FuProgram { Parent = parent, System = system };
 		foreach (string file in files) {
@@ -117,7 +113,7 @@ public static class Fut
 		}
 		if (host.HasErrors)
 			return null;
-		sema.Process(host.Program);
+		sema.Process();
 		if (host.HasErrors)
 			return null;
 		return host.Program;
@@ -177,10 +173,10 @@ public static class Fut
 	public static int Main(string[] args)
 	{
 		CultureInfo.CurrentCulture = CultureInfo.InvariantCulture;
+		FileGenHost host = new FileGenHost();
 		FuParser parser = new FuParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
-		FileResourceSema sema = new FileResourceSema();
 		string lang = null;
 		string outputFile = null;
 		string namespace_ = "";
@@ -219,7 +215,7 @@ public static class Fut
 					referencedFiles.Add(args[++i]);
 					break;
 				case 'I':
-					sema.AddResourceDir(args[++i]);
+					host.AddResourceDir(args[++i]);
 					break;
 				default:
 					Console.Error.WriteLine($"fut: ERROR: Unknown option: {arg}");
@@ -236,7 +232,7 @@ public static class Fut
 			return 1;
 		}
 
-		FileGenHost host = new FileGenHost();
+		FuSema sema = new FuSema();
 		parser.SetHost(host);
 		sema.SetHost(host);
 		FuSystem system = FuSystem.New();

@@ -909,7 +909,7 @@ public class FuParser : FuLexer
 	void ParseClass!(FuCodeDoc# doc, bool isPublic, FuCallType callType)
 	{
 		Expect(FuToken.Class);
-		FuClass# klass = new FuClass { Filename = this.Filename, Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
+		FuClass# klass = new FuClass { Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 		if (Expect(FuToken.Id))
 			AddSymbol(this.Host.Program, klass);
 		if (Eat(FuToken.Colon)) {
@@ -1025,7 +1025,6 @@ public class FuParser : FuLexer
 		Expect(FuToken.Enum);
 		bool flags = Eat(FuToken.Asterisk);
 		FuEnum# enu = this.Host.Program.System.NewEnum(flags);
-		enu.Filename = this.Filename;
 		enu.Loc = this.Loc;
 		enu.Documentation = doc;
 		enu.IsPublic = isPublic;

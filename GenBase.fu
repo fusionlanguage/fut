@@ -47,17 +47,11 @@ public abstract class GenBase : FuVisitor
 		this.Host = host;
 	}
 
-	protected virtual FuContainerType GetCurrentContainer()
-	{
-		assert this.CurrentMethod.Parent is FuClass klass;
-		return klass;
-	}
-
 	protected abstract string GetTargetName();
 
 	void ReportError(FuStatement statement, string message)
 	{
-		this.Host.ReportError(GetCurrentContainer().Filename, statement.Loc, 0, statement.Loc, 0, message);
+		this.Host.ReportStatementError(statement, message);
 	}
 
 	protected void NotSupported(FuStatement statement, string feature)

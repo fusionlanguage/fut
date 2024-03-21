@@ -22,9 +22,10 @@ import fs from "fs";
 import path from "path";
 import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./libfut.js";
 
-class FileResourceSema extends FuSema
+class FileGenHost extends FuConsoleHost
 {
 	#resourceDirs = []
+	#currentFile;
 
 	addResourceDir(path)
 	{
@@ -44,7 +45,7 @@ class FileResourceSema extends FuSema
 			return fs.readFileSync(name);
 		}
 		catch {
-			this.reportError(expr, `File ${name} not found`);
+			this.reportStatementError(expr, `File '${name}' not found`);
 		}
 		return [];
 	}
@@ -57,11 +58,6 @@ class FileResourceSema extends FuSema
 		this.program.resources[name] = content;
 		return content.length;
 	}
-}
-
-class FileGenHost extends FuConsoleHost
-{
-	#currentFile;
 
 	createFile(directory, filename)
 	{
@@ -121,7 +117,7 @@ function parseAndResolve(parser, system, parent, files, sema, host)
 	}
 	if (host.hasErrors)
 		process.exit(1);
-	sema.process(host.program);
+	sema.process();
 	if (host.hasErrors)
 		process.exit(1);
 	return host.program;
@@ -211,10 +207,10 @@ function emitImplicitLang(program, namespace, outputFile, host)
 	process.exitCode = 1;
 }
 
+const host = new FileGenHost();
 const parser = new FuParser();
 const inputFiles = [];
 const referencedFiles = [];
-const sema = new FileResourceSema();
 let lang = null;
 let outputFile = null;
 let namespace = "";
@@ -253,7 +249,7 @@ for (let i = 2; i < process.argv.length; i++) {
 			referencedFiles.push(process.argv[++i]);
 			break;
 		case "-I":
-			sema.addResourceDir(process.argv[++i]);
+			host.addResourceDir(process.argv[++i]);
 			break;
 		default:
 			console.error(`fut: ERROR: Unknown option: ${arg}`);
@@ -270,7 +266,7 @@ if (outputFile == null || inputFiles.length == 0) {
 	process.exit(1);
 }
 
-const host = new FileGenHost();
+const sema = new FuSema();
 parser.setHost(host);
 sema.setHost(host);
 const system = FuSystem.new();

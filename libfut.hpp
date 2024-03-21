@@ -445,6 +445,7 @@ class FuStringType;
 class FuStringStorageType;
 class FuPrintableType;
 class FuSystem;
+class FuSourceFile;
 class FuProgram;
 class FuParser;
 class FuConsoleHost;
@@ -490,8 +491,7 @@ protected:
 	uint8_t const * input;
 	int charOffset;
 	FuParserHost * host;
-	std::string filename;
-	int loc;
+	int loc = 0;
 	int lexemeOffset;
 	FuToken currentToken;
 	int64_t longValue;
@@ -707,7 +707,6 @@ public:
 	FuScope() = default;
 	virtual ~FuScope() = default;
 	int count() const;
-	FuContainerType * getContainer();
 	bool contains(const FuSymbol * symbol) const;
 	std::shared_ptr<FuSymbol> tryLookup(std::string_view name, bool global) const;
 	void add(std::shared_ptr<FuSymbol> symbol);
@@ -1318,7 +1317,6 @@ protected:
 	FuContainerType() = default;
 public:
 	bool isPublic;
-	std::string filename;
 };
 
 class FuEnum : public FuContainerType
@@ -1505,6 +1503,15 @@ private:
 	void addMinMaxValue(FuIntegerType * target, int64_t min, int64_t max) const;
 };
 
+class FuSourceFile
+{
+public:
+	FuSourceFile() = default;
+public:
+	std::string filename;
+	int line;
+};
+
 class FuProgram : public FuScope
 {
 public:
@@ -1517,7 +1524,9 @@ public:
 	std::map<std::string, std::vector<uint8_t>> resources;
 	bool regexOptionsEnum = false;
 	std::vector<int> lineLocs;
+	std::vector<FuSourceFile> sourceFiles;
 	int getLine(int loc) const;
+	const FuSourceFile * getSourceFile(int line) const;
 };
 
 class FuParser : public FuLexer
@@ -1589,6 +1598,9 @@ public:
 	virtual ~FuSemaHost() = default;
 protected:
 	FuSemaHost() = default;
+public:
+	virtual int getResourceLength(std::string_view name, const FuPrefixExpr * expr);
+	void reportStatementError(const FuStatement * statement, std::string_view message);
 };
 
 class GenHost : public FuSemaHost
@@ -1615,13 +1627,8 @@ class FuSema
 {
 public:
 	FuSema();
-	virtual ~FuSema() = default;
 	void setHost(FuSemaHost * host);
-	void process(FuProgram * program);
-protected:
-	FuProgram * program;
-	void reportError(const FuStatement * statement, std::string_view message) const;
-	virtual int getResourceLength(std::string_view name, const FuPrefixExpr * expr);
+	void process();
 private:
 	FuSemaHost * host;
 	FuMethodBase * currentMethod = nullptr;
@@ -1629,7 +1636,7 @@ private:
 	std::unordered_set<const FuMethod *> currentPureMethods;
 	std::unordered_map<const FuVar *, std::shared_ptr<FuExpr>> currentPureArguments;
 	std::shared_ptr<FuType> poison = std::make_shared<FuType>();
-	const FuContainerType * getCurrentContainer() const;
+	void reportError(const FuStatement * statement, std::string_view message) const;
 	std::shared_ptr<FuType> poisonError(const FuStatement * statement, std::string_view message) const;
 	void resolveBase(FuClass * klass);
 	void checkBaseCycle(FuClass * klass);
@@ -1638,6 +1645,7 @@ private:
 	bool coercePermanent(const FuExpr * expr, const FuType * type) const;
 	std::shared_ptr<FuExpr> visitInterpolatedString(std::shared_ptr<FuInterpolatedString> expr);
 	std::shared_ptr<FuExpr> lookup(std::shared_ptr<FuSymbolReference> expr, const FuScope * scope);
+	FuContainerType * getCurrentContainer() const;
 	std::shared_ptr<FuExpr> visitSymbolReference(std::shared_ptr<FuSymbolReference> expr);
 	static std::shared_ptr<FuRangeType> union_(std::shared_ptr<FuRangeType> left, std::shared_ptr<FuRangeType> right);
 	std::shared_ptr<FuType> getIntegerType(const FuExpr * left, const FuExpr * right) const;
@@ -1732,7 +1740,6 @@ protected:
 	std::unordered_set<const FuClass *> writtenClasses;
 	std::vector<const FuSwitch *> switchesWithGoto;
 	std::vector<const FuExpr *> currentTemporaries;
-	virtual const FuContainerType * getCurrentContainer() const;
 	virtual std::string_view getTargetName() const = 0;
 	void notSupported(const FuStatement * statement, std::string_view feature) const;
 	void notYet(const FuStatement * statement, std::string_view feature) const;
@@ -2050,7 +2057,6 @@ public:
 	void writeProgram(const FuProgram * program) override;
 protected:
 	const FuClass * currentClass;
-	const FuContainerType * getCurrentContainer() const override;
 	std::string_view getTargetName() const override;
 	void writeSelfDoc(const FuMethod * method) override;
 	void writeReturnDoc(const FuMethod * method) override;

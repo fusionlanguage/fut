@@ -43,12 +43,13 @@ void FuLexer::addPreSymbol(std::string_view symbol)
 
 void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLength)
 {
-	this->filename = filename;
 	this->input = input;
 	this->inputLength = inputLength;
 	this->nextOffset = 0;
-	this->loc = 0;
-	this->host->program->lineLocs.push_back(0);
+	this->host->program->sourceFiles.emplace_back();
+	this->host->program->sourceFiles.back().filename = filename;
+	this->host->program->sourceFiles.back().line = std::ssize(this->host->program->lineLocs);
+	this->host->program->lineLocs.push_back(this->loc);
 	fillNextChar();
 	if (this->nextChar == 65279)
 		fillNextChar();
@@ -57,9 +58,10 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 
 void FuLexer::reportError(std::string_view message) const
 {
-	int line = std::ssize(this->host->program->lineLocs) - 1;
+	const FuSourceFile * file = &static_cast<const FuSourceFile &>(this->host->program->sourceFiles.back());
+	int line = std::ssize(this->host->program->lineLocs) - file->line - 1;
 	int lineLoc = this->host->program->lineLocs.back();
-	this->host->reportError(this->filename, line, this->tokenLoc - lineLoc, line, this->loc - lineLoc, message);
+	this->host->reportError(file->filename, line, this->tokenLoc - lineLoc, line, this->loc - lineLoc, message);
 }
 
 int FuLexer::readByte()
@@ -1168,15 +1170,6 @@ std::string FuSymbol::toString() const
 int FuScope::count() const
 {
 	return std::ssize(this->dict);
-}
-
-FuContainerType * FuScope::getContainer()
-{
-	for (FuScope * scope = this; scope != nullptr; scope = scope->parent) {
-		if (FuContainerType *container = dynamic_cast<FuContainerType *>(scope))
-			return container;
-	}
-	std::abort();
 }
 
 bool FuScope::contains(const FuSymbol * symbol) const
@@ -2788,12 +2781,26 @@ int FuProgram::getLine(int loc) const
 	int r = std::ssize(this->lineLocs) - 1;
 	while (l < r) {
 		int m = (l + r + 1) >> 1;
-		if (this->lineLocs[m] > loc)
+		if (loc < this->lineLocs[m])
 			r = m - 1;
 		else
 			l = m;
 	}
 	return l;
+}
+
+const FuSourceFile * FuProgram::getSourceFile(int line) const
+{
+	int l = 0;
+	int r = std::ssize(this->sourceFiles) - 1;
+	while (l < r) {
+		int m = (l + r + 1) >> 1;
+		if (line < this->sourceFiles[m].line)
+			r = m - 1;
+		else
+			l = m;
+	}
+	return &this->sourceFiles[l];
 }
 
 bool FuParser::docParseLine(FuDocPara * para)
@@ -3902,7 +3909,6 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 {
 	expect(FuToken::class_);
 	std::shared_ptr<FuClass> klass = std::make_shared<FuClass>();
-	klass->filename = this->filename;
 	klass->loc = this->loc;
 	klass->documentation = doc;
 	klass->isPublic = isPublic;
@@ -4021,7 +4027,6 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
 	expect(FuToken::enum_);
 	bool flags = eat(FuToken::asterisk);
 	std::shared_ptr<FuEnum> enu = this->host->program->system->newEnum(flags);
-	enu->filename = this->filename;
 	enu->loc = this->loc;
 	enu->documentation = doc;
 	enu->isPublic = isPublic;
@@ -4082,6 +4087,20 @@ void FuConsoleHost::reportError(std::string_view filename, int startLine, int st
 	this->hasErrors = true;
 	std::cerr << filename << "(" << (startLine + 1) << "): ERROR: " << message << '\n';
 }
+
+int FuSemaHost::getResourceLength(std::string_view name, const FuPrefixExpr * expr)
+{
+	return 0;
+}
+
+void FuSemaHost::reportStatementError(const FuStatement * statement, std::string_view message)
+{
+	int line = this->program->getLine(statement->loc);
+	int column = statement->loc - this->program->lineLocs[line];
+	const FuSourceFile * file = this->program->getSourceFile(line);
+	line -= file->line;
+	reportError(file->filename, line, column, line, column, message);
+}
 FuSema::FuSema()
 {
 	this->poison->name = "poison";
@@ -4092,16 +4111,9 @@ void FuSema::setHost(FuSemaHost * host)
 	this->host = host;
 }
 
-const FuContainerType * FuSema::getCurrentContainer() const
-{
-	return this->currentScope->getContainer();
-}
-
 void FuSema::reportError(const FuStatement * statement, std::string_view message) const
 {
-	int line = this->program->getLine(statement->loc);
-	int column = statement->loc - this->program->lineLocs[line];
-	this->host->reportError(getCurrentContainer()->filename, line, column, line, column, message);
+	this->host->reportStatementError(statement, message);
 }
 
 std::shared_ptr<FuType> FuSema::poisonError(const FuStatement * statement, std::string_view message) const
@@ -4114,7 +4126,7 @@ void FuSema::resolveBase(FuClass * klass)
 {
 	if (klass->hasBaseClass()) {
 		this->currentScope = klass;
-		if (FuClass *baseClass = dynamic_cast<FuClass *>(this->program->tryLookup(klass->baseClassName, true).get())) {
+		if (FuClass *baseClass = dynamic_cast<FuClass *>(this->host->program->tryLookup(klass->baseClassName, true).get())) {
 			if (klass->isPublic && !baseClass->isPublic)
 				reportError(klass, "Public class cannot derive from an internal class");
 			baseClass->hasSubclasses = true;
@@ -4123,7 +4135,7 @@ void FuSema::resolveBase(FuClass * klass)
 		else
 			reportError(klass, std::format("Base class '{}' not found", klass->baseClassName));
 	}
-	this->program->classes.push_back(klass);
+	this->host->program->classes.push_back(klass);
 }
 
 void FuSema::checkBaseCycle(FuClass * klass)
@@ -4191,7 +4203,7 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 		const FuInterpolatedPart * part = &expr->parts[partsIndex];
 		s += part->prefix;
 		std::shared_ptr<FuExpr> arg = visitExpr(part->argument);
-		if (coerce(arg.get(), this->program->system->printableType.get())) {
+		if (coerce(arg.get(), this->host->program->system->printableType.get())) {
 			if (dynamic_cast<const FuIntegerType *>(arg->type.get())) {
 				switch (part->format) {
 				case ' ':
@@ -4251,8 +4263,8 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 	}
 	s += expr->suffix;
 	if (partsCount == 0)
-		return this->program->system->newLiteralString(s, expr->loc);
-	expr->type = this->program->system->stringStorageType;
+		return this->host->program->system->newLiteralString(s, expr->loc);
+	expr->type = this->host->program->system->stringStorageType;
 	expr->parts.erase(expr->parts.begin() + partsCount, expr->parts.begin() + partsCount + (std::ssize(expr->parts) - partsCount));
 	expr->suffix = s;
 	return expr;
@@ -4279,6 +4291,15 @@ std::shared_ptr<FuExpr> FuSema::lookup(std::shared_ptr<FuSymbolReference> expr, 
 	return expr;
 }
 
+FuContainerType * FuSema::getCurrentContainer() const
+{
+	for (FuScope * scope = this->currentScope; scope != nullptr; scope = scope->parent) {
+		if (FuContainerType *container = dynamic_cast<FuContainerType *>(scope))
+			return container;
+	}
+	std::abort();
+}
+
 std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolReference> expr)
 {
 	if (expr->left == nullptr) {
@@ -4298,7 +4319,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 					return this->currentPureArguments.find(v)->second;
 			}
 			else if (symbol->symbol->id == FuId::regexOptionsEnum)
-				this->program->regexOptionsEnum = true;
+				this->host->program->regexOptionsEnum = true;
 		}
 		return resolved;
 	}
@@ -4408,7 +4429,7 @@ std::shared_ptr<FuRangeType> FuSema::union_(std::shared_ptr<FuRangeType> left, s
 
 std::shared_ptr<FuType> FuSema::getIntegerType(const FuExpr * left, const FuExpr * right) const
 {
-	std::shared_ptr<FuType> type = this->program->system->promoteIntegerTypes(left->type.get(), right->type.get());
+	std::shared_ptr<FuType> type = this->host->program->system->promoteIntegerTypes(left->type.get(), right->type.get());
 	coerce(left, type.get());
 	coerce(right, type.get());
 	return type;
@@ -4416,7 +4437,7 @@ std::shared_ptr<FuType> FuSema::getIntegerType(const FuExpr * left, const FuExpr
 
 std::shared_ptr<FuIntegerType> FuSema::getShiftType(const FuExpr * left, const FuExpr * right) const
 {
-	std::shared_ptr<FuIntegerType> intType = this->program->system->intType;
+	std::shared_ptr<FuIntegerType> intType = this->host->program->system->intType;
 	coerce(right, intType.get());
 	if (left->type->id == FuId::longType) {
 		std::shared_ptr<FuIntegerType> longType = std::static_pointer_cast<FuIntegerType>(left->type);
@@ -4428,7 +4449,7 @@ std::shared_ptr<FuIntegerType> FuSema::getShiftType(const FuExpr * left, const F
 
 std::shared_ptr<FuType> FuSema::getNumericType(const FuExpr * left, const FuExpr * right) const
 {
-	std::shared_ptr<FuType> type = this->program->system->promoteNumericTypes(left->type, right->type);
+	std::shared_ptr<FuType> type = this->host->program->system->promoteNumericTypes(left->type, right->type);
 	coerce(left, type.get());
 	coerce(right, type.get());
 	return type;
@@ -4594,20 +4615,20 @@ std::shared_ptr<FuLiteral> FuSema::toLiteralBool(const FuExpr * expr, bool value
 {
 	std::shared_ptr<FuLiteral> result = value ? std::static_pointer_cast<FuLiteral>(std::make_shared<FuLiteralTrue>()) : std::static_pointer_cast<FuLiteral>(std::make_shared<FuLiteralFalse>());
 	result->loc = expr->loc;
-	result->type = this->program->system->boolType;
+	result->type = this->host->program->system->boolType;
 	return result;
 }
 
 std::shared_ptr<FuLiteralLong> FuSema::toLiteralLong(const FuExpr * expr, int64_t value) const
 {
-	return this->program->system->newLiteralLong(value, expr->loc);
+	return this->host->program->system->newLiteralLong(value, expr->loc);
 }
 
 std::shared_ptr<FuLiteralDouble> FuSema::toLiteralDouble(const FuExpr * expr, double value) const
 {
 	std::shared_ptr<FuLiteralDouble> futemp0 = std::make_shared<FuLiteralDouble>();
 	futemp0->loc = expr->loc;
-	futemp0->type = this->program->system->doubleType;
+	futemp0->type = this->host->program->system->doubleType;
 	futemp0->value = value;
 	return futemp0;
 }
@@ -4666,7 +4687,7 @@ std::shared_ptr<FuInterpolatedString> FuSema::concatenate(const FuInterpolatedSt
 {
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
 	result->loc = left->loc;
-	result->type = this->program->system->stringStorageType;
+	result->type = this->host->program->system->stringStorageType;
 	result->parts.insert(result->parts.end(), left->parts.begin(), left->parts.end());
 	if (std::ssize(right->parts) == 0)
 		result->suffix = left->suffix + right->suffix;
@@ -4685,7 +4706,7 @@ std::shared_ptr<FuInterpolatedString> FuSema::toInterpolatedString(std::shared_p
 		return interpolated;
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
 	result->loc = expr->loc;
-	result->type = this->program->system->stringStorageType;
+	result->type = this->host->program->system->stringStorageType;
 	if (const FuLiteral *literal = dynamic_cast<const FuLiteral *>(expr.get()))
 		result->suffix = literal->getLiteralString();
 	else {
@@ -4700,7 +4721,7 @@ void FuSema::checkComparison(const FuExpr * left, const FuExpr * right) const
 	if (dynamic_cast<const FuEnum *>(left->type.get()))
 		coerce(right, left->type.get());
 	else {
-		const FuType * doubleType = this->program->system->doubleType.get();
+		const FuType * doubleType = this->host->program->system->doubleType.get();
 		coerce(left, doubleType);
 		coerce(right, doubleType);
 	}
@@ -4741,7 +4762,7 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 	if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type.get())) {
 		std::shared_ptr<FuDynamicPtrType> futemp0 = std::make_shared<FuDynamicPtrType>();
 		futemp0->loc = expr->loc;
-		futemp0->class_ = this->program->system->arrayPtrClass.get();
+		futemp0->class_ = this->host->program->system->arrayPtrClass.get();
 		futemp0->typeArg0 = array->getElementType();
 		expr->type = futemp0;
 		expr->inner = array->lengthExpr;
@@ -4761,11 +4782,6 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 		return poisonError(expr.get(), "Invalid argument to new");
 }
 
-int FuSema::getResourceLength(std::string_view name, const FuPrefixExpr * expr)
-{
-	return 0;
-}
-
 std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> expr)
 {
 	std::shared_ptr<FuExpr> inner;
@@ -4775,7 +4791,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 	case FuToken::decrement:
 		inner = visitExpr(expr->inner);
 		checkLValue(inner.get());
-		coerce(inner.get(), this->program->system->doubleType.get());
+		coerce(inner.get(), this->host->program->system->doubleType.get());
 		if (const FuRangeType *xcrementRange = dynamic_cast<const FuRangeType *>(inner->type.get())) {
 			int delta = expr->op == FuToken::increment ? 1 : -1;
 			type = FuRangeType::new_(xcrementRange->min + delta, xcrementRange->max + delta);
@@ -4787,7 +4803,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		return expr;
 	case FuToken::minus:
 		inner = visitExpr(expr->inner);
-		coerce(inner.get(), this->program->system->doubleType.get());
+		coerce(inner.get(), this->host->program->system->doubleType.get());
 		if (const FuRangeType *negRange = dynamic_cast<const FuRangeType *>(inner->type.get())) {
 			if (negRange->min == negRange->max)
 				return toLiteralLong(expr.get(), -negRange->min);
@@ -4805,7 +4821,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		if (dynamic_cast<const FuEnumFlags *>(inner->type.get()))
 			type = inner->type;
 		else {
-			coerce(inner.get(), this->program->system->intType.get());
+			coerce(inner.get(), this->host->program->system->intType.get());
 			if (const FuRangeType *notRange = dynamic_cast<const FuRangeType *>(inner->type.get()))
 				type = FuRangeType::new_(~notRange->max, ~notRange->min);
 			else
@@ -4819,7 +4835,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 			futemp0->loc = expr->loc;
 			futemp0->op = FuToken::exclamationMark;
 			futemp0->inner = inner;
-			futemp0->type = this->program->system->boolType;
+			futemp0->type = this->host->program->system->boolType;
 			return futemp0;
 		}
 	case FuToken::new_:
@@ -4831,9 +4847,9 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 				return poisonError(expr.get(), "Resource name must be a string");
 			inner = resourceName;
 			std::shared_ptr<FuArrayStorageType> futemp1 = std::make_shared<FuArrayStorageType>();
-			futemp1->class_ = this->program->system->arrayStorageClass.get();
-			futemp1->typeArg0 = this->program->system->byteType;
-			futemp1->length = getResourceLength(resourceName->value, expr.get());
+			futemp1->class_ = this->host->program->system->arrayStorageClass.get();
+			futemp1->typeArg0 = this->host->program->system->byteType;
+			futemp1->length = this->host->getResourceLength(resourceName->value, expr.get());
 			type = futemp1;
 			break;
 		}
@@ -4855,7 +4871,7 @@ std::shared_ptr<FuExpr> FuSema::visitPostfixExpr(std::shared_ptr<FuPostfixExpr> 
 	case FuToken::increment:
 	case FuToken::decrement:
 		checkLValue(expr->inner.get());
-		coerce(expr->inner.get(), this->program->system->doubleType.get());
+		coerce(expr->inner.get(), this->host->program->system->doubleType.get());
 		expr->type = expr->inner->type;
 		return expr;
 	default:
@@ -4920,7 +4936,7 @@ std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::
 	futemp0->left = left;
 	futemp0->op = expr->op;
 	futemp0->right = right;
-	futemp0->type = this->program->system->boolType;
+	futemp0->type = this->host->program->system->boolType;
 	return futemp0;
 }
 
@@ -4961,7 +4977,7 @@ std::shared_ptr<FuExpr> FuSema::resolveIs(std::shared_ptr<FuBinaryExpr> expr, st
 	else
 		return poisonError(expr.get(), "Right hand side of the 'is' operator must be a class name");
 	expr->left = left;
-	expr->type = this->program->system->boolType;
+	expr->type = this->host->program->system->boolType;
 	return expr;
 }
 
@@ -4980,7 +4996,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 				return poisonError(expr.get(), "Cannot index this object");
 			switch (klass->class_->id) {
 			case FuId::stringClass:
-				coerce(right.get(), this->program->system->intType.get());
+				coerce(right.get(), this->host->program->system->intType.get());
 				{
 					const FuRangeType * stringIndexRange;
 					if ((stringIndexRange = dynamic_cast<const FuRangeType *>(right->type.get())) && stringIndexRange->max < 0)
@@ -4997,13 +5013,13 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 							}
 						}
 					}
-					type = this->program->system->charType;
+					type = this->host->program->system->charType;
 					break;
 				}
 			case FuId::arrayPtrClass:
 			case FuId::arrayStorageClass:
 			case FuId::listClass:
-				coerce(right.get(), this->program->system->intType.get());
+				coerce(right.get(), this->host->program->system->intType.get());
 				if (const FuRangeType *indexRange = dynamic_cast<const FuRangeType *>(right->type.get())) {
 					if (indexRange->max < 0)
 						reportError(expr.get(), "Negative index");
@@ -5034,14 +5050,14 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 				type = FuRangeType::new_(saturatedAdd(leftAdd->min, rightAdd->min), saturatedAdd(leftAdd->max, rightAdd->max));
 			}
 			else if (dynamic_cast<const FuStringType *>(left->type.get())) {
-				coerce(right.get(), this->program->system->stringPtrType.get());
+				coerce(right.get(), this->host->program->system->stringPtrType.get());
 				const FuLiteral * leftLiteral;
 				const FuLiteral * rightLiteral;
 				if ((leftLiteral = dynamic_cast<const FuLiteral *>(left.get())) && (rightLiteral = dynamic_cast<const FuLiteral *>(right.get())))
-					return this->program->system->newLiteralString(leftLiteral->getLiteralString() + rightLiteral->getLiteralString(), expr->loc);
+					return this->host->program->system->newLiteralString(leftLiteral->getLiteralString() + rightLiteral->getLiteralString(), expr->loc);
 				if (dynamic_cast<const FuInterpolatedString *>(left.get()) || dynamic_cast<const FuInterpolatedString *>(right.get()))
 					return concatenate(toInterpolatedString(left).get(), toInterpolatedString(right).get());
-				type = this->program->system->stringStorageType;
+				type = this->host->program->system->stringStorageType;
 			}
 			else
 				type = getNumericType(left.get(), right.get());
@@ -5145,7 +5161,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			}
 			else
 				checkComparison(left.get(), right.get());
-			type = this->program->system->boolType;
+			type = this->host->program->system->boolType;
 			break;
 		}
 	case FuToken::lessOrEqual:
@@ -5160,7 +5176,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			}
 			else
 				checkComparison(left.get(), right.get());
-			type = this->program->system->boolType;
+			type = this->host->program->system->boolType;
 			break;
 		}
 	case FuToken::greater:
@@ -5175,7 +5191,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			}
 			else
 				checkComparison(left.get(), right.get());
-			type = this->program->system->boolType;
+			type = this->host->program->system->boolType;
 			break;
 		}
 	case FuToken::greaterOrEqual:
@@ -5190,26 +5206,26 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			}
 			else
 				checkComparison(left.get(), right.get());
-			type = this->program->system->boolType;
+			type = this->host->program->system->boolType;
 			break;
 		}
 	case FuToken::condAnd:
-		coerce(left.get(), this->program->system->boolType.get());
-		coerce(right.get(), this->program->system->boolType.get());
+		coerce(left.get(), this->host->program->system->boolType.get());
+		coerce(right.get(), this->host->program->system->boolType.get());
 		if (dynamic_cast<const FuLiteralTrue *>(left.get()))
 			return right;
 		if (dynamic_cast<const FuLiteralFalse *>(left.get()) || dynamic_cast<const FuLiteralTrue *>(right.get()))
 			return left;
-		type = this->program->system->boolType;
+		type = this->host->program->system->boolType;
 		break;
 	case FuToken::condOr:
-		coerce(left.get(), this->program->system->boolType.get());
-		coerce(right.get(), this->program->system->boolType.get());
+		coerce(left.get(), this->host->program->system->boolType.get());
+		coerce(right.get(), this->host->program->system->boolType.get());
 		if (dynamic_cast<const FuLiteralTrue *>(left.get()) || dynamic_cast<const FuLiteralFalse *>(right.get()))
 			return left;
 		if (dynamic_cast<const FuLiteralFalse *>(left.get()))
 			return right;
-		type = this->program->system->boolType;
+		type = this->host->program->system->boolType;
 		break;
 	case FuToken::assign:
 		checkLValue(left.get());
@@ -5221,9 +5237,9 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	case FuToken::addAssign:
 		checkLValue(left.get());
 		if (left->type->id == FuId::stringStorageType)
-			coerce(right.get(), this->program->system->stringPtrType.get());
+			coerce(right.get(), this->host->program->system->stringPtrType.get());
 		else {
-			coerce(left.get(), this->program->system->doubleType.get());
+			coerce(left.get(), this->host->program->system->doubleType.get());
 			coerce(right.get(), left->type.get());
 		}
 		expr->left = left;
@@ -5234,7 +5250,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	case FuToken::mulAssign:
 	case FuToken::divAssign:
 		checkLValue(left.get());
-		coerce(left.get(), this->program->system->doubleType.get());
+		coerce(left.get(), this->host->program->system->doubleType.get());
 		coerce(right.get(), left->type.get());
 		expr->left = left;
 		expr->right = right;
@@ -5244,8 +5260,8 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	case FuToken::shiftLeftAssign:
 	case FuToken::shiftRightAssign:
 		checkLValue(left.get());
-		coerce(left.get(), this->program->system->intType.get());
-		coerce(right.get(), this->program->system->intType.get());
+		coerce(left.get(), this->host->program->system->intType.get());
+		coerce(right.get(), this->host->program->system->intType.get());
 		expr->left = left;
 		expr->right = right;
 		expr->type = left->type;
@@ -5255,8 +5271,8 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	case FuToken::xorAssign:
 		checkLValue(left.get());
 		if (!isEnumOp(left.get(), right.get())) {
-			coerce(left.get(), this->program->system->intType.get());
-			coerce(right.get(), this->program->system->intType.get());
+			coerce(left.get(), this->host->program->system->intType.get());
+			coerce(right.get(), this->host->program->system->intType.get());
 		}
 		expr->left = left;
 		expr->right = right;
@@ -5284,10 +5300,10 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 std::shared_ptr<FuType> FuSema::tryGetPtr(std::shared_ptr<FuType> type, bool nullable) const
 {
 	if (type->id == FuId::stringStorageType)
-		return nullable ? this->program->system->stringNullablePtrType : this->program->system->stringPtrType;
+		return nullable ? this->host->program->system->stringNullablePtrType : this->host->program->system->stringPtrType;
 	if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(type.get())) {
 		std::shared_ptr<FuReadWriteClassType> futemp0 = std::make_shared<FuReadWriteClassType>();
-		futemp0->class_ = storage->class_->id == FuId::arrayStorageClass ? this->program->system->arrayPtrClass.get() : storage->class_;
+		futemp0->class_ = storage->class_->id == FuId::arrayStorageClass ? this->host->program->system->arrayPtrClass.get() : storage->class_;
 		futemp0->nullable = nullable;
 		futemp0->typeArg0 = storage->typeArg0;
 		futemp0->typeArg1 = storage->typeArg1;
@@ -5490,7 +5506,8 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			openScope(lambda);
 			lambda->body = visitExpr(lambda->body);
 			closeScope();
-			coerce(lambda->body.get(), this->program->system->boolType.get());
+			coerce(lambda->body.get(), this->host->program->system->boolType.get());
+			coerce(lambda->body.get(), this->host->program->system->boolType.get());
 		}
 		else
 			coerce(arg, type.get());
@@ -5637,7 +5654,7 @@ std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr)
 std::shared_ptr<FuExpr> FuSema::resolveBool(std::shared_ptr<FuExpr> expr)
 {
 	expr = visitExpr(expr);
-	coerce(expr.get(), this->program->system->boolType.get());
+	coerce(expr.get(), this->host->program->system->boolType.get());
 	return expr;
 }
 
@@ -5691,7 +5708,7 @@ bool FuSema::expectNoPtrModifier(const FuExpr * expr, FuToken ptrModifier, bool 
 std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModifier, bool nullable)
 {
 	if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
-		if (std::shared_ptr<FuType>type = std::dynamic_pointer_cast<FuType>(this->program->tryLookup(symbol->name, true))) {
+		if (std::shared_ptr<FuType>type = std::dynamic_pointer_cast<FuType>(this->host->program->tryLookup(symbol->name, true))) {
 			if (const FuClass *klass = dynamic_cast<const FuClass *>(type.get())) {
 				if (klass->id == FuId::matchClass && ptrModifier != FuToken::endOfFile)
 					reportError(expr, "Read-write references to the built-in class Match are not supported");
@@ -5707,7 +5724,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 			else if (symbol->left != nullptr)
 				return poisonError(expr, "Invalid type");
 			if (type->id == FuId::stringPtrType && nullable) {
-				type = this->program->system->stringNullablePtrType;
+				type = this->host->program->system->stringNullablePtrType;
 				nullable = false;
 			}
 			return expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this->poison;
@@ -5722,7 +5739,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 		if (const FuAggregateInitializer *typeArgExprs2 = dynamic_cast<const FuAggregateInitializer *>(call->method->left.get())) {
 			std::shared_ptr<FuStorageType> storage = std::make_shared<FuStorageType>();
 			storage->loc = call->loc;
-			if (const FuClass *klass = dynamic_cast<const FuClass *>(this->program->tryLookup(call->method->name, true).get())) {
+			if (const FuClass *klass = dynamic_cast<const FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
 				fillGenericClass(storage.get(), klass, typeArgExprs2);
 				return storage;
 			}
@@ -5731,8 +5748,8 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 		else if (call->method->left != nullptr)
 			return poisonError(expr, "Invalid type");
 		if (call->method->name == "string")
-			return this->program->system->stringStorageType;
-		if (const FuClass *klass2 = dynamic_cast<const FuClass *>(this->program->tryLookup(call->method->name, true).get())) {
+			return this->host->program->system->stringStorageType;
+		if (const FuClass *klass2 = dynamic_cast<const FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
 			std::shared_ptr<FuStorageType> futemp0 = std::make_shared<FuStorageType>();
 			futemp0->class_ = klass2;
 			return futemp0;
@@ -5777,11 +5794,11 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 					return this->poison;
 				std::shared_ptr<FuExpr> lengthExpr = visitExpr(binary->right);
 				std::shared_ptr<FuArrayStorageType> arrayStorage = std::make_shared<FuArrayStorageType>();
-				arrayStorage->class_ = this->program->system->arrayStorageClass.get();
+				arrayStorage->class_ = this->host->program->system->arrayStorageClass.get();
 				arrayStorage->typeArg0 = outerArray;
 				arrayStorage->lengthExpr = lengthExpr;
 				arrayStorage->length = 0;
-				if (coerce(lengthExpr.get(), this->program->system->intType.get()) && (!dynamic || binary->left->isIndexing())) {
+				if (coerce(lengthExpr.get(), this->host->program->system->intType.get()) && (!dynamic || binary->left->isIndexing())) {
 					if (const FuLiteralLong *literal = dynamic_cast<const FuLiteralLong *>(lengthExpr.get())) {
 						int64_t length = literal->value;
 						if (length < 0)
@@ -5798,7 +5815,7 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 			}
 			else {
 				std::shared_ptr<FuType> elementType = outerArray;
-				outerArray = createClassPtr(this->program->system->arrayPtrClass.get(), ptrModifier, nullable);
+				outerArray = createClassPtr(this->host->program->system->arrayPtrClass.get(), ptrModifier, nullable);
 				outerArray->typeArg0 = elementType;
 			}
 			if (innerArray == nullptr)
@@ -5851,7 +5868,7 @@ bool FuSema::resolveStatements(const std::vector<std::shared_ptr<FuStatement>> *
 			resolveConst(konst.get());
 			this->currentScope->add(konst);
 			if (dynamic_cast<const FuArrayStorageType *>(konst->type.get())) {
-				FuClass * klass = static_cast<FuClass *>(this->currentScope->getContainer());
+				FuClass * klass = static_cast<FuClass *>(getCurrentContainer());
 				klass->constArrays.push_back(konst.get());
 			}
 		}
@@ -5964,7 +5981,7 @@ void FuSema::visitForeach(FuForeach * statement)
 	if (const FuClassType *klass = dynamic_cast<const FuClassType *>(statement->collection->type.get())) {
 		switch (klass->class_->id) {
 		case FuId::stringClass:
-			if (statement->count() != 1 || !element->type->isAssignableFrom(this->program->system->intType.get()))
+			if (statement->count() != 1 || !element->type->isAssignableFrom(this->host->program->system->intType.get()))
 				reportError(statement, "Expected 'int' iterator variable");
 			break;
 		case FuId::arrayStorageClass:
@@ -6017,7 +6034,7 @@ void FuSema::visitIf(FuIf * statement)
 void FuSema::visitLock(FuLock * statement)
 {
 	statement->lock = visitExpr(statement->lock);
-	coerce(statement->lock.get(), this->program->system->lockPtrType.get());
+	coerce(statement->lock.get(), this->host->program->system->lockPtrType.get());
 	visitStatement(statement->body);
 }
 
@@ -6222,7 +6239,7 @@ void FuSema::resolveConst(FuConst * konst)
 				reportError(konst, "Invalid constant type");
 			else {
 				std::shared_ptr<FuArrayStorageType> futemp0 = std::make_shared<FuArrayStorageType>();
-				futemp0->class_ = this->program->system->arrayStorageClass.get();
+				futemp0->class_ = this->host->program->system->arrayStorageClass.get();
 				futemp0->typeArg0 = elementType;
 				futemp0->length = std::ssize(coll->items);
 				konst->type = futemp0;
@@ -6288,8 +6305,8 @@ void FuSema::resolveTypes(FuClass * klass)
 			}
 		}
 		else if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
-			if (method->typeExpr == this->program->system->voidType)
-				method->type = this->program->system->voidType;
+			if (method->typeExpr == this->host->program->system->voidType)
+				method->type = this->host->program->system->voidType;
 			else
 				resolveType(method);
 			for (FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
@@ -6315,7 +6332,7 @@ void FuSema::resolveTypes(FuClass * klass)
 							const FuType * argsElement = argsType->getElementType().get();
 							if (argsElement->id == FuId::stringPtrType && !argsElement->nullable && args->value == nullptr) {
 								argsType->id = FuId::mainArgsType;
-								argsType->class_ = this->program->system->arrayStorageClass.get();
+								argsType->class_ = this->host->program->system->arrayStorageClass.get();
 								break;
 							}
 						}
@@ -6326,11 +6343,11 @@ void FuSema::resolveTypes(FuClass * klass)
 					reportError(method, "'Main' method must have no parameters or one 'string[]' parameter");
 					break;
 				}
-				if (this->program->main != nullptr)
+				if (this->host->program->main != nullptr)
 					reportError(method, "Duplicate 'Main' method");
 				else {
 					method->id = FuId::main;
-					this->program->main = method;
+					this->host->program->main = method;
 				}
 			}
 			for (const std::shared_ptr<FuThrowsDeclaration> &exception : method->throws)
@@ -6428,9 +6445,9 @@ void FuSema::markClassLive(const FuClass * klass)
 		markMethodLive(klass->constructor.get());
 }
 
-void FuSema::process(FuProgram * program)
+void FuSema::process()
 {
-	this->program = program;
+	const FuProgram * program = this->host->program;
 	for (FuSymbol * type = program->first; type != nullptr; type = type->next) {
 		if (FuClass *klass = dynamic_cast<FuClass *>(type))
 			resolveBase(klass);
@@ -6454,15 +6471,9 @@ void GenBase::setHost(GenHost * host)
 	this->host = host;
 }
 
-const FuContainerType * GenBase::getCurrentContainer() const
-{
-	const FuClass * klass = static_cast<const FuClass *>(this->currentMethod->parent);
-	return klass;
-}
-
 void GenBase::reportError(const FuStatement * statement, std::string_view message) const
 {
-	this->host->reportError(getCurrentContainer()->filename, statement->loc, 0, statement->loc, 0, message);
+	this->host->reportStatementError(statement, message);
 }
 
 void GenBase::notSupported(const FuStatement * statement, std::string_view feature) const
@@ -9078,11 +9089,6 @@ void GenCCpp::createImplementationFile(const FuProgram * program, std::string_vi
 	write(getFilenameWithoutExtension(this->outputFile));
 	write(headerExt);
 	writeCharLine('"');
-}
-
-const FuContainerType * GenC::getCurrentContainer() const
-{
-	return this->currentClass;
 }
 
 std::string_view GenC::getTargetName() const

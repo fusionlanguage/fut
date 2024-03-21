@@ -143,9 +143,7 @@ namespace Fusion
 
 		protected FuParserHost Host;
 
-		protected string Filename;
-
-		protected int Loc;
+		protected int Loc = 0;
 
 		int TokenLoc;
 
@@ -179,12 +177,13 @@ namespace Fusion
 
 		protected void Open(string filename, byte[] input, int inputLength)
 		{
-			this.Filename = filename;
 			this.Input = input;
 			this.InputLength = inputLength;
 			this.NextOffset = 0;
-			this.Loc = 0;
-			this.Host.Program.LineLocs.Add(0);
+			this.Host.Program.SourceFiles.Add(new FuSourceFile());
+			this.Host.Program.SourceFiles[^1].Filename = filename;
+			this.Host.Program.SourceFiles[^1].Line = this.Host.Program.LineLocs.Count;
+			this.Host.Program.LineLocs.Add(this.Loc);
 			FillNextChar();
 			if (this.NextChar == 65279)
 				FillNextChar();
@@ -193,9 +192,10 @@ namespace Fusion
 
 		protected void ReportError(string message)
 		{
-			int line = this.Host.Program.LineLocs.Count - 1;
+			FuSourceFile file = this.Host.Program.SourceFiles[^1];
+			int line = this.Host.Program.LineLocs.Count - file.Line - 1;
 			int lineLoc = this.Host.Program.LineLocs[^1];
-			this.Host.ReportError(this.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
+			this.Host.ReportError(file.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
 		}
 
 		int ReadByte()
@@ -1642,15 +1642,6 @@ namespace Fusion
 
 		public int Count() => this.Dict.Count;
 
-		public FuContainerType GetContainer()
-		{
-			for (FuScope scope = this; scope != null; scope = scope.Parent) {
-				if (scope is FuContainerType container)
-					return container;
-			}
-			throw new NotImplementedException();
-		}
-
 		public bool Contains(FuSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
 		public FuSymbol TryLookup(string name, bool global)
@@ -2737,8 +2728,6 @@ namespace Fusion
 	{
 
 		internal bool IsPublic;
-
-		internal string Filename;
 	}
 
 	public class FuEnum : FuContainerType
@@ -3309,6 +3298,14 @@ namespace Fusion
 		internal static FuSystem New() => new FuSystem();
 	}
 
+	class FuSourceFile
+	{
+
+		internal string Filename;
+
+		internal int Line;
+	}
+
 	public class FuProgram : FuScope
 	{
 
@@ -3326,18 +3323,34 @@ namespace Fusion
 
 		internal readonly List<int> LineLocs = new List<int>();
 
+		internal readonly List<FuSourceFile> SourceFiles = new List<FuSourceFile>();
+
 		internal int GetLine(int loc)
 		{
 			int l = 0;
 			int r = this.LineLocs.Count - 1;
 			while (l < r) {
 				int m = (l + r + 1) >> 1;
-				if (this.LineLocs[m] > loc)
+				if (loc < this.LineLocs[m])
 					r = m - 1;
 				else
 					l = m;
 			}
 			return l;
+		}
+
+		internal FuSourceFile GetSourceFile(int line)
+		{
+			int l = 0;
+			int r = this.SourceFiles.Count - 1;
+			while (l < r) {
+				int m = (l + r + 1) >> 1;
+				if (line < this.SourceFiles[m].Line)
+					r = m - 1;
+				else
+					l = m;
+			}
+			return this.SourceFiles[l];
 		}
 	}
 
@@ -4242,7 +4255,7 @@ namespace Fusion
 		void ParseClass(FuCodeDoc doc, bool isPublic, FuCallType callType)
 		{
 			Expect(FuToken.Class);
-			FuClass klass = new FuClass { Filename = this.Filename, Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
+			FuClass klass = new FuClass { Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 			if (Expect(FuToken.Id))
 				AddSymbol(this.Host.Program, klass);
 			if (Eat(FuToken.Colon)) {
@@ -4335,7 +4348,6 @@ namespace Fusion
 			Expect(FuToken.Enum);
 			bool flags = Eat(FuToken.Asterisk);
 			FuEnum enu = this.Host.Program.System.NewEnum(flags);
-			enu.Filename = this.Filename;
 			enu.Loc = this.Loc;
 			enu.Documentation = doc;
 			enu.IsPublic = isPublic;
@@ -4400,12 +4412,21 @@ namespace Fusion
 
 	public abstract class FuSemaHost : FuParserHost
 	{
+
+		internal virtual int GetResourceLength(string name, FuPrefixExpr expr) => 0;
+
+		internal void ReportStatementError(FuStatement statement, string message)
+		{
+			int line = this.Program.GetLine(statement.Loc);
+			int column = statement.Loc - this.Program.LineLocs[line];
+			FuSourceFile file = this.Program.GetSourceFile(line);
+			line -= file.Line;
+			ReportError(file.Filename, line, column, line, column, message);
+		}
 	}
 
 	public class FuSema
 	{
-
-		protected FuProgram Program;
 
 		FuSemaHost Host;
 
@@ -4424,13 +4445,9 @@ namespace Fusion
 			this.Host = host;
 		}
 
-		FuContainerType GetCurrentContainer() => this.CurrentScope.GetContainer();
-
-		protected void ReportError(FuStatement statement, string message)
+		void ReportError(FuStatement statement, string message)
 		{
-			int line = this.Program.GetLine(statement.Loc);
-			int column = statement.Loc - this.Program.LineLocs[line];
-			this.Host.ReportError(GetCurrentContainer().Filename, line, column, line, column, message);
+			this.Host.ReportStatementError(statement, message);
 		}
 
 		FuType PoisonError(FuStatement statement, string message)
@@ -4443,7 +4460,7 @@ namespace Fusion
 		{
 			if (klass.HasBaseClass()) {
 				this.CurrentScope = klass;
-				if (this.Program.TryLookup(klass.BaseClassName, true) is FuClass baseClass) {
+				if (this.Host.Program.TryLookup(klass.BaseClassName, true) is FuClass baseClass) {
 					if (klass.IsPublic && !baseClass.IsPublic)
 						ReportError(klass, "Public class cannot derive from an internal class");
 					baseClass.HasSubclasses = true;
@@ -4452,7 +4469,7 @@ namespace Fusion
 				else
 					ReportError(klass, $"Base class '{klass.BaseClassName}' not found");
 			}
-			this.Program.Classes.Add(klass);
+			this.Host.Program.Classes.Add(klass);
 		}
 
 		void CheckBaseCycle(FuClass klass)
@@ -4519,7 +4536,7 @@ namespace Fusion
 				FuInterpolatedPart part = expr.Parts[partsIndex];
 				s += part.Prefix;
 				FuExpr arg = VisitExpr(part.Argument);
-				if (Coerce(arg, this.Program.System.PrintableType)) {
+				if (Coerce(arg, this.Host.Program.System.PrintableType)) {
 					switch (arg.Type) {
 					case FuIntegerType:
 						switch (part.Format) {
@@ -4575,8 +4592,8 @@ namespace Fusion
 			}
 			s += expr.Suffix;
 			if (partsCount == 0)
-				return this.Program.System.NewLiteralString(s, expr.Loc);
-			expr.Type = this.Program.System.StringStorageType;
+				return this.Host.Program.System.NewLiteralString(s, expr.Loc);
+			expr.Type = this.Host.Program.System.StringStorageType;
 			expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
 			expr.Suffix = s;
 			return expr;
@@ -4601,6 +4618,15 @@ namespace Fusion
 			return expr;
 		}
 
+		FuContainerType GetCurrentContainer()
+		{
+			for (FuScope scope = this.CurrentScope; scope != null; scope = scope.Parent) {
+				if (scope is FuContainerType container)
+					return container;
+			}
+			throw new NotImplementedException();
+		}
+
 		FuExpr VisitSymbolReference(FuSymbolReference expr)
 		{
 			if (expr.Left == null) {
@@ -4619,7 +4645,7 @@ namespace Fusion
 							return this.CurrentPureArguments[v];
 					}
 					else if (symbol.Symbol.Id == FuId.RegexOptionsEnum)
-						this.Program.RegexOptionsEnum = true;
+						this.Host.Program.RegexOptionsEnum = true;
 				}
 				return resolved;
 			}
@@ -4711,7 +4737,7 @@ namespace Fusion
 
 		FuType GetIntegerType(FuExpr left, FuExpr right)
 		{
-			FuType type = this.Program.System.PromoteIntegerTypes(left.Type, right.Type);
+			FuType type = this.Host.Program.System.PromoteIntegerTypes(left.Type, right.Type);
 			Coerce(left, type);
 			Coerce(right, type);
 			return type;
@@ -4719,7 +4745,7 @@ namespace Fusion
 
 		FuIntegerType GetShiftType(FuExpr left, FuExpr right)
 		{
-			FuIntegerType intType = this.Program.System.IntType;
+			FuIntegerType intType = this.Host.Program.System.IntType;
 			Coerce(right, intType);
 			if (left.Type.Id == FuId.LongType) {
 				FuIntegerType longType = (FuIntegerType) left.Type;
@@ -4731,7 +4757,7 @@ namespace Fusion
 
 		FuType GetNumericType(FuExpr left, FuExpr right)
 		{
-			FuType type = this.Program.System.PromoteNumericTypes(left.Type, right.Type);
+			FuType type = this.Host.Program.System.PromoteNumericTypes(left.Type, right.Type);
 			Coerce(left, type);
 			Coerce(right, type);
 			return type;
@@ -4890,13 +4916,13 @@ namespace Fusion
 		{
 			FuLiteral result = value ? new FuLiteralTrue() : new FuLiteralFalse();
 			result.Loc = expr.Loc;
-			result.Type = this.Program.System.BoolType;
+			result.Type = this.Host.Program.System.BoolType;
 			return result;
 		}
 
-		FuLiteralLong ToLiteralLong(FuExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Loc);
+		FuLiteralLong ToLiteralLong(FuExpr expr, long value) => this.Host.Program.System.NewLiteralLong(value, expr.Loc);
 
-		FuLiteralDouble ToLiteralDouble(FuExpr expr, double value) => new FuLiteralDouble { Loc = expr.Loc, Type = this.Program.System.DoubleType, Value = value };
+		FuLiteralDouble ToLiteralDouble(FuExpr expr, double value) => new FuLiteralDouble { Loc = expr.Loc, Type = this.Host.Program.System.DoubleType, Value = value };
 
 		void CheckLValue(FuExpr expr)
 		{
@@ -4965,7 +4991,7 @@ namespace Fusion
 
 		FuInterpolatedString Concatenate(FuInterpolatedString left, FuInterpolatedString right)
 		{
-			FuInterpolatedString result = new FuInterpolatedString { Loc = left.Loc, Type = this.Program.System.StringStorageType };
+			FuInterpolatedString result = new FuInterpolatedString { Loc = left.Loc, Type = this.Host.Program.System.StringStorageType };
 			result.Parts.AddRange(left.Parts);
 			if (right.Parts.Count == 0)
 				result.Suffix = left.Suffix + right.Suffix;
@@ -4982,7 +5008,7 @@ namespace Fusion
 		{
 			if (expr is FuInterpolatedString interpolated)
 				return interpolated;
-			FuInterpolatedString result = new FuInterpolatedString { Loc = expr.Loc, Type = this.Program.System.StringStorageType };
+			FuInterpolatedString result = new FuInterpolatedString { Loc = expr.Loc, Type = this.Host.Program.System.StringStorageType };
 			if (expr is FuLiteral literal)
 				result.Suffix = literal.GetLiteralString();
 			else {
@@ -4997,7 +5023,7 @@ namespace Fusion
 			if (left.Type is FuEnum)
 				Coerce(right, left.Type);
 			else {
-				FuType doubleType = this.Program.System.DoubleType;
+				FuType doubleType = this.Host.Program.System.DoubleType;
 				Coerce(left, doubleType);
 				Coerce(right, doubleType);
 			}
@@ -5032,7 +5058,7 @@ namespace Fusion
 			type = ToType(expr.Inner, true);
 			switch (type) {
 			case FuArrayStorageType array:
-				expr.Type = new FuDynamicPtrType { Loc = expr.Loc, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+				expr.Type = new FuDynamicPtrType { Loc = expr.Loc, Class = this.Host.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 				expr.Inner = array.LengthExpr;
 				return expr;
 			case FuStorageType klass:
@@ -5044,8 +5070,6 @@ namespace Fusion
 			}
 		}
 
-		protected virtual int GetResourceLength(string name, FuPrefixExpr expr) => 0;
-
 		FuExpr VisitPrefixExpr(FuPrefixExpr expr)
 		{
 			FuExpr inner;
@@ -5055,7 +5079,7 @@ namespace Fusion
 			case FuToken.Decrement:
 				inner = VisitExpr(expr.Inner);
 				CheckLValue(inner);
-				Coerce(inner, this.Program.System.DoubleType);
+				Coerce(inner, this.Host.Program.System.DoubleType);
 				if (inner.Type is FuRangeType xcrementRange) {
 					int delta = expr.Op == FuToken.Increment ? 1 : -1;
 					type = FuRangeType.New(xcrementRange.Min + delta, xcrementRange.Max + delta);
@@ -5067,7 +5091,7 @@ namespace Fusion
 				return expr;
 			case FuToken.Minus:
 				inner = VisitExpr(expr.Inner);
-				Coerce(inner, this.Program.System.DoubleType);
+				Coerce(inner, this.Host.Program.System.DoubleType);
 				if (inner.Type is FuRangeType negRange) {
 					if (negRange.Min == negRange.Max)
 						return ToLiteralLong(expr, -negRange.Min);
@@ -5085,7 +5109,7 @@ namespace Fusion
 				if (inner.Type is FuEnumFlags)
 					type = inner.Type;
 				else {
-					Coerce(inner, this.Program.System.IntType);
+					Coerce(inner, this.Host.Program.System.IntType);
 					if (inner.Type is FuRangeType notRange)
 						type = FuRangeType.New(~notRange.Max, ~notRange.Min);
 					else
@@ -5094,14 +5118,14 @@ namespace Fusion
 				break;
 			case FuToken.ExclamationMark:
 				inner = ResolveBool(expr.Inner);
-				return new FuPrefixExpr { Loc = expr.Loc, Op = FuToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
+				return new FuPrefixExpr { Loc = expr.Loc, Op = FuToken.ExclamationMark, Inner = inner, Type = this.Host.Program.System.BoolType };
 			case FuToken.New:
 				return ResolveNew(expr);
 			case FuToken.Resource:
 				if (!(FoldConst(expr.Inner) is FuLiteralString resourceName))
 					return PoisonError(expr, "Resource name must be a string");
 				inner = resourceName;
-				type = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = this.Program.System.ByteType, Length = GetResourceLength(resourceName.Value, expr) };
+				type = new FuArrayStorageType { Class = this.Host.Program.System.ArrayStorageClass, TypeArg0 = this.Host.Program.System.ByteType, Length = this.Host.GetResourceLength(resourceName.Value, expr) };
 				break;
 			default:
 				throw new NotImplementedException();
@@ -5116,7 +5140,7 @@ namespace Fusion
 			case FuToken.Increment:
 			case FuToken.Decrement:
 				CheckLValue(expr.Inner);
-				Coerce(expr.Inner, this.Program.System.DoubleType);
+				Coerce(expr.Inner, this.Host.Program.System.DoubleType);
 				expr.Type = expr.Inner.Type;
 				return expr;
 			default:
@@ -5175,7 +5199,7 @@ namespace Fusion
 			}
 			TakePtr(left);
 			TakePtr(right);
-			return new FuBinaryExpr { Loc = expr.Loc, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
+			return new FuBinaryExpr { Loc = expr.Loc, Left = left, Op = expr.Op, Right = right, Type = this.Host.Program.System.BoolType };
 		}
 
 		void CheckIsHierarchy(FuClassType leftPtr, FuExpr left, FuClass rightClass, FuExpr expr, string op, string alwaysMessage, string neverMessage)
@@ -5215,7 +5239,7 @@ namespace Fusion
 				return PoisonError(expr, "Right hand side of the 'is' operator must be a class name");
 			}
 			expr.Left = left;
-			expr.Type = this.Program.System.BoolType;
+			expr.Type = this.Host.Program.System.BoolType;
 			return expr;
 		}
 
@@ -5232,7 +5256,7 @@ namespace Fusion
 					return PoisonError(expr, "Cannot index this object");
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
-					Coerce(right, this.Program.System.IntType);
+					Coerce(right, this.Host.Program.System.IntType);
 					if (right.Type is FuRangeType stringIndexRange && stringIndexRange.Max < 0)
 						ReportError(expr, "Negative index");
 					else if (left is FuLiteralString stringLiteral && right is FuLiteralLong indexLiteral) {
@@ -5243,12 +5267,12 @@ namespace Fusion
 								return FuLiteralChar.New(c, expr.Loc);
 						}
 					}
-					type = this.Program.System.CharType;
+					type = this.Host.Program.System.CharType;
 					break;
 				case FuId.ArrayPtrClass:
 				case FuId.ArrayStorageClass:
 				case FuId.ListClass:
-					Coerce(right, this.Program.System.IntType);
+					Coerce(right, this.Host.Program.System.IntType);
 					if (right.Type is FuRangeType indexRange) {
 						if (indexRange.Max < 0)
 							ReportError(expr, "Negative index");
@@ -5272,12 +5296,12 @@ namespace Fusion
 					type = FuRangeType.New(SaturatedAdd(leftAdd.Min, rightAdd.Min), SaturatedAdd(leftAdd.Max, rightAdd.Max));
 				}
 				else if (left.Type is FuStringType) {
-					Coerce(right, this.Program.System.StringPtrType);
+					Coerce(right, this.Host.Program.System.StringPtrType);
 					if (left is FuLiteral leftLiteral && right is FuLiteral rightLiteral)
-						return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Loc);
+						return this.Host.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Loc);
 					if (left is FuInterpolatedString || right is FuInterpolatedString)
 						return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
-					type = this.Program.System.StringStorageType;
+					type = this.Host.Program.System.StringStorageType;
 				}
 				else
 					type = GetNumericType(left, right);
@@ -5353,7 +5377,7 @@ namespace Fusion
 				}
 				else
 					CheckComparison(left, right);
-				type = this.Program.System.BoolType;
+				type = this.Host.Program.System.BoolType;
 				break;
 			case FuToken.LessOrEqual:
 				if (left.Type is FuRangeType leftLeq && right.Type is FuRangeType rightLeq) {
@@ -5364,7 +5388,7 @@ namespace Fusion
 				}
 				else
 					CheckComparison(left, right);
-				type = this.Program.System.BoolType;
+				type = this.Host.Program.System.BoolType;
 				break;
 			case FuToken.Greater:
 				if (left.Type is FuRangeType leftGreater && right.Type is FuRangeType rightGreater) {
@@ -5375,7 +5399,7 @@ namespace Fusion
 				}
 				else
 					CheckComparison(left, right);
-				type = this.Program.System.BoolType;
+				type = this.Host.Program.System.BoolType;
 				break;
 			case FuToken.GreaterOrEqual:
 				if (left.Type is FuRangeType leftGeq && right.Type is FuRangeType rightGeq) {
@@ -5386,25 +5410,25 @@ namespace Fusion
 				}
 				else
 					CheckComparison(left, right);
-				type = this.Program.System.BoolType;
+				type = this.Host.Program.System.BoolType;
 				break;
 			case FuToken.CondAnd:
-				Coerce(left, this.Program.System.BoolType);
-				Coerce(right, this.Program.System.BoolType);
+				Coerce(left, this.Host.Program.System.BoolType);
+				Coerce(right, this.Host.Program.System.BoolType);
 				if (left is FuLiteralTrue)
 					return right;
 				if (left is FuLiteralFalse || right is FuLiteralTrue)
 					return left;
-				type = this.Program.System.BoolType;
+				type = this.Host.Program.System.BoolType;
 				break;
 			case FuToken.CondOr:
-				Coerce(left, this.Program.System.BoolType);
-				Coerce(right, this.Program.System.BoolType);
+				Coerce(left, this.Host.Program.System.BoolType);
+				Coerce(right, this.Host.Program.System.BoolType);
 				if (left is FuLiteralTrue || right is FuLiteralFalse)
 					return left;
 				if (left is FuLiteralFalse)
 					return right;
-				type = this.Program.System.BoolType;
+				type = this.Host.Program.System.BoolType;
 				break;
 			case FuToken.Assign:
 				CheckLValue(left);
@@ -5416,9 +5440,9 @@ namespace Fusion
 			case FuToken.AddAssign:
 				CheckLValue(left);
 				if (left.Type.Id == FuId.StringStorageType)
-					Coerce(right, this.Program.System.StringPtrType);
+					Coerce(right, this.Host.Program.System.StringPtrType);
 				else {
-					Coerce(left, this.Program.System.DoubleType);
+					Coerce(left, this.Host.Program.System.DoubleType);
 					Coerce(right, left.Type);
 				}
 				expr.Left = left;
@@ -5429,7 +5453,7 @@ namespace Fusion
 			case FuToken.MulAssign:
 			case FuToken.DivAssign:
 				CheckLValue(left);
-				Coerce(left, this.Program.System.DoubleType);
+				Coerce(left, this.Host.Program.System.DoubleType);
 				Coerce(right, left.Type);
 				expr.Left = left;
 				expr.Right = right;
@@ -5439,8 +5463,8 @@ namespace Fusion
 			case FuToken.ShiftLeftAssign:
 			case FuToken.ShiftRightAssign:
 				CheckLValue(left);
-				Coerce(left, this.Program.System.IntType);
-				Coerce(right, this.Program.System.IntType);
+				Coerce(left, this.Host.Program.System.IntType);
+				Coerce(right, this.Host.Program.System.IntType);
 				expr.Left = left;
 				expr.Right = right;
 				expr.Type = left.Type;
@@ -5450,8 +5474,8 @@ namespace Fusion
 			case FuToken.XorAssign:
 				CheckLValue(left);
 				if (!IsEnumOp(left, right)) {
-					Coerce(left, this.Program.System.IntType);
-					Coerce(right, this.Program.System.IntType);
+					Coerce(left, this.Host.Program.System.IntType);
+					Coerce(right, this.Host.Program.System.IntType);
 				}
 				expr.Left = left;
 				expr.Right = right;
@@ -5472,9 +5496,9 @@ namespace Fusion
 		FuType TryGetPtr(FuType type, bool nullable)
 		{
 			if (type.Id == FuId.StringStorageType)
-				return nullable ? this.Program.System.StringNullablePtrType : this.Program.System.StringPtrType;
+				return nullable ? this.Host.Program.System.StringNullablePtrType : this.Host.Program.System.StringPtrType;
 			if (type is FuStorageType storage)
-				return new FuReadWriteClassType { Class = storage.Class.Id == FuId.ArrayStorageClass ? this.Program.System.ArrayPtrClass : storage.Class, Nullable = nullable, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
+				return new FuReadWriteClassType { Class = storage.Class.Id == FuId.ArrayStorageClass ? this.Host.Program.System.ArrayPtrClass : storage.Class, Nullable = nullable, TypeArg0 = storage.TypeArg0, TypeArg1 = storage.TypeArg1 };
 			if (nullable && type is FuClassType ptr && !ptr.Nullable) {
 				FuClassType result;
 				if (type is FuDynamicPtrType)
@@ -5651,7 +5675,8 @@ namespace Fusion
 					OpenScope(lambda);
 					lambda.Body = VisitExpr(lambda.Body);
 					CloseScope();
-					Coerce(lambda.Body, this.Program.System.BoolType);
+					Coerce(lambda.Body, this.Host.Program.System.BoolType);
+					Coerce(lambda.Body, this.Host.Program.System.BoolType);
 				}
 				else
 					Coerce(arg, type);
@@ -5790,7 +5815,7 @@ namespace Fusion
 		FuExpr ResolveBool(FuExpr expr)
 		{
 			expr = VisitExpr(expr);
-			Coerce(expr, this.Program.System.BoolType);
+			Coerce(expr, this.Host.Program.System.BoolType);
 			return expr;
 		}
 
@@ -5845,7 +5870,7 @@ namespace Fusion
 		{
 			switch (expr) {
 			case FuSymbolReference symbol:
-				if (this.Program.TryLookup(symbol.Name, true) is FuType type) {
+				if (this.Host.Program.TryLookup(symbol.Name, true) is FuType type) {
 					if (type is FuClass klass) {
 						if (klass.Id == FuId.MatchClass && ptrModifier != FuToken.EndOfFile)
 							ReportError(expr, "Read-write references to the built-in class Match are not supported");
@@ -5861,7 +5886,7 @@ namespace Fusion
 					else if (symbol.Left != null)
 						return PoisonError(expr, "Invalid type");
 					if (type.Id == FuId.StringPtrType && nullable) {
-						type = this.Program.System.StringNullablePtrType;
+						type = this.Host.Program.System.StringNullablePtrType;
 						nullable = false;
 					}
 					return ExpectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.Poison;
@@ -5874,7 +5899,7 @@ namespace Fusion
 					return PoisonError(call, "Expected empty parentheses for storage type");
 				if (call.Method.Left is FuAggregateInitializer typeArgExprs2) {
 					FuStorageType storage = new FuStorageType { Loc = call.Loc };
-					if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass) {
+					if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass) {
 						FillGenericClass(storage, klass, typeArgExprs2);
 						return storage;
 					}
@@ -5883,8 +5908,8 @@ namespace Fusion
 				else if (call.Method.Left != null)
 					return PoisonError(expr, "Invalid type");
 				if (call.Method.Name == "string")
-					return this.Program.System.StringStorageType;
-				if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass2)
+					return this.Host.Program.System.StringStorageType;
+				if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass2)
 					return new FuStorageType { Class = klass2 };
 				return PoisonError(expr, $"Class '{call.Method.Name}' not found");
 			default:
@@ -5921,8 +5946,8 @@ namespace Fusion
 						if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
 							return this.Poison;
 						FuExpr lengthExpr = VisitExpr(binary.Right);
-						FuArrayStorageType arrayStorage = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
-						if (Coerce(lengthExpr, this.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
+						FuArrayStorageType arrayStorage = new FuArrayStorageType { Class = this.Host.Program.System.ArrayStorageClass, TypeArg0 = outerArray, LengthExpr = lengthExpr, Length = 0 };
+						if (Coerce(lengthExpr, this.Host.Program.System.IntType) && (!dynamic || binary.Left.IsIndexing())) {
 							if (lengthExpr is FuLiteralLong literal) {
 								long length = literal.Value;
 								if (length < 0)
@@ -5939,7 +5964,7 @@ namespace Fusion
 					}
 					else {
 						FuType elementType = outerArray;
-						outerArray = CreateClassPtr(this.Program.System.ArrayPtrClass, ptrModifier, nullable);
+						outerArray = CreateClassPtr(this.Host.Program.System.ArrayPtrClass, ptrModifier, nullable);
 						outerArray.TypeArg0 = elementType;
 					}
 					if (innerArray == null)
@@ -5992,7 +6017,7 @@ namespace Fusion
 					ResolveConst(konst);
 					this.CurrentScope.Add(konst);
 					if (konst.Type is FuArrayStorageType) {
-						FuClass klass = (FuClass) this.CurrentScope.GetContainer();
+						FuClass klass = (FuClass) GetCurrentContainer();
 						klass.ConstArrays.Add(konst);
 					}
 				}
@@ -6103,7 +6128,7 @@ namespace Fusion
 			if (statement.Collection.Type is FuClassType klass) {
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
-					if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Program.System.IntType))
+					if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Host.Program.System.IntType))
 						ReportError(statement, "Expected 'int' iterator variable");
 					break;
 				case FuId.ArrayStorageClass:
@@ -6156,7 +6181,7 @@ namespace Fusion
 		void VisitLock(FuLock statement)
 		{
 			statement.Lock = VisitExpr(statement.Lock);
-			Coerce(statement.Lock, this.Program.System.LockPtrType);
+			Coerce(statement.Lock, this.Host.Program.System.LockPtrType);
 			VisitStatement(statement.Body);
 		}
 
@@ -6372,7 +6397,7 @@ namespace Fusion
 					else if (array is FuReadWriteClassType)
 						ReportError(konst, "Invalid constant type");
 					else
-						konst.Type = new FuArrayStorageType { Class = this.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
+						konst.Type = new FuArrayStorageType { Class = this.Host.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
 					coll.Type = konst.Type;
 					foreach (FuExpr item in coll.Items)
 						Coerce(item, elementType);
@@ -6433,8 +6458,8 @@ namespace Fusion
 					}
 					break;
 				case FuMethod method:
-					if (method.TypeExpr == this.Program.System.VoidType)
-						method.Type = this.Program.System.VoidType;
+					if (method.TypeExpr == this.Host.Program.System.VoidType)
+						method.Type = this.Host.Program.System.VoidType;
 					else
 						ResolveType(method);
 					for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
@@ -6458,7 +6483,7 @@ namespace Fusion
 								FuType argsElement = argsType.GetElementType();
 								if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
 									argsType.Id = FuId.MainArgsType;
-									argsType.Class = this.Program.System.ArrayStorageClass;
+									argsType.Class = this.Host.Program.System.ArrayStorageClass;
 									break;
 								}
 							}
@@ -6468,11 +6493,11 @@ namespace Fusion
 							ReportError(method, "'Main' method must have no parameters or one 'string[]' parameter");
 							break;
 						}
-						if (this.Program.Main != null)
+						if (this.Host.Program.Main != null)
 							ReportError(method, "Duplicate 'Main' method");
 						else {
 							method.Id = FuId.Main;
-							this.Program.Main = method;
+							this.Host.Program.Main = method;
 						}
 					}
 					foreach (FuSymbolReference exception in method.Throws)
@@ -6572,9 +6597,9 @@ namespace Fusion
 				MarkMethodLive(klass.Constructor);
 		}
 
-		public void Process(FuProgram program)
+		public void Process()
 		{
-			this.Program = program;
+			FuProgram program = this.Host.Program;
 			for (FuSymbol type = program.First; type != null; type = type.Next) {
 				if (type is FuClass klass)
 					ResolveBase(klass);
@@ -6640,17 +6665,11 @@ namespace Fusion
 			this.Host = host;
 		}
 
-		protected virtual FuContainerType GetCurrentContainer()
-		{
-			FuClass klass = (FuClass) this.CurrentMethod.Parent;
-			return klass;
-		}
-
 		protected abstract string GetTargetName();
 
 		void ReportError(FuStatement statement, string message)
 		{
-			this.Host.ReportError(GetCurrentContainer().Filename, statement.Loc, 0, statement.Loc, 0, message);
+			this.Host.ReportStatementError(statement, message);
 		}
 
 		protected void NotSupported(FuStatement statement, string feature)
@@ -9337,8 +9356,6 @@ namespace Fusion
 		bool ConditionVarInScope;
 
 		protected FuClass CurrentClass;
-
-		protected override FuContainerType GetCurrentContainer() => this.CurrentClass;
 
 		protected override string GetTargetName() => "C";
 

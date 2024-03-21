@@ -144,8 +144,7 @@ public abstract class FuLexer
 	protected int CharOffset;
 	int NextChar;
 	protected FuParserHost! Host;
-	protected string() Filename;
-	protected int Loc;
+	protected int Loc = 0;
 	int TokenLoc;
 	protected int LexemeOffset;
 	protected FuToken CurrentToken;
@@ -169,12 +168,13 @@ public abstract class FuLexer
 
 	protected void Open!(string filename, byte[] input, int inputLength)
 	{
-		this.Filename = filename;
 		this.Input = input;
 		this.InputLength = inputLength;
 		this.NextOffset = 0;
-		this.Loc = 0;
-		this.Host.Program.LineLocs.Add(0);
+		this.Host.Program.SourceFiles.Add();
+		this.Host.Program.SourceFiles.Last().Filename = filename;
+		this.Host.Program.SourceFiles.Last().Line = this.Host.Program.LineLocs.Count;
+		this.Host.Program.LineLocs.Add(this.Loc);
 		FillNextChar();
 		if (this.NextChar == 0xfeff) // BOM
 			FillNextChar();
@@ -183,9 +183,10 @@ public abstract class FuLexer
 
 	protected void ReportError(string message)
 	{
-		int line = this.Host.Program.LineLocs.Count - 1;
+		FuSourceFile file = this.Host.Program.SourceFiles.Last();
+		int line = this.Host.Program.LineLocs.Count - file.Line - 1;
 		int lineLoc = this.Host.Program.LineLocs.Last();
-		this.Host.ReportError(this.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
+		this.Host.ReportError(file.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
 	}
 
 	int ReadByte!()

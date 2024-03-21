@@ -62,9 +62,11 @@ static std::string slurp(std::ifstream &stream)
 	return oss.str();
 }
 
-class FileResourceSema : public FuSema
+class FileGenHost : public FuConsoleHost
 {
 	std::vector<const char *> resourceDirs;
+	std::string currentFilename;
+	std::ofstream currentFile;
 
 	void readResource(std::string_view name, const FuPrefixExpr *expr, std::vector<uint8_t> &content)
 	{
@@ -83,7 +85,7 @@ class FileResourceSema : public FuSema
 			content.assign(input.begin(), input.end());
 		}
 		else
-			reportError(expr, std::format("File {} not found", name));
+			reportStatementError(expr, std::format("File '{}' not found", name));
 	}
 
 public:
@@ -92,7 +94,6 @@ public:
 		resourceDirs.push_back(path);
 	}
 
-protected:
 	int getResourceLength(std::string_view name, const FuPrefixExpr *expr) override
 	{
 		auto p = this->program->resources.try_emplace(std::string(name));
@@ -101,14 +102,7 @@ protected:
 			readResource(name, expr, content);
 		return content.size();
 	}
-};
 
-class FileGenHost : public FuConsoleHost
-{
-	std::string currentFilename;
-	std::ofstream currentFile;
-
-public:
 	std::ostream *createFile(std::string_view directory, std::string_view filename) override
 	{
 		currentFilename = directory.empty() ? filename : (std::filesystem::path(directory) / filename).string();
@@ -129,7 +123,7 @@ public:
 };
 
 static bool parseAndResolve(FuParser *parser, FuProgram *program,
-	const std::vector<const char *> &files, FileResourceSema *sema, FuConsoleHost *host)
+	const std::vector<const char *> &files, FuSema *sema, FuConsoleHost *host)
 {
 	host->program = program;
 	for (const char *file : files) {
@@ -143,7 +137,7 @@ static bool parseAndResolve(FuParser *parser, FuProgram *program,
 	}
 	if (host->hasErrors)
 		return false;
-	sema->process(program);
+	sema->process();
 	return !host->hasErrors;
 }
 
@@ -194,10 +188,10 @@ static void emit(FuProgram *program, const char *lang, const char *namespace_, c
 
 int main(int argc, char **argv)
 {
+	FileGenHost host;
 	FuParser parser;
 	std::vector<const char *> inputFiles;
 	std::vector<const char *> referencedFiles;
-	FileResourceSema sema;
 	const char *lang = nullptr;
 	const char *outputFile = nullptr;
 	const char *namespace_ = "";
@@ -237,7 +231,7 @@ int main(int argc, char **argv)
 				referencedFiles.push_back(argv[++i]);
 				break;
 			case 'I':
-				sema.addResourceDir(argv[++i]);
+				host.addResourceDir(argv[++i]);
 				break;
 			default:
 				std::cerr << "fut: ERROR: Unknown option: " << arg << '\n';
@@ -254,7 +248,7 @@ int main(int argc, char **argv)
 		return 1;
 	}
 
-	FileGenHost host;
+	FuSema sema;
 	parser.setHost(&host);
 	sema.setHost(&host);
 	std::shared_ptr<FuSystem> system = FuSystem::new_();

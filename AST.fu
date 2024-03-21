@@ -352,15 +352,6 @@ public class FuScope : FuSymbol
 
 	public int Count() => this.Dict.Count;
 
-	public FuContainerType! GetContainer!()
-	{
-		for (FuScope!? scope = this; scope != null; scope = scope.Parent) {
-			if (scope is FuContainerType! container)
-				return container;
-		}
-		assert false;
-	}
-
 	public bool Contains(FuSymbol symbol) => this.Dict.ContainsKey(symbol.Name);
 
 	public FuSymbol#? TryLookup(string name, bool global)
@@ -1199,7 +1190,6 @@ class FuMethodGroup : FuMember
 public abstract class FuContainerType : FuType
 {
 	internal bool IsPublic;
-	internal string() Filename;
 }
 
 public class FuEnum : FuContainerType
@@ -1741,6 +1731,12 @@ public class FuSystem : FuScope
 	internal static FuSystem# New() => new FuSystem();
 }
 
+class FuSourceFile
+{
+	internal string() Filename;
+	internal int Line;
+}
+
 public class FuProgram : FuScope
 {
 	internal FuSystem System;
@@ -1750,6 +1746,7 @@ public class FuProgram : FuScope
 	internal SortedDictionary<string(), List<byte>()>() Resources;
 	internal bool RegexOptionsEnum = false;
 	internal List<int>() LineLocs;
+	internal List<FuSourceFile()>() SourceFiles;
 
 	internal int GetLine(int loc)
 	{
@@ -1757,11 +1754,25 @@ public class FuProgram : FuScope
 		int r = this.LineLocs.Count - 1;
 		while (l < r) {
 			int m = l + r + 1 >> 1;
-			if (this.LineLocs[m] > loc)
+			if (loc < this.LineLocs[m])
 				r = m - 1;
 			else
 				l = m;
 		}
 		return l;
+	}
+
+	internal FuSourceFile GetSourceFile(int line)
+	{
+		int l = 0;
+		int r = this.SourceFiles.Count - 1;
+		while (l < r) {
+			int m = l + r + 1 >> 1;
+			if (line < this.SourceFiles[m].Line)
+				r = m - 1;
+			else
+				l = m;
+		}
+		return this.SourceFiles[l];
 	}
 }
