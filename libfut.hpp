@@ -491,7 +491,7 @@ protected:
 	uint8_t const * input;
 	int charOffset;
 	FuParserHost * host;
-	int loc = 0;
+	int tokenLoc;
 	int lexemeOffset;
 	FuToken currentToken;
 	int64_t longValue;
@@ -517,7 +517,7 @@ private:
 	int inputLength;
 	int nextOffset;
 	int nextChar;
-	int tokenLoc;
+	int loc = 0;
 	std::unordered_set<std::string> preSymbols;
 	bool lineMode = false;
 	bool enableDocComments = true;
@@ -658,6 +658,7 @@ class FuStatement
 {
 public:
 	virtual ~FuStatement() = default;
+	virtual int getLocLength() const;
 	virtual bool completesNormally() const = 0;
 	virtual void acceptStatement(FuVisitor * visitor) const = 0;
 protected:
@@ -690,6 +691,7 @@ class FuSymbol : public FuExpr
 {
 public:
 	virtual ~FuSymbol() = default;
+	int getLocLength() const override;
 	std::string toString() const override;
 protected:
 	FuSymbol() = default;
@@ -742,6 +744,7 @@ class FuLiteralNull : public FuLiteral
 {
 public:
 	FuLiteralNull() = default;
+	int getLocLength() const override;
 	bool isDefaultValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string toString() const override;
@@ -751,6 +754,7 @@ class FuLiteralFalse : public FuLiteral
 {
 public:
 	FuLiteralFalse() = default;
+	int getLocLength() const override;
 	bool isDefaultValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string toString() const override;
@@ -760,6 +764,7 @@ class FuLiteralTrue : public FuLiteral
 {
 public:
 	FuLiteralTrue() = default;
+	int getLocLength() const override;
 	bool isDefaultValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string toString() const override;
@@ -854,6 +859,7 @@ class FuSymbolReference : public FuExpr
 public:
 	FuSymbolReference() = default;
 	virtual ~FuSymbolReference() = default;
+	int getLocLength() const override;
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
@@ -870,6 +876,7 @@ class FuUnaryExpr : public FuExpr
 {
 public:
 	virtual ~FuUnaryExpr() = default;
+	int getLocLength() const override;
 protected:
 	FuUnaryExpr() = default;
 public:
@@ -897,6 +904,7 @@ class FuBinaryExpr : public FuExpr
 {
 public:
 	FuBinaryExpr() = default;
+	int getLocLength() const override;
 	bool isIndexing() const override;
 	bool isConstEnum() const override;
 	int intValue() const override;
@@ -916,6 +924,7 @@ class FuSelectExpr : public FuExpr
 {
 public:
 	FuSelectExpr() = default;
+	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string toString() const override;
 public:
@@ -969,6 +978,7 @@ class FuAssert : public FuStatement
 {
 public:
 	FuAssert() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -992,6 +1002,7 @@ class FuBreak : public FuStatement
 {
 public:
 	FuBreak() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -1002,6 +1013,7 @@ class FuContinue : public FuStatement
 {
 public:
 	FuContinue() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -1012,6 +1024,7 @@ class FuDoWhile : public FuLoop
 {
 public:
 	FuDoWhile() = default;
+	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 };
 
@@ -1019,6 +1032,7 @@ class FuFor : public FuLoop
 {
 public:
 	FuFor() = default;
+	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
 	std::shared_ptr<FuExpr> init;
@@ -1032,6 +1046,7 @@ class FuForeach : public FuLoop
 {
 public:
 	FuForeach() = default;
+	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 	FuVar * getVar() const;
 	FuVar * getValueVar() const;
@@ -1043,6 +1058,7 @@ class FuIf : public FuCondCompletionStatement
 {
 public:
 	FuIf() = default;
+	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
 	std::shared_ptr<FuExpr> cond;
@@ -1054,6 +1070,7 @@ class FuLock : public FuStatement
 {
 public:
 	FuLock() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -1065,6 +1082,7 @@ class FuNative : public FuStatement
 {
 public:
 	FuNative() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -1075,6 +1093,7 @@ class FuReturn : public FuStatement
 {
 public:
 	FuReturn() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -1094,6 +1113,7 @@ class FuSwitch : public FuCondCompletionStatement
 {
 public:
 	FuSwitch() = default;
+	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 	bool isTypeMatching() const;
 	bool hasWhen() const;
@@ -1115,6 +1135,7 @@ class FuThrow : public FuStatement
 {
 public:
 	FuThrow() = default;
+	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 public:
@@ -1126,6 +1147,7 @@ class FuWhile : public FuLoop
 {
 public:
 	FuWhile() = default;
+	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 };
 

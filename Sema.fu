@@ -28,7 +28,7 @@ public abstract class FuSemaHost : FuParserHost
 		int column = statement.Loc - this.Program.LineLocs[line];
 		FuSourceFile file = this.Program.GetSourceFile(line);
 		line -= file.Line;
-		ReportError(file.Filename, line, column, line, column, message);
+		ReportError(file.Filename, line, column, line, column + statement.GetLocLength(), message);
 	}
 }
 

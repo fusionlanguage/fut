@@ -144,8 +144,8 @@ public abstract class FuLexer
 	protected int CharOffset;
 	int NextChar;
 	protected FuParserHost! Host;
-	protected int Loc = 0;
-	int TokenLoc;
+	int Loc = 0;
+	protected int TokenLoc;
 	protected int LexemeOffset;
 	protected FuToken CurrentToken;
 	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralChar

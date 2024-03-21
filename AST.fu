@@ -315,6 +315,7 @@ public abstract class FuVisitor
 public abstract class FuStatement
 {
 	internal int Loc;
+	public virtual int GetLocLength() => 0;
 	public abstract bool CompletesNormally();
 	public abstract void AcceptStatement(FuVisitor! visitor);
 }
@@ -341,6 +342,7 @@ public abstract class FuSymbol : FuExpr
 	internal FuSymbol!? Next;
 	internal FuScope!? Parent;
 	internal FuCodeDoc#? Documentation = null;
+	public override int GetLocLength() => this.Name.Length;
 	public override string() ToString() => this.Name;
 }
 
@@ -399,6 +401,7 @@ public abstract class FuLiteral : FuExpr
 
 class FuLiteralNull : FuLiteral
 {
+	public override int GetLocLength() => 4;
 	public override bool IsDefaultValue() => true;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralNull(); }
 	public override string() ToString() => "null";
@@ -406,6 +409,7 @@ class FuLiteralNull : FuLiteral
 
 class FuLiteralFalse : FuLiteral
 {
+	public override int GetLocLength() => 5;
 	public override bool IsDefaultValue() => true;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralFalse(); }
 	public override string() ToString() => "false";
@@ -413,6 +417,7 @@ class FuLiteralFalse : FuLiteral
 
 class FuLiteralTrue : FuLiteral
 {
+	public override int GetLocLength() => 4;
 	public override bool IsDefaultValue() => false;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralTrue(); }
 	public override string() ToString() => "true";
@@ -572,6 +577,7 @@ public class FuSymbolReference : FuExpr
 	internal FuExpr#? Left = null;
 	internal string() Name;
 	internal FuSymbol!? Symbol;
+	public override int GetLocLength() => this.Name.Length;
 	public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
 	public override int IntValue()
 	{
@@ -588,6 +594,26 @@ public abstract class FuUnaryExpr : FuExpr
 {
 	internal FuToken Op;
 	internal FuExpr#? Inner;
+	public override int GetLocLength()
+	{
+		switch (this.Op) {
+		case FuToken.Increment:
+		case FuToken.Decrement:
+			return 2;
+		case FuToken.Minus:
+		case FuToken.Tilde:
+		case FuToken.ExclamationMark:
+		case FuToken.Hash:
+		case FuToken.QuestionMark:
+			return 1;
+		case FuToken.New:
+			return 3;
+		case FuToken.Resource:
+			return 8;
+		default:
+			assert false;
+		}
+	}
 }
 
 public class FuPrefixExpr : FuUnaryExpr
@@ -611,6 +637,51 @@ public class FuBinaryExpr : FuExpr
 	internal FuExpr# Left;
 	internal FuToken Op;
 	internal FuExpr#? Right;
+	public override int GetLocLength()
+	{
+		switch (this.Op) {
+		case FuToken.Plus:
+		case FuToken.Minus:
+		case FuToken.Asterisk:
+		case FuToken.Slash:
+		case FuToken.Mod:
+		case FuToken.Less:
+		case FuToken.Greater:
+		case FuToken.And:
+		case FuToken.Or:
+		case FuToken.Xor:
+		case FuToken.Assign:
+		case FuToken.LeftBracket:
+		case FuToken.LeftBrace:
+			return 1;
+		case FuToken.ShiftLeft:
+		case FuToken.ShiftRight:
+		case FuToken.LessOrEqual:
+		case FuToken.GreaterOrEqual:
+		case FuToken.Equal:
+		case FuToken.NotEqual:
+		case FuToken.CondAnd:
+		case FuToken.CondOr:
+		case FuToken.AddAssign:
+		case FuToken.SubAssign:
+		case FuToken.MulAssign:
+		case FuToken.DivAssign:
+		case FuToken.ModAssign:
+		case FuToken.AndAssign:
+		case FuToken.OrAssign:
+		case FuToken.XorAssign:
+		case FuToken.Range:
+		case FuToken.Is:
+			return 2;
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
+			return 3;
+		case FuToken.When:
+			return 0;
+		default:
+			assert false;
+		}
+	}
 	public override bool IsIndexing() => this.Op == FuToken.LeftBracket;
 	public override bool IsConstEnum()
 	{
@@ -746,6 +817,7 @@ public class FuSelectExpr : FuExpr
 	internal FuExpr# Cond;
 	internal FuExpr# OnTrue;
 	internal FuExpr# OnFalse;
+	public override int GetLocLength() => 1;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSelectExpr(this, parent); }
 	public override string() ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 }
@@ -784,6 +856,7 @@ public class FuAssert : FuStatement
 {
 	internal FuExpr# Cond;
 	internal FuExpr#? Message = null;
+	public override int GetLocLength() => 6;
 	public override bool CompletesNormally() => !(this.Cond is FuLiteralFalse);
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitAssert(this); }
 }
@@ -798,6 +871,7 @@ public abstract class FuLoop : FuCondCompletionStatement
 class FuBreak : FuStatement
 {
 	internal FuCondCompletionStatement! LoopOrSwitch;
+	public override int GetLocLength() => 5;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitBreak(this); }
 }
@@ -805,12 +879,14 @@ class FuBreak : FuStatement
 class FuContinue : FuStatement
 {
 	internal FuLoop Loop;
+	public override int GetLocLength() => 8;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitContinue(this); }
 }
 
 class FuDoWhile : FuLoop
 {
+	public override int GetLocLength() => 2;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitDoWhile(this); }
 }
 
@@ -821,12 +897,14 @@ class FuFor : FuLoop
 	internal bool IsRange = false;
 	internal bool IsIteratorUsed;
 	internal long RangeStep;
+	public override int GetLocLength() => 3;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitFor(this); }
 }
 
 class FuForeach : FuLoop
 {
 	internal FuExpr# Collection;
+	public override int GetLocLength() => 7;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitForeach(this); }
 	public FuVar! GetVar()
 	{
@@ -841,6 +919,7 @@ class FuIf : FuCondCompletionStatement
 	internal FuExpr# Cond;
 	internal FuStatement# OnTrue;
 	internal FuStatement#? OnFalse;
+	public override int GetLocLength() => 2;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitIf(this); }
 }
 
@@ -848,6 +927,7 @@ class FuLock : FuStatement
 {
 	internal FuExpr# Lock;
 	internal FuStatement# Body;
+	public override int GetLocLength() => 4;
 	public override bool CompletesNormally() => this.Body.CompletesNormally();
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitLock(this); }
 }
@@ -855,6 +935,7 @@ class FuLock : FuStatement
 class FuNative : FuStatement
 {
 	internal string() Content;
+	public override int GetLocLength() => 6;
 	public override bool CompletesNormally() => true;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitNative(this); }
 }
@@ -862,6 +943,7 @@ class FuNative : FuStatement
 class FuReturn : FuStatement
 {
 	internal FuExpr#? Value;
+	public override int GetLocLength() => 6;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitReturn(this); }
 }
@@ -877,6 +959,7 @@ public class FuSwitch : FuCondCompletionStatement
 	internal FuExpr# Value;
 	internal List<FuCase()>() Cases;
 	internal List<FuStatement#>() DefaultBody;
+	public override int GetLocLength() => 6;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitSwitch(this); }
 
 	public bool IsTypeMatching() => this.Value.Type is FuClassType klass && klass.Class.Id != FuId.StringClass;
@@ -942,12 +1025,14 @@ public class FuThrow : FuStatement
 {
 	internal FuSymbolReference# Class;
 	internal FuExpr#? Message;
+	public override int GetLocLength() => 5;
 	public override bool CompletesNormally() => false;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitThrow(this); }
 }
 
 class FuWhile : FuLoop
 {
+	public override int GetLocLength() => 5;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitWhile(this); }
 }
 

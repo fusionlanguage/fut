@@ -143,9 +143,9 @@ namespace Fusion
 
 		protected FuParserHost Host;
 
-		protected int Loc = 0;
+		int Loc = 0;
 
-		int TokenLoc;
+		protected int TokenLoc;
 
 		protected int LexemeOffset;
 
@@ -1572,6 +1572,8 @@ namespace Fusion
 
 		internal int Loc;
 
+		public virtual int GetLocLength() => 0;
+
 		public abstract bool CompletesNormally();
 
 		public abstract void AcceptStatement(FuVisitor visitor);
@@ -1627,6 +1629,8 @@ namespace Fusion
 		internal FuScope Parent;
 
 		internal FuCodeDoc Documentation = null;
+
+		public override int GetLocLength() => this.Name.Length;
 
 		public override string ToString() => this.Name;
 	}
@@ -1700,6 +1704,8 @@ namespace Fusion
 	class FuLiteralNull : FuLiteral
 	{
 
+		public override int GetLocLength() => 4;
+
 		public override bool IsDefaultValue() => true;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
@@ -1713,6 +1719,8 @@ namespace Fusion
 	class FuLiteralFalse : FuLiteral
 	{
 
+		public override int GetLocLength() => 5;
+
 		public override bool IsDefaultValue() => true;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
@@ -1725,6 +1733,8 @@ namespace Fusion
 
 	class FuLiteralTrue : FuLiteral
 	{
+
+		public override int GetLocLength() => 4;
 
 		public override bool IsDefaultValue() => false;
 
@@ -1909,6 +1919,8 @@ namespace Fusion
 
 		internal FuSymbol Symbol;
 
+		public override int GetLocLength() => this.Name.Length;
+
 		public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
 
 		public override int IntValue()
@@ -1935,6 +1947,27 @@ namespace Fusion
 		internal FuToken Op;
 
 		internal FuExpr Inner;
+
+		public override int GetLocLength()
+		{
+			switch (this.Op) {
+			case FuToken.Increment:
+			case FuToken.Decrement:
+				return 2;
+			case FuToken.Minus:
+			case FuToken.Tilde:
+			case FuToken.ExclamationMark:
+			case FuToken.Hash:
+			case FuToken.QuestionMark:
+				return 1;
+			case FuToken.New:
+				return 3;
+			case FuToken.Resource:
+				return 8;
+			default:
+				throw new NotImplementedException();
+			}
+		}
 	}
 
 	public class FuPrefixExpr : FuUnaryExpr
@@ -1971,6 +2004,52 @@ namespace Fusion
 		internal FuToken Op;
 
 		internal FuExpr Right;
+
+		public override int GetLocLength()
+		{
+			switch (this.Op) {
+			case FuToken.Plus:
+			case FuToken.Minus:
+			case FuToken.Asterisk:
+			case FuToken.Slash:
+			case FuToken.Mod:
+			case FuToken.Less:
+			case FuToken.Greater:
+			case FuToken.And:
+			case FuToken.Or:
+			case FuToken.Xor:
+			case FuToken.Assign:
+			case FuToken.LeftBracket:
+			case FuToken.LeftBrace:
+				return 1;
+			case FuToken.ShiftLeft:
+			case FuToken.ShiftRight:
+			case FuToken.LessOrEqual:
+			case FuToken.GreaterOrEqual:
+			case FuToken.Equal:
+			case FuToken.NotEqual:
+			case FuToken.CondAnd:
+			case FuToken.CondOr:
+			case FuToken.AddAssign:
+			case FuToken.SubAssign:
+			case FuToken.MulAssign:
+			case FuToken.DivAssign:
+			case FuToken.ModAssign:
+			case FuToken.AndAssign:
+			case FuToken.OrAssign:
+			case FuToken.XorAssign:
+			case FuToken.Range:
+			case FuToken.Is:
+				return 2;
+			case FuToken.ShiftLeftAssign:
+			case FuToken.ShiftRightAssign:
+				return 3;
+			case FuToken.When:
+				return 0;
+			default:
+				throw new NotImplementedException();
+			}
+		}
 
 		public override bool IsIndexing() => this.Op == FuToken.LeftBracket;
 
@@ -2120,6 +2199,8 @@ namespace Fusion
 
 		internal FuExpr OnFalse;
 
+		public override int GetLocLength() => 1;
+
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
 			visitor.VisitSelectExpr(this, parent);
@@ -2185,6 +2266,8 @@ namespace Fusion
 
 		internal FuExpr Message = null;
 
+		public override int GetLocLength() => 6;
+
 		public override bool CompletesNormally() => !(this.Cond is FuLiteralFalse);
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2208,6 +2291,8 @@ namespace Fusion
 
 		internal FuCondCompletionStatement LoopOrSwitch;
 
+		public override int GetLocLength() => 5;
+
 		public override bool CompletesNormally() => false;
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2221,6 +2306,8 @@ namespace Fusion
 
 		internal FuLoop Loop;
 
+		public override int GetLocLength() => 8;
+
 		public override bool CompletesNormally() => false;
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2231,6 +2318,8 @@ namespace Fusion
 
 	class FuDoWhile : FuLoop
 	{
+
+		public override int GetLocLength() => 2;
 
 		public override void AcceptStatement(FuVisitor visitor)
 		{
@@ -2251,6 +2340,8 @@ namespace Fusion
 
 		internal long RangeStep;
 
+		public override int GetLocLength() => 3;
+
 		public override void AcceptStatement(FuVisitor visitor)
 		{
 			visitor.VisitFor(this);
@@ -2261,6 +2352,8 @@ namespace Fusion
 	{
 
 		internal FuExpr Collection;
+
+		public override int GetLocLength() => 7;
 
 		public override void AcceptStatement(FuVisitor visitor)
 		{
@@ -2285,6 +2378,8 @@ namespace Fusion
 
 		internal FuStatement OnFalse;
 
+		public override int GetLocLength() => 2;
+
 		public override void AcceptStatement(FuVisitor visitor)
 		{
 			visitor.VisitIf(this);
@@ -2297,6 +2392,8 @@ namespace Fusion
 		internal FuExpr Lock;
 
 		internal FuStatement Body;
+
+		public override int GetLocLength() => 4;
 
 		public override bool CompletesNormally() => this.Body.CompletesNormally();
 
@@ -2311,6 +2408,8 @@ namespace Fusion
 
 		internal string Content;
 
+		public override int GetLocLength() => 6;
+
 		public override bool CompletesNormally() => true;
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2323,6 +2422,8 @@ namespace Fusion
 	{
 
 		internal FuExpr Value;
+
+		public override int GetLocLength() => 6;
 
 		public override bool CompletesNormally() => false;
 
@@ -2348,6 +2449,8 @@ namespace Fusion
 		internal readonly List<FuCase> Cases = new List<FuCase>();
 
 		internal readonly List<FuStatement> DefaultBody = new List<FuStatement>();
+
+		public override int GetLocLength() => 6;
 
 		public override void AcceptStatement(FuVisitor visitor)
 		{
@@ -2420,6 +2523,8 @@ namespace Fusion
 
 		internal FuExpr Message;
 
+		public override int GetLocLength() => 5;
+
 		public override bool CompletesNormally() => false;
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -2430,6 +2535,8 @@ namespace Fusion
 
 	class FuWhile : FuLoop
 	{
+
+		public override int GetLocLength() => 5;
 
 		public override void AcceptStatement(FuVisitor visitor)
 		{
@@ -3465,7 +3572,7 @@ namespace Fusion
 			double d;
 			if (!double.TryParse(GetLexeme().Replace("_", ""), out d))
 				ReportError("Invalid floating-point number");
-			FuLiteralDouble result = new FuLiteralDouble { Loc = this.Loc, Type = this.Host.Program.System.DoubleType, Value = d };
+			FuLiteralDouble result = new FuLiteralDouble { Loc = this.TokenLoc, Type = this.Host.Program.System.DoubleType, Value = d };
 			NextToken();
 			return result;
 		}
@@ -3478,7 +3585,7 @@ namespace Fusion
 
 		FuInterpolatedString ParseInterpolatedString()
 		{
-			FuInterpolatedString result = new FuInterpolatedString { Loc = this.Loc };
+			FuInterpolatedString result = new FuInterpolatedString { Loc = this.TokenLoc };
 			do {
 				string prefix = this.StringValue.Replace("{{", "{");
 				NextToken();
@@ -3514,7 +3621,7 @@ namespace Fusion
 
 		void ParseSymbolReference(FuSymbolReference result)
 		{
-			result.Loc = this.Loc;
+			result.Loc = this.TokenLoc;
 			result.Name = this.StringValue;
 			Expect(FuToken.Id);
 		}
@@ -3536,43 +3643,43 @@ namespace Fusion
 			case FuToken.Increment:
 			case FuToken.Decrement:
 				CheckXcrementParent();
-				return new FuPrefixExpr { Loc = this.Loc, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
+				return new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
 			case FuToken.Minus:
 			case FuToken.Tilde:
 			case FuToken.ExclamationMark:
-				return new FuPrefixExpr { Loc = this.Loc, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
+				return new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
 			case FuToken.New:
-				FuPrefixExpr newResult = new FuPrefixExpr { Loc = this.Loc, Op = NextToken() };
+				FuPrefixExpr newResult = new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken() };
 				result = ParseType();
 				if (Eat(FuToken.LeftBrace))
-					result = new FuBinaryExpr { Loc = this.Loc, Left = result, Op = FuToken.LeftBrace, Right = ParseObjectLiteral() };
+					result = new FuBinaryExpr { Loc = this.TokenLoc, Left = result, Op = FuToken.LeftBrace, Right = ParseObjectLiteral() };
 				newResult.Inner = result;
 				return newResult;
 			case FuToken.LiteralLong:
-				result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.Loc);
+				result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.TokenLoc);
 				NextToken();
 				break;
 			case FuToken.LiteralDouble:
 				result = ParseDouble();
 				break;
 			case FuToken.LiteralChar:
-				result = FuLiteralChar.New((int) this.LongValue, this.Loc);
+				result = FuLiteralChar.New((int) this.LongValue, this.TokenLoc);
 				NextToken();
 				break;
 			case FuToken.LiteralString:
-				result = this.Host.Program.System.NewLiteralString(this.StringValue, this.Loc);
+				result = this.Host.Program.System.NewLiteralString(this.StringValue, this.TokenLoc);
 				NextToken();
 				break;
 			case FuToken.False:
-				result = new FuLiteralFalse { Loc = this.Loc, Type = this.Host.Program.System.BoolType };
+				result = new FuLiteralFalse { Loc = this.TokenLoc, Type = this.Host.Program.System.BoolType };
 				NextToken();
 				break;
 			case FuToken.True:
-				result = new FuLiteralTrue { Loc = this.Loc, Type = this.Host.Program.System.BoolType };
+				result = new FuLiteralTrue { Loc = this.TokenLoc, Type = this.Host.Program.System.BoolType };
 				NextToken();
 				break;
 			case FuToken.Null:
-				result = new FuLiteralNull { Loc = this.Loc, Type = this.Host.Program.System.NullType };
+				result = new FuLiteralNull { Loc = this.TokenLoc, Type = this.Host.Program.System.NullType };
 				NextToken();
 				break;
 			case FuToken.InterpolatedString:
@@ -3591,7 +3698,7 @@ namespace Fusion
 					return lambda;
 				}
 				if (type && Eat(FuToken.Less)) {
-					FuAggregateInitializer typeArgs = new FuAggregateInitializer { Loc = this.Loc };
+					FuAggregateInitializer typeArgs = new FuAggregateInitializer { Loc = this.TokenLoc };
 					bool saveTypeArg = this.ParsingTypeArg;
 					this.ParsingTypeArg = true;
 					do
@@ -3604,9 +3711,10 @@ namespace Fusion
 				result = symbol;
 				break;
 			case FuToken.Resource:
+				int loc = this.TokenLoc;
 				NextToken();
 				if (Eat(FuToken.Less) && this.StringValue == "byte" && Eat(FuToken.Id) && Eat(FuToken.LeftBracket) && Eat(FuToken.RightBracket) && Eat(FuToken.Greater))
-					result = new FuPrefixExpr { Loc = this.Loc, Op = FuToken.Resource, Inner = ParseParenthesized() };
+					result = new FuPrefixExpr { Loc = loc, Op = FuToken.Resource, Inner = ParseParenthesized() };
 				else {
 					ReportError("Expected 'resource<byte[]>'");
 					result = null;
@@ -3628,7 +3736,7 @@ namespace Fusion
 				case FuToken.LeftParenthesis:
 					NextToken();
 					if (result is FuSymbolReference method) {
-						FuCallExpr call = new FuCallExpr { Loc = this.Loc, Method = method };
+						FuCallExpr call = new FuCallExpr { Loc = this.TokenLoc, Method = method };
 						ParseCollection(call.Arguments, FuToken.RightParenthesis);
 						result = call;
 					}
@@ -3636,22 +3744,22 @@ namespace Fusion
 						ReportError("Expected a method");
 					break;
 				case FuToken.LeftBracket:
-					result = new FuBinaryExpr { Loc = this.Loc, Left = result, Op = NextToken(), Right = See(FuToken.RightBracket) ? null : ParseExpr() };
+					result = new FuBinaryExpr { Loc = this.TokenLoc, Left = result, Op = NextToken(), Right = See(FuToken.RightBracket) ? null : ParseExpr() };
 					Expect(FuToken.RightBracket);
 					break;
 				case FuToken.Increment:
 				case FuToken.Decrement:
 					CheckXcrementParent();
-					result = new FuPostfixExpr { Loc = this.Loc, Inner = result, Op = NextToken() };
+					result = new FuPostfixExpr { Loc = this.TokenLoc, Inner = result, Op = NextToken() };
 					break;
 				case FuToken.ExclamationMark:
 				case FuToken.Hash:
-					result = new FuPostfixExpr { Loc = this.Loc, Inner = result, Op = NextToken() };
+					result = new FuPostfixExpr { Loc = this.TokenLoc, Inner = result, Op = NextToken() };
 					break;
 				case FuToken.QuestionMark:
 					if (!type)
 						return result;
-					result = new FuPostfixExpr { Loc = this.Loc, Inner = result, Op = NextToken() };
+					result = new FuPostfixExpr { Loc = this.TokenLoc, Inner = result, Op = NextToken() };
 					break;
 				default:
 					return result;
@@ -3667,7 +3775,7 @@ namespace Fusion
 				case FuToken.Asterisk:
 				case FuToken.Slash:
 				case FuToken.Mod:
-					left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
+					left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 					break;
 				default:
 					return left;
@@ -3679,7 +3787,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseMulExpr();
 			while (See(FuToken.Plus) || See(FuToken.Minus))
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseMulExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseMulExpr() };
 			return left;
 		}
 
@@ -3687,7 +3795,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseAddExpr();
 			while (See(FuToken.ShiftLeft) || See(FuToken.ShiftRight))
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseAddExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseAddExpr() };
 			return left;
 		}
 
@@ -3700,10 +3808,10 @@ namespace Fusion
 				case FuToken.LessOrEqual:
 				case FuToken.Greater:
 				case FuToken.GreaterOrEqual:
-					left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
+					left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 					break;
 				case FuToken.Is:
-					FuBinaryExpr isExpr = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
+					FuBinaryExpr isExpr = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
 					if (See(FuToken.Id)) {
 						FuVar def = ParseVar(isExpr.Right, false);
 						def.IsAssigned = true;
@@ -3720,7 +3828,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseRelExpr();
 			while (See(FuToken.Equal) || See(FuToken.NotEqual))
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseRelExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseRelExpr() };
 			return left;
 		}
 
@@ -3728,7 +3836,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseEqualityExpr();
 			while (See(FuToken.And))
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseEqualityExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseEqualityExpr() };
 			return left;
 		}
 
@@ -3736,7 +3844,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseAndExpr();
 			while (See(FuToken.Xor))
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseAndExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseAndExpr() };
 			return left;
 		}
 
@@ -3744,7 +3852,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseXorExpr();
 			while (See(FuToken.Or))
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseXorExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseXorExpr() };
 			return left;
 		}
 
@@ -3754,7 +3862,7 @@ namespace Fusion
 			while (See(FuToken.CondAnd)) {
 				string saveXcrementParent = this.XcrementParent;
 				this.XcrementParent = "&&";
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseOrExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseOrExpr() };
 				this.XcrementParent = saveXcrementParent;
 			}
 			return left;
@@ -3766,7 +3874,7 @@ namespace Fusion
 			while (See(FuToken.CondOr)) {
 				string saveXcrementParent = this.XcrementParent;
 				this.XcrementParent = "||";
-				left = new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
+				left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseCondAndExpr() };
 				this.XcrementParent = saveXcrementParent;
 			}
 			return left;
@@ -3776,7 +3884,7 @@ namespace Fusion
 		{
 			FuExpr left = ParseCondOrExpr();
 			if (See(FuToken.QuestionMark)) {
-				FuSelectExpr result = new FuSelectExpr { Loc = this.Loc, Cond = left };
+				FuSelectExpr result = new FuSelectExpr { Loc = this.TokenLoc, Cond = left };
 				NextToken();
 				string saveXcrementParent = this.XcrementParent;
 				this.XcrementParent = "?";
@@ -3793,14 +3901,14 @@ namespace Fusion
 		{
 			FuExpr left = ParsePrimaryExpr(true);
 			if (Eat(FuToken.Range))
-				return new FuBinaryExpr { Loc = this.Loc, Left = left, Op = FuToken.Range, Right = ParsePrimaryExpr(true) };
+				return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = FuToken.Range, Right = ParsePrimaryExpr(true) };
 			return left;
 		}
 
 		FuExpr ParseConstInitializer()
 		{
 			if (Eat(FuToken.LeftBrace)) {
-				FuAggregateInitializer result = new FuAggregateInitializer { Loc = this.Loc };
+				FuAggregateInitializer result = new FuAggregateInitializer { Loc = this.TokenLoc };
 				ParseCollection(result.Items, FuToken.RightBrace);
 				return result;
 			}
@@ -3809,9 +3917,9 @@ namespace Fusion
 
 		FuAggregateInitializer ParseObjectLiteral()
 		{
-			FuAggregateInitializer result = new FuAggregateInitializer { Loc = this.Loc };
+			FuAggregateInitializer result = new FuAggregateInitializer { Loc = this.TokenLoc };
 			do {
-				int loc = this.Loc;
+				int loc = this.TokenLoc;
 				FuSymbolReference field = new FuSymbolReference();
 				ParseSymbolReference(field);
 				Expect(FuToken.Assign);
@@ -3841,7 +3949,7 @@ namespace Fusion
 
 		FuVar ParseVar(FuExpr type, bool initializer)
 		{
-			FuVar result = new FuVar { Loc = this.Loc, TypeExpr = type, Name = this.StringValue };
+			FuVar result = new FuVar { Loc = this.TokenLoc, TypeExpr = type, Name = this.StringValue };
 			NextToken();
 			result.Value = initializer ? ParseInitializer() : null;
 			return result;
@@ -3850,7 +3958,7 @@ namespace Fusion
 		FuConst ParseConst(FuVisibility visibility)
 		{
 			Expect(FuToken.Const);
-			FuConst konst = new FuConst { Loc = this.Loc, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue, VisitStatus = FuVisitStatus.NotYet };
+			FuConst konst = new FuConst { Loc = this.TokenLoc, Visibility = visibility, TypeExpr = ParseType(), Name = this.StringValue, VisitStatus = FuVisitStatus.NotYet };
 			NextToken();
 			Expect(FuToken.Assign);
 			konst.Value = ParseConstInitializer();
@@ -3873,7 +3981,7 @@ namespace Fusion
 			case FuToken.XorAssign:
 			case FuToken.ShiftLeftAssign:
 			case FuToken.ShiftRightAssign:
-				return new FuBinaryExpr { Loc = this.Loc, Left = left, Op = NextToken(), Right = ParseAssign(false) };
+				return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseAssign(false) };
 			case FuToken.Id:
 				if (allowVar)
 					return ParseVar(left, true);
@@ -3885,7 +3993,7 @@ namespace Fusion
 
 		FuBlock ParseBlock()
 		{
-			FuBlock result = new FuBlock { Loc = this.Loc };
+			FuBlock result = new FuBlock { Loc = this.TokenLoc };
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile))
 				result.Statements.Add(ParseStatement());
@@ -3895,7 +4003,7 @@ namespace Fusion
 
 		FuAssert ParseAssert()
 		{
-			FuAssert result = new FuAssert { Loc = this.Loc };
+			FuAssert result = new FuAssert { Loc = this.TokenLoc };
 			Expect(FuToken.Assert);
 			result.Cond = ParseExpr();
 			if (Eat(FuToken.Comma))
@@ -3908,7 +4016,7 @@ namespace Fusion
 		{
 			if (this.CurrentLoopOrSwitch == null)
 				ReportError("'break' outside loop or 'switch'");
-			FuBreak result = new FuBreak { Loc = this.Loc, LoopOrSwitch = this.CurrentLoopOrSwitch };
+			FuBreak result = new FuBreak { Loc = this.TokenLoc, LoopOrSwitch = this.CurrentLoopOrSwitch };
 			Expect(FuToken.Break);
 			Expect(FuToken.Semicolon);
 			if (this.CurrentLoopOrSwitch is FuLoop loop)
@@ -3920,7 +4028,7 @@ namespace Fusion
 		{
 			if (this.CurrentLoop == null)
 				ReportError("'continue' outside loop");
-			FuContinue result = new FuContinue { Loc = this.Loc, Loop = this.CurrentLoop };
+			FuContinue result = new FuContinue { Loc = this.TokenLoc, Loop = this.CurrentLoop };
 			Expect(FuToken.Continue);
 			Expect(FuToken.Semicolon);
 			return result;
@@ -3939,7 +4047,7 @@ namespace Fusion
 
 		FuDoWhile ParseDoWhile()
 		{
-			FuDoWhile result = new FuDoWhile { Loc = this.Loc };
+			FuDoWhile result = new FuDoWhile { Loc = this.TokenLoc };
 			Expect(FuToken.Do);
 			ParseLoopBody(result);
 			Expect(FuToken.While);
@@ -3950,7 +4058,7 @@ namespace Fusion
 
 		FuFor ParseFor()
 		{
-			FuFor result = new FuFor { Loc = this.Loc };
+			FuFor result = new FuFor { Loc = this.TokenLoc };
 			Expect(FuToken.For);
 			Expect(FuToken.LeftParenthesis);
 			if (!See(FuToken.Semicolon))
@@ -3973,7 +4081,7 @@ namespace Fusion
 
 		FuForeach ParseForeach()
 		{
-			FuForeach result = new FuForeach { Loc = this.Loc };
+			FuForeach result = new FuForeach { Loc = this.TokenLoc };
 			Expect(FuToken.Foreach);
 			Expect(FuToken.LeftParenthesis);
 			if (Eat(FuToken.LeftParenthesis)) {
@@ -3993,7 +4101,7 @@ namespace Fusion
 
 		FuIf ParseIf()
 		{
-			FuIf result = new FuIf { Loc = this.Loc };
+			FuIf result = new FuIf { Loc = this.TokenLoc };
 			Expect(FuToken.If);
 			result.Cond = ParseParenthesized();
 			result.OnTrue = ParseStatement();
@@ -4004,7 +4112,7 @@ namespace Fusion
 
 		FuLock ParseLock()
 		{
-			FuLock result = new FuLock { Loc = this.Loc };
+			FuLock result = new FuLock { Loc = this.TokenLoc };
 			Expect(FuToken.Lock_);
 			result.Lock = ParseParenthesized();
 			result.Body = ParseStatement();
@@ -4013,7 +4121,7 @@ namespace Fusion
 
 		FuNative ParseNative()
 		{
-			FuNative result = new FuNative { Loc = this.Loc };
+			FuNative result = new FuNative { Loc = this.TokenLoc };
 			Expect(FuToken.Native);
 			if (See(FuToken.LiteralString))
 				result.Content = this.StringValue;
@@ -4043,7 +4151,7 @@ namespace Fusion
 
 		FuReturn ParseReturn()
 		{
-			FuReturn result = new FuReturn { Loc = this.Loc };
+			FuReturn result = new FuReturn { Loc = this.TokenLoc };
 			NextToken();
 			if (!See(FuToken.Semicolon))
 				result.Value = ParseExpr();
@@ -4053,7 +4161,7 @@ namespace Fusion
 
 		FuSwitch ParseSwitch()
 		{
-			FuSwitch result = new FuSwitch { Loc = this.Loc };
+			FuSwitch result = new FuSwitch { Loc = this.TokenLoc };
 			Expect(FuToken.Switch);
 			result.Value = ParseParenthesized();
 			Expect(FuToken.LeftBrace);
@@ -4067,7 +4175,7 @@ namespace Fusion
 					if (See(FuToken.Id))
 						expr = ParseVar(expr, false);
 					if (Eat(FuToken.When))
-						expr = new FuBinaryExpr { Loc = this.Loc, Left = expr, Op = FuToken.When, Right = ParseExpr() };
+						expr = new FuBinaryExpr { Loc = this.TokenLoc, Left = expr, Op = FuToken.When, Right = ParseExpr() };
 					kase.Values.Add(expr);
 					Expect(FuToken.Colon);
 				}
@@ -4107,7 +4215,7 @@ namespace Fusion
 
 		FuThrow ParseThrow()
 		{
-			FuThrow result = new FuThrow { Loc = this.Loc };
+			FuThrow result = new FuThrow { Loc = this.TokenLoc };
 			Expect(FuToken.Throw);
 			result.Class = new FuSymbolReference();
 			ParseSymbolReference(result.Class);
@@ -4120,7 +4228,7 @@ namespace Fusion
 
 		FuWhile ParseWhile()
 		{
-			FuWhile result = new FuWhile { Loc = this.Loc };
+			FuWhile result = new FuWhile { Loc = this.TokenLoc };
 			Expect(FuToken.While);
 			result.Cond = ParseParenthesized();
 			ParseLoopBody(result);
@@ -4255,7 +4363,7 @@ namespace Fusion
 		void ParseClass(FuCodeDoc doc, bool isPublic, FuCallType callType)
 		{
 			Expect(FuToken.Class);
-			FuClass klass = new FuClass { Loc = this.Loc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
+			FuClass klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 			if (Expect(FuToken.Id))
 				AddSymbol(this.Host.Program, klass);
 			if (Eat(FuToken.Colon)) {
@@ -4311,7 +4419,7 @@ namespace Fusion
 					klass.Constructor.AddThis(klass, true);
 					continue;
 				}
-				int loc = this.Loc;
+				int loc = this.TokenLoc;
 				string name = this.StringValue;
 				if (!Expect(FuToken.Id))
 					continue;
@@ -4348,7 +4456,7 @@ namespace Fusion
 			Expect(FuToken.Enum);
 			bool flags = Eat(FuToken.Asterisk);
 			FuEnum enu = this.Host.Program.System.NewEnum(flags);
-			enu.Loc = this.Loc;
+			enu.Loc = this.TokenLoc;
 			enu.Documentation = doc;
 			enu.IsPublic = isPublic;
 			enu.Name = this.StringValue;
@@ -4356,7 +4464,7 @@ namespace Fusion
 				AddSymbol(this.Host.Program, enu);
 			Expect(FuToken.LeftBrace);
 			do {
-				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.Loc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
+				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.TokenLoc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
 				Expect(FuToken.Id);
 				if (Eat(FuToken.Assign))
 					konst.Value = ParseExpr();
@@ -4421,7 +4529,7 @@ namespace Fusion
 			int column = statement.Loc - this.Program.LineLocs[line];
 			FuSourceFile file = this.Program.GetSourceFile(line);
 			line -= file.Line;
-			ReportError(file.Filename, line, column, line, column, message);
+			ReportError(file.Filename, line, column, line, column + statement.GetLocLength(), message);
 		}
 	}
 
