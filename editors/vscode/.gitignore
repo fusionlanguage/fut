@@ -1,4 +1,4 @@
 /fusion-*.vsix
 /node_modules
 /out
-/src/parser.js
+/src/fucheck.js

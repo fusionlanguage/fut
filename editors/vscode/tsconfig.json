@@ -1,7 +1,7 @@
 {
   "files": [
     "src/extension.ts",
-    "src/parser.js"
+    "src/fucheck.js"
   ],
   "compilerOptions": {
     "target": "es2021",

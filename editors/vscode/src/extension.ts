@@ -19,9 +19,9 @@
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
 import * as vscode from "vscode";
-import { FuParser, FuProgram, FuSystem, FuParserHost } from "./parser.js";
+import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost } from "./fucheck.js";
 
-class VsCodeHost extends FuParserHost
+class VsCodeHost extends FuSemaHost
 {
 	#system = FuSystem.new();
 	#diagnostics: vscode.Diagnostic[] = [];
@@ -43,6 +43,11 @@ class VsCodeHost extends FuParserHost
 		parser.program.system = this.#system;
 		const input = new TextEncoder().encode(document.getText());
 		parser.parse(document.fileName, input, input.length);
+		if (this.#diagnostics.length == 0) {
+			const sema = new FuSema();
+			sema.setHost(this);
+			sema.process(parser.program);
+		}
 		diagnosticCollection.set(document.uri, this.#diagnostics);
 	}
 }
