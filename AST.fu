@@ -314,7 +314,7 @@ public abstract class FuVisitor
 
 public abstract class FuStatement
 {
-	internal int Line;
+	internal int Loc;
 	public abstract bool CompletesNormally();
 	public abstract void AcceptStatement(FuVisitor! visitor);
 }
@@ -440,7 +440,7 @@ class FuLiteralLong : FuLiteral
 
 class FuLiteralChar : FuLiteralLong
 {
-	public static FuLiteralChar# New(int value, int line) => new FuLiteralChar { Line = line, Type = FuRangeType.New(value, value), Value = value };
+	public static FuLiteralChar# New(int value, int loc) => new FuLiteralChar { Loc = loc, Type = FuRangeType.New(value, value), Value = value };
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralChar(this.Value); }
 //	public override string() ToString()
 //	{
@@ -1428,13 +1428,13 @@ public class FuSystem : FuScope
 	internal FuEnum# RegexOptionsEnum;
 	internal FuReadWriteClassType# LockPtrType = new FuReadWriteClassType();
 
-	internal FuLiteralLong# NewLiteralLong(long value, int line = 0)
+	internal FuLiteralLong# NewLiteralLong(long value, int loc = 0)
 	{
 		FuType# type = value >= int.MinValue && value <= int.MaxValue ? FuRangeType.New(value, value) : LongType;
-		return new FuLiteralLong { Line = line, Type = type, Value = value };
+		return new FuLiteralLong { Loc = loc, Type = type, Value = value };
 	}
 
-	internal FuLiteralString# NewLiteralString(string value, int line = 0) => new FuLiteralString { Line = line, Type = StringPtrType, Value = value };
+	internal FuLiteralString# NewLiteralString(string value, int loc = 0) => new FuLiteralString { Loc = loc, Type = StringPtrType, Value = value };
 
 	internal FuType# PromoteIntegerTypes(FuType left, FuType right)
 	{

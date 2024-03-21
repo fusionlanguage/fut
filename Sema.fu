@@ -41,7 +41,7 @@ public class FuSema
 
 	protected void ReportError(FuStatement statement, string message)
 	{
-		this.Host.ReportError(GetCurrentContainer().Filename, statement.Line, 0, statement.Line, 0,message);
+		this.Host.ReportError(GetCurrentContainer().Filename, statement.Loc, 0, statement.Loc, 0,message);
 	}
 
 	FuType# PoisonError(FuStatement statement, string message)
@@ -186,7 +186,7 @@ public class FuSema
 		}
 		s += expr.Suffix;
 		if (partsCount == 0)
-			return this.Program.System.NewLiteralString(s, expr.Line);
+			return this.Program.System.NewLiteralString(s, expr.Loc);
 		expr.Type = this.Program.System.StringStorageType;
 		expr.Parts.RemoveRange(partsCount, expr.Parts.Count - partsCount);
 		expr.Suffix = s;
@@ -309,7 +309,7 @@ public class FuSema
 		}
 		if (result != expr)
 			return result;
-		return new FuSymbolReference { Line = expr.Line, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
+		return new FuSymbolReference { Loc = expr.Loc, Left = left, Name = expr.Name, Symbol = expr.Symbol, Type = expr.Type };
 	}
 
 	static FuRangeType# Union(FuRangeType# left, FuRangeType#? right)
@@ -509,14 +509,14 @@ public class FuSema
 	FuLiteral# ToLiteralBool(FuExpr expr, bool value)
 	{
 		FuLiteral# result = value ? new FuLiteralTrue() : new FuLiteralFalse();
-		result.Line = expr.Line;
+		result.Loc = expr.Loc;
 		result.Type = this.Program.System.BoolType;
 		return result;
 	}
 
-	FuLiteralLong# ToLiteralLong(FuExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Line);
+	FuLiteralLong# ToLiteralLong(FuExpr expr, long value) => this.Program.System.NewLiteralLong(value, expr.Loc);
 
-	FuLiteralDouble# ToLiteralDouble(FuExpr expr, double value) => new FuLiteralDouble { Line = expr.Line, Type = this.Program.System.DoubleType, Value = value };
+	FuLiteralDouble# ToLiteralDouble(FuExpr expr, double value) => new FuLiteralDouble { Loc = expr.Loc, Type = this.Program.System.DoubleType, Value = value };
 
 	void CheckLValue(FuExpr expr)
 	{
@@ -590,7 +590,7 @@ public class FuSema
 
 	FuInterpolatedString# Concatenate(FuInterpolatedString left, FuInterpolatedString right)
 	{
-		FuInterpolatedString# result = new FuInterpolatedString { Line = left.Line, Type = this.Program.System.StringStorageType };
+		FuInterpolatedString# result = new FuInterpolatedString { Loc = left.Loc, Type = this.Program.System.StringStorageType };
 		result.Parts.AddRange(left.Parts);
 		if (right.Parts.Count == 0)
 			result.Suffix = left.Suffix + right.Suffix;
@@ -607,7 +607,7 @@ public class FuSema
 	{
 		if (expr is FuInterpolatedString# interpolated)
 			return interpolated;
-		FuInterpolatedString# result = new FuInterpolatedString { Line = expr.Line, Type = this.Program.System.StringStorageType };
+		FuInterpolatedString# result = new FuInterpolatedString { Loc = expr.Loc, Type = this.Program.System.StringStorageType };
 		if (expr is FuLiteral literal)
 			result.Suffix = literal.GetLiteralString();
 		else {
@@ -650,18 +650,18 @@ public class FuSema
 				return PoisonError(expr, "Invalid argument to new");
 			assert binaryNew.Right is FuAggregateInitializer# init;
 			ResolveObjectLiteral(klass, init);
-			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class };
+			expr.Type = new FuDynamicPtrType { Loc = expr.Loc, Class = klass.Class };
 			expr.Inner = init;
 			return expr;
 		}
 		type = ToType(expr.Inner, true);
 		switch (type) {
 		case FuArrayStorageType array:
-			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
+			expr.Type = new FuDynamicPtrType { Loc = expr.Loc, Class = this.Program.System.ArrayPtrClass, TypeArg0 = array.GetElementType() };
 			expr.Inner = array.LengthExpr;
 			return expr;
 		case FuStorageType klass:
-			expr.Type = new FuDynamicPtrType { Line = expr.Line, Class = klass.Class, TypeArg0 = klass.TypeArg0, TypeArg1 = klass.TypeArg1 };
+			expr.Type = new FuDynamicPtrType { Loc = expr.Loc, Class = klass.Class, TypeArg0 = klass.TypeArg0, TypeArg1 = klass.TypeArg1 };
 			expr.Inner = null;
 			return expr;
 		default:
@@ -719,7 +719,7 @@ public class FuSema
 			break;
 		case FuToken.ExclamationMark:
 			inner = ResolveBool(expr.Inner);
-			return new FuPrefixExpr { Line = expr.Line, Op = FuToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
+			return new FuPrefixExpr { Loc = expr.Loc, Op = FuToken.ExclamationMark, Inner = inner, Type = this.Program.System.BoolType };
 		case FuToken.New:
 			return ResolveNew(expr);
 		case FuToken.Resource:
@@ -731,7 +731,7 @@ public class FuSema
 		default:
 			assert false;
 		}
-		return new FuPrefixExpr { Line = expr.Line, Op = expr.Op, Inner = inner, Type = type };
+		return new FuPrefixExpr { Loc = expr.Loc, Op = expr.Op, Inner = inner, Type = type };
 	}
 
 	FuExpr# VisitPostfixExpr!(FuPostfixExpr# expr)
@@ -803,7 +803,7 @@ public class FuSema
 		}
 		TakePtr(left);
 		TakePtr(right);
-		return new FuBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
+		return new FuBinaryExpr { Loc = expr.Loc, Left = left, Op = expr.Op, Right = right, Type = this.Program.System.BoolType };
 	}
 
 	void CheckIsHierarchy(FuClassType leftPtr, FuExpr left, FuClass rightClass, FuExpr expr, string op, string alwaysMessage, string neverMessage)
@@ -872,7 +872,7 @@ public class FuSema
 					if (i >= 0 && i <= int.MaxValue) {
 						int c = stringLiteral.GetAsciiAt(i);
 						if (c >= 0)
-							return FuLiteralChar.New(c, expr.Line);
+							return FuLiteralChar.New(c, expr.Loc);
 					}
 				}
 				type = this.Program.System.CharType;
@@ -909,7 +909,7 @@ public class FuSema
 			else if (left.Type is FuStringType) {
 				Coerce(right, this.Program.System.StringPtrType);
 				if (left is FuLiteral leftLiteral && right is FuLiteral rightLiteral)
-					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Line);
+					return this.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Loc);
 				if (left is FuInterpolatedString || right is FuInterpolatedString)
 					return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 				type = this.Program.System.StringStorageType;
@@ -1127,7 +1127,7 @@ public class FuSema
 		}
 		if (type is FuRangeType range && range.Min == range.Max)
 			return ToLiteralLong(expr, range.Min);
-		return new FuBinaryExpr { Line = expr.Line, Left = left, Op = expr.Op, Right = right, Type = type };
+		return new FuBinaryExpr { Loc = expr.Loc, Left = left, Op = expr.Op, Right = right, Type = type };
 	}
 
 	FuType# TryGetPtr(FuType# type, bool nullable)
@@ -1210,7 +1210,7 @@ public class FuSema
 			return onTrue;
 		if (cond is FuLiteralFalse)
 			return onFalse;
-		return new FuSelectExpr { Line = expr.Line, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
+		return new FuSelectExpr { Loc = expr.Loc, Cond = cond, OnTrue = onTrue, OnFalse = onFalse, Type = type };
 	}
 
 	FuType# EvalType(FuClassType generic, FuType# type)
@@ -1546,7 +1546,7 @@ public class FuSema
 			if (call.Arguments.Count != 0)
 				return PoisonError(call, "Expected empty parentheses for storage type");
 			if (call.Method.Left is FuAggregateInitializer typeArgExprs2) {
-				FuStorageType# storage = new FuStorageType { Line = call.Line };
+				FuStorageType# storage = new FuStorageType { Loc = call.Loc };
 				if (this.Program.TryLookup(call.Method.Name, true) is FuClass klass) {
 					FillGenericClass(storage, klass, typeArgExprs2);
 					return storage;
@@ -1637,7 +1637,7 @@ public class FuSema
 		}
 		else
 			baseType = ToBaseType(expr, ptrModifier, nullable);
-		baseType.Line = expr.Line;
+		baseType.Loc = expr.Loc;
 
 		if (outerArray == null)
 			return baseType;

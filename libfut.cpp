@@ -47,7 +47,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	this->input = input;
 	this->inputLength = inputLength;
 	this->nextOffset = 0;
-	this->line = 1;
+	this->loc = 1;
 	this->utf16Column = 0;
 	fillNextChar();
 	if (this->nextChar == 65279)
@@ -57,7 +57,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 
 void FuLexer::reportError(std::string_view message) const
 {
-	this->host->reportError(this->filename, this->line, this->tokenUtf16Column, this->line, this->utf16Column, message);
+	this->host->reportError(this->filename, this->loc, this->tokenUtf16Column, this->loc, this->utf16Column, message);
 }
 
 int FuLexer::readByte()
@@ -127,7 +127,7 @@ int FuLexer::readChar()
 		this->utf16Column++;
 		break;
 	case '\n':
-		this->line++;
+		this->loc++;
 		this->utf16Column = 0;
 		this->atLineStart = true;
 		break;
@@ -480,7 +480,7 @@ FuToken FuLexer::readPreToken()
 				break;
 			}
 			if (eatChar('*')) {
-				int startLine = this->line;
+				int startLine = this->loc;
 				do {
 					c = readChar();
 					if (c < 0) {
@@ -1301,10 +1301,10 @@ std::string FuLiteralLong::toString() const
 	return std::format("{}", this->value);
 }
 
-std::shared_ptr<FuLiteralChar> FuLiteralChar::new_(int value, int line)
+std::shared_ptr<FuLiteralChar> FuLiteralChar::new_(int value, int loc)
 {
 	std::shared_ptr<FuLiteralChar> futemp0 = std::make_shared<FuLiteralChar>();
-	futemp0->line = line;
+	futemp0->loc = loc;
 	futemp0->type = FuRangeType::new_(value, value);
 	futemp0->value = value;
 	return futemp0;
@@ -2668,20 +2668,20 @@ FuSystem::FuSystem()
 	this->lockPtrType->class_ = lockClass.get();
 }
 
-std::shared_ptr<FuLiteralLong> FuSystem::newLiteralLong(int64_t value, int line) const
+std::shared_ptr<FuLiteralLong> FuSystem::newLiteralLong(int64_t value, int loc) const
 {
 	std::shared_ptr<FuType> type = value >= -2147483648 && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
 	std::shared_ptr<FuLiteralLong> futemp0 = std::make_shared<FuLiteralLong>();
-	futemp0->line = line;
+	futemp0->loc = loc;
 	futemp0->type = type;
 	futemp0->value = value;
 	return futemp0;
 }
 
-std::shared_ptr<FuLiteralString> FuSystem::newLiteralString(std::string_view value, int line) const
+std::shared_ptr<FuLiteralString> FuSystem::newLiteralString(std::string_view value, int loc) const
 {
 	std::shared_ptr<FuLiteralString> futemp0 = std::make_shared<FuLiteralString>();
-	futemp0->line = line;
+	futemp0->loc = loc;
 	futemp0->type = this->stringPtrType;
 	futemp0->value = value;
 	return futemp0;
@@ -2900,7 +2900,7 @@ std::shared_ptr<FuLiteralDouble> FuParser::parseDouble()
 	if (!FuNumber_TryParse(d, FuString_Replace(getLexeme(), "_", "")))
 		reportError("Invalid floating-point number");
 	std::shared_ptr<FuLiteralDouble> result = std::make_shared<FuLiteralDouble>();
-	result->line = this->line;
+	result->loc = this->loc;
 	result->type = this->program->system->doubleType;
 	result->value = d;
 	nextToken();
@@ -2916,7 +2916,7 @@ bool FuParser::seeDigit() const
 std::shared_ptr<FuInterpolatedString> FuParser::parseInterpolatedString()
 {
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
-	result->line = this->line;
+	result->loc = this->loc;
 	do {
 		std::string prefix{FuString_Replace(this->stringValue, "{{", "{")};
 		nextToken();
@@ -2952,7 +2952,7 @@ std::shared_ptr<FuExpr> FuParser::parseParenthesized()
 
 void FuParser::parseSymbolReference(FuSymbolReference * result)
 {
-	result->line = this->line;
+	result->loc = this->loc;
 	result->name = this->stringValue;
 	expect(FuToken::id);
 }
@@ -2976,7 +2976,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		checkXcrementParent();
 		{
 			std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
-			futemp0->line = this->line;
+			futemp0->loc = this->loc;
 			futemp0->op = nextToken();
 			futemp0->inner = parsePrimaryExpr(false);
 			return futemp0;
@@ -2986,7 +2986,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 	case FuToken::exclamationMark:
 		{
 			std::shared_ptr<FuPrefixExpr> futemp1 = std::make_shared<FuPrefixExpr>();
-			futemp1->line = this->line;
+			futemp1->loc = this->loc;
 			futemp1->op = nextToken();
 			futemp1->inner = parsePrimaryExpr(false);
 			return futemp1;
@@ -2994,12 +2994,12 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 	case FuToken::new_:
 		{
 			std::shared_ptr<FuPrefixExpr> newResult = std::make_shared<FuPrefixExpr>();
-			newResult->line = this->line;
+			newResult->loc = this->loc;
 			newResult->op = nextToken();
 			result = parseType();
 			if (eat(FuToken::leftBrace)) {
 				std::shared_ptr<FuBinaryExpr> futemp2 = std::make_shared<FuBinaryExpr>();
-				futemp2->line = this->line;
+				futemp2->loc = this->loc;
 				futemp2->left = result;
 				futemp2->op = FuToken::leftBrace;
 				futemp2->right = parseObjectLiteral();
@@ -3009,24 +3009,24 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			return newResult;
 		}
 	case FuToken::literalLong:
-		result = this->program->system->newLiteralLong(this->longValue, this->line);
+		result = this->program->system->newLiteralLong(this->longValue, this->loc);
 		nextToken();
 		break;
 	case FuToken::literalDouble:
 		result = parseDouble();
 		break;
 	case FuToken::literalChar:
-		result = FuLiteralChar::new_(static_cast<int>(this->longValue), this->line);
+		result = FuLiteralChar::new_(static_cast<int>(this->longValue), this->loc);
 		nextToken();
 		break;
 	case FuToken::literalString:
-		result = this->program->system->newLiteralString(this->stringValue, this->line);
+		result = this->program->system->newLiteralString(this->stringValue, this->loc);
 		nextToken();
 		break;
 	case FuToken::false_:
 		{
 			std::shared_ptr<FuLiteralFalse> futemp3 = std::make_shared<FuLiteralFalse>();
-			futemp3->line = this->line;
+			futemp3->loc = this->loc;
 			futemp3->type = this->program->system->boolType;
 			result = futemp3;
 			nextToken();
@@ -3035,7 +3035,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 	case FuToken::true_:
 		{
 			std::shared_ptr<FuLiteralTrue> futemp4 = std::make_shared<FuLiteralTrue>();
-			futemp4->line = this->line;
+			futemp4->loc = this->loc;
 			futemp4->type = this->program->system->boolType;
 			result = futemp4;
 			nextToken();
@@ -3044,7 +3044,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 	case FuToken::null:
 		{
 			std::shared_ptr<FuLiteralNull> futemp5 = std::make_shared<FuLiteralNull>();
-			futemp5->line = this->line;
+			futemp5->loc = this->loc;
 			futemp5->type = this->program->system->nullType;
 			result = futemp5;
 			nextToken();
@@ -3062,14 +3062,14 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			parseSymbolReference(symbol.get());
 			if (eat(FuToken::fatArrow)) {
 				std::shared_ptr<FuLambdaExpr> lambda = std::make_shared<FuLambdaExpr>();
-				lambda->line = symbol->line;
+				lambda->loc = symbol->loc;
 				lambda->add(FuVar::new_(nullptr, symbol->name));
 				lambda->body = parseExpr();
 				return lambda;
 			}
 			if (type && eat(FuToken::less)) {
 				std::shared_ptr<FuAggregateInitializer> typeArgs = std::make_shared<FuAggregateInitializer>();
-				typeArgs->line = this->line;
+				typeArgs->loc = this->loc;
 				bool saveTypeArg = this->parsingTypeArg;
 				this->parsingTypeArg = true;
 				do
@@ -3086,7 +3086,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		nextToken();
 		if (eat(FuToken::less) && this->stringValue == "byte" && eat(FuToken::id) && eat(FuToken::leftBracket) && eat(FuToken::rightBracket) && eat(FuToken::greater)) {
 			std::shared_ptr<FuPrefixExpr> futemp6 = std::make_shared<FuPrefixExpr>();
-			futemp6->line = this->line;
+			futemp6->loc = this->loc;
 			futemp6->op = FuToken::resource;
 			futemp6->inner = parseParenthesized();
 			result = futemp6;
@@ -3116,7 +3116,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			nextToken();
 			if (std::shared_ptr<FuSymbolReference>method = std::dynamic_pointer_cast<FuSymbolReference>(result)) {
 				std::shared_ptr<FuCallExpr> call = std::make_shared<FuCallExpr>();
-				call->line = this->line;
+				call->loc = this->loc;
 				call->method = method;
 				parseCollection(&call->arguments, FuToken::rightParenthesis);
 				result = call;
@@ -3127,7 +3127,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		case FuToken::leftBracket:
 			{
 				std::shared_ptr<FuBinaryExpr> futemp7 = std::make_shared<FuBinaryExpr>();
-				futemp7->line = this->line;
+				futemp7->loc = this->loc;
 				futemp7->left = result;
 				futemp7->op = nextToken();
 				futemp7->right = see(FuToken::rightBracket) ? nullptr : parseExpr();
@@ -3140,7 +3140,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			checkXcrementParent();
 			{
 				std::shared_ptr<FuPostfixExpr> futemp8 = std::make_shared<FuPostfixExpr>();
-				futemp8->line = this->line;
+				futemp8->loc = this->loc;
 				futemp8->inner = result;
 				futemp8->op = nextToken();
 				result = futemp8;
@@ -3150,7 +3150,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		case FuToken::hash:
 			{
 				std::shared_ptr<FuPostfixExpr> futemp9 = std::make_shared<FuPostfixExpr>();
-				futemp9->line = this->line;
+				futemp9->loc = this->loc;
 				futemp9->inner = result;
 				futemp9->op = nextToken();
 				result = futemp9;
@@ -3161,7 +3161,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 				return result;
 			{
 				std::shared_ptr<FuPostfixExpr> futemp10 = std::make_shared<FuPostfixExpr>();
-				futemp10->line = this->line;
+				futemp10->loc = this->loc;
 				futemp10->inner = result;
 				futemp10->op = nextToken();
 				result = futemp10;
@@ -3183,7 +3183,7 @@ std::shared_ptr<FuExpr> FuParser::parseMulExpr()
 		case FuToken::mod:
 			{
 				std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-				futemp0->line = this->line;
+				futemp0->loc = this->loc;
 				futemp0->left = left;
 				futemp0->op = nextToken();
 				futemp0->right = parsePrimaryExpr(false);
@@ -3201,7 +3201,7 @@ std::shared_ptr<FuExpr> FuParser::parseAddExpr()
 	std::shared_ptr<FuExpr> left = parseMulExpr();
 	while (see(FuToken::plus) || see(FuToken::minus)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseMulExpr();
@@ -3215,7 +3215,7 @@ std::shared_ptr<FuExpr> FuParser::parseShiftExpr()
 	std::shared_ptr<FuExpr> left = parseAddExpr();
 	while (see(FuToken::shiftLeft) || see(FuToken::shiftRight)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseAddExpr();
@@ -3235,7 +3235,7 @@ std::shared_ptr<FuExpr> FuParser::parseRelExpr()
 		case FuToken::greaterOrEqual:
 			{
 				std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-				futemp0->line = this->line;
+				futemp0->loc = this->loc;
 				futemp0->left = left;
 				futemp0->op = nextToken();
 				futemp0->right = parseShiftExpr();
@@ -3245,7 +3245,7 @@ std::shared_ptr<FuExpr> FuParser::parseRelExpr()
 		case FuToken::is:
 			{
 				std::shared_ptr<FuBinaryExpr> isExpr = std::make_shared<FuBinaryExpr>();
-				isExpr->line = this->line;
+				isExpr->loc = this->loc;
 				isExpr->left = left;
 				isExpr->op = nextToken();
 				isExpr->right = parsePrimaryExpr(false);
@@ -3267,7 +3267,7 @@ std::shared_ptr<FuExpr> FuParser::parseEqualityExpr()
 	std::shared_ptr<FuExpr> left = parseRelExpr();
 	while (see(FuToken::equal) || see(FuToken::notEqual)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseRelExpr();
@@ -3281,7 +3281,7 @@ std::shared_ptr<FuExpr> FuParser::parseAndExpr()
 	std::shared_ptr<FuExpr> left = parseEqualityExpr();
 	while (see(FuToken::and_)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseEqualityExpr();
@@ -3295,7 +3295,7 @@ std::shared_ptr<FuExpr> FuParser::parseXorExpr()
 	std::shared_ptr<FuExpr> left = parseAndExpr();
 	while (see(FuToken::xor_)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseAndExpr();
@@ -3309,7 +3309,7 @@ std::shared_ptr<FuExpr> FuParser::parseOrExpr()
 	std::shared_ptr<FuExpr> left = parseXorExpr();
 	while (see(FuToken::or_)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseXorExpr();
@@ -3325,7 +3325,7 @@ std::shared_ptr<FuExpr> FuParser::parseCondAndExpr()
 		std::string_view saveXcrementParent = this->xcrementParent;
 		this->xcrementParent = "&&";
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseOrExpr();
@@ -3342,7 +3342,7 @@ std::shared_ptr<FuExpr> FuParser::parseCondOrExpr()
 		std::string_view saveXcrementParent = this->xcrementParent;
 		this->xcrementParent = "||";
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = nextToken();
 		futemp0->right = parseCondAndExpr();
@@ -3357,7 +3357,7 @@ std::shared_ptr<FuExpr> FuParser::parseExpr()
 	std::shared_ptr<FuExpr> left = parseCondOrExpr();
 	if (see(FuToken::questionMark)) {
 		std::shared_ptr<FuSelectExpr> result = std::make_shared<FuSelectExpr>();
-		result->line = this->line;
+		result->loc = this->loc;
 		result->cond = left;
 		nextToken();
 		std::string_view saveXcrementParent = this->xcrementParent;
@@ -3376,7 +3376,7 @@ std::shared_ptr<FuExpr> FuParser::parseType()
 	std::shared_ptr<FuExpr> left = parsePrimaryExpr(true);
 	if (eat(FuToken::range)) {
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = this->line;
+		futemp0->loc = this->loc;
 		futemp0->left = left;
 		futemp0->op = FuToken::range;
 		futemp0->right = parsePrimaryExpr(true);
@@ -3389,7 +3389,7 @@ std::shared_ptr<FuExpr> FuParser::parseConstInitializer()
 {
 	if (eat(FuToken::leftBrace)) {
 		std::shared_ptr<FuAggregateInitializer> result = std::make_shared<FuAggregateInitializer>();
-		result->line = this->line;
+		result->loc = this->loc;
 		parseCollection(&result->items, FuToken::rightBrace);
 		return result;
 	}
@@ -3399,14 +3399,14 @@ std::shared_ptr<FuExpr> FuParser::parseConstInitializer()
 std::shared_ptr<FuAggregateInitializer> FuParser::parseObjectLiteral()
 {
 	std::shared_ptr<FuAggregateInitializer> result = std::make_shared<FuAggregateInitializer>();
-	result->line = this->line;
+	result->loc = this->loc;
 	do {
-		int line = this->line;
+		int loc = this->loc;
 		std::shared_ptr<FuSymbolReference> field = std::make_shared<FuSymbolReference>();
 		parseSymbolReference(field.get());
 		expect(FuToken::assign);
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->line = line;
+		futemp0->loc = loc;
 		futemp0->left = field;
 		futemp0->op = FuToken::assign;
 		futemp0->right = parseExpr();
@@ -3437,7 +3437,7 @@ void FuParser::addSymbol(FuScope * scope, std::shared_ptr<FuSymbol> symbol)
 std::shared_ptr<FuVar> FuParser::parseVar(std::shared_ptr<FuExpr> type, bool initializer)
 {
 	std::shared_ptr<FuVar> result = std::make_shared<FuVar>();
-	result->line = this->line;
+	result->loc = this->loc;
 	result->typeExpr = type;
 	result->name = this->stringValue;
 	nextToken();
@@ -3449,7 +3449,7 @@ std::shared_ptr<FuConst> FuParser::parseConst(FuVisibility visibility)
 {
 	expect(FuToken::const_);
 	std::shared_ptr<FuConst> konst = std::make_shared<FuConst>();
-	konst->line = this->line;
+	konst->loc = this->loc;
 	konst->visibility = visibility;
 	konst->typeExpr = parseType();
 	konst->name = this->stringValue;
@@ -3478,7 +3478,7 @@ std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar)
 	case FuToken::shiftRightAssign:
 		{
 			std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-			futemp0->line = this->line;
+			futemp0->loc = this->loc;
 			futemp0->left = left;
 			futemp0->op = nextToken();
 			futemp0->right = parseAssign(false);
@@ -3496,7 +3496,7 @@ std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar)
 std::shared_ptr<FuBlock> FuParser::parseBlock()
 {
 	std::shared_ptr<FuBlock> result = std::make_shared<FuBlock>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile))
 		result->statements.push_back(parseStatement());
@@ -3507,7 +3507,7 @@ std::shared_ptr<FuBlock> FuParser::parseBlock()
 std::shared_ptr<FuAssert> FuParser::parseAssert()
 {
 	std::shared_ptr<FuAssert> result = std::make_shared<FuAssert>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::assert);
 	result->cond = parseExpr();
 	if (eat(FuToken::comma))
@@ -3521,7 +3521,7 @@ std::shared_ptr<FuBreak> FuParser::parseBreak()
 	if (this->currentLoopOrSwitch == nullptr)
 		reportError("'break' outside loop or 'switch'");
 	std::shared_ptr<FuBreak> result = std::make_shared<FuBreak>();
-	result->line = this->line;
+	result->loc = this->loc;
 	result->loopOrSwitch = this->currentLoopOrSwitch;
 	expect(FuToken::break_);
 	expect(FuToken::semicolon);
@@ -3535,7 +3535,7 @@ std::shared_ptr<FuContinue> FuParser::parseContinue()
 	if (this->currentLoop == nullptr)
 		reportError("'continue' outside loop");
 	std::shared_ptr<FuContinue> result = std::make_shared<FuContinue>();
-	result->line = this->line;
+	result->loc = this->loc;
 	result->loop = this->currentLoop;
 	expect(FuToken::continue_);
 	expect(FuToken::semicolon);
@@ -3556,7 +3556,7 @@ void FuParser::parseLoopBody(FuLoop * loop)
 std::shared_ptr<FuDoWhile> FuParser::parseDoWhile()
 {
 	std::shared_ptr<FuDoWhile> result = std::make_shared<FuDoWhile>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::do_);
 	parseLoopBody(result.get());
 	expect(FuToken::while_);
@@ -3568,7 +3568,7 @@ std::shared_ptr<FuDoWhile> FuParser::parseDoWhile()
 std::shared_ptr<FuFor> FuParser::parseFor()
 {
 	std::shared_ptr<FuFor> result = std::make_shared<FuFor>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::for_);
 	expect(FuToken::leftParenthesis);
 	if (!see(FuToken::semicolon))
@@ -3592,7 +3592,7 @@ void FuParser::parseForeachIterator(FuForeach * result)
 std::shared_ptr<FuForeach> FuParser::parseForeach()
 {
 	std::shared_ptr<FuForeach> result = std::make_shared<FuForeach>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::foreach);
 	expect(FuToken::leftParenthesis);
 	if (eat(FuToken::leftParenthesis)) {
@@ -3613,7 +3613,7 @@ std::shared_ptr<FuForeach> FuParser::parseForeach()
 std::shared_ptr<FuIf> FuParser::parseIf()
 {
 	std::shared_ptr<FuIf> result = std::make_shared<FuIf>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::if_);
 	result->cond = parseParenthesized();
 	result->onTrue = parseStatement();
@@ -3625,7 +3625,7 @@ std::shared_ptr<FuIf> FuParser::parseIf()
 std::shared_ptr<FuLock> FuParser::parseLock()
 {
 	std::shared_ptr<FuLock> result = std::make_shared<FuLock>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::lock_);
 	result->lock = parseParenthesized();
 	result->body = parseStatement();
@@ -3635,7 +3635,7 @@ std::shared_ptr<FuLock> FuParser::parseLock()
 std::shared_ptr<FuNative> FuParser::parseNative()
 {
 	std::shared_ptr<FuNative> result = std::make_shared<FuNative>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::native);
 	if (see(FuToken::literalString))
 		result->content = this->stringValue;
@@ -3666,7 +3666,7 @@ std::shared_ptr<FuNative> FuParser::parseNative()
 std::shared_ptr<FuReturn> FuParser::parseReturn()
 {
 	std::shared_ptr<FuReturn> result = std::make_shared<FuReturn>();
-	result->line = this->line;
+	result->loc = this->loc;
 	nextToken();
 	if (!see(FuToken::semicolon))
 		result->value = parseExpr();
@@ -3677,7 +3677,7 @@ std::shared_ptr<FuReturn> FuParser::parseReturn()
 std::shared_ptr<FuSwitch> FuParser::parseSwitch()
 {
 	std::shared_ptr<FuSwitch> result = std::make_shared<FuSwitch>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::switch_);
 	result->value = parseParenthesized();
 	expect(FuToken::leftBrace);
@@ -3692,7 +3692,7 @@ std::shared_ptr<FuSwitch> FuParser::parseSwitch()
 				expr = parseVar(expr, false);
 			if (eat(FuToken::when)) {
 				std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-				futemp0->line = this->line;
+				futemp0->loc = this->loc;
 				futemp0->left = expr;
 				futemp0->op = FuToken::when;
 				futemp0->right = parseExpr();
@@ -3738,7 +3738,7 @@ std::shared_ptr<FuSwitch> FuParser::parseSwitch()
 std::shared_ptr<FuThrow> FuParser::parseThrow()
 {
 	std::shared_ptr<FuThrow> result = std::make_shared<FuThrow>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::throw_);
 	result->class_ = std::make_shared<FuSymbolReference>();
 	parseSymbolReference(result->class_.get());
@@ -3752,7 +3752,7 @@ std::shared_ptr<FuThrow> FuParser::parseThrow()
 std::shared_ptr<FuWhile> FuParser::parseWhile()
 {
 	std::shared_ptr<FuWhile> result = std::make_shared<FuWhile>();
-	result->line = this->line;
+	result->loc = this->loc;
 	expect(FuToken::while_);
 	result->cond = parseParenthesized();
 	parseLoopBody(result.get());
@@ -3891,7 +3891,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 	expect(FuToken::class_);
 	std::shared_ptr<FuClass> klass = std::make_shared<FuClass>();
 	klass->filename = this->filename;
-	klass->line = this->line;
+	klass->loc = this->loc;
 	klass->documentation = doc;
 	klass->isPublic = isPublic;
 	klass->callType = callType;
@@ -3943,12 +3943,12 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 				if (std::ssize(call->arguments) != 0)
 					reportError("Constructor parameters not supported");
 				if (klass->constructor != nullptr)
-					reportError(std::format("Duplicate constructor, already defined in line {}", klass->constructor->line));
+					reportError(std::format("Duplicate constructor, already defined in line {}", klass->constructor->loc));
 			}
 			if (visibility == FuVisibility::private_)
 				visibility = FuVisibility::internal;
 			std::shared_ptr<FuMethodBase> futemp0 = std::make_shared<FuMethodBase>();
-			futemp0->line = call->line;
+			futemp0->loc = call->loc;
 			futemp0->documentation = doc;
 			futemp0->visibility = visibility;
 			futemp0->parent = klass.get();
@@ -3960,7 +3960,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			klass->constructor->addThis(klass.get(), true);
 			continue;
 		}
-		int line = this->line;
+		int loc = this->loc;
 		std::string name{this->stringValue};
 		if (!expect(FuToken::id))
 			continue;
@@ -3976,7 +3976,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 			if (visibility == FuVisibility::private_ && callType != FuCallType::static_ && callType != FuCallType::normal)
 				reportError(std::format("{} method cannot be private", callTypeToString(callType)));
 			std::shared_ptr<FuMethod> method = std::make_shared<FuMethod>();
-			method->line = line;
+			method->loc = loc;
 			method->documentation = doc;
 			method->visibility = visibility;
 			method->callType = callType;
@@ -3992,7 +3992,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 		if (type == this->program->system->voidType)
 			reportError("Field cannot be void");
 		std::shared_ptr<FuField> field = std::make_shared<FuField>();
-		field->line = line;
+		field->loc = loc;
 		field->documentation = doc;
 		field->visibility = visibility;
 		field->typeExpr = type;
@@ -4010,7 +4010,7 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
 	bool flags = eat(FuToken::asterisk);
 	std::shared_ptr<FuEnum> enu = this->program->system->newEnum(flags);
 	enu->filename = this->filename;
-	enu->line = this->line;
+	enu->loc = this->loc;
 	enu->documentation = doc;
 	enu->isPublic = isPublic;
 	enu->name = this->stringValue;
@@ -4021,7 +4021,7 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
 		std::shared_ptr<FuConst> konst = std::make_shared<FuConst>();
 		konst->visibility = FuVisibility::public_;
 		konst->documentation = parseDoc();
-		konst->line = this->line;
+		konst->loc = this->loc;
 		konst->name = this->stringValue;
 		konst->type = enu;
 		konst->visitStatus = FuVisitStatus::notYet;
@@ -4087,7 +4087,7 @@ const FuContainerType * FuSema::getCurrentContainer() const
 
 void FuSema::reportError(const FuStatement * statement, std::string_view message) const
 {
-	this->host->reportError(getCurrentContainer()->filename, statement->line, 0, statement->line, 0, message);
+	this->host->reportError(getCurrentContainer()->filename, statement->loc, 0, statement->loc, 0, message);
 }
 
 std::shared_ptr<FuType> FuSema::poisonError(const FuStatement * statement, std::string_view message) const
@@ -4237,7 +4237,7 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 	}
 	s += expr->suffix;
 	if (partsCount == 0)
-		return this->program->system->newLiteralString(s, expr->line);
+		return this->program->system->newLiteralString(s, expr->loc);
 	expr->type = this->program->system->stringStorageType;
 	expr->parts.erase(expr->parts.begin() + partsCount, expr->parts.begin() + partsCount + (std::ssize(expr->parts) - partsCount));
 	expr->suffix = s;
@@ -4370,7 +4370,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 	if (result != expr)
 		return result;
 	std::shared_ptr<FuSymbolReference> futemp0 = std::make_shared<FuSymbolReference>();
-	futemp0->line = expr->line;
+	futemp0->loc = expr->loc;
 	futemp0->left = left;
 	futemp0->name = expr->name;
 	futemp0->symbol = expr->symbol;
@@ -4579,20 +4579,20 @@ std::shared_ptr<FuRangeType> FuSema::newRangeType(int a, int b, int c, int d)
 std::shared_ptr<FuLiteral> FuSema::toLiteralBool(const FuExpr * expr, bool value) const
 {
 	std::shared_ptr<FuLiteral> result = value ? std::static_pointer_cast<FuLiteral>(std::make_shared<FuLiteralTrue>()) : std::static_pointer_cast<FuLiteral>(std::make_shared<FuLiteralFalse>());
-	result->line = expr->line;
+	result->loc = expr->loc;
 	result->type = this->program->system->boolType;
 	return result;
 }
 
 std::shared_ptr<FuLiteralLong> FuSema::toLiteralLong(const FuExpr * expr, int64_t value) const
 {
-	return this->program->system->newLiteralLong(value, expr->line);
+	return this->program->system->newLiteralLong(value, expr->loc);
 }
 
 std::shared_ptr<FuLiteralDouble> FuSema::toLiteralDouble(const FuExpr * expr, double value) const
 {
 	std::shared_ptr<FuLiteralDouble> futemp0 = std::make_shared<FuLiteralDouble>();
-	futemp0->line = expr->line;
+	futemp0->loc = expr->loc;
 	futemp0->type = this->program->system->doubleType;
 	futemp0->value = value;
 	return futemp0;
@@ -4651,7 +4651,7 @@ void FuSema::checkLValue(const FuExpr * expr) const
 std::shared_ptr<FuInterpolatedString> FuSema::concatenate(const FuInterpolatedString * left, const FuInterpolatedString * right) const
 {
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
-	result->line = left->line;
+	result->loc = left->loc;
 	result->type = this->program->system->stringStorageType;
 	result->parts.insert(result->parts.end(), left->parts.begin(), left->parts.end());
 	if (std::ssize(right->parts) == 0)
@@ -4670,7 +4670,7 @@ std::shared_ptr<FuInterpolatedString> FuSema::toInterpolatedString(std::shared_p
 	if (std::shared_ptr<FuInterpolatedString>interpolated = std::dynamic_pointer_cast<FuInterpolatedString>(expr))
 		return interpolated;
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
-	result->line = expr->line;
+	result->loc = expr->loc;
 	result->type = this->program->system->stringStorageType;
 	if (const FuLiteral *literal = dynamic_cast<const FuLiteral *>(expr.get()))
 		result->suffix = literal->getLiteralString();
@@ -4717,7 +4717,7 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 		std::shared_ptr<FuAggregateInitializer> init = std::static_pointer_cast<FuAggregateInitializer>(binaryNew->right);
 		resolveObjectLiteral(klass, init.get());
 		std::shared_ptr<FuDynamicPtrType> futemp0 = std::make_shared<FuDynamicPtrType>();
-		futemp0->line = expr->line;
+		futemp0->loc = expr->loc;
 		futemp0->class_ = klass->class_;
 		expr->type = futemp0;
 		expr->inner = init;
@@ -4726,7 +4726,7 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 	type = toType(expr->inner, true);
 	if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type.get())) {
 		std::shared_ptr<FuDynamicPtrType> futemp0 = std::make_shared<FuDynamicPtrType>();
-		futemp0->line = expr->line;
+		futemp0->loc = expr->loc;
 		futemp0->class_ = this->program->system->arrayPtrClass.get();
 		futemp0->typeArg0 = array->getElementType();
 		expr->type = futemp0;
@@ -4735,7 +4735,7 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 	}
 	else if (const FuStorageType *klass = dynamic_cast<const FuStorageType *>(type.get())) {
 		std::shared_ptr<FuDynamicPtrType> futemp1 = std::make_shared<FuDynamicPtrType>();
-		futemp1->line = expr->line;
+		futemp1->loc = expr->loc;
 		futemp1->class_ = klass->class_;
 		futemp1->typeArg0 = klass->typeArg0;
 		futemp1->typeArg1 = klass->typeArg1;
@@ -4802,7 +4802,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		inner = resolveBool(expr->inner);
 		{
 			std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
-			futemp0->line = expr->line;
+			futemp0->loc = expr->loc;
 			futemp0->op = FuToken::exclamationMark;
 			futemp0->inner = inner;
 			futemp0->type = this->program->system->boolType;
@@ -4827,7 +4827,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		std::abort();
 	}
 	std::shared_ptr<FuPrefixExpr> futemp2 = std::make_shared<FuPrefixExpr>();
-	futemp2->line = expr->line;
+	futemp2->loc = expr->loc;
 	futemp2->op = expr->op;
 	futemp2->inner = inner;
 	futemp2->type = type;
@@ -4902,7 +4902,7 @@ std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::
 	takePtr(left.get());
 	takePtr(right.get());
 	std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-	futemp0->line = expr->line;
+	futemp0->loc = expr->loc;
 	futemp0->left = left;
 	futemp0->op = expr->op;
 	futemp0->right = right;
@@ -4979,7 +4979,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 							if (i >= 0 && i <= 2147483647) {
 								int c = stringLiteral->getAsciiAt(static_cast<int>(i));
 								if (c >= 0)
-									return FuLiteralChar::new_(c, expr->line);
+									return FuLiteralChar::new_(c, expr->loc);
 							}
 						}
 					}
@@ -5024,7 +5024,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 				const FuLiteral * leftLiteral;
 				const FuLiteral * rightLiteral;
 				if ((leftLiteral = dynamic_cast<const FuLiteral *>(left.get())) && (rightLiteral = dynamic_cast<const FuLiteral *>(right.get())))
-					return this->program->system->newLiteralString(leftLiteral->getLiteralString() + rightLiteral->getLiteralString(), expr->line);
+					return this->program->system->newLiteralString(leftLiteral->getLiteralString() + rightLiteral->getLiteralString(), expr->loc);
 				if (dynamic_cast<const FuInterpolatedString *>(left.get()) || dynamic_cast<const FuInterpolatedString *>(right.get()))
 					return concatenate(toInterpolatedString(left).get(), toInterpolatedString(right).get());
 				type = this->program->system->stringStorageType;
@@ -5259,7 +5259,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	if ((range = dynamic_cast<const FuRangeType *>(type.get())) && range->min == range->max)
 		return toLiteralLong(expr.get(), range->min);
 	std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-	futemp0->line = expr->line;
+	futemp0->loc = expr->loc;
 	futemp0->left = left;
 	futemp0->op = expr->op;
 	futemp0->right = right;
@@ -5359,7 +5359,7 @@ std::shared_ptr<FuExpr> FuSema::visitSelectExpr(const FuSelectExpr * expr)
 	if (dynamic_cast<const FuLiteralFalse *>(cond.get()))
 		return onFalse;
 	std::shared_ptr<FuSelectExpr> futemp0 = std::make_shared<FuSelectExpr>();
-	futemp0->line = expr->line;
+	futemp0->loc = expr->loc;
 	futemp0->cond = cond;
 	futemp0->onTrue = onTrue;
 	futemp0->onFalse = onFalse;
@@ -5707,7 +5707,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 			return poisonError(call, "Expected empty parentheses for storage type");
 		if (const FuAggregateInitializer *typeArgExprs2 = dynamic_cast<const FuAggregateInitializer *>(call->method->left.get())) {
 			std::shared_ptr<FuStorageType> storage = std::make_shared<FuStorageType>();
-			storage->line = call->line;
+			storage->loc = call->loc;
 			if (const FuClass *klass = dynamic_cast<const FuClass *>(this->program->tryLookup(call->method->name, true).get())) {
 				fillGenericClass(storage.get(), klass, typeArgExprs2);
 				return storage;
@@ -5806,7 +5806,7 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 	}
 	else
 		baseType = toBaseType(expr.get(), ptrModifier, nullable);
-	baseType->line = expr->line;
+	baseType->loc = expr->loc;
 	if (outerArray == nullptr)
 		return baseType;
 	innerArray->typeArg0 = baseType;
@@ -6448,7 +6448,7 @@ const FuContainerType * GenBase::getCurrentContainer() const
 
 void GenBase::reportError(const FuStatement * statement, std::string_view message) const
 {
-	this->host->reportError(getCurrentContainer()->filename, statement->line, 0, statement->line, 0, message);
+	this->host->reportError(getCurrentContainer()->filename, statement->loc, 0, statement->loc, 0, message);
 }
 
 void GenBase::notSupported(const FuStatement * statement, std::string_view feature) const

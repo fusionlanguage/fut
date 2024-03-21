@@ -488,7 +488,7 @@ protected:
 	uint8_t const * input;
 	int charOffset;
 	std::string filename;
-	int line;
+	int loc;
 	int lexemeOffset;
 	FuToken currentToken;
 	int64_t longValue;
@@ -663,7 +663,7 @@ public:
 protected:
 	FuStatement() = default;
 public:
-	int line;
+	int loc;
 };
 
 class FuExpr : public FuStatement
@@ -785,7 +785,7 @@ class FuLiteralChar : public FuLiteralLong
 {
 public:
 	FuLiteralChar() = default;
-	static std::shared_ptr<FuLiteralChar> new_(int value, int line);
+	static std::shared_ptr<FuLiteralChar> new_(int value, int loc);
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 };
 
@@ -1484,8 +1484,8 @@ public:
 	std::shared_ptr<FuClass> arrayStorageClass = FuClass::new_(FuCallType::normal, FuId::arrayStorageClass, "ArrayStorage", 1);
 	std::shared_ptr<FuEnum> regexOptionsEnum;
 	std::shared_ptr<FuReadWriteClassType> lockPtrType = std::make_shared<FuReadWriteClassType>();
-	std::shared_ptr<FuLiteralLong> newLiteralLong(int64_t value, int line = 0) const;
-	std::shared_ptr<FuLiteralString> newLiteralString(std::string_view value, int line = 0) const;
+	std::shared_ptr<FuLiteralLong> newLiteralLong(int64_t value, int loc = 0) const;
+	std::shared_ptr<FuLiteralString> newLiteralString(std::string_view value, int loc = 0) const;
 	std::shared_ptr<FuType> promoteIntegerTypes(const FuType * left, const FuType * right) const;
 	std::shared_ptr<FuType> promoteFloatingTypes(const FuType * left, const FuType * right) const;
 	std::shared_ptr<FuType> promoteNumericTypes(std::shared_ptr<FuType> left, std::shared_ptr<FuType> right) const;

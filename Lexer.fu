@@ -144,7 +144,7 @@ public abstract class FuLexer
 	int NextChar;
 	FuParserHost! Host;
 	protected string() Filename;
-	protected int Line;
+	protected int Loc;
 	int Utf16Column;
 	int TokenUtf16Column;
 	protected int LexemeOffset;
@@ -174,7 +174,7 @@ public abstract class FuLexer
 		this.Input = input;
 		this.InputLength = inputLength;
 		this.NextOffset = 0;
-		this.Line = 1;
+		this.Loc = 1;
 		this.Utf16Column = 0;
 		FillNextChar();
 		if (this.NextChar == 0xfeff) // BOM
@@ -184,7 +184,7 @@ public abstract class FuLexer
 
 	protected void ReportError(string message)
 	{
-		this.Host.ReportError(this.Filename, this.Line, this.TokenUtf16Column, this.Line, this.Utf16Column, message);
+		this.Host.ReportError(this.Filename, this.Loc, this.TokenUtf16Column, this.Loc, this.Utf16Column, message);
 	}
 
 	int ReadByte!()
@@ -250,7 +250,7 @@ public abstract class FuLexer
 			this.Utf16Column++;
 			break;
 		case '\n':
-			this.Line++;
+			this.Loc++;
 			this.Utf16Column = 0;
 			this.AtLineStart = true;
 			break;
@@ -577,7 +577,7 @@ public abstract class FuLexer
 					break;
 				}
 				if (EatChar('*')) {
-					int startLine = this.Line;
+					int startLine = this.Loc;
 					do {
 						c = ReadChar();
 						if (c < 0) {

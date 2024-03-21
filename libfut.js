@@ -130,7 +130,7 @@ export class FuLexer
 	#nextChar;
 	#host;
 	filename;
-	line;
+	loc;
 	#utf16Column;
 	#tokenUtf16Column;
 	lexemeOffset;
@@ -160,7 +160,7 @@ export class FuLexer
 		this.input = input;
 		this.#inputLength = inputLength;
 		this.#nextOffset = 0;
-		this.line = 1;
+		this.loc = 1;
 		this.#utf16Column = 0;
 		this.#fillNextChar();
 		if (this.#nextChar == 65279)
@@ -170,7 +170,7 @@ export class FuLexer
 
 	reportError(message)
 	{
-		this.#host.reportError(this.filename, this.line, this.#tokenUtf16Column, this.line, this.#utf16Column, message);
+		this.#host.reportError(this.filename, this.loc, this.#tokenUtf16Column, this.loc, this.#utf16Column, message);
 	}
 
 	#readByte()
@@ -240,7 +240,7 @@ export class FuLexer
 			this.#utf16Column++;
 			break;
 		case 10:
-			this.line++;
+			this.loc++;
 			this.#utf16Column = 0;
 			this.#atLineStart = true;
 			break;
@@ -593,7 +593,7 @@ export class FuLexer
 					break;
 				}
 				if (this.#eatChar(42)) {
-					let startLine = this.line;
+					let startLine = this.loc;
 					do {
 						c = this.readChar();
 						if (c < 0) {
@@ -1482,7 +1482,7 @@ export class FuVisitor
 
 export class FuStatement
 {
-	line;
+	loc;
 }
 
 export class FuExpr extends FuStatement
@@ -1725,9 +1725,9 @@ class FuLiteralLong extends FuLiteral
 class FuLiteralChar extends FuLiteralLong
 {
 
-	static new(value, line)
+	static new(value, loc)
 	{
-		return Object.assign(new FuLiteralChar(), { line: line, type: FuRangeType.new(value, value), value: BigInt(value) });
+		return Object.assign(new FuLiteralChar(), { loc: loc, type: FuRangeType.new(value, value), value: BigInt(value) });
 	}
 
 	accept(visitor, parent)
@@ -3363,15 +3363,15 @@ export class FuSystem extends FuScope
 	regexOptionsEnum;
 	lockPtrType = new FuReadWriteClassType();
 
-	newLiteralLong(value, line = 0)
+	newLiteralLong(value, loc = 0)
 	{
 		let type = value >= -2147483648 && value <= 2147483647 ? FuRangeType.new(Number(value), Number(value)) : this.longType;
-		return Object.assign(new FuLiteralLong(), { line: line, type: type, value: value });
+		return Object.assign(new FuLiteralLong(), { loc: loc, type: type, value: value });
 	}
 
-	newLiteralString(value, line = 0)
+	newLiteralString(value, loc = 0)
 	{
-		return Object.assign(new FuLiteralString(), { line: line, type: this.stringPtrType, value: value });
+		return Object.assign(new FuLiteralString(), { loc: loc, type: this.stringPtrType, value: value });
 	}
 
 	promoteIntegerTypes(left, right)
@@ -3578,7 +3578,7 @@ export class FuParser extends FuLexer
 		let d;
 		if (!!isNaN(d = parseFloat(this.getLexeme().replaceAll("_", ""))))
 			this.reportError("Invalid floating-point number");
-		let result = Object.assign(new FuLiteralDouble(), { line: this.line, type: this.program.system.doubleType, value: d });
+		let result = Object.assign(new FuLiteralDouble(), { loc: this.loc, type: this.program.system.doubleType, value: d });
 		this.nextToken();
 		return result;
 	}
@@ -3591,7 +3591,7 @@ export class FuParser extends FuLexer
 
 	#parseInterpolatedString()
 	{
-		let result = Object.assign(new FuInterpolatedString(), { line: this.line });
+		let result = Object.assign(new FuInterpolatedString(), { loc: this.loc });
 		do {
 			let prefix = this.stringValue.replaceAll("{{", "{");
 			this.nextToken();
@@ -3627,7 +3627,7 @@ export class FuParser extends FuLexer
 
 	#parseSymbolReference(result)
 	{
-		result.line = this.line;
+		result.loc = this.loc;
 		result.name = this.stringValue;
 		this.expect(FuToken.ID);
 	}
@@ -3649,43 +3649,43 @@ export class FuParser extends FuLexer
 		case FuToken.INCREMENT:
 		case FuToken.DECREMENT:
 			this.#checkXcrementParent();
-			return Object.assign(new FuPrefixExpr(), { line: this.line, op: this.nextToken(), inner: this.#parsePrimaryExpr(false) });
+			return Object.assign(new FuPrefixExpr(), { loc: this.loc, op: this.nextToken(), inner: this.#parsePrimaryExpr(false) });
 		case FuToken.MINUS:
 		case FuToken.TILDE:
 		case FuToken.EXCLAMATION_MARK:
-			return Object.assign(new FuPrefixExpr(), { line: this.line, op: this.nextToken(), inner: this.#parsePrimaryExpr(false) });
+			return Object.assign(new FuPrefixExpr(), { loc: this.loc, op: this.nextToken(), inner: this.#parsePrimaryExpr(false) });
 		case FuToken.NEW:
-			let newResult = Object.assign(new FuPrefixExpr(), { line: this.line, op: this.nextToken() });
+			let newResult = Object.assign(new FuPrefixExpr(), { loc: this.loc, op: this.nextToken() });
 			result = this.#parseType();
 			if (this.eat(FuToken.LEFT_BRACE))
-				result = Object.assign(new FuBinaryExpr(), { line: this.line, left: result, op: FuToken.LEFT_BRACE, right: this.#parseObjectLiteral() });
+				result = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: result, op: FuToken.LEFT_BRACE, right: this.#parseObjectLiteral() });
 			newResult.inner = result;
 			return newResult;
 		case FuToken.LITERAL_LONG:
-			result = this.program.system.newLiteralLong(this.longValue, this.line);
+			result = this.program.system.newLiteralLong(this.longValue, this.loc);
 			this.nextToken();
 			break;
 		case FuToken.LITERAL_DOUBLE:
 			result = this.#parseDouble();
 			break;
 		case FuToken.LITERAL_CHAR:
-			result = FuLiteralChar.new(Number(this.longValue), this.line);
+			result = FuLiteralChar.new(Number(this.longValue), this.loc);
 			this.nextToken();
 			break;
 		case FuToken.LITERAL_STRING:
-			result = this.program.system.newLiteralString(this.stringValue, this.line);
+			result = this.program.system.newLiteralString(this.stringValue, this.loc);
 			this.nextToken();
 			break;
 		case FuToken.FALSE:
-			result = Object.assign(new FuLiteralFalse(), { line: this.line, type: this.program.system.boolType });
+			result = Object.assign(new FuLiteralFalse(), { loc: this.loc, type: this.program.system.boolType });
 			this.nextToken();
 			break;
 		case FuToken.TRUE:
-			result = Object.assign(new FuLiteralTrue(), { line: this.line, type: this.program.system.boolType });
+			result = Object.assign(new FuLiteralTrue(), { loc: this.loc, type: this.program.system.boolType });
 			this.nextToken();
 			break;
 		case FuToken.NULL:
-			result = Object.assign(new FuLiteralNull(), { line: this.line, type: this.program.system.nullType });
+			result = Object.assign(new FuLiteralNull(), { loc: this.loc, type: this.program.system.nullType });
 			this.nextToken();
 			break;
 		case FuToken.INTERPOLATED_STRING:
@@ -3698,13 +3698,13 @@ export class FuParser extends FuLexer
 			let symbol = new FuSymbolReference();
 			this.#parseSymbolReference(symbol);
 			if (this.eat(FuToken.FAT_ARROW)) {
-				let lambda = Object.assign(new FuLambdaExpr(), { line: symbol.line });
+				let lambda = Object.assign(new FuLambdaExpr(), { loc: symbol.loc });
 				lambda.add(FuVar.new(null, symbol.name));
 				lambda.body = this.#parseExpr();
 				return lambda;
 			}
 			if (type && this.eat(FuToken.LESS)) {
-				let typeArgs = Object.assign(new FuAggregateInitializer(), { line: this.line });
+				let typeArgs = Object.assign(new FuAggregateInitializer(), { loc: this.loc });
 				let saveTypeArg = this.parsingTypeArg;
 				this.parsingTypeArg = true;
 				do
@@ -3719,7 +3719,7 @@ export class FuParser extends FuLexer
 		case FuToken.RESOURCE:
 			this.nextToken();
 			if (this.eat(FuToken.LESS) && this.stringValue == "byte" && this.eat(FuToken.ID) && this.eat(FuToken.LEFT_BRACKET) && this.eat(FuToken.RIGHT_BRACKET) && this.eat(FuToken.GREATER))
-				result = Object.assign(new FuPrefixExpr(), { line: this.line, op: FuToken.RESOURCE, inner: this.#parseParenthesized() });
+				result = Object.assign(new FuPrefixExpr(), { loc: this.loc, op: FuToken.RESOURCE, inner: this.#parseParenthesized() });
 			else {
 				this.reportError("Expected 'resource<byte[]>'");
 				result = null;
@@ -3742,7 +3742,7 @@ export class FuParser extends FuLexer
 				this.nextToken();
 				let method;
 				if ((method = result) instanceof FuSymbolReference) {
-					let call = Object.assign(new FuCallExpr(), { line: this.line, method: method });
+					let call = Object.assign(new FuCallExpr(), { loc: this.loc, method: method });
 					this.#parseCollection(call.arguments_, FuToken.RIGHT_PARENTHESIS);
 					result = call;
 				}
@@ -3750,22 +3750,22 @@ export class FuParser extends FuLexer
 					this.reportError("Expected a method");
 				break;
 			case FuToken.LEFT_BRACKET:
-				result = Object.assign(new FuBinaryExpr(), { line: this.line, left: result, op: this.nextToken(), right: this.see(FuToken.RIGHT_BRACKET) ? null : this.#parseExpr() });
+				result = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: result, op: this.nextToken(), right: this.see(FuToken.RIGHT_BRACKET) ? null : this.#parseExpr() });
 				this.expect(FuToken.RIGHT_BRACKET);
 				break;
 			case FuToken.INCREMENT:
 			case FuToken.DECREMENT:
 				this.#checkXcrementParent();
-				result = Object.assign(new FuPostfixExpr(), { line: this.line, inner: result, op: this.nextToken() });
+				result = Object.assign(new FuPostfixExpr(), { loc: this.loc, inner: result, op: this.nextToken() });
 				break;
 			case FuToken.EXCLAMATION_MARK:
 			case FuToken.HASH:
-				result = Object.assign(new FuPostfixExpr(), { line: this.line, inner: result, op: this.nextToken() });
+				result = Object.assign(new FuPostfixExpr(), { loc: this.loc, inner: result, op: this.nextToken() });
 				break;
 			case FuToken.QUESTION_MARK:
 				if (!type)
 					return result;
-				result = Object.assign(new FuPostfixExpr(), { line: this.line, inner: result, op: this.nextToken() });
+				result = Object.assign(new FuPostfixExpr(), { loc: this.loc, inner: result, op: this.nextToken() });
 				break;
 			default:
 				return result;
@@ -3781,7 +3781,7 @@ export class FuParser extends FuLexer
 			case FuToken.ASTERISK:
 			case FuToken.SLASH:
 			case FuToken.MOD:
-				left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
+				left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
 				break;
 			default:
 				return left;
@@ -3793,7 +3793,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseMulExpr();
 		while (this.see(FuToken.PLUS) || this.see(FuToken.MINUS))
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseMulExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseMulExpr() });
 		return left;
 	}
 
@@ -3801,7 +3801,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseAddExpr();
 		while (this.see(FuToken.SHIFT_LEFT) || this.see(FuToken.SHIFT_RIGHT))
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseAddExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseAddExpr() });
 		return left;
 	}
 
@@ -3814,10 +3814,10 @@ export class FuParser extends FuLexer
 			case FuToken.LESS_OR_EQUAL:
 			case FuToken.GREATER:
 			case FuToken.GREATER_OR_EQUAL:
-				left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseShiftExpr() });
+				left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseShiftExpr() });
 				break;
 			case FuToken.IS:
-				let isExpr = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
+				let isExpr = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
 				if (this.see(FuToken.ID)) {
 					let def = this.#parseVar(isExpr.right, false);
 					def.isAssigned = true;
@@ -3834,7 +3834,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseRelExpr();
 		while (this.see(FuToken.EQUAL) || this.see(FuToken.NOT_EQUAL))
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseRelExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseRelExpr() });
 		return left;
 	}
 
@@ -3842,7 +3842,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseEqualityExpr();
 		while (this.see(FuToken.AND))
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseEqualityExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseEqualityExpr() });
 		return left;
 	}
 
@@ -3850,7 +3850,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseAndExpr();
 		while (this.see(FuToken.XOR))
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseAndExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseAndExpr() });
 		return left;
 	}
 
@@ -3858,7 +3858,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseXorExpr();
 		while (this.see(FuToken.OR))
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseXorExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseXorExpr() });
 		return left;
 	}
 
@@ -3868,7 +3868,7 @@ export class FuParser extends FuLexer
 		while (this.see(FuToken.COND_AND)) {
 			let saveXcrementParent = this.#xcrementParent;
 			this.#xcrementParent = "&&";
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseOrExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseOrExpr() });
 			this.#xcrementParent = saveXcrementParent;
 		}
 		return left;
@@ -3880,7 +3880,7 @@ export class FuParser extends FuLexer
 		while (this.see(FuToken.COND_OR)) {
 			let saveXcrementParent = this.#xcrementParent;
 			this.#xcrementParent = "||";
-			left = Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseCondAndExpr() });
+			left = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseCondAndExpr() });
 			this.#xcrementParent = saveXcrementParent;
 		}
 		return left;
@@ -3890,7 +3890,7 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parseCondOrExpr();
 		if (this.see(FuToken.QUESTION_MARK)) {
-			let result = Object.assign(new FuSelectExpr(), { line: this.line, cond: left });
+			let result = Object.assign(new FuSelectExpr(), { loc: this.loc, cond: left });
 			this.nextToken();
 			let saveXcrementParent = this.#xcrementParent;
 			this.#xcrementParent = "?";
@@ -3907,14 +3907,14 @@ export class FuParser extends FuLexer
 	{
 		let left = this.#parsePrimaryExpr(true);
 		if (this.eat(FuToken.RANGE))
-			return Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: FuToken.RANGE, right: this.#parsePrimaryExpr(true) });
+			return Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: FuToken.RANGE, right: this.#parsePrimaryExpr(true) });
 		return left;
 	}
 
 	#parseConstInitializer()
 	{
 		if (this.eat(FuToken.LEFT_BRACE)) {
-			let result = Object.assign(new FuAggregateInitializer(), { line: this.line });
+			let result = Object.assign(new FuAggregateInitializer(), { loc: this.loc });
 			this.#parseCollection(result.items, FuToken.RIGHT_BRACE);
 			return result;
 		}
@@ -3923,13 +3923,13 @@ export class FuParser extends FuLexer
 
 	#parseObjectLiteral()
 	{
-		let result = Object.assign(new FuAggregateInitializer(), { line: this.line });
+		let result = Object.assign(new FuAggregateInitializer(), { loc: this.loc });
 		do {
-			let line = this.line;
+			let loc = this.loc;
 			let field = new FuSymbolReference();
 			this.#parseSymbolReference(field);
 			this.expect(FuToken.ASSIGN);
-			result.items.push(Object.assign(new FuBinaryExpr(), { line: line, left: field, op: FuToken.ASSIGN, right: this.#parseExpr() }));
+			result.items.push(Object.assign(new FuBinaryExpr(), { loc: loc, left: field, op: FuToken.ASSIGN, right: this.#parseExpr() }));
 		}
 		while (this.eat(FuToken.COMMA));
 		this.expect(FuToken.RIGHT_BRACE);
@@ -3955,7 +3955,7 @@ export class FuParser extends FuLexer
 
 	#parseVar(type, initializer)
 	{
-		let result = Object.assign(new FuVar(), { line: this.line, typeExpr: type, name: this.stringValue });
+		let result = Object.assign(new FuVar(), { loc: this.loc, typeExpr: type, name: this.stringValue });
 		this.nextToken();
 		result.value = initializer ? this.#parseInitializer() : null;
 		return result;
@@ -3964,7 +3964,7 @@ export class FuParser extends FuLexer
 	#parseConst(visibility)
 	{
 		this.expect(FuToken.CONST);
-		let konst = Object.assign(new FuConst(), { line: this.line, visibility: visibility, typeExpr: this.#parseType(), name: this.stringValue, visitStatus: FuVisitStatus.NOT_YET });
+		let konst = Object.assign(new FuConst(), { loc: this.loc, visibility: visibility, typeExpr: this.#parseType(), name: this.stringValue, visitStatus: FuVisitStatus.NOT_YET });
 		this.nextToken();
 		this.expect(FuToken.ASSIGN);
 		konst.value = this.#parseConstInitializer();
@@ -3987,7 +3987,7 @@ export class FuParser extends FuLexer
 		case FuToken.XOR_ASSIGN:
 		case FuToken.SHIFT_LEFT_ASSIGN:
 		case FuToken.SHIFT_RIGHT_ASSIGN:
-			return Object.assign(new FuBinaryExpr(), { line: this.line, left: left, op: this.nextToken(), right: this.#parseAssign(false) });
+			return Object.assign(new FuBinaryExpr(), { loc: this.loc, left: left, op: this.nextToken(), right: this.#parseAssign(false) });
 		case FuToken.ID:
 			if (allowVar)
 				return this.#parseVar(left, true);
@@ -3999,7 +3999,7 @@ export class FuParser extends FuLexer
 
 	#parseBlock()
 	{
-		let result = Object.assign(new FuBlock(), { line: this.line });
+		let result = Object.assign(new FuBlock(), { loc: this.loc });
 		this.expect(FuToken.LEFT_BRACE);
 		while (!this.see(FuToken.RIGHT_BRACE) && !this.see(FuToken.END_OF_FILE))
 			result.statements.push(this.#parseStatement());
@@ -4009,7 +4009,7 @@ export class FuParser extends FuLexer
 
 	#parseAssert()
 	{
-		let result = Object.assign(new FuAssert(), { line: this.line });
+		let result = Object.assign(new FuAssert(), { loc: this.loc });
 		this.expect(FuToken.ASSERT);
 		result.cond = this.#parseExpr();
 		if (this.eat(FuToken.COMMA))
@@ -4022,7 +4022,7 @@ export class FuParser extends FuLexer
 	{
 		if (this.#currentLoopOrSwitch == null)
 			this.reportError("'break' outside loop or 'switch'");
-		let result = Object.assign(new FuBreak(), { line: this.line, loopOrSwitch: this.#currentLoopOrSwitch });
+		let result = Object.assign(new FuBreak(), { loc: this.loc, loopOrSwitch: this.#currentLoopOrSwitch });
 		this.expect(FuToken.BREAK);
 		this.expect(FuToken.SEMICOLON);
 		let loop;
@@ -4035,7 +4035,7 @@ export class FuParser extends FuLexer
 	{
 		if (this.#currentLoop == null)
 			this.reportError("'continue' outside loop");
-		let result = Object.assign(new FuContinue(), { line: this.line, loop: this.#currentLoop });
+		let result = Object.assign(new FuContinue(), { loc: this.loc, loop: this.#currentLoop });
 		this.expect(FuToken.CONTINUE);
 		this.expect(FuToken.SEMICOLON);
 		return result;
@@ -4054,7 +4054,7 @@ export class FuParser extends FuLexer
 
 	#parseDoWhile()
 	{
-		let result = Object.assign(new FuDoWhile(), { line: this.line });
+		let result = Object.assign(new FuDoWhile(), { loc: this.loc });
 		this.expect(FuToken.DO);
 		this.#parseLoopBody(result);
 		this.expect(FuToken.WHILE);
@@ -4065,7 +4065,7 @@ export class FuParser extends FuLexer
 
 	#parseFor()
 	{
-		let result = Object.assign(new FuFor(), { line: this.line });
+		let result = Object.assign(new FuFor(), { loc: this.loc });
 		this.expect(FuToken.FOR);
 		this.expect(FuToken.LEFT_PARENTHESIS);
 		if (!this.see(FuToken.SEMICOLON))
@@ -4088,7 +4088,7 @@ export class FuParser extends FuLexer
 
 	#parseForeach()
 	{
-		let result = Object.assign(new FuForeach(), { line: this.line });
+		let result = Object.assign(new FuForeach(), { loc: this.loc });
 		this.expect(FuToken.FOREACH);
 		this.expect(FuToken.LEFT_PARENTHESIS);
 		if (this.eat(FuToken.LEFT_PARENTHESIS)) {
@@ -4108,7 +4108,7 @@ export class FuParser extends FuLexer
 
 	#parseIf()
 	{
-		let result = Object.assign(new FuIf(), { line: this.line });
+		let result = Object.assign(new FuIf(), { loc: this.loc });
 		this.expect(FuToken.IF);
 		result.cond = this.#parseParenthesized();
 		result.onTrue = this.#parseStatement();
@@ -4119,7 +4119,7 @@ export class FuParser extends FuLexer
 
 	#parseLock()
 	{
-		let result = Object.assign(new FuLock(), { line: this.line });
+		let result = Object.assign(new FuLock(), { loc: this.loc });
 		this.expect(FuToken.LOCK_);
 		result.lock = this.#parseParenthesized();
 		result.body = this.#parseStatement();
@@ -4128,7 +4128,7 @@ export class FuParser extends FuLexer
 
 	#parseNative()
 	{
-		let result = Object.assign(new FuNative(), { line: this.line });
+		let result = Object.assign(new FuNative(), { loc: this.loc });
 		this.expect(FuToken.NATIVE);
 		if (this.see(FuToken.LITERAL_STRING))
 			result.content = this.stringValue;
@@ -4158,7 +4158,7 @@ export class FuParser extends FuLexer
 
 	#parseReturn()
 	{
-		let result = Object.assign(new FuReturn(), { line: this.line });
+		let result = Object.assign(new FuReturn(), { loc: this.loc });
 		this.nextToken();
 		if (!this.see(FuToken.SEMICOLON))
 			result.value = this.#parseExpr();
@@ -4168,7 +4168,7 @@ export class FuParser extends FuLexer
 
 	#parseSwitch()
 	{
-		let result = Object.assign(new FuSwitch(), { line: this.line });
+		let result = Object.assign(new FuSwitch(), { loc: this.loc });
 		this.expect(FuToken.SWITCH);
 		result.value = this.#parseParenthesized();
 		this.expect(FuToken.LEFT_BRACE);
@@ -4182,7 +4182,7 @@ export class FuParser extends FuLexer
 				if (this.see(FuToken.ID))
 					expr = this.#parseVar(expr, false);
 				if (this.eat(FuToken.WHEN))
-					expr = Object.assign(new FuBinaryExpr(), { line: this.line, left: expr, op: FuToken.WHEN, right: this.#parseExpr() });
+					expr = Object.assign(new FuBinaryExpr(), { loc: this.loc, left: expr, op: FuToken.WHEN, right: this.#parseExpr() });
 				kase.values.push(expr);
 				this.expect(FuToken.COLON);
 			}
@@ -4222,7 +4222,7 @@ export class FuParser extends FuLexer
 
 	#parseThrow()
 	{
-		let result = Object.assign(new FuThrow(), { line: this.line });
+		let result = Object.assign(new FuThrow(), { loc: this.loc });
 		this.expect(FuToken.THROW);
 		result.class = new FuSymbolReference();
 		this.#parseSymbolReference(result.class);
@@ -4235,7 +4235,7 @@ export class FuParser extends FuLexer
 
 	#parseWhile()
 	{
-		let result = Object.assign(new FuWhile(), { line: this.line });
+		let result = Object.assign(new FuWhile(), { loc: this.loc });
 		this.expect(FuToken.WHILE);
 		result.cond = this.#parseParenthesized();
 		this.#parseLoopBody(result);
@@ -4370,7 +4370,7 @@ export class FuParser extends FuLexer
 	#parseClass(doc, isPublic, callType)
 	{
 		this.expect(FuToken.CLASS);
-		let klass = Object.assign(new FuClass(), { filename: this.filename, line: this.line, documentation: doc, isPublic: isPublic, callType: callType, name: this.stringValue });
+		let klass = Object.assign(new FuClass(), { filename: this.filename, loc: this.loc, documentation: doc, isPublic: isPublic, callType: callType, name: this.stringValue });
 		if (this.expect(FuToken.ID))
 			this.#addSymbol(this.program, klass);
 		if (this.eat(FuToken.COLON)) {
@@ -4418,16 +4418,16 @@ export class FuParser extends FuLexer
 					if (call.arguments_.length != 0)
 						this.reportError("Constructor parameters not supported");
 					if (klass.constructor_ != null)
-						this.reportError(`Duplicate constructor, already defined in line ${klass.constructor_.line}`);
+						this.reportError(`Duplicate constructor, already defined in line ${klass.constructor_.loc}`);
 				}
 				if (visibility == FuVisibility.PRIVATE)
 					visibility = FuVisibility.INTERNAL;
-				klass.constructor_ = Object.assign(new FuMethodBase(), { line: call.line, documentation: doc, visibility: visibility, parent: klass, type: this.program.system.voidType, name: klass.name, body: this.#parseBlock() });
+				klass.constructor_ = Object.assign(new FuMethodBase(), { loc: call.loc, documentation: doc, visibility: visibility, parent: klass, type: this.program.system.voidType, name: klass.name, body: this.#parseBlock() });
 				klass.constructor_.parameters.parent = klass;
 				klass.constructor_.addThis(klass, true);
 				continue;
 			}
-			let line = this.line;
+			let loc = this.loc;
 			let name = this.stringValue;
 			if (!this.expect(FuToken.ID))
 				continue;
@@ -4442,7 +4442,7 @@ export class FuParser extends FuLexer
 					this.reportError("Virtual methods disallowed in a sealed class");
 				if (visibility == FuVisibility.PRIVATE && callType != FuCallType.STATIC && callType != FuCallType.NORMAL)
 					this.reportError(`${FuParser.#callTypeToString(callType)} method cannot be private`);
-				let method = Object.assign(new FuMethod(), { line: line, documentation: doc, visibility: visibility, callType: callType, typeExpr: type, name: name });
+				let method = Object.assign(new FuMethod(), { loc: loc, documentation: doc, visibility: visibility, callType: callType, typeExpr: type, name: name });
 				this.#parseMethod(klass, method);
 				continue;
 			}
@@ -4452,7 +4452,7 @@ export class FuParser extends FuLexer
 				this.reportError(`Field cannot be ${FuParser.#callTypeToString(callType)}`);
 			if (type == this.program.system.voidType)
 				this.reportError("Field cannot be void");
-			let field = Object.assign(new FuField(), { line: line, documentation: doc, visibility: visibility, typeExpr: type, name: name, value: this.#parseInitializer() });
+			let field = Object.assign(new FuField(), { loc: loc, documentation: doc, visibility: visibility, typeExpr: type, name: name, value: this.#parseInitializer() });
 			this.#addSymbol(klass, field);
 			this.expect(FuToken.SEMICOLON);
 		}
@@ -4465,7 +4465,7 @@ export class FuParser extends FuLexer
 		let flags = this.eat(FuToken.ASTERISK);
 		let enu = this.program.system.newEnum(flags);
 		enu.filename = this.filename;
-		enu.line = this.line;
+		enu.loc = this.loc;
 		enu.documentation = doc;
 		enu.isPublic = isPublic;
 		enu.name = this.stringValue;
@@ -4473,7 +4473,7 @@ export class FuParser extends FuLexer
 			this.#addSymbol(this.program, enu);
 		this.expect(FuToken.LEFT_BRACE);
 		do {
-			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), line: this.line, name: this.stringValue, type: enu, visitStatus: FuVisitStatus.NOT_YET });
+			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), loc: this.loc, name: this.stringValue, type: enu, visitStatus: FuVisitStatus.NOT_YET });
 			this.expect(FuToken.ID);
 			if (this.eat(FuToken.ASSIGN))
 				konst.value = this.#parseExpr();
@@ -4556,7 +4556,7 @@ export class FuSema
 
 	reportError(statement, message)
 	{
-		this.#host.reportError(this.#getCurrentContainer().filename, statement.line, 0, statement.line, 0, message);
+		this.#host.reportError(this.#getCurrentContainer().filename, statement.loc, 0, statement.loc, 0, message);
 	}
 
 	#poisonError(statement, message)
@@ -4706,7 +4706,7 @@ export class FuSema
 		}
 		s += expr.suffix;
 		if (partsCount == 0)
-			return this.program.system.newLiteralString(s, expr.line);
+			return this.program.system.newLiteralString(s, expr.loc);
 		expr.type = this.program.system.stringStorageType;
 		expr.parts.splice(partsCount, expr.parts.length - partsCount);
 		expr.suffix = s;
@@ -4842,7 +4842,7 @@ export class FuSema
 		}
 		if (result != expr)
 			return result;
-		return Object.assign(new FuSymbolReference(), { line: expr.line, left: left, name: expr.name, symbol: expr.symbol, type: expr.type });
+		return Object.assign(new FuSymbolReference(), { loc: expr.loc, left: left, name: expr.name, symbol: expr.symbol, type: expr.type });
 	}
 
 	static #union(left, right)
@@ -5044,19 +5044,19 @@ export class FuSema
 	#toLiteralBool(expr, value)
 	{
 		let result = value ? new FuLiteralTrue() : new FuLiteralFalse();
-		result.line = expr.line;
+		result.loc = expr.loc;
 		result.type = this.program.system.boolType;
 		return result;
 	}
 
 	#toLiteralLong(expr, value)
 	{
-		return this.program.system.newLiteralLong(value, expr.line);
+		return this.program.system.newLiteralLong(value, expr.loc);
 	}
 
 	#toLiteralDouble(expr, value)
 	{
-		return Object.assign(new FuLiteralDouble(), { line: expr.line, type: this.program.system.doubleType, value: value });
+		return Object.assign(new FuLiteralDouble(), { loc: expr.loc, type: this.program.system.doubleType, value: value });
 	}
 
 	#checkLValue(expr)
@@ -5115,7 +5115,7 @@ export class FuSema
 
 	#concatenate(left, right)
 	{
-		let result = Object.assign(new FuInterpolatedString(), { line: left.line, type: this.program.system.stringStorageType });
+		let result = Object.assign(new FuInterpolatedString(), { loc: left.loc, type: this.program.system.stringStorageType });
 		result.parts.push(...left.parts);
 		if (right.parts.length == 0)
 			result.suffix = left.suffix + right.suffix;
@@ -5133,7 +5133,7 @@ export class FuSema
 		let interpolated;
 		if ((interpolated = expr) instanceof FuInterpolatedString)
 			return interpolated;
-		let result = Object.assign(new FuInterpolatedString(), { line: expr.line, type: this.program.system.stringStorageType });
+		let result = Object.assign(new FuInterpolatedString(), { loc: expr.loc, type: this.program.system.stringStorageType });
 		let literal;
 		if ((literal = expr) instanceof FuLiteral)
 			result.suffix = literal.getLiteralString();
@@ -5179,20 +5179,20 @@ export class FuSema
 				return this.#poisonError(expr, "Invalid argument to new");
 			let init = binaryNew.right;
 			this.#resolveObjectLiteral(klass, init);
-			expr.type = Object.assign(new FuDynamicPtrType(), { line: expr.line, class: klass.class });
+			expr.type = Object.assign(new FuDynamicPtrType(), { loc: expr.loc, class: klass.class });
 			expr.inner = init;
 			return expr;
 		}
 		type = this.#toType(expr.inner, true);
 		if (type instanceof FuArrayStorageType) {
 			const array = type;
-			expr.type = Object.assign(new FuDynamicPtrType(), { line: expr.line, class: this.program.system.arrayPtrClass, typeArg0: array.getElementType() });
+			expr.type = Object.assign(new FuDynamicPtrType(), { loc: expr.loc, class: this.program.system.arrayPtrClass, typeArg0: array.getElementType() });
 			expr.inner = array.lengthExpr;
 			return expr;
 		}
 		else if (type instanceof FuStorageType) {
 			const klass = type;
-			expr.type = Object.assign(new FuDynamicPtrType(), { line: expr.line, class: klass.class, typeArg0: klass.typeArg0, typeArg1: klass.typeArg1 });
+			expr.type = Object.assign(new FuDynamicPtrType(), { loc: expr.loc, class: klass.class, typeArg0: klass.typeArg0, typeArg1: klass.typeArg1 });
 			expr.inner = null;
 			return expr;
 		}
@@ -5262,7 +5262,7 @@ export class FuSema
 			break;
 		case FuToken.EXCLAMATION_MARK:
 			inner = this.#resolveBool(expr.inner);
-			return Object.assign(new FuPrefixExpr(), { line: expr.line, op: FuToken.EXCLAMATION_MARK, inner: inner, type: this.program.system.boolType });
+			return Object.assign(new FuPrefixExpr(), { loc: expr.loc, op: FuToken.EXCLAMATION_MARK, inner: inner, type: this.program.system.boolType });
 		case FuToken.NEW:
 			return this.#resolveNew(expr);
 		case FuToken.RESOURCE:
@@ -5275,7 +5275,7 @@ export class FuSema
 		default:
 			throw new Error();
 		}
-		return Object.assign(new FuPrefixExpr(), { line: expr.line, op: expr.op, inner: inner, type: type });
+		return Object.assign(new FuPrefixExpr(), { loc: expr.loc, op: expr.op, inner: inner, type: type });
 	}
 
 	#visitPostfixExpr(expr)
@@ -5346,7 +5346,7 @@ export class FuSema
 		}
 		FuSema.#takePtr(left);
 		FuSema.#takePtr(right);
-		return Object.assign(new FuBinaryExpr(), { line: expr.line, left: left, op: expr.op, right: right, type: this.program.system.boolType });
+		return Object.assign(new FuBinaryExpr(), { loc: expr.loc, left: left, op: expr.op, right: right, type: this.program.system.boolType });
 	}
 
 	#checkIsHierarchy(leftPtr, left, rightClass, expr, op, alwaysMessage, neverMessage)
@@ -5418,7 +5418,7 @@ export class FuSema
 						if (i >= 0 && i <= 2147483647) {
 							let c = stringLiteral.getAsciiAt(Number(i));
 							if (c >= 0)
-								return FuLiteralChar.new(c, expr.line);
+								return FuLiteralChar.new(c, expr.loc);
 						}
 					}
 				}
@@ -5461,7 +5461,7 @@ export class FuSema
 				let leftLiteral;
 				let rightLiteral;
 				if ((leftLiteral = left) instanceof FuLiteral && (rightLiteral = right) instanceof FuLiteral)
-					return this.program.system.newLiteralString(leftLiteral.getLiteralString() + rightLiteral.getLiteralString(), expr.line);
+					return this.program.system.newLiteralString(leftLiteral.getLiteralString() + rightLiteral.getLiteralString(), expr.loc);
 				if (left instanceof FuInterpolatedString || right instanceof FuInterpolatedString)
 					return this.#concatenate(this.#toInterpolatedString(left), this.#toInterpolatedString(right));
 				type = this.program.system.stringStorageType;
@@ -5674,7 +5674,7 @@ export class FuSema
 		let range;
 		if ((range = type) instanceof FuRangeType && range.min == range.max)
 			return this.#toLiteralLong(expr, BigInt(range.min));
-		return Object.assign(new FuBinaryExpr(), { line: expr.line, left: left, op: expr.op, right: right, type: type });
+		return Object.assign(new FuBinaryExpr(), { loc: expr.loc, left: left, op: expr.op, right: right, type: type });
 	}
 
 	#tryGetPtr(type, nullable)
@@ -5764,7 +5764,7 @@ export class FuSema
 			return onTrue;
 		if (cond instanceof FuLiteralFalse)
 			return onFalse;
-		return Object.assign(new FuSelectExpr(), { line: expr.line, cond: cond, onTrue: onTrue, onFalse: onFalse, type: type });
+		return Object.assign(new FuSelectExpr(), { loc: expr.loc, cond: cond, onTrue: onTrue, onFalse: onFalse, type: type });
 	}
 
 	#evalType(generic, type)
@@ -6130,7 +6130,7 @@ export class FuSema
 				return this.#poisonError(call, "Expected empty parentheses for storage type");
 			let typeArgExprs2;
 			if ((typeArgExprs2 = call.method.left) instanceof FuAggregateInitializer) {
-				let storage = Object.assign(new FuStorageType(), { line: call.line });
+				let storage = Object.assign(new FuStorageType(), { loc: call.loc });
 				let klass;
 				if ((klass = this.program.tryLookup(call.method.name, true)) instanceof FuClass) {
 					this.#fillGenericClass(storage, klass, typeArgExprs2);
@@ -6225,7 +6225,7 @@ export class FuSema
 		}
 		else
 			baseType = this.#toBaseType(expr, ptrModifier, nullable);
-		baseType.line = expr.line;
+		baseType.loc = expr.loc;
 		if (outerArray == null)
 			return baseType;
 		innerArray.typeArg0 = baseType;
@@ -6922,7 +6922,7 @@ export class GenBase extends FuVisitor
 
 	#reportError(statement, message)
 	{
-		this.#host.reportError(this.getCurrentContainer().filename, statement.line, 0, statement.line, 0, message);
+		this.#host.reportError(this.getCurrentContainer().filename, statement.loc, 0, statement.loc, 0, message);
 	}
 
 	notSupported(statement, feature)
