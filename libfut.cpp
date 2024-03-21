@@ -4985,7 +4985,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 {
 	std::shared_ptr<FuExpr> left = visitExpr(expr->left);
 	std::shared_ptr<FuExpr> right = visitExpr(expr->right);
-	if (left == this->poison || right == this->poison)
+	if (left == this->poison || left->type == this->poison || right == this->poison || right->type == this->poison)
 		return this->poison;
 	std::shared_ptr<FuType> type;
 	switch (expr->op) {
@@ -5379,7 +5379,7 @@ std::shared_ptr<FuExpr> FuSema::visitSelectExpr(const FuSelectExpr * expr)
 	std::shared_ptr<FuExpr> cond = resolveBool(expr->cond);
 	std::shared_ptr<FuExpr> onTrue = visitExpr(expr->onTrue);
 	std::shared_ptr<FuExpr> onFalse = visitExpr(expr->onFalse);
-	if (onTrue == this->poison || onFalse == this->poison)
+	if (onTrue == this->poison || onTrue->type == this->poison || onFalse == this->poison || onFalse->type == this->poison)
 		return this->poison;
 	std::shared_ptr<FuType> type = getCommonType(onTrue.get(), onFalse.get());
 	coerce(onTrue.get(), type.get());
@@ -6074,7 +6074,7 @@ void FuSema::visitSwitch(FuSwitch * statement)
 {
 	openScope(statement);
 	statement->value = visitExpr(statement->value);
-	if (statement->value != this->poison) {
+	if (statement->value != this->poison && statement->value->type != this->poison) {
 		const FuIntegerType * i;
 		const FuClassType * klass;
 		if ((i = dynamic_cast<const FuIntegerType *>(statement->value->type.get())) && i->id != FuId::longType) {

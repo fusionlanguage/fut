@@ -5430,7 +5430,7 @@ export class FuSema
 	{
 		let left = this.#visitExpr(expr.left);
 		let right = this.#visitExpr(expr.right);
-		if (left == this.#poison || right == this.#poison)
+		if (left == this.#poison || left.type == this.#poison || right == this.#poison || right.type == this.#poison)
 			return this.#poison;
 		let type;
 		switch (expr.op) {
@@ -5789,7 +5789,7 @@ export class FuSema
 		let cond = this.#resolveBool(expr.cond);
 		let onTrue = this.#visitExpr(expr.onTrue);
 		let onFalse = this.#visitExpr(expr.onFalse);
-		if (onTrue == this.#poison || onFalse == this.#poison)
+		if (onTrue == this.#poison || onTrue.type == this.#poison || onFalse == this.#poison || onFalse.type == this.#poison)
 			return this.#poison;
 		let type = this.#getCommonType(onTrue, onFalse);
 		this.#coerce(onTrue, type);
@@ -6503,7 +6503,7 @@ export class FuSema
 	{
 		this.#openScope(statement);
 		statement.value = this.#visitExpr(statement.value);
-		if (statement.value != this.#poison) {
+		if (statement.value != this.#poison && statement.value.type != this.#poison) {
 			let i;
 			let klass;
 			if ((i = statement.value.type) instanceof FuIntegerType && i.id != FuId.LONG_TYPE) {

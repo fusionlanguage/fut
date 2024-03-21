@@ -5247,7 +5247,7 @@ namespace Fusion
 		{
 			FuExpr left = VisitExpr(expr.Left);
 			FuExpr right = VisitExpr(expr.Right);
-			if (left == this.Poison || right == this.Poison)
+			if (left == this.Poison || left.Type == this.Poison || right == this.Poison || right.Type == this.Poison)
 				return this.Poison;
 			FuType type;
 			switch (expr.Op) {
@@ -5564,7 +5564,7 @@ namespace Fusion
 			FuExpr cond = ResolveBool(expr.Cond);
 			FuExpr onTrue = VisitExpr(expr.OnTrue);
 			FuExpr onFalse = VisitExpr(expr.OnFalse);
-			if (onTrue == this.Poison || onFalse == this.Poison)
+			if (onTrue == this.Poison || onTrue.Type == this.Poison || onFalse == this.Poison || onFalse.Type == this.Poison)
 				return this.Poison;
 			FuType type = GetCommonType(onTrue, onFalse);
 			Coerce(onTrue, type);
@@ -6222,7 +6222,7 @@ namespace Fusion
 		{
 			OpenScope(statement);
 			statement.Value = VisitExpr(statement.Value);
-			if (statement.Value != this.Poison) {
+			if (statement.Value != this.Poison && statement.Value.Type != this.Poison) {
 				switch (statement.Value.Type) {
 				case FuIntegerType i when i.Id != FuId.LongType:
 					break;
