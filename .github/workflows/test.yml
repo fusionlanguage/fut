@@ -8,7 +8,6 @@ jobs:
         with:
           version: 13
       - uses: actions/checkout@main
-      - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: make -j3 test-c test-cl test-error
   cpp-java:
     runs-on: ubuntu-22.04
@@ -21,7 +20,6 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: actions/checkout@main
-      - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: make -j3 test-cpp test-java
   cs:
     runs-on: ubuntu-22.04
@@ -60,7 +58,6 @@ jobs:
       - run: pip install mypy
       - uses: swift-actions/setup-swift@main
       - uses: actions/checkout@main
-      - run: sudo sysctl vm.mmap_rnd_bits=28
       - run: make -j3 test-py test-swift
   host-diff:
     runs-on: ubuntu-22.04
