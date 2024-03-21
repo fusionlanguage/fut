@@ -138,7 +138,6 @@ export class FuLexer
 	longValue;
 	stringValue;
 	#preSymbols = new Set();
-	#atLineStart = true;
 	#lineMode = false;
 	#enableDocComments = true;
 	parsingTypeArg = false;
@@ -243,11 +242,9 @@ export class FuLexer
 			break;
 		case 10:
 			this.program.lineLocs.push(this.loc);
-			this.#atLineStart = true;
 			break;
 		default:
 			this.loc += c < 65536 ? 1 : 2;
-			this.#atLineStart = false;
 			break;
 		}
 		this.#fillNextChar();
@@ -483,7 +480,6 @@ export class FuLexer
 	#readPreToken()
 	{
 		for (;;) {
-			let atLineStart = this.#atLineStart;
 			this.#tokenLoc = this.loc;
 			this.lexemeOffset = this.charOffset;
 			let c = this.readChar();
@@ -499,7 +495,7 @@ export class FuLexer
 					return FuToken.END_OF_LINE;
 				break;
 			case 35:
-				if (!atLineStart)
+				if (this.#tokenLoc != this.program.lineLocs.at(-1))
 					return FuToken.HASH;
 				switch (this.peekChar()) {
 				case 105:

@@ -518,7 +518,6 @@ private:
 	FuParserHost * host;
 	int tokenLoc;
 	std::unordered_set<std::string> preSymbols;
-	bool atLineStart = true;
 	bool lineMode = false;
 	bool enableDocComments = true;
 	std::stack<bool> preElseStack;
