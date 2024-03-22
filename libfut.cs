@@ -143,7 +143,7 @@ namespace Fusion
 
 		protected FuParserHost Host;
 
-		int Loc = 0;
+		protected int Loc = 0;
 
 		protected int TokenLoc;
 
@@ -3470,6 +3470,47 @@ namespace Fusion
 
 		FuCondCompletionStatement CurrentLoopOrSwitch = null;
 
+		string FindDefinitionFilename;
+
+		int FindDefinitionLine = -1;
+
+		int FindDefinitionColumn;
+
+		FuSymbolReference FoundDefinition = null;
+
+		public void FindDefinition(string filename, int line, int column)
+		{
+			this.FindDefinitionFilename = filename;
+			this.FindDefinitionLine = line;
+			this.FindDefinitionColumn = column;
+			this.FoundDefinition = null;
+		}
+
+		public string GetFoundDefinitionFilename()
+		{
+			if (this.FoundDefinition == null || this.FoundDefinition.Symbol == null)
+				return null;
+			int loc = this.FoundDefinition.Symbol.Loc;
+			int line = this.Host.Program.GetLine(loc);
+			FuSourceFile file = this.Host.Program.GetSourceFile(line);
+			return file.Filename;
+		}
+
+		public int GetFoundDefinitionLine()
+		{
+			int loc = this.FoundDefinition.Symbol.Loc;
+			int line = this.Host.Program.GetLine(loc);
+			FuSourceFile file = this.Host.Program.GetSourceFile(line);
+			return line - file.Line;
+		}
+
+		public int GetFoundDefinitionColumn()
+		{
+			int loc = this.FoundDefinition.Symbol.Loc;
+			int line = this.Host.Program.GetLine(loc);
+			return loc - this.Host.Program.LineLocs[line];
+		}
+
 		bool DocParseLine(FuDocPara para)
 		{
 			if (para.Children.Count > 0)
@@ -3621,6 +3662,12 @@ namespace Fusion
 
 		void ParseSymbolReference(FuSymbolReference result)
 		{
+			FuSourceFile file = this.Host.Program.SourceFiles[^1];
+			if (this.Host.Program.LineLocs.Count - file.Line - 1 == this.FindDefinitionLine && file.Filename == this.FindDefinitionFilename) {
+				int loc = this.Host.Program.LineLocs[^1] + this.FindDefinitionColumn;
+				if (loc >= this.TokenLoc && loc <= this.Loc)
+					this.FoundDefinition = result;
+			}
 			result.Loc = this.TokenLoc;
 			result.Name = this.StringValue;
 			Expect(FuToken.Id);

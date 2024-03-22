@@ -2970,6 +2970,39 @@ const FuSourceFile * FuProgram::getSourceFile(int line) const
 	return &this->sourceFiles[l];
 }
 
+void FuParser::findDefinition(std::string_view filename, int line, int column)
+{
+	this->findDefinitionFilename = filename;
+	this->findDefinitionLine = line;
+	this->findDefinitionColumn = column;
+	this->foundDefinition = nullptr;
+}
+
+std::string_view FuParser::getFoundDefinitionFilename() const
+{
+	if (this->foundDefinition == nullptr || this->foundDefinition->symbol == nullptr)
+		return std::string_view();
+	int loc = this->foundDefinition->symbol->loc;
+	int line = this->host->program->getLine(loc);
+	const FuSourceFile * file = this->host->program->getSourceFile(line);
+	return file->filename;
+}
+
+int FuParser::getFoundDefinitionLine() const
+{
+	int loc = this->foundDefinition->symbol->loc;
+	int line = this->host->program->getLine(loc);
+	const FuSourceFile * file = this->host->program->getSourceFile(line);
+	return line - file->line;
+}
+
+int FuParser::getFoundDefinitionColumn() const
+{
+	int loc = this->foundDefinition->symbol->loc;
+	int line = this->host->program->getLine(loc);
+	return loc - this->host->program->lineLocs[line];
+}
+
 bool FuParser::docParseLine(FuDocPara * para)
 {
 	if (std::ssize(para->children) > 0)
@@ -3138,6 +3171,12 @@ std::shared_ptr<FuExpr> FuParser::parseParenthesized()
 
 void FuParser::parseSymbolReference(FuSymbolReference * result)
 {
+	const FuSourceFile * file = &static_cast<const FuSourceFile &>(this->host->program->sourceFiles.back());
+	if (std::ssize(this->host->program->lineLocs) - file->line - 1 == this->findDefinitionLine && file->filename == this->findDefinitionFilename) {
+		int loc = this->host->program->lineLocs.back() + this->findDefinitionColumn;
+		if (loc >= this->tokenLoc && loc <= this->loc)
+			this->foundDefinition = result;
+	}
 	result->loc = this->tokenLoc;
 	result->name = this->stringValue;
 	expect(FuToken::id);

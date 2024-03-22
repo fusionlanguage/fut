@@ -31,12 +31,9 @@ class VsCodeHost extends FuSemaHost
 		this.#diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine, startUtf16Column, endLine, endUtf16Column), message));
 	}
 
-	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void
+	#process(document: vscode.TextDocument, parser: FuParser)
 	{
-		if (document.languageId != "fusion")
-			return;
 		this.#diagnostics.length = 0;
-		const parser = new FuParser();
 		parser.setHost(this);
 		this.program = new FuProgram();
 		this.program.parent = this.#system;
@@ -48,7 +45,23 @@ class VsCodeHost extends FuSemaHost
 			sema.setHost(this);
 			sema.process();
 		}
+	}
+
+	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void
+	{
+		if (document.languageId != "fusion")
+			return;
+		this.#process(document, new FuParser());
 		diagnosticCollection.set(document.uri, this.#diagnostics);
+	}
+
+	findDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Location | null
+	{
+		const parser = new FuParser();
+		parser.findDefinition(document.fileName, position.line, position.character);
+		this.#process(document, parser);
+		const filename: string | null = parser.getFoundDefinitionFilename();
+		return filename == null ? null : new vscode.Location(document.uri /* FIXME */, new vscode.Position(parser.getFoundDefinitionLine(), parser.getFoundDefinitionColumn()));
 	}
 }
 
@@ -62,4 +75,9 @@ export function activate(context: vscode.ExtensionContext): void {
 				host.updateDiagnostics(editor.document, diagnosticCollection);
 		}));
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(e => host.updateDiagnostics(e.document, diagnosticCollection)));
+	vscode.languages.registerDefinitionProvider("fusion", {
+			provideDefinition(document, position, token) {
+				return host.findDefinition(document, position);
+			}
+		});
 }

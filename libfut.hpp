@@ -491,6 +491,7 @@ protected:
 	uint8_t const * input;
 	int charOffset;
 	FuParserHost * host;
+	int loc = 0;
 	int tokenLoc;
 	int lexemeOffset;
 	FuToken currentToken;
@@ -517,7 +518,6 @@ private:
 	int inputLength;
 	int nextOffset;
 	int nextChar;
-	int loc = 0;
 	std::unordered_set<std::string> preSymbols;
 	bool lineMode = false;
 	bool enableDocComments = true;
@@ -1555,11 +1555,19 @@ class FuParser : public FuLexer
 {
 public:
 	FuParser() = default;
+	void findDefinition(std::string_view filename, int line, int column);
+	std::string_view getFoundDefinitionFilename() const;
+	int getFoundDefinitionLine() const;
+	int getFoundDefinitionColumn() const;
 	void parse(std::string_view filename, uint8_t const * input, int inputLength);
 private:
 	std::string_view xcrementParent = std::string_view();
 	const FuLoop * currentLoop = nullptr;
 	FuCondCompletionStatement * currentLoopOrSwitch = nullptr;
+	std::string findDefinitionFilename;
+	int findDefinitionLine = -1;
+	int findDefinitionColumn;
+	const FuSymbolReference * foundDefinition = nullptr;
 	bool docParseLine(FuDocPara * para);
 	void docParsePara(FuDocPara * para);
 	std::shared_ptr<FuCodeDoc> parseDoc();

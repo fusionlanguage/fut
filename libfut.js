@@ -130,7 +130,7 @@ export class FuLexer
 	charOffset;
 	#nextChar;
 	host;
-	#loc = 0;
+	loc = 0;
 	tokenLoc;
 	lexemeOffset;
 	currentToken;
@@ -160,7 +160,7 @@ export class FuLexer
 		this.host.program.sourceFiles.push(new FuSourceFile());
 		this.host.program.sourceFiles.at(-1).filename = filename;
 		this.host.program.sourceFiles.at(-1).line = this.host.program.lineLocs.length;
-		this.host.program.lineLocs.push(this.#loc);
+		this.host.program.lineLocs.push(this.loc);
 		this.#fillNextChar();
 		if (this.#nextChar == 65279)
 			this.#fillNextChar();
@@ -172,7 +172,7 @@ export class FuLexer
 		let file = this.host.program.sourceFiles.at(-1);
 		let line = this.host.program.lineLocs.length - file.line - 1;
 		let lineLoc = this.host.program.lineLocs.at(-1);
-		this.host.reportError(file.filename, line, this.tokenLoc - lineLoc, line, this.#loc - lineLoc, message);
+		this.host.reportError(file.filename, line, this.tokenLoc - lineLoc, line, this.loc - lineLoc, message);
 	}
 
 	#readByte()
@@ -239,13 +239,13 @@ export class FuLexer
 		switch (c) {
 		case 9:
 		case 32:
-			this.#loc++;
+			this.loc++;
 			break;
 		case 10:
-			this.host.program.lineLocs.push(this.#loc);
+			this.host.program.lineLocs.push(this.loc);
 			break;
 		default:
-			this.#loc += c < 65536 ? 1 : 2;
+			this.loc += c < 65536 ? 1 : 2;
 			break;
 		}
 		this.#fillNextChar();
@@ -481,7 +481,7 @@ export class FuLexer
 	#readPreToken()
 	{
 		for (;;) {
-			this.tokenLoc = this.#loc;
+			this.tokenLoc = this.loc;
 			this.lexemeOffset = this.charOffset;
 			let c = this.readChar();
 			switch (c) {
@@ -3664,6 +3664,43 @@ export class FuParser extends FuLexer
 	#xcrementParent = null;
 	#currentLoop = null;
 	#currentLoopOrSwitch = null;
+	#findDefinitionFilename;
+	#findDefinitionLine = -1;
+	#findDefinitionColumn;
+	#foundDefinition = null;
+
+	findDefinition(filename, line, column)
+	{
+		this.#findDefinitionFilename = filename;
+		this.#findDefinitionLine = line;
+		this.#findDefinitionColumn = column;
+		this.#foundDefinition = null;
+	}
+
+	getFoundDefinitionFilename()
+	{
+		if (this.#foundDefinition == null || this.#foundDefinition.symbol == null)
+			return null;
+		let loc = this.#foundDefinition.symbol.loc;
+		let line = this.host.program.getLine(loc);
+		let file = this.host.program.getSourceFile(line);
+		return file.filename;
+	}
+
+	getFoundDefinitionLine()
+	{
+		let loc = this.#foundDefinition.symbol.loc;
+		let line = this.host.program.getLine(loc);
+		let file = this.host.program.getSourceFile(line);
+		return line - file.line;
+	}
+
+	getFoundDefinitionColumn()
+	{
+		let loc = this.#foundDefinition.symbol.loc;
+		let line = this.host.program.getLine(loc);
+		return loc - this.host.program.lineLocs[line];
+	}
 
 	#docParseLine(para)
 	{
@@ -3816,6 +3853,12 @@ export class FuParser extends FuLexer
 
 	#parseSymbolReference(result)
 	{
+		let file = this.host.program.sourceFiles.at(-1);
+		if (this.host.program.lineLocs.length - file.line - 1 == this.#findDefinitionLine && file.filename == this.#findDefinitionFilename) {
+			let loc = this.host.program.lineLocs.at(-1) + this.#findDefinitionColumn;
+			if (loc >= this.tokenLoc && loc <= this.loc)
+				this.#foundDefinition = result;
+		}
 		result.loc = this.tokenLoc;
 		result.name = this.stringValue;
 		this.expect(FuToken.ID);

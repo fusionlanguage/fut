@@ -24,6 +24,46 @@ public class FuParser : FuLexer
 	FuLoop? CurrentLoop = null;
 	FuCondCompletionStatement!? CurrentLoopOrSwitch = null;
 
+	string() FindDefinitionFilename;
+	int FindDefinitionLine = -1;
+	int FindDefinitionColumn;
+	FuSymbolReference? FoundDefinition = null;
+
+	public void FindDefinition!(string filename, int line, int column)
+	{
+		this.FindDefinitionFilename = filename;
+		this.FindDefinitionLine = line;
+		this.FindDefinitionColumn = column;
+		this.FoundDefinition = null;
+	}
+
+	// TODO: refactor duplicate code in GetFoundDefinitionFilename, GetFoundDefinitionLine, GetFoundDefinitionColumn
+
+	public string? GetFoundDefinitionFilename()
+	{
+		if (this.FoundDefinition == null || this.FoundDefinition.Symbol == null)
+			return null;
+		int loc = this.FoundDefinition.Symbol.Loc;
+		int line = this.Host.Program.GetLine(loc);
+		FuSourceFile file = this.Host.Program.GetSourceFile(line);
+		return file.Filename;
+	}
+
+	public int GetFoundDefinitionLine()
+	{
+		int loc = this.FoundDefinition.Symbol.Loc;
+		int line = this.Host.Program.GetLine(loc);
+		FuSourceFile file = this.Host.Program.GetSourceFile(line);
+		return line - file.Line;
+	}
+
+	public int GetFoundDefinitionColumn()
+	{
+		int loc = this.FoundDefinition.Symbol.Loc;
+		int line = this.Host.Program.GetLine(loc);
+		return loc - this.Host.Program.LineLocs[line];
+	}
+
 	bool DocParseLine!(FuDocPara! para)
 	{
 		if (para.Children.Count > 0)
@@ -171,6 +211,13 @@ public class FuParser : FuLexer
 
 	void ParseSymbolReference!(FuSymbolReference! result)
 	{
+		FuSourceFile file = this.Host.Program.SourceFiles.Last();
+		if (this.Host.Program.LineLocs.Count - file.Line - 1 == this.FindDefinitionLine && file.Filename == this.FindDefinitionFilename) {
+			int loc = this.Host.Program.LineLocs.Last() + this.FindDefinitionColumn;
+			if (loc >= this.TokenLoc && loc <= this.Loc)
+				this.FoundDefinition = result;
+		}
+
 		result.Loc = this.TokenLoc;
 		result.Name = this.StringValue;
 		Expect(FuToken.Id);
