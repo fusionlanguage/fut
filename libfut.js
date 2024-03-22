@@ -5455,6 +5455,8 @@ export class FuSema
 		case FuToken.INCREMENT:
 		case FuToken.DECREMENT:
 			inner = this.#visitExpr(expr.inner);
+			if (inner == this.#poison)
+				return inner;
 			this.#checkLValue(inner);
 			this.#coerce(inner, this.#host.program.system.doubleType);
 			let xcrementRange;
@@ -5469,6 +5471,8 @@ export class FuSema
 			return expr;
 		case FuToken.MINUS:
 			inner = this.#visitExpr(expr.inner);
+			if (inner == this.#poison)
+				return inner;
 			this.#coerce(inner, this.#host.program.system.doubleType);
 			let negRange;
 			if ((negRange = inner.type) instanceof FuRangeType) {
@@ -5491,6 +5495,8 @@ export class FuSema
 			break;
 		case FuToken.TILDE:
 			inner = this.#visitExpr(expr.inner);
+			if (inner == this.#poison)
+				return inner;
 			if (inner.type instanceof FuEnumFlags)
 				type = inner.type;
 			else {

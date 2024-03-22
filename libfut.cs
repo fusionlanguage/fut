@@ -5224,6 +5224,8 @@ namespace Fusion
 			case FuToken.Increment:
 			case FuToken.Decrement:
 				inner = VisitExpr(expr.Inner);
+				if (inner == this.Poison)
+					return inner;
 				CheckLValue(inner);
 				Coerce(inner, this.Host.Program.System.DoubleType);
 				if (inner.Type is FuRangeType xcrementRange) {
@@ -5237,6 +5239,8 @@ namespace Fusion
 				return expr;
 			case FuToken.Minus:
 				inner = VisitExpr(expr.Inner);
+				if (inner == this.Poison)
+					return inner;
 				Coerce(inner, this.Host.Program.System.DoubleType);
 				if (inner.Type is FuRangeType negRange) {
 					if (negRange.Min == negRange.Max)
@@ -5252,6 +5256,8 @@ namespace Fusion
 				break;
 			case FuToken.Tilde:
 				inner = VisitExpr(expr.Inner);
+				if (inner == this.Poison)
+					return inner;
 				if (inner.Type is FuEnumFlags)
 					type = inner.Type;
 				else {

@@ -4996,6 +4996,8 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 	case FuToken::increment:
 	case FuToken::decrement:
 		inner = visitExpr(expr->inner);
+		if (inner == this->poison)
+			return inner;
 		checkLValue(inner.get());
 		coerce(inner.get(), this->host->program->system->doubleType.get());
 		if (const FuRangeType *xcrementRange = dynamic_cast<const FuRangeType *>(inner->type.get())) {
@@ -5009,6 +5011,8 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		return expr;
 	case FuToken::minus:
 		inner = visitExpr(expr->inner);
+		if (inner == this->poison)
+			return inner;
 		coerce(inner.get(), this->host->program->system->doubleType.get());
 		if (const FuRangeType *negRange = dynamic_cast<const FuRangeType *>(inner->type.get())) {
 			if (negRange->min == negRange->max)
@@ -5024,6 +5028,8 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		break;
 	case FuToken::tilde:
 		inner = visitExpr(expr->inner);
+		if (inner == this->poison)
+			return inner;
 		if (dynamic_cast<const FuEnumFlags *>(inner->type.get()))
 			type = inner->type;
 		else {
