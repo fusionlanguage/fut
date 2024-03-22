@@ -2978,29 +2978,26 @@ void FuParser::findDefinition(std::string_view filename, int line, int column)
 	this->foundDefinition = nullptr;
 }
 
-std::string_view FuParser::getFoundDefinitionFilename() const
+std::string_view FuParser::getFoundDefinitionFilename()
 {
 	if (this->foundDefinition == nullptr || this->foundDefinition->symbol == nullptr)
 		return std::string_view();
 	int loc = this->foundDefinition->symbol->loc;
 	int line = this->host->program->getLine(loc);
 	const FuSourceFile * file = this->host->program->getSourceFile(line);
+	this->findDefinitionLine = line - file->line;
+	this->findDefinitionColumn = loc - this->host->program->lineLocs[line];
 	return file->filename;
 }
 
 int FuParser::getFoundDefinitionLine() const
 {
-	int loc = this->foundDefinition->symbol->loc;
-	int line = this->host->program->getLine(loc);
-	const FuSourceFile * file = this->host->program->getSourceFile(line);
-	return line - file->line;
+	return this->findDefinitionLine;
 }
 
 int FuParser::getFoundDefinitionColumn() const
 {
-	int loc = this->foundDefinition->symbol->loc;
-	int line = this->host->program->getLine(loc);
-	return loc - this->host->program->lineLocs[line];
+	return this->findDefinitionColumn;
 }
 
 bool FuParser::docParseLine(FuDocPara * para)

@@ -3684,22 +3684,19 @@ export class FuParser extends FuLexer
 		let loc = this.#foundDefinition.symbol.loc;
 		let line = this.host.program.getLine(loc);
 		let file = this.host.program.getSourceFile(line);
+		this.#findDefinitionLine = line - file.line;
+		this.#findDefinitionColumn = loc - this.host.program.lineLocs[line];
 		return file.filename;
 	}
 
 	getFoundDefinitionLine()
 	{
-		let loc = this.#foundDefinition.symbol.loc;
-		let line = this.host.program.getLine(loc);
-		let file = this.host.program.getSourceFile(line);
-		return line - file.line;
+		return this.#findDefinitionLine;
 	}
 
 	getFoundDefinitionColumn()
 	{
-		let loc = this.#foundDefinition.symbol.loc;
-		let line = this.host.program.getLine(loc);
-		return loc - this.host.program.lineLocs[line];
+		return this.#findDefinitionColumn;
 	}
 
 	#docParseLine(para)

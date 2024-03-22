@@ -3493,23 +3493,14 @@ namespace Fusion
 			int loc = this.FoundDefinition.Symbol.Loc;
 			int line = this.Host.Program.GetLine(loc);
 			FuSourceFile file = this.Host.Program.GetSourceFile(line);
+			this.FindDefinitionLine = line - file.Line;
+			this.FindDefinitionColumn = loc - this.Host.Program.LineLocs[line];
 			return file.Filename;
 		}
 
-		public int GetFoundDefinitionLine()
-		{
-			int loc = this.FoundDefinition.Symbol.Loc;
-			int line = this.Host.Program.GetLine(loc);
-			FuSourceFile file = this.Host.Program.GetSourceFile(line);
-			return line - file.Line;
-		}
+		public int GetFoundDefinitionLine() => this.FindDefinitionLine;
 
-		public int GetFoundDefinitionColumn()
-		{
-			int loc = this.FoundDefinition.Symbol.Loc;
-			int line = this.Host.Program.GetLine(loc);
-			return loc - this.Host.Program.LineLocs[line];
-		}
+		public int GetFoundDefinitionColumn() => this.FindDefinitionColumn;
 
 		bool DocParseLine(FuDocPara para)
 		{

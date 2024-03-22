@@ -1556,7 +1556,7 @@ class FuParser : public FuLexer
 public:
 	FuParser() = default;
 	void findDefinition(std::string_view filename, int line, int column);
-	std::string_view getFoundDefinitionFilename() const;
+	std::string_view getFoundDefinitionFilename();
 	int getFoundDefinitionLine() const;
 	int getFoundDefinitionColumn() const;
 	void parse(std::string_view filename, uint8_t const * input, int inputLength);
