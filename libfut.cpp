@@ -3674,9 +3674,9 @@ std::shared_ptr<FuConst> FuParser::parseConst(FuVisibility visibility)
 {
 	expect(FuToken::const_);
 	std::shared_ptr<FuConst> konst = std::make_shared<FuConst>();
-	konst->loc = this->tokenLoc;
 	konst->visibility = visibility;
 	konst->typeExpr = parseType();
+	konst->loc = this->tokenLoc;
 	konst->name = this->stringValue;
 	konst->visitStatus = FuVisitStatus::notYet;
 	nextToken();
