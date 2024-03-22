@@ -1725,7 +1725,7 @@ private:
 	static std::shared_ptr<FuClassType> createClassPtr(const FuClass * klass, FuToken ptrModifier, bool nullable);
 	void fillGenericClass(FuClassType * result, const FuClass * klass, const FuAggregateInitializer * typeArgExprs);
 	bool expectNoPtrModifier(const FuExpr * expr, FuToken ptrModifier, bool nullable) const;
-	std::shared_ptr<FuType> toBaseType(const FuExpr * expr, FuToken ptrModifier, bool nullable);
+	std::shared_ptr<FuType> toBaseType(FuExpr * expr, FuToken ptrModifier, bool nullable);
 	std::shared_ptr<FuType> toType(std::shared_ptr<FuExpr> expr, bool dynamic);
 	std::shared_ptr<FuType> resolveType(FuNamedValue * def);
 	void visitAssert(FuAssert * statement);

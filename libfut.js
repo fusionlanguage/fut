@@ -6341,6 +6341,7 @@ export class FuSema
 			const symbol = expr;
 			let type;
 			if ((type = this.#host.program.tryLookup(symbol.name, true)) instanceof FuType) {
+				symbol.symbol = type;
 				let klass;
 				if ((klass = type) instanceof FuClass) {
 					if (klass.id == FuId.MATCH_CLASS && ptrModifier != FuToken.END_OF_FILE)
@@ -6386,8 +6387,10 @@ export class FuSema
 			if (call.method.name == "string")
 				return this.#host.program.system.stringStorageType;
 			let klass2;
-			if ((klass2 = this.#host.program.tryLookup(call.method.name, true)) instanceof FuClass)
+			if ((klass2 = this.#host.program.tryLookup(call.method.name, true)) instanceof FuClass) {
+				call.method.symbol = klass2;
 				return Object.assign(new FuStorageType(), { class: klass2 });
+			}
 			return this.#poisonError(expr, `Class '${call.method.name}' not found`);
 		}
 		else

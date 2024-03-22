@@ -1527,12 +1527,13 @@ public class FuSema
 		return ptrModifier == FuToken.EndOfFile;
 	}
 
-	FuType# ToBaseType!(FuExpr expr, FuToken ptrModifier, bool nullable)
+	FuType# ToBaseType!(FuExpr! expr, FuToken ptrModifier, bool nullable)
 	{
 		switch (expr) {
-		case FuSymbolReference symbol:
+		case FuSymbolReference! symbol:
 			// built-in, string?, MyEnum, MyClass, MyClass?, MyClass!, MyClass!?, MyClass#, MyClass#?
 			if (this.Host.Program.TryLookup(symbol.Name, true) is FuType# type) {
+				symbol.Symbol = type; // for vscode goto
 				if (type is FuClass klass) {
 					if (klass.Id == FuId.MatchClass && ptrModifier != FuToken.EndOfFile)
 						ReportError(expr, "Read-write references to the built-in class Match are not supported");
@@ -1573,8 +1574,10 @@ public class FuSema
 				return PoisonError(expr, "Invalid type");
 			if (call.Method.Name == "string")
 				return this.Host.Program.System.StringStorageType;
-			if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass2)
+			if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass! klass2) {
+				call.Method.Symbol = klass2; // for vscode goto
 				return new FuStorageType { Class = klass2 };
+			}
 			return PoisonError(expr, $"Class '{call.Method.Name}' not found");
 
 		default:

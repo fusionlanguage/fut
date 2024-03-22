@@ -5911,10 +5911,11 @@ bool FuSema::expectNoPtrModifier(const FuExpr * expr, FuToken ptrModifier, bool 
 	return ptrModifier == FuToken::endOfFile;
 }
 
-std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModifier, bool nullable)
+std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, bool nullable)
 {
-	if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
+	if (FuSymbolReference *symbol = dynamic_cast<FuSymbolReference *>(expr)) {
 		if (std::shared_ptr<FuType>type = std::dynamic_pointer_cast<FuType>(this->host->program->tryLookup(symbol->name, true))) {
+			symbol->symbol = type.get();
 			if (const FuClass *klass = dynamic_cast<const FuClass *>(type.get())) {
 				if (klass->id == FuId::matchClass && ptrModifier != FuToken::endOfFile)
 					reportError(expr, "Read-write references to the built-in class Match are not supported");
@@ -5955,7 +5956,8 @@ std::shared_ptr<FuType> FuSema::toBaseType(const FuExpr * expr, FuToken ptrModif
 			return poisonError(expr, "Invalid type");
 		if (call->method->name == "string")
 			return this->host->program->system->stringStorageType;
-		if (const FuClass *klass2 = dynamic_cast<const FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
+		if (FuClass *klass2 = dynamic_cast<FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
+			call->method->symbol = klass2;
 			std::shared_ptr<FuStorageType> futemp0 = std::make_shared<FuStorageType>();
 			futemp0->class_ = klass2;
 			return futemp0;

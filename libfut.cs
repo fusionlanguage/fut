@@ -6017,6 +6017,7 @@ namespace Fusion
 			switch (expr) {
 			case FuSymbolReference symbol:
 				if (this.Host.Program.TryLookup(symbol.Name, true) is FuType type) {
+					symbol.Symbol = type;
 					if (type is FuClass klass) {
 						if (klass.Id == FuId.MatchClass && ptrModifier != FuToken.EndOfFile)
 							ReportError(expr, "Read-write references to the built-in class Match are not supported");
@@ -6055,8 +6056,10 @@ namespace Fusion
 					return PoisonError(expr, "Invalid type");
 				if (call.Method.Name == "string")
 					return this.Host.Program.System.StringStorageType;
-				if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass2)
+				if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass2) {
+					call.Method.Symbol = klass2;
 					return new FuStorageType { Class = klass2 };
+				}
 				return PoisonError(expr, $"Class '{call.Method.Name}' not found");
 			default:
 				return PoisonError(expr, "Invalid type");
