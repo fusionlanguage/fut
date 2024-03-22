@@ -1622,7 +1622,7 @@ namespace Fusion
 
 		internal FuId Id = FuId.None;
 
-		internal string Name;
+		internal string Name = "";
 
 		internal FuSymbol Next;
 

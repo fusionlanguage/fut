@@ -338,7 +338,7 @@ public abstract class FuExpr : FuStatement
 public abstract class FuSymbol : FuExpr
 {
 	internal FuId Id = FuId.None;
-	internal string() Name;
+	internal string() Name = ""; // TODO: for host-diff - why?
 	internal FuSymbol!? Next;
 	internal FuScope!? Parent;
 	internal FuCodeDoc#? Documentation = null;

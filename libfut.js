@@ -1546,7 +1546,7 @@ export class FuExpr extends FuStatement
 export class FuSymbol extends FuExpr
 {
 	id = FuId.NONE;
-	name;
+	name = "";
 	next;
 	parent;
 	documentation = null;

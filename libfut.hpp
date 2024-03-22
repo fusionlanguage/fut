@@ -697,7 +697,7 @@ protected:
 	FuSymbol() = default;
 public:
 	FuId id = FuId::none;
-	std::string name;
+	std::string name{""};
 	FuSymbol * next;
 	FuScope * parent;
 	std::shared_ptr<FuCodeDoc> documentation = nullptr;
