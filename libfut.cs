@@ -6605,12 +6605,7 @@ namespace Fusion
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 				switch (symbol) {
 				case FuField field:
-					FuType type = ResolveType(field);
-					if (field.Value != null) {
-						field.Value = VisitExpr(field.Value);
-						if (!field.IsAssignableStorage())
-							Coerce(field.Value, type is FuArrayStorageType array ? array.GetElementType() : type);
-					}
+					ResolveType(field);
 					break;
 				case FuMethod method:
 					if (method.TypeExpr == this.Host.Program.System.VoidType)
@@ -6673,7 +6668,15 @@ namespace Fusion
 				this.CurrentMethod = null;
 			}
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is FuMethod method) {
+				switch (symbol) {
+				case FuField field:
+					if (field.Value != null) {
+						field.Value = VisitExpr(field.Value);
+						if (!field.IsAssignableStorage())
+							Coerce(field.Value, field.Type is FuArrayStorageType array ? array.GetElementType() : field.Type);
+					}
+					break;
+				case FuMethod method:
 					if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 1)
 						method.Id = FuId.ClassToString;
 					if (method.Body != null) {
@@ -6727,6 +6730,9 @@ namespace Fusion
 							ReportError(method.Body, "Method can complete without a return value");
 						this.CurrentMethod = null;
 					}
+					break;
+				default:
+					break;
 				}
 			}
 		}

@@ -6508,16 +6508,8 @@ void FuSema::resolveTypes(FuClass * klass)
 {
 	this->currentScope = klass;
 	for (FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		if (FuField *field = dynamic_cast<FuField *>(symbol)) {
-			FuType * type = resolveType(field).get();
-			if (field->value != nullptr) {
-				field->value = visitExpr(field->value);
-				if (!field->isAssignableStorage()) {
-					const FuArrayStorageType * array;
-					coerce(field->value.get(), (array = dynamic_cast<const FuArrayStorageType *>(type)) ? array->getElementType().get() : type);
-				}
-			}
-		}
+		if (FuField *field = dynamic_cast<FuField *>(symbol))
+			resolveType(field);
 		else if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
 			if (method->typeExpr == this->host->program->system->voidType)
 				method->type = this->host->program->system->voidType;
@@ -6579,7 +6571,16 @@ void FuSema::resolveCode(FuClass * klass)
 		this->currentMethod = nullptr;
 	}
 	for (FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
+		if (FuField *field = dynamic_cast<FuField *>(symbol)) {
+			if (field->value != nullptr) {
+				field->value = visitExpr(field->value);
+				if (!field->isAssignableStorage()) {
+					const FuArrayStorageType * array;
+					coerce(field->value.get(), (array = dynamic_cast<const FuArrayStorageType *>(field->type.get())) ? array->getElementType().get() : field->type.get());
+				}
+			}
+		}
+		else if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
 			if (method->name == "ToString" && method->callType != FuCallType::static_ && method->parameters.count() == 1)
 				method->id = FuId::classToString;
 			if (method->body != nullptr) {

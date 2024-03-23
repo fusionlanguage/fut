@@ -6969,14 +6969,7 @@ export class FuSema
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
 			if (symbol instanceof FuField) {
 				const field = symbol;
-				let type = this.#resolveType(field);
-				if (field.value != null) {
-					field.value = this.#visitExpr(field.value);
-					if (!field.isAssignableStorage()) {
-						let array;
-						this.#coerce(field.value, (array = type) instanceof FuArrayStorageType ? array.getElementType() : type);
-					}
-				}
+				this.#resolveType(field);
 			}
 			else if (symbol instanceof FuMethod) {
 				const method = symbol;
@@ -7038,8 +7031,18 @@ export class FuSema
 			this.#currentMethod = null;
 		}
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
-			let method;
-			if ((method = symbol) instanceof FuMethod) {
+			if (symbol instanceof FuField) {
+				const field = symbol;
+				if (field.value != null) {
+					field.value = this.#visitExpr(field.value);
+					if (!field.isAssignableStorage()) {
+						let array;
+						this.#coerce(field.value, (array = field.type) instanceof FuArrayStorageType ? array.getElementType() : field.type);
+					}
+				}
+			}
+			else if (symbol instanceof FuMethod) {
+				const method = symbol;
 				if (method.name == "ToString" && method.callType != FuCallType.STATIC && method.parameters.count() == 1)
 					method.id = FuId.CLASS_TO_STRING;
 				if (method.body != null) {
