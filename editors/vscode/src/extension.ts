@@ -24,48 +24,78 @@ import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost } from "./fucheck.js"
 class VsCodeHost extends FuSemaHost
 {
 	#system = FuSystem.new();
-	#diagnostics: vscode.Diagnostic[] = [];
+	#diagnostics: Record<string, vscode.Diagnostic[]> = {};
+	#hasErrors = false;
 
-	reportError(filename: string, startLine: number, startUtf16Column: number, endLine: number, endUtf16Column: number, message: string) : void
+	reportError(filename: string, startLine: number, startUtf16Column: number, endLine: number, endUtf16Column: number, message: string): void
 	{
-		this.#diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine, startUtf16Column, endLine, endUtf16Column), message));
+		this.#hasErrors = true;
+		const diagnostics = this.#diagnostics[filename];
+		if (diagnostics !== undefined)
+			diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine, startUtf16Column, endLine, endUtf16Column), message));
 	}
 
-	#process(document: vscode.TextDocument, parser: FuParser)
+	#parse(document: vscode.TextDocument, parser: FuParser): void
 	{
-		this.#diagnostics.length = 0;
+		const filename = document.uri.toString();
+		this.#diagnostics[filename] = [];
+		const input = new TextEncoder().encode(document.getText());
+		parser.parse(filename, input, input.length);
+	}
+
+	async #process(document: vscode.TextDocument, parser: FuParser): Promise<void>
+	{
+		const files = await vscode.workspace.findFiles("*.fu");
+		this.#diagnostics = {};
+		this.#hasErrors = false;
 		parser.setHost(this);
 		this.program = new FuProgram();
 		this.program.parent = this.#system;
 		this.program.system = this.#system;
-		const input = new TextEncoder().encode(document.getText());
-		parser.parse(document.fileName, input, input.length);
-		if (this.#diagnostics.length == 0) {
+		const documentFilename = document.uri.toString();
+		if (files.some(uri => uri.toString() == documentFilename)) {
+			const documents = vscode.workspace.textDocuments;
+			for (const uri of files) {
+				const filename = uri.toString();
+				const doc = documents.find(doc => doc.uri.toString() == filename);
+				if (doc === undefined) {
+					const input = await vscode.workspace.fs.readFile(uri);
+					parser.parse(filename, input, input.length);
+				}
+				else
+					this.#parse(doc, parser);
+			}
+		}
+		else
+			this.#parse(document, parser);
+		if (!this.#hasErrors) {
 			const sema = new FuSema();
 			sema.setHost(this);
 			sema.process();
 		}
 	}
 
-	updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): void
+	async updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): Promise<void>
 	{
 		if (document.languageId != "fusion")
 			return;
-		this.#process(document, new FuParser());
-		diagnosticCollection.set(document.uri, this.#diagnostics);
+		await this.#process(document, new FuParser());
+		for (const [filename, diagnostics] of Object.entries(this.#diagnostics))
+			diagnosticCollection.set(vscode.Uri.parse(filename), diagnostics);
 	}
 
-	findDefinition(document: vscode.TextDocument, position: vscode.Position): vscode.Location | null
+	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location | null>
 	{
 		const parser = new FuParser();
-		parser.findDefinition(document.fileName, position.line, position.character);
-		this.#process(document, parser);
+		parser.findDefinition(document.uri.toString(), position.line, position.character);
+		await this.#process(document, parser);
 		const filename: string | null = parser.getFoundDefinitionFilename();
-		return filename == null ? null : new vscode.Location(document.uri /* FIXME */, new vscode.Position(parser.getFoundDefinitionLine(), parser.getFoundDefinitionColumn()));
+		return filename == null ? null : new vscode.Location(vscode.Uri.parse(filename), new vscode.Position(parser.getFoundDefinitionLine(), parser.getFoundDefinitionColumn()));
 	}
 }
 
-export function activate(context: vscode.ExtensionContext): void {
+export function activate(context: vscode.ExtensionContext): void
+{
 	const host = new VsCodeHost();
 	const diagnosticCollection = vscode.languages.createDiagnosticCollection("fusion");
 	if (vscode.window.activeTextEditor)
