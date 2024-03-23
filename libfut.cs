@@ -5270,7 +5270,8 @@ namespace Fusion
 				break;
 			case FuToken.ExclamationMark:
 				inner = ResolveBool(expr.Inner);
-				return new FuPrefixExpr { Loc = expr.Loc, Op = FuToken.ExclamationMark, Inner = inner, Type = this.Host.Program.System.BoolType };
+				type = this.Host.Program.System.BoolType;
+				break;
 			case FuToken.New:
 				return ResolveNew(expr);
 			case FuToken.Resource:
@@ -6141,7 +6142,8 @@ namespace Fusion
 			}
 			else
 				baseType = ToBaseType(expr, ptrModifier, nullable);
-			baseType.Loc = expr.Loc;
+			if (!(baseType is FuEnum))
+				baseType.Loc = expr.Loc;
 			if (outerArray == null)
 				return baseType;
 			innerArray.TypeArg0 = baseType;

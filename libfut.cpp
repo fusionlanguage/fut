@@ -5042,14 +5042,8 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		break;
 	case FuToken::exclamationMark:
 		inner = resolveBool(expr->inner);
-		{
-			std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
-			futemp0->loc = expr->loc;
-			futemp0->op = FuToken::exclamationMark;
-			futemp0->inner = inner;
-			futemp0->type = this->host->program->system->boolType;
-			return futemp0;
-		}
+		type = this->host->program->system->boolType;
+		break;
 	case FuToken::new_:
 		return resolveNew(expr);
 	case FuToken::resource:
@@ -5058,22 +5052,22 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 			if (!(resourceName = std::dynamic_pointer_cast<FuLiteralString>(foldConst(expr->inner))))
 				return poisonError(expr.get(), "Resource name must be a string");
 			inner = resourceName;
-			std::shared_ptr<FuArrayStorageType> futemp1 = std::make_shared<FuArrayStorageType>();
-			futemp1->class_ = this->host->program->system->arrayStorageClass.get();
-			futemp1->typeArg0 = this->host->program->system->byteType;
-			futemp1->length = this->host->getResourceLength(resourceName->value, expr.get());
-			type = futemp1;
+			std::shared_ptr<FuArrayStorageType> futemp0 = std::make_shared<FuArrayStorageType>();
+			futemp0->class_ = this->host->program->system->arrayStorageClass.get();
+			futemp0->typeArg0 = this->host->program->system->byteType;
+			futemp0->length = this->host->getResourceLength(resourceName->value, expr.get());
+			type = futemp0;
 			break;
 		}
 	default:
 		std::abort();
 	}
-	std::shared_ptr<FuPrefixExpr> futemp2 = std::make_shared<FuPrefixExpr>();
-	futemp2->loc = expr->loc;
-	futemp2->op = expr->op;
-	futemp2->inner = inner;
-	futemp2->type = type;
-	return futemp2;
+	std::shared_ptr<FuPrefixExpr> futemp1 = std::make_shared<FuPrefixExpr>();
+	futemp1->loc = expr->loc;
+	futemp1->op = expr->op;
+	futemp1->inner = inner;
+	futemp1->type = type;
+	return futemp1;
 }
 
 std::shared_ptr<FuExpr> FuSema::visitPostfixExpr(std::shared_ptr<FuPostfixExpr> expr)
@@ -6051,7 +6045,8 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 	}
 	else
 		baseType = toBaseType(expr.get(), ptrModifier, nullable);
-	baseType->loc = expr->loc;
+	if (!dynamic_cast<const FuEnum *>(baseType.get()))
+		baseType->loc = expr->loc;
 	if (outerArray == nullptr)
 		return baseType;
 	innerArray->typeArg0 = baseType;

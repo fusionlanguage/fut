@@ -5510,7 +5510,8 @@ export class FuSema
 			break;
 		case FuToken.EXCLAMATION_MARK:
 			inner = this.#resolveBool(expr.inner);
-			return Object.assign(new FuPrefixExpr(), { loc: expr.loc, op: FuToken.EXCLAMATION_MARK, inner: inner, type: this.#host.program.system.boolType });
+			type = this.#host.program.system.boolType;
+			break;
 		case FuToken.NEW:
 			return this.#resolveNew(expr);
 		case FuToken.RESOURCE:
@@ -6477,7 +6478,8 @@ export class FuSema
 		}
 		else
 			baseType = this.#toBaseType(expr, ptrModifier, nullable);
-		baseType.loc = expr.loc;
+		if (!(baseType instanceof FuEnum))
+			baseType.loc = expr.loc;
 		if (outerArray == null)
 			return baseType;
 		innerArray.typeArg0 = baseType;
