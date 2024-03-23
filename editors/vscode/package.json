@@ -25,6 +25,10 @@
     "languages": [
       {
         "id": "fusion",
+        "aliases": [
+          "Fusion",
+          "fusion"
+        ],
         "extensions": [
           ".fu"
         ],
