@@ -6977,6 +6977,8 @@ export class FuSema
 					method.type = this.#host.program.system.voidType;
 				else
 					this.#resolveType(method);
+				if (method.name == "ToString" && method.callType != FuCallType.STATIC && method.parameters.count() == 1)
+					method.id = FuId.CLASS_TO_STRING;
 				for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
 					this.#resolveType(param);
 					if (param.value != null) {
@@ -7043,8 +7045,6 @@ export class FuSema
 			}
 			else if (symbol instanceof FuMethod) {
 				const method = symbol;
-				if (method.name == "ToString" && method.callType != FuCallType.STATIC && method.parameters.count() == 1)
-					method.id = FuId.CLASS_TO_STRING;
 				if (method.body != null) {
 					if (method.callType == FuCallType.OVERRIDE || method.callType == FuCallType.SEALED) {
 						let baseMethod;

@@ -6612,6 +6612,8 @@ namespace Fusion
 						method.Type = this.Host.Program.System.VoidType;
 					else
 						ResolveType(method);
+					if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 1)
+						method.Id = FuId.ClassToString;
 					for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {
 						ResolveType(param);
 						if (param.Value != null) {
@@ -6677,8 +6679,6 @@ namespace Fusion
 					}
 					break;
 				case FuMethod method:
-					if (method.Name == "ToString" && method.CallType != FuCallType.Static && method.Parameters.Count() == 1)
-						method.Id = FuId.ClassToString;
 					if (method.Body != null) {
 						if (method.CallType == FuCallType.Override || method.CallType == FuCallType.Sealed) {
 							if (klass.Parent.TryLookup(method.Name, false) is FuMethod baseMethod) {

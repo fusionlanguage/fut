@@ -6515,6 +6515,8 @@ void FuSema::resolveTypes(FuClass * klass)
 				method->type = this->host->program->system->voidType;
 			else
 				resolveType(method);
+			if (method->name == "ToString" && method->callType != FuCallType::static_ && method->parameters.count() == 1)
+				method->id = FuId::classToString;
 			for (FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
 				resolveType(param);
 				if (param->value != nullptr) {
@@ -6581,8 +6583,6 @@ void FuSema::resolveCode(FuClass * klass)
 			}
 		}
 		else if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
-			if (method->name == "ToString" && method->callType != FuCallType::static_ && method->parameters.count() == 1)
-				method->id = FuId::classToString;
 			if (method->body != nullptr) {
 				if (method->callType == FuCallType::override_ || method->callType == FuCallType::sealed) {
 					if (FuMethod *baseMethod = dynamic_cast<FuMethod *>(klass->parent->tryLookup(method->name, false).get())) {
