@@ -106,6 +106,7 @@ export function activate(context: vscode.ExtensionContext): void
 				host.updateDiagnostics(editor.document, diagnosticCollection);
 		}));
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(e => host.updateDiagnostics(e.document, diagnosticCollection)));
+	context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => diagnosticCollection.delete(document.uri)));
 	vscode.languages.registerDefinitionProvider("fusion", {
 			provideDefinition(document, position, token) {
 				return host.findDefinition(document, position);
