@@ -35,12 +35,15 @@ class VsCodeHost extends FuSemaHost
 			diagnostics.push(new vscode.Diagnostic(new vscode.Range(startLine, startUtf16Column, endLine, endUtf16Column), message));
 	}
 
-	#parse(document: vscode.TextDocument, parser: FuParser): void
+	#parse(filename: string, input: Uint8Array, parser: FuParser): void
 	{
-		const filename = document.uri.toString();
 		this.#diagnostics[filename] = [];
-		const input = new TextEncoder().encode(document.getText());
 		parser.parse(filename, input, input.length);
+	}
+
+	#parseDocument(document: vscode.TextDocument, parser: FuParser): void
+	{
+		this.#parse(document.uri.toString(), new TextEncoder().encode(document.getText()), parser);
 	}
 
 	async #process(document: vscode.TextDocument, parser: FuParser): Promise<void>
@@ -58,16 +61,14 @@ class VsCodeHost extends FuSemaHost
 			for (const uri of files) {
 				const filename = uri.toString();
 				const doc = documents.find(doc => doc.uri.toString() == filename);
-				if (doc === undefined) {
-					const input = await vscode.workspace.fs.readFile(uri);
-					parser.parse(filename, input, input.length);
-				}
+				if (doc === undefined)
+					this.#parse(filename, await vscode.workspace.fs.readFile(uri), parser);
 				else
-					this.#parse(doc, parser);
+					this.#parseDocument(doc, parser);
 			}
 		}
 		else
-			this.#parse(document, parser);
+			this.#parseDocument(document, parser);
 		if (!this.#hasErrors) {
 			const sema = new FuSema();
 			sema.setHost(this);
