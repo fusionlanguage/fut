@@ -1,4 +1,4 @@
 Makefile
 src/extension.ts
-src/parser.js
+src/fucheck.js
 tsconfig.json
