@@ -1882,6 +1882,7 @@ public class FuSema
 		else if (statement.Value == null)
 			ReportError(statement, "Missing return value");
 		else {
+			OpenScope(statement);
 			statement.Value = VisitExpr(statement.Value);
 			CoercePermanent(statement.Value, this.CurrentMethod.Type);
 			if (statement.Value is FuSymbolReference symbol
@@ -1889,6 +1890,7 @@ public class FuSema
 			 && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType))
 				|| (local.Type.Id == FuId.StringStorageType && this.CurrentMethod.Type.Id != FuId.StringStorageType)))
 				ReportError(statement, "Returning dangling reference to local storage");
+			CloseScope();
 		}
 	}
 
@@ -2262,8 +2264,6 @@ public class FuSema
 					}
 					this.CurrentScope = method.Parameters;
 					this.CurrentMethod = method;
-					if (!(method.Body is FuScope))
-						OpenScope(method.MethodScope); // don't add "is Derived d" to parameters
 					VisitStatement(method.Body);
 					if (method.Type.Id != FuId.VoidType && method.Body.CompletesNormally())
 						ReportError(method.Body, "Method can complete without a return value");

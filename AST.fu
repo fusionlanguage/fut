@@ -346,7 +346,7 @@ public abstract class FuSymbol : FuExpr
 	public override string() ToString() => this.Name;
 }
 
-public class FuScope : FuSymbol
+public abstract class FuScope : FuSymbol
 {
 	protected Dictionary<string, FuSymbol#>() Dict;
 	internal FuSymbol!? First = null;
@@ -940,7 +940,7 @@ class FuNative : FuStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitNative(this); }
 }
 
-class FuReturn : FuStatement
+class FuReturn : FuScope
 {
 	internal FuExpr#? Value;
 	public override int GetLocLength() => 6;
@@ -1214,7 +1214,6 @@ public class FuMethodBase : FuMember
 public class FuMethod : FuMethodBase
 {
 	internal FuCallType CallType;
-	internal FuScope() MethodScope;
 	public static FuMethod# New(FuClass? klass, FuVisibility visibility, FuCallType callType, FuType# type, FuId id, string name, bool isMutator, FuVar#? param0 = null, FuVar#? param1 = null, FuVar#? param2 = null, FuVar#? param3 = null)
 	{
 		FuMethod# result = new FuMethod { Visibility = visibility, CallType = callType, Type = type, Id = id, Name = name };

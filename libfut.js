@@ -2451,7 +2451,7 @@ class FuNative extends FuStatement
 	}
 }
 
-class FuReturn extends FuStatement
+class FuReturn extends FuScope
 {
 	value;
 
@@ -2878,7 +2878,6 @@ export class FuMethodBase extends FuMember
 export class FuMethod extends FuMethodBase
 {
 	callType;
-	methodScope = new FuScope();
 
 	static new(klass, visibility, callType, type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
 	{
@@ -6693,12 +6692,14 @@ export class FuSema
 		else if (statement.value == null)
 			this.#reportError(statement, "Missing return value");
 		else {
+			this.#openScope(statement);
 			statement.value = this.#visitExpr(statement.value);
 			this.#coercePermanent(statement.value, this.#currentMethod.type);
 			let symbol;
 			let local;
 			if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar && ((local.type.isFinal() && !(this.#currentMethod.type instanceof FuStorageType)) || (local.type.id == FuId.STRING_STORAGE_TYPE && this.#currentMethod.type.id != FuId.STRING_STORAGE_TYPE)))
 				this.#reportError(statement, "Returning dangling reference to local storage");
+			this.#closeScope();
 		}
 	}
 
@@ -7092,8 +7093,6 @@ export class FuSema
 					}
 					this.#currentScope = method.parameters;
 					this.#currentMethod = method;
-					if (!(method.body instanceof FuScope))
-						this.#openScope(method.methodScope);
 					this.#visitStatement(method.body);
 					if (method.type.id != FuId.VOID_TYPE && method.body.completesNormally())
 						this.#reportError(method.body, "Method can complete without a return value");

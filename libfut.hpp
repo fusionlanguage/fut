@@ -706,7 +706,6 @@ public:
 class FuScope : public FuSymbol
 {
 public:
-	FuScope() = default;
 	virtual ~FuScope() = default;
 	int count() const;
 	bool contains(const FuSymbol * symbol) const;
@@ -714,6 +713,7 @@ public:
 	void add(std::shared_ptr<FuSymbol> symbol);
 	bool encloses(const FuSymbol * symbol) const;
 protected:
+	FuScope() = default;
 	std::unordered_map<std::string_view, std::shared_ptr<FuSymbol>> dict;
 public:
 	FuSymbol * first = nullptr;
@@ -1089,7 +1089,7 @@ public:
 	std::string content;
 };
 
-class FuReturn : public FuStatement
+class FuReturn : public FuScope
 {
 public:
 	FuReturn() = default;
@@ -1318,7 +1318,6 @@ public:
 	const FuMethod * getDeclaringMethod() const;
 public:
 	FuCallType callType;
-	FuScope methodScope;
 };
 
 class FuMethodGroup : public FuMember

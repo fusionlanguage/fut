@@ -1635,7 +1635,7 @@ namespace Fusion
 		public override string ToString() => this.Name;
 	}
 
-	public class FuScope : FuSymbol
+	public abstract class FuScope : FuSymbol
 	{
 
 		protected readonly Dictionary<string, FuSymbol> Dict = new Dictionary<string, FuSymbol>();
@@ -2418,7 +2418,7 @@ namespace Fusion
 		}
 	}
 
-	class FuReturn : FuStatement
+	class FuReturn : FuScope
 	{
 
 		internal FuExpr Value;
@@ -2760,8 +2760,6 @@ namespace Fusion
 	{
 
 		internal FuCallType CallType;
-
-		internal readonly FuScope MethodScope = new FuScope();
 
 		public static FuMethod New(FuClass klass, FuVisibility visibility, FuCallType callType, FuType type, FuId id, string name, bool isMutator, FuVar param0 = null, FuVar param1 = null, FuVar param2 = null, FuVar param3 = null)
 		{
@@ -6351,10 +6349,12 @@ namespace Fusion
 			else if (statement.Value == null)
 				ReportError(statement, "Missing return value");
 			else {
+				OpenScope(statement);
 				statement.Value = VisitExpr(statement.Value);
 				CoercePermanent(statement.Value, this.CurrentMethod.Type);
 				if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType)) || (local.Type.Id == FuId.StringStorageType && this.CurrentMethod.Type.Id != FuId.StringStorageType)))
 					ReportError(statement, "Returning dangling reference to local storage");
+				CloseScope();
 			}
 		}
 
@@ -6725,8 +6725,6 @@ namespace Fusion
 						}
 						this.CurrentScope = method.Parameters;
 						this.CurrentMethod = method;
-						if (!(method.Body is FuScope))
-							OpenScope(method.MethodScope);
 						VisitStatement(method.Body);
 						if (method.Type.Id != FuId.VoidType && method.Body.CompletesNormally())
 							ReportError(method.Body, "Method can complete without a return value");

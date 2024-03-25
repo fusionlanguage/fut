@@ -6256,12 +6256,14 @@ void FuSema::visitReturn(FuReturn * statement)
 	else if (statement->value == nullptr)
 		reportError(statement, "Missing return value");
 	else {
+		openScope(statement);
 		statement->value = visitExpr(statement->value);
 		coercePermanent(statement->value.get(), this->currentMethod->type.get());
 		const FuSymbolReference * symbol;
 		const FuVar * local;
 		if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol)) && ((local->type->isFinal() && !dynamic_cast<const FuStorageType *>(this->currentMethod->type.get())) || (local->type->id == FuId::stringStorageType && this->currentMethod->type->id != FuId::stringStorageType)))
 			reportError(statement, "Returning dangling reference to local storage");
+		closeScope();
 	}
 }
 
@@ -6622,8 +6624,6 @@ void FuSema::resolveCode(FuClass * klass)
 				}
 				this->currentScope = &method->parameters;
 				this->currentMethod = method;
-				if (!dynamic_cast<const FuScope *>(method->body.get()))
-					openScope(&method->methodScope);
 				visitStatement(method->body);
 				if (method->type->id != FuId::voidType && method->body->completesNormally())
 					reportError(method->body.get(), "Method can complete without a return value");
