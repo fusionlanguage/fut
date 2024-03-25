@@ -4,7 +4,7 @@
   "publisher": "fusionlanguage",
   "license": "MIT",
   "displayName": "Fusion",
-  "description": "Fusion language syntax highlighting",
+  "description": "Fusion language support",
   "icon": "fu-logo.png",
   "repository": {
     "type": "git",
