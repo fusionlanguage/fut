@@ -1,7 +1,7 @@
 public static class HelloFu
 {
 	public const int VersionMajor = 3;
-	public const int VersionMinor = 1;
+	public const int VersionMinor = 2;
 	public const string Version = $"{VersionMajor}.{VersionMinor}";
 
 	/// Returns `true` if and only if `x` is a power of 2 (1, 2, 4, 8, 16, ...).
@@ -45,7 +45,9 @@ public static class HelloFu
 	}
 
 	/// Converts an unsigned integer from its decimal representation.
-	public static uint ParseUnsignedInt(string? s) throws Exception
+	public static uint ParseUnsignedInt(string? s)
+		/// Input is null or empty.
+		throws Exception
 	{
 		if (s == null || s.Length == 0)
 			throw Exception("Null or empty argument");

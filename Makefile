@@ -1,3 +1,5 @@
+VERSION = 3.2.0
+
 prefix := /usr/local
 bindir = $(prefix)/bin
 srcdir := $(dir $(lastword $(MAKEFILE_LIST)))
@@ -285,11 +287,24 @@ install: fut
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/fut
 
+srcdist:
+	git archive -o ../fut-$(VERSION).tar.gz --prefix=fut-$(VERSION)/ -9 HEAD
+
+deb64: srcdist
+	scp ../fut-$(VERSION).tar.gz vm:.
+	ssh vm 'rm -rf fut-$(VERSION) && tar xf fut-$(VERSION).tar.gz && cd fut-$(VERSION) && debuild -b -us -uc'
+	scp vm:fut_$(VERSION)-1_amd64.deb ..
+
+rpm64: srcdist
+	scp ../fut-$(VERSION).tar.gz vm:.
+	ssh vm 'rpmbuild -tb fut-$(VERSION).tar.gz'
+	scp vm:rpmbuild/RPMS/x86_64/fut-$(VERSION)-1.x86_64.rpm ..
+
 clean:
 	$(RM) fut fut.exe
 	$(RM) -r test/bin test/cpp test/cs test/node
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff host-diff-java install uninstall clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff host-diff-java install uninstall srcdist deb64 rpm64 clean
 
 .DELETE_ON_ERROR:
 
