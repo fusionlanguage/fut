@@ -1357,7 +1357,7 @@ public class FuSema
 		symbol.Symbol = method;
 
 		if (method.CallType == FuCallType.Static
-		 && method.Body is FuReturn ret
+		 && method.Body is FuReturn! ret
 		 && arguments.All(arg => arg is FuLiteral)
 		 && !this.CurrentPureMethods.Contains(method)) {
 			this.CurrentPureMethods.Add(method);
@@ -1368,7 +1368,11 @@ public class FuSema
 				else
 					this.CurrentPureArguments[param] = param.Value;
 			}
+			FuScope! callSite = this.CurrentScope;
+			ret.Parent = method.Parameters;
+			this.CurrentScope = ret;
 			FuExpr# result = VisitExpr(ret.Value);
+			this.CurrentScope = callSite;
 			for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar())
 				this.CurrentPureArguments.Remove(param);
 			this.CurrentPureMethods.Remove(method);

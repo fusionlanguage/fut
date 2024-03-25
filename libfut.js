@@ -6153,7 +6153,11 @@ export class FuSema
 				else
 					this.#currentPureArguments[param] = param.value;
 			}
+			let callSite = this.#currentScope;
+			ret.parent = method.parameters;
+			this.#currentScope = ret;
 			let result = this.#visitExpr(ret.value);
+			this.#currentScope = callSite;
 			for (let param = method.firstParameter(); param != null; param = param.nextVar())
 				delete this.#currentPureArguments[param];
 			this.#currentPureMethods.delete(method);

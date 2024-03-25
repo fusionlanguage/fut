@@ -1198,7 +1198,7 @@ public class FuMethodBase : FuMember
 {
 	internal FuParameters() Parameters;
 	internal List<FuThrowsDeclaration#>() Throws;
-	internal FuStatement#? Body;
+	internal FuScope#? Body;
 	internal bool IsLive = false;
 	internal HashSet<FuMethod!>() Calls;
 	public override bool IsStatic() => false; // constructor

@@ -2738,7 +2738,7 @@ namespace Fusion
 
 		internal readonly List<FuThrowsDeclaration> Throws = new List<FuThrowsDeclaration>();
 
-		internal FuStatement Body;
+		internal FuScope Body;
 
 		internal bool IsLive = false;
 
@@ -5852,7 +5852,11 @@ namespace Fusion
 					else
 						this.CurrentPureArguments[param] = param.Value;
 				}
+				FuScope callSite = this.CurrentScope;
+				ret.Parent = method.Parameters;
+				this.CurrentScope = ret;
 				FuExpr result = VisitExpr(ret.Value);
+				this.CurrentScope = callSite;
 				for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar())
 					this.CurrentPureArguments.Remove(param);
 				this.CurrentPureMethods.Remove(method);

@@ -5730,8 +5730,8 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			reportError(expr.get(), std::format("Method marked 'throws {}' called from a method without it", exception->name));
 	}
 	symbol->symbol = method;
-	const FuReturn * ret;
-	if (method->callType == FuCallType::static_ && (ret = dynamic_cast<const FuReturn *>(method->body.get())) && std::all_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuLiteral *>(arg.get()); }) && !this->currentPureMethods.contains(method)) {
+	FuReturn * ret;
+	if (method->callType == FuCallType::static_ && (ret = dynamic_cast<FuReturn *>(method->body.get())) && std::all_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuLiteral *>(arg.get()); }) && !this->currentPureMethods.contains(method)) {
 		this->currentPureMethods.insert(method);
 		i = 0;
 		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {
@@ -5740,7 +5740,11 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			else
 				this->currentPureArguments[param] = param->value;
 		}
+		FuScope * callSite = this->currentScope;
+		ret->parent = &method->parameters;
+		this->currentScope = ret;
 		std::shared_ptr<FuExpr> result = visitExpr(ret->value);
+		this->currentScope = callSite;
 		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar())
 			this->currentPureArguments.erase(param);
 		this->currentPureMethods.erase(method);

@@ -1301,7 +1301,7 @@ public:
 public:
 	FuParameters parameters;
 	std::vector<std::shared_ptr<FuThrowsDeclaration>> throws;
-	std::shared_ptr<FuStatement> body;
+	std::shared_ptr<FuScope> body;
 	bool isLive = false;
 	std::unordered_set<FuMethod *> calls;
 };
