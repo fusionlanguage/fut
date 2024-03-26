@@ -23,6 +23,7 @@ import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost } from "./fucheck.js"
 
 class VsCodeHost extends FuSemaHost
 {
+	#mutex = false;
 	#system = FuSystem.new();
 	#diagnostics: Record<string, vscode.Diagnostic[]> = {};
 	#hasErrors = false;
@@ -48,6 +49,9 @@ class VsCodeHost extends FuSemaHost
 
 	async #process(document: vscode.TextDocument, parser: FuParser): Promise<void>
 	{
+		if (this.#mutex)
+			return;
+		this.#mutex = true;
 		const files = await vscode.workspace.findFiles("*.fu");
 		this.#diagnostics = {};
 		this.#hasErrors = false;
@@ -74,6 +78,7 @@ class VsCodeHost extends FuSemaHost
 			sema.setHost(this);
 			sema.process();
 		}
+		this.#mutex = false;
 	}
 
 	async updateDiagnostics(document: vscode.TextDocument, diagnosticCollection: vscode.DiagnosticCollection): Promise<void>
