@@ -19,6 +19,9 @@ public class Test
 		List<Stack<int>()>() los2;
 		los2.Add();
 		los2[0].Push(5);
+		List<Queue<int>()>() loq;
+		loq.Add();
+		loq[0].Enqueue(10);
 		List<HashSet<string()>()>() loh;
 		loh.Add();
 		loh[0].Add("foo");
@@ -31,15 +34,19 @@ public class Test
 		List<SortedDictionary<string(), string()>()>() losd;
 		losd.Add();
 		losd[0]["foo"] = "bar";
+		List<Regex#>() lor; //FAIL: swift TODO
+		lor.Add(Regex.Compile("^\\d+$"));
 		return los.Count == 1
 			&& loo.Count == 1
 			&& lod.Count == 1
 			&& loa.Count == 1
 			&& lol.Count == 1
 			&& los2.Count == 1
+			&& loq.Count == 1
 			&& loh.Count == 1
 			&& loss.Count == 1
 			&& lod2.Count == 1
-			&& losd.Count == 1;
+			&& losd.Count == 1
+			&& lor.Count == 1;
 	}
 }
