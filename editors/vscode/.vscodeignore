@@ -1,3 +1,4 @@
+.gitignore
 Makefile
 src/extension.ts
 src/fucheck.js
