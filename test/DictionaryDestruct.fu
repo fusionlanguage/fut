@@ -6,7 +6,7 @@ public class Test
 	{
 		Dictionary<string, string()>() dos; //FAIL: cl
 		dos["foo"] = "bar";
-		Dictionary<string, Test()>() doo; // FAIL: c TODO
+		Dictionary<string, Test()>() doo; //FAIL: c TODO
 		doo.Add("bar");
 		doo["bar"].Field = "quux";
 		Dictionary<int, Test#>() dod;
@@ -21,7 +21,7 @@ public class Test
 		dos2["bar"].Push(5);
 		Dictionary<int, Queue<int>()>() doq;
 		doq.Add(5);
-		doq[5].Enqueue(10); // FAIL: c TODO
+		doq[5].Enqueue(10); //FAIL: c TODO
 		Dictionary<string, HashSet<string()>()>() doh;
 		doh.Add("quux");
 		doh["quux"].Add("foo");
