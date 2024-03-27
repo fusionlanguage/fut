@@ -1,0 +1,45 @@
+public class Test
+{
+	internal string() Field;
+
+	public static bool Run()
+	{
+		List<string()>() los; //FAIL: cl
+		los.Add("foo");
+		List<Test()>() loo;
+		loo.Add();
+		loo[0].Field = "bar";
+		List<Test#>() lod;
+		lod.Add(new Test { Field = "quux" });
+		List<int[]#>() loa;
+		loa.Add(new int[2]);
+		List<List<int>()>() lol;
+		lol.Add();
+		lol[0].Add(42);
+		List<Stack<int>()>() los2;
+		los2.Add();
+		los2[0].Push(5);
+		List<HashSet<string()>()>() loh;
+		loh.Add();
+		loh[0].Add("foo");
+		List<SortedSet<string()>()>() loss;
+		loss.Add();
+		loss[0].Add("bar");
+		List<Dictionary<string(), int>()>() lod2;
+		lod2.Add();
+		lod2[0]["answer"] = 42;
+		List<SortedDictionary<string(), string()>()>() losd;
+		losd.Add();
+		losd[0]["foo"] = "bar";
+		return los.Count == 1
+			&& loo.Count == 1
+			&& lod.Count == 1
+			&& loa.Count == 1
+			&& lol.Count == 1
+			&& los2.Count == 1
+			&& loh.Count == 1
+			&& loss.Count == 1
+			&& lod2.Count == 1
+			&& losd.Count == 1;
+	}
+}
