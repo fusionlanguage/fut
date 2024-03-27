@@ -11464,8 +11464,11 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			switch (valueType->class_->id) {
 			case FuId::listClass:
 			case FuId::stackClass:
+			case FuId::hashSetClass:
+			case FuId::sortedSetClass:
 			case FuId::dictionaryClass:
 			case FuId::sortedDictionaryClass:
+			case FuId::stringWriterClass:
 				writeNewStorage(valueType);
 				break;
 			default:

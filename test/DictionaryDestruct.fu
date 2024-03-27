@@ -1,0 +1,52 @@
+public class Test
+{
+	internal string() Field;
+
+	public static bool Run()
+	{
+		Dictionary<string, string()>() dos; //FAIL: cl
+		dos["foo"] = "bar";
+		Dictionary<string, Test()>() doo; // FAIL: c TODO
+		doo.Add("bar");
+		doo["bar"].Field = "quux";
+		Dictionary<int, Test#>() dod;
+		dod[42] = new Test { Field = "quux" };
+		Dictionary<string, int[]#>() doa;
+		doa["foo"] = new int[2];
+		Dictionary<string(), List<int>()>() dol;
+		dol.Add("foo");
+		dol["foo"].Add(42);
+		Dictionary<string, Stack<int>()>() dos2;
+		dos2.Add("bar");
+		dos2["bar"].Push(5);
+		Dictionary<int, Queue<int>()>() doq;
+		doq.Add(5);
+		doq[5].Enqueue(10); // FAIL: c TODO
+		Dictionary<string, HashSet<string()>()>() doh;
+		doh.Add("quux");
+		doh["quux"].Add("foo");
+		Dictionary<string(), SortedSet<string()>()>() doss;
+		doss.Add("foo");
+		doss["foo"].Add("bar");
+		Dictionary<string(), Dictionary<string(), int>()>() dod2;
+		dod2.Add("aaa");
+		dod2["aaa"]["answer"] = 42;
+		Dictionary<string, SortedDictionary<string(), string()>()>() dosd;
+		dosd.Add("bbb");
+		dosd["bbb"]["foo"] = "bar";
+		Dictionary<int, Regex#>() dor; //FAIL: swift TODO
+		dor[10] = Regex.Compile("^\\d+$");
+		return dos.Count == 1
+			&& doo.Count == 1
+			&& dod.Count == 1
+			&& doa.Count == 1
+			&& dol.Count == 1
+			&& dos2.Count == 1
+			&& doq.Count == 1
+			&& doh.Count == 1
+			&& doss.Count == 1
+			&& dod2.Count == 1
+			&& dosd.Count == 1
+			&& dor.Count == 1;
+	}
+}

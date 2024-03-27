@@ -11692,8 +11692,11 @@ namespace Fusion
 				switch (valueType.Class.Id) {
 				case FuId.ListClass:
 				case FuId.StackClass:
+				case FuId.HashSetClass:
+				case FuId.SortedSetClass:
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
+				case FuId.StringWriterClass:
 					WriteNewStorage(valueType);
 					break;
 				default:

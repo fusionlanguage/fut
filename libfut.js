@@ -12129,8 +12129,11 @@ export class GenC extends GenCCpp
 			switch (valueType.class.id) {
 			case FuId.LIST_CLASS:
 			case FuId.STACK_CLASS:
+			case FuId.HASH_SET_CLASS:
+			case FuId.SORTED_SET_CLASS:
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
+			case FuId.STRING_WRITER_CLASS:
 				this.writeNewStorage(valueType);
 				break;
 			default:
