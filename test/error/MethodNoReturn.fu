@@ -1,6 +1,6 @@
 public static class Test
 {
-	public static bool Run()
-	{ //ERROR: Method can complete without a return value
+	public static bool Run() //ERROR: Method can complete without a return value
+	{
 	}
 }

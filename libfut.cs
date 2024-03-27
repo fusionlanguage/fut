@@ -1772,6 +1772,8 @@ namespace Fusion
 
 		public static FuLiteralChar New(int value, int loc) => new FuLiteralChar { Loc = loc, Type = FuRangeType.New(value, value), Value = value };
 
+		public override int GetLocLength() => this.Value >= 65536 || this.Value == '\n' || this.Value == '\r' || this.Value == '\t' || this.Value == '\\' || this.Value == '\'' ? 4 : 3;
+
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
 			visitor.VisitLiteralChar((int) this.Value);
@@ -1801,6 +1803,8 @@ namespace Fusion
 		internal string Value;
 
 		public override bool IsDefaultValue() => false;
+
+		public override int GetLocLength() => this.Value.Length + 2;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -1893,6 +1897,8 @@ namespace Fusion
 			part.Format = format;
 			part.Precision = precision;
 		}
+
+		public override int GetLocLength() => 2;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -4800,7 +4806,7 @@ namespace Fusion
 			bool isBase = left is FuSymbolReference baseSymbol && baseSymbol.Symbol.Id == FuId.BasePtr;
 			if (isBase) {
 				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is FuClass baseClass))
-					return PoisonError(expr, "No base class");
+					return PoisonError(left, "No base class");
 				scope = baseClass;
 			}
 			else if (left is FuSymbolReference leftSymbol && leftSymbol.Symbol is FuScope obj)
@@ -5274,7 +5280,7 @@ namespace Fusion
 				return ResolveNew(expr);
 			case FuToken.Resource:
 				if (!(FoldConst(expr.Inner) is FuLiteralString resourceName))
-					return PoisonError(expr, "Resource name must be a string");
+					return PoisonError(expr.Inner, "Resource name must be a string");
 				inner = resourceName;
 				type = new FuArrayStorageType { Class = this.Host.Program.System.ArrayStorageClass, TypeArg0 = this.Host.Program.System.ByteType, Length = this.Host.GetResourceLength(resourceName.Value, expr) };
 				break;
@@ -5364,11 +5370,11 @@ namespace Fusion
 		void CheckIsVar(FuExpr left, FuVar def, FuExpr expr, string op, string alwaysMessage, string neverMessage)
 		{
 			if (!(def.Type is FuClassType rightPtr) || rightPtr is FuStorageType)
-				ReportError(expr, $"'{op}' with non-reference type");
+				ReportError(def.Type, $"'{op}' with non-reference type");
 			else {
 				FuClassType leftPtr = (FuClassType) left.Type;
 				if (rightPtr is FuReadWriteClassType && !(leftPtr is FuDynamicPtrType) && (rightPtr is FuDynamicPtrType || !(leftPtr is FuReadWriteClassType)))
-					ReportError(expr, $"'{leftPtr}' cannot be casted to '{rightPtr}'");
+					ReportError(rightPtr, $"'{leftPtr}' cannot be casted to '{rightPtr}'");
 				else {
 					CheckIsHierarchy(leftPtr, left, rightPtr.Class, expr, op, alwaysMessage, neverMessage);
 				}
@@ -5409,7 +5415,7 @@ namespace Fusion
 				case FuId.StringClass:
 					Coerce(right, this.Host.Program.System.IntType);
 					if (right.Type is FuRangeType stringIndexRange && stringIndexRange.Max < 0)
-						ReportError(expr, "Negative index");
+						ReportError(right, "Negative index");
 					else if (left is FuLiteralString stringLiteral && right is FuLiteralLong indexLiteral) {
 						long i = indexLiteral.Value;
 						if (i >= 0 && i <= 2147483647) {
@@ -5426,9 +5432,9 @@ namespace Fusion
 					Coerce(right, this.Host.Program.System.IntType);
 					if (right.Type is FuRangeType indexRange) {
 						if (indexRange.Max < 0)
-							ReportError(expr, "Negative index");
+							ReportError(right, "Negative index");
 						else if (klass is FuArrayStorageType array && indexRange.Min >= array.Length)
-							ReportError(expr, "Array index out of bounds");
+							ReportError(right, "Array index out of bounds");
 					}
 					type = klass.GetElementType();
 					break;
@@ -5789,7 +5795,7 @@ namespace Fusion
 			if (!method.IsStatic() && method.IsMutator()) {
 				if (symbol.Left == null) {
 					if (!this.CurrentMethod.IsMutator())
-						ReportError(expr, $"Cannot call mutating method '{method.Name}' from a non-mutating method");
+						ReportError(expr.Method, $"Cannot call mutating method '{method.Name}' from a non-mutating method");
 				}
 				else if (symbol.Left is FuSymbolReference baseRef && baseRef.Symbol.Id == FuId.BasePtr) {
 				}
@@ -5836,11 +5842,11 @@ namespace Fusion
 				return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
 			foreach (FuSymbolReference exceptionDecl in method.Throws) {
 				if (this.CurrentMethod == null) {
-					ReportError(expr, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
+					ReportError(expr.Method, $"Cannot call method '{method.Name}' here because it is marked 'throws'");
 					break;
 				}
 				if (exceptionDecl.Symbol is FuClass exception && !MethodHasThrows(this.CurrentMethod, exception))
-					ReportError(expr, $"Method marked 'throws {exception.Name}' called from a method without it");
+					ReportError(expr.Method, $"Method marked 'throws {exception.Name}' called from a method without it");
 			}
 			symbol.Symbol = method;
 			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
@@ -5905,7 +5911,7 @@ namespace Fusion
 					Coerce(field.Right, symbol.Type);
 				}
 				else
-					ReportError(field, "Expected a field");
+					ReportError(field.Left, "Expected a field");
 			}
 		}
 
@@ -6164,7 +6170,7 @@ namespace Fusion
 			if (statement.Message != null) {
 				statement.Message = VisitExpr(statement.Message);
 				if (!(statement.Message.Type is FuStringType))
-					ReportError(statement, "The second argument of 'assert' must be a string");
+					ReportError(statement.Message, "The second argument of 'assert' must be a string");
 			}
 		}
 
@@ -6288,38 +6294,38 @@ namespace Fusion
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
 					if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Host.Program.System.IntType))
-						ReportError(statement, "Expected 'int' iterator variable");
+						ReportError(element.Type, "Expected 'int' iterator variable");
 					break;
 				case FuId.ArrayStorageClass:
 				case FuId.ListClass:
 				case FuId.HashSetClass:
 				case FuId.SortedSetClass:
 					if (statement.Count() != 1)
-						ReportError(statement, "Expected one iterator variable");
+						ReportError(statement.GetValueVar(), "Expected one iterator variable");
 					else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
-						ReportError(statement, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
+						ReportError(element.Type, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
 					break;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
 				case FuId.OrderedDictionaryClass:
 					if (statement.Count() != 2)
-						ReportError(statement, "Expected '(TKey key, TValue value)' iterator");
+						ReportError(element, "Expected '(TKey key, TValue value)' iterator");
 					else {
 						FuVar value = statement.GetValueVar();
 						ResolveType(value);
 						if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
-							ReportError(statement, $"Cannot convert '{klass.GetKeyType()}' to '{element.Type}'");
-						else if (!value.Type.IsAssignableFrom(klass.GetValueType()))
-							ReportError(statement, $"Cannot convert '{klass.GetValueType()}' to '{value.Type}'");
+							ReportError(element, $"Cannot convert '{klass.GetKeyType()}' to '{element.Type}'");
+						if (!value.Type.IsAssignableFrom(klass.GetValueType()))
+							ReportError(value, $"Cannot convert '{klass.GetValueType()}' to '{value.Type}'");
 					}
 					break;
 				default:
-					ReportError(statement, $"'foreach' invalid on '{klass.Class.Name}'");
+					ReportError(statement.Collection, $"'foreach' invalid on '{klass.Class.Name}'");
 					break;
 				}
 			}
 			else
-				ReportError(statement, $"'foreach' invalid on '{statement.Collection.Type}'");
+				ReportError(statement.Collection, $"'foreach' invalid on '{statement.Collection.Type}'");
 			statement.SetCompletesNormally(true);
 			VisitStatement(statement.Body);
 			CloseScope();
@@ -6348,7 +6354,7 @@ namespace Fusion
 		{
 			if (this.CurrentMethod.Type.Id == FuId.VoidType) {
 				if (statement.Value != null)
-					ReportError(statement, "Void method cannot return a value");
+					ReportError(statement.Value, "Void method cannot return a value");
 			}
 			else if (statement.Value == null)
 				ReportError(statement, "Missing return value");
@@ -6357,7 +6363,7 @@ namespace Fusion
 				statement.Value = VisitExpr(statement.Value);
 				CoercePermanent(statement.Value, this.CurrentMethod.Type);
 				if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType)) || (local.Type.Id == FuId.StringStorageType && this.CurrentMethod.Type.Id != FuId.StringStorageType)))
-					ReportError(statement, "Returning dangling reference to local storage");
+					ReportError(symbol, "Returning dangling reference to local storage");
 				CloseScope();
 			}
 		}
@@ -6447,7 +6453,7 @@ namespace Fusion
 			if (statement.Message != null) {
 				statement.Message = VisitExpr(statement.Message);
 				if (!(statement.Message.Type is FuStringType))
-					ReportError(statement, "Exception accepts a string argument");
+					ReportError(statement.Message, "Exception accepts a string argument");
 			}
 		}
 
@@ -6704,7 +6710,7 @@ namespace Fusion
 									break;
 								}
 								if (!method.Type.EqualsType(baseMethod.Type))
-									ReportError(method, "Base method has a different return type");
+									ReportError(method.Type, "Base method has a different return type");
 								FuVar baseParam = baseMethod.FirstParameter();
 								for (FuVar param = method.FirstParameter();; param = param.NextVar()) {
 									if (param == null) {
@@ -6713,11 +6719,11 @@ namespace Fusion
 										break;
 									}
 									if (baseParam == null) {
-										ReportError(method, "More parameters than the overridden method");
+										ReportError(param, "More parameters than the overridden method");
 										break;
 									}
 									if (!param.Type.EqualsType(baseParam.Type)) {
-										ReportError(method, "Base method has a different parameter type");
+										ReportError(param.Type, "Base method has a different parameter type");
 										break;
 									}
 									baseParam = baseParam.NextVar();
@@ -6731,7 +6737,7 @@ namespace Fusion
 						this.CurrentMethod = method;
 						VisitStatement(method.Body);
 						if (method.Type.Id != FuId.VoidType && method.Body.CompletesNormally())
-							ReportError(method.Body, "Method can complete without a return value");
+							ReportError(method, "Method can complete without a return value");
 						this.CurrentMethod = null;
 					}
 					break;

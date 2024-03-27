@@ -1743,6 +1743,11 @@ class FuLiteralChar extends FuLiteralLong
 		return Object.assign(new FuLiteralChar(), { loc: loc, type: FuRangeType.new(value, value), value: BigInt(value) });
 	}
 
+	getLocLength()
+	{
+		return this.value >= 65536 || this.value == 10 || this.value == 13 || this.value == 9 || this.value == 92 || this.value == 39 ? 4 : 3;
+	}
+
 	accept(visitor, parent)
 	{
 		visitor.visitLiteralChar(Number(this.value));
@@ -1781,6 +1786,11 @@ class FuLiteralString extends FuLiteral
 	isDefaultValue()
 	{
 		return false;
+	}
+
+	getLocLength()
+	{
+		return this.value.length + 2;
 	}
 
 	accept(visitor, parent)
@@ -1871,6 +1881,11 @@ export class FuInterpolatedString extends FuExpr
 		part.widthExpr = widthExpr;
 		part.format = format;
 		part.precision = precision;
+	}
+
+	getLocLength()
+	{
+		return 2;
 	}
 
 	accept(visitor, parent)
@@ -5016,7 +5031,7 @@ export class FuSema
 		if (isBase) {
 			let baseClass;
 			if (this.#currentMethod == null || !((baseClass = this.#currentMethod.parent.parent) instanceof FuClass))
-				return this.#poisonError(expr, "No base class");
+				return this.#poisonError(left, "No base class");
 			scope = baseClass;
 		}
 		else {
@@ -5516,7 +5531,7 @@ export class FuSema
 		case FuToken.RESOURCE:
 			let resourceName;
 			if (!((resourceName = this.#foldConst(expr.inner)) instanceof FuLiteralString))
-				return this.#poisonError(expr, "Resource name must be a string");
+				return this.#poisonError(expr.inner, "Resource name must be a string");
 			inner = resourceName;
 			type = Object.assign(new FuArrayStorageType(), { class: this.#host.program.system.arrayStorageClass, typeArg0: this.#host.program.system.byteType, length: this.#host.getResourceLength(resourceName.value, expr) });
 			break;
@@ -5609,11 +5624,11 @@ export class FuSema
 	{
 		let rightPtr;
 		if (!((rightPtr = def.type) instanceof FuClassType) || rightPtr instanceof FuStorageType)
-			this.#reportError(expr, `'${op}' with non-reference type`);
+			this.#reportError(def.type, `'${op}' with non-reference type`);
 		else {
 			let leftPtr = left.type;
 			if (rightPtr instanceof FuReadWriteClassType && !(leftPtr instanceof FuDynamicPtrType) && (rightPtr instanceof FuDynamicPtrType || !(leftPtr instanceof FuReadWriteClassType)))
-				this.#reportError(expr, `'${leftPtr}' cannot be casted to '${rightPtr}'`);
+				this.#reportError(rightPtr, `'${leftPtr}' cannot be casted to '${rightPtr}'`);
 			else {
 				this.#checkIsHierarchy(leftPtr, left, rightPtr.class, expr, op, alwaysMessage, neverMessage);
 			}
@@ -5657,7 +5672,7 @@ export class FuSema
 				this.#coerce(right, this.#host.program.system.intType);
 				let stringIndexRange;
 				if ((stringIndexRange = right.type) instanceof FuRangeType && stringIndexRange.max < 0)
-					this.#reportError(expr, "Negative index");
+					this.#reportError(right, "Negative index");
 				else {
 					let stringLiteral;
 					let indexLiteral;
@@ -5679,11 +5694,11 @@ export class FuSema
 				let indexRange;
 				if ((indexRange = right.type) instanceof FuRangeType) {
 					if (indexRange.max < 0)
-						this.#reportError(expr, "Negative index");
+						this.#reportError(right, "Negative index");
 					else {
 						let array;
 						if ((array = klass) instanceof FuArrayStorageType && indexRange.min >= array.length)
-							this.#reportError(expr, "Array index out of bounds");
+							this.#reportError(right, "Array index out of bounds");
 					}
 				}
 				type = klass.getElementType();
@@ -6081,7 +6096,7 @@ export class FuSema
 		if (!method.isStatic() && method.isMutator()) {
 			if (symbol.left == null) {
 				if (!this.#currentMethod.isMutator())
-					this.#reportError(expr, `Cannot call mutating method '${method.name}' from a non-mutating method`);
+					this.#reportError(expr.method, `Cannot call mutating method '${method.name}' from a non-mutating method`);
 			}
 			else {
 				let baseRef;
@@ -6135,12 +6150,12 @@ export class FuSema
 			return this.#poisonError(arguments_[i], `Too many arguments for '${method.name}'`);
 		for (const exceptionDecl of method.throws) {
 			if (this.#currentMethod == null) {
-				this.#reportError(expr, `Cannot call method '${method.name}' here because it is marked 'throws'`);
+				this.#reportError(expr.method, `Cannot call method '${method.name}' here because it is marked 'throws'`);
 				break;
 			}
 			let exception;
 			if ((exception = exceptionDecl.symbol) instanceof FuClass && !FuSema.#methodHasThrows(this.#currentMethod, exception))
-				this.#reportError(expr, `Method marked 'throws ${exception.name}' called from a method without it`);
+				this.#reportError(expr.method, `Method marked 'throws ${exception.name}' called from a method without it`);
 		}
 		symbol.symbol = method;
 		let ret;
@@ -6207,7 +6222,7 @@ export class FuSema
 				this.#coerce(field.right, symbol.type);
 			}
 			else
-				this.#reportError(field, "Expected a field");
+				this.#reportError(field.left, "Expected a field");
 		}
 	}
 
@@ -6501,7 +6516,7 @@ export class FuSema
 		if (statement.message != null) {
 			statement.message = this.#visitExpr(statement.message);
 			if (!(statement.message.type instanceof FuStringType))
-				this.#reportError(statement, "The second argument of 'assert' must be a string");
+				this.#reportError(statement.message, "The second argument of 'assert' must be a string");
 		}
 	}
 
@@ -6631,38 +6646,38 @@ export class FuSema
 			switch (klass.class.id) {
 			case FuId.STRING_CLASS:
 				if (statement.count() != 1 || !element.type.isAssignableFrom(this.#host.program.system.intType))
-					this.#reportError(statement, "Expected 'int' iterator variable");
+					this.#reportError(element.type, "Expected 'int' iterator variable");
 				break;
 			case FuId.ARRAY_STORAGE_CLASS:
 			case FuId.LIST_CLASS:
 			case FuId.HASH_SET_CLASS:
 			case FuId.SORTED_SET_CLASS:
 				if (statement.count() != 1)
-					this.#reportError(statement, "Expected one iterator variable");
+					this.#reportError(statement.getValueVar(), "Expected one iterator variable");
 				else if (!element.type.isAssignableFrom(klass.getElementType()))
-					this.#reportError(statement, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
+					this.#reportError(element.type, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
 				break;
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
 			case FuId.ORDERED_DICTIONARY_CLASS:
 				if (statement.count() != 2)
-					this.#reportError(statement, "Expected '(TKey key, TValue value)' iterator");
+					this.#reportError(element, "Expected '(TKey key, TValue value)' iterator");
 				else {
 					let value = statement.getValueVar();
 					this.#resolveType(value);
 					if (!element.type.isAssignableFrom(klass.getKeyType()))
-						this.#reportError(statement, `Cannot convert '${klass.getKeyType()}' to '${element.type}'`);
-					else if (!value.type.isAssignableFrom(klass.getValueType()))
-						this.#reportError(statement, `Cannot convert '${klass.getValueType()}' to '${value.type}'`);
+						this.#reportError(element, `Cannot convert '${klass.getKeyType()}' to '${element.type}'`);
+					if (!value.type.isAssignableFrom(klass.getValueType()))
+						this.#reportError(value, `Cannot convert '${klass.getValueType()}' to '${value.type}'`);
 				}
 				break;
 			default:
-				this.#reportError(statement, `'foreach' invalid on '${klass.class.name}'`);
+				this.#reportError(statement.collection, `'foreach' invalid on '${klass.class.name}'`);
 				break;
 			}
 		}
 		else
-			this.#reportError(statement, `'foreach' invalid on '${statement.collection.type}'`);
+			this.#reportError(statement.collection, `'foreach' invalid on '${statement.collection.type}'`);
 		statement.setCompletesNormally(true);
 		this.#visitStatement(statement.body);
 		this.#closeScope();
@@ -6691,7 +6706,7 @@ export class FuSema
 	{
 		if (this.#currentMethod.type.id == FuId.VOID_TYPE) {
 			if (statement.value != null)
-				this.#reportError(statement, "Void method cannot return a value");
+				this.#reportError(statement.value, "Void method cannot return a value");
 		}
 		else if (statement.value == null)
 			this.#reportError(statement, "Missing return value");
@@ -6702,7 +6717,7 @@ export class FuSema
 			let symbol;
 			let local;
 			if ((symbol = statement.value) instanceof FuSymbolReference && (local = symbol.symbol) instanceof FuVar && ((local.type.isFinal() && !(this.#currentMethod.type instanceof FuStorageType)) || (local.type.id == FuId.STRING_STORAGE_TYPE && this.#currentMethod.type.id != FuId.STRING_STORAGE_TYPE)))
-				this.#reportError(statement, "Returning dangling reference to local storage");
+				this.#reportError(symbol, "Returning dangling reference to local storage");
 			this.#closeScope();
 		}
 	}
@@ -6796,7 +6811,7 @@ export class FuSema
 		if (statement.message != null) {
 			statement.message = this.#visitExpr(statement.message);
 			if (!(statement.message.type instanceof FuStringType))
-				this.#reportError(statement, "Exception accepts a string argument");
+				this.#reportError(statement.message, "Exception accepts a string argument");
 		}
 	}
 
@@ -7072,7 +7087,7 @@ export class FuSema
 								break;
 							}
 							if (!method.type.equalsType(baseMethod.type))
-								this.#reportError(method, "Base method has a different return type");
+								this.#reportError(method.type, "Base method has a different return type");
 							let baseParam = baseMethod.firstParameter();
 							for (let param = method.firstParameter();; param = param.nextVar()) {
 								if (param == null) {
@@ -7081,11 +7096,11 @@ export class FuSema
 									break;
 								}
 								if (baseParam == null) {
-									this.#reportError(method, "More parameters than the overridden method");
+									this.#reportError(param, "More parameters than the overridden method");
 									break;
 								}
 								if (!param.type.equalsType(baseParam.type)) {
-									this.#reportError(method, "Base method has a different parameter type");
+									this.#reportError(param.type, "Base method has a different parameter type");
 									break;
 								}
 								baseParam = baseParam.nextVar();
@@ -7099,7 +7114,7 @@ export class FuSema
 					this.#currentMethod = method;
 					this.#visitStatement(method.body);
 					if (method.type.id != FuId.VOID_TYPE && method.body.completesNormally())
-						this.#reportError(method.body, "Method can complete without a return value");
+						this.#reportError(method, "Method can complete without a return value");
 					this.#currentMethod = null;
 				}
 			}

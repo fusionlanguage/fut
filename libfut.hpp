@@ -790,6 +790,7 @@ class FuLiteralChar : public FuLiteralLong
 public:
 	FuLiteralChar() = default;
 	static std::shared_ptr<FuLiteralChar> new_(int value, int loc);
+	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 };
 
@@ -810,6 +811,7 @@ class FuLiteralString : public FuLiteral
 public:
 	FuLiteralString() = default;
 	bool isDefaultValue() const override;
+	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string getLiteralString() const override;
 	std::string toString() const override;
@@ -838,6 +840,7 @@ class FuInterpolatedString : public FuExpr
 public:
 	FuInterpolatedString() = default;
 	void addPart(std::string_view prefix, std::shared_ptr<FuExpr> arg, std::shared_ptr<FuExpr> widthExpr = nullptr, int format = ' ', int precision = -1);
+	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 public:

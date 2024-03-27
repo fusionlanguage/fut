@@ -1326,6 +1326,11 @@ std::shared_ptr<FuLiteralChar> FuLiteralChar::new_(int value, int loc)
 	return futemp0;
 }
 
+int FuLiteralChar::getLocLength() const
+{
+	return this->value >= 65536 || this->value == '\n' || this->value == '\r' || this->value == '\t' || this->value == '\\' || this->value == '\'' ? 4 : 3;
+}
+
 void FuLiteralChar::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitLiteralChar(static_cast<int>(this->value));
@@ -1354,6 +1359,11 @@ std::string FuLiteralDouble::toString() const
 bool FuLiteralString::isDefaultValue() const
 {
 	return false;
+}
+
+int FuLiteralString::getLocLength() const
+{
+	return std::ssize(this->value) + 2;
 }
 
 void FuLiteralString::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1430,6 +1440,11 @@ void FuInterpolatedString::addPart(std::string_view prefix, std::shared_ptr<FuEx
 	part->widthExpr = widthExpr;
 	part->format = format;
 	part->precision = precision;
+}
+
+int FuInterpolatedString::getLocLength() const
+{
+	return 2;
 }
 
 void FuInterpolatedString::accept(FuVisitor * visitor, FuPriority parent) const
@@ -4538,7 +4553,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 	if (isBase) {
 		const FuClass * baseClass;
 		if (this->currentMethod == nullptr || !(baseClass = dynamic_cast<const FuClass *>(this->currentMethod->parent->parent)))
-			return poisonError(expr.get(), "No base class");
+			return poisonError(left.get(), "No base class");
 		scope = baseClass;
 	}
 	else {
@@ -5050,7 +5065,7 @@ std::shared_ptr<FuExpr> FuSema::visitPrefixExpr(std::shared_ptr<FuPrefixExpr> ex
 		{
 			std::shared_ptr<FuLiteralString> resourceName;
 			if (!(resourceName = std::dynamic_pointer_cast<FuLiteralString>(foldConst(expr->inner))))
-				return poisonError(expr.get(), "Resource name must be a string");
+				return poisonError(expr->inner.get(), "Resource name must be a string");
 			inner = resourceName;
 			std::shared_ptr<FuArrayStorageType> futemp0 = std::make_shared<FuArrayStorageType>();
 			futemp0->class_ = this->host->program->system->arrayStorageClass.get();
@@ -5158,11 +5173,11 @@ void FuSema::checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * e
 {
 	const FuClassType * rightPtr;
 	if (!(rightPtr = dynamic_cast<const FuClassType *>(def->type.get())) || dynamic_cast<const FuStorageType *>(rightPtr))
-		reportError(expr, std::format("'{}' with non-reference type", op));
+		reportError(def->type.get(), std::format("'{}' with non-reference type", op));
 	else {
 		const FuClassType * leftPtr = static_cast<const FuClassType *>(left->type.get());
 		if (dynamic_cast<const FuReadWriteClassType *>(rightPtr) && !dynamic_cast<const FuDynamicPtrType *>(leftPtr) && (dynamic_cast<const FuDynamicPtrType *>(rightPtr) || !dynamic_cast<const FuReadWriteClassType *>(leftPtr)))
-			reportError(expr, std::format("'{}' cannot be casted to '{}'", leftPtr->toString(), rightPtr->toString()));
+			reportError(rightPtr, std::format("'{}' cannot be casted to '{}'", leftPtr->toString(), rightPtr->toString()));
 		else {
 			checkIsHierarchy(leftPtr, left, rightPtr->class_, expr, op, alwaysMessage, neverMessage);
 		}
@@ -5206,7 +5221,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 				{
 					const FuRangeType * stringIndexRange;
 					if ((stringIndexRange = dynamic_cast<const FuRangeType *>(right->type.get())) && stringIndexRange->max < 0)
-						reportError(expr.get(), "Negative index");
+						reportError(right.get(), "Negative index");
 					else {
 						const FuLiteralString * stringLiteral;
 						const FuLiteralLong * indexLiteral;
@@ -5228,11 +5243,11 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 				coerce(right.get(), this->host->program->system->intType.get());
 				if (const FuRangeType *indexRange = dynamic_cast<const FuRangeType *>(right->type.get())) {
 					if (indexRange->max < 0)
-						reportError(expr.get(), "Negative index");
+						reportError(right.get(), "Negative index");
 					else {
 						const FuArrayStorageType * array;
 						if ((array = dynamic_cast<const FuArrayStorageType *>(klass)) && indexRange->min >= array->length)
-							reportError(expr.get(), "Array index out of bounds");
+							reportError(right.get(), "Array index out of bounds");
 					}
 				}
 				type = klass->getElementType();
@@ -5666,7 +5681,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	if (!method->isStatic() && method->isMutator()) {
 		if (symbol->left == nullptr) {
 			if (!this->currentMethod->isMutator())
-				reportError(expr.get(), std::format("Cannot call mutating method '{}' from a non-mutating method", method->name));
+				reportError(expr->method.get(), std::format("Cannot call mutating method '{}' from a non-mutating method", method->name));
 		}
 		else {
 			const FuSymbolReference * baseRef;
@@ -5722,12 +5737,12 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		return poisonError((*arguments)[i].get(), std::format("Too many arguments for '{}'", method->name));
 	for (const std::shared_ptr<FuThrowsDeclaration> &exceptionDecl : method->throws) {
 		if (this->currentMethod == nullptr) {
-			reportError(expr.get(), std::format("Cannot call method '{}' here because it is marked 'throws'", method->name));
+			reportError(expr->method.get(), std::format("Cannot call method '{}' here because it is marked 'throws'", method->name));
 			break;
 		}
 		const FuClass * exception;
 		if ((exception = dynamic_cast<const FuClass *>(exceptionDecl->symbol)) && !methodHasThrows(this->currentMethod, exception))
-			reportError(expr.get(), std::format("Method marked 'throws {}' called from a method without it", exception->name));
+			reportError(expr->method.get(), std::format("Method marked 'throws {}' called from a method without it", exception->name));
 	}
 	symbol->symbol = method;
 	FuReturn * ret;
@@ -5794,7 +5809,7 @@ void FuSema::resolveObjectLiteral(const FuClassType * klass, const FuAggregateIn
 			coerce(field->right.get(), symbol->type.get());
 		}
 		else
-			reportError(field, "Expected a field");
+			reportError(field->left.get(), "Expected a field");
 	}
 }
 
@@ -6069,7 +6084,7 @@ void FuSema::visitAssert(FuAssert * statement)
 	if (statement->message != nullptr) {
 		statement->message = visitExpr(statement->message);
 		if (!dynamic_cast<const FuStringType *>(statement->message->type.get()))
-			reportError(statement, "The second argument of 'assert' must be a string");
+			reportError(statement->message.get(), "The second argument of 'assert' must be a string");
 	}
 }
 
@@ -6195,38 +6210,38 @@ void FuSema::visitForeach(FuForeach * statement)
 		switch (klass->class_->id) {
 		case FuId::stringClass:
 			if (statement->count() != 1 || !element->type->isAssignableFrom(this->host->program->system->intType.get()))
-				reportError(statement, "Expected 'int' iterator variable");
+				reportError(element->type.get(), "Expected 'int' iterator variable");
 			break;
 		case FuId::arrayStorageClass:
 		case FuId::listClass:
 		case FuId::hashSetClass:
 		case FuId::sortedSetClass:
 			if (statement->count() != 1)
-				reportError(statement, "Expected one iterator variable");
+				reportError(statement->getValueVar(), "Expected one iterator variable");
 			else if (!element->type->isAssignableFrom(klass->getElementType().get()))
-				reportError(statement, std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
+				reportError(element->type.get(), std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
 			break;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
 		case FuId::orderedDictionaryClass:
 			if (statement->count() != 2)
-				reportError(statement, "Expected '(TKey key, TValue value)' iterator");
+				reportError(element, "Expected '(TKey key, TValue value)' iterator");
 			else {
 				FuVar * value = statement->getValueVar();
 				resolveType(value);
 				if (!element->type->isAssignableFrom(klass->getKeyType()))
-					reportError(statement, std::format("Cannot convert '{}' to '{}'", klass->getKeyType()->toString(), element->type->toString()));
-				else if (!value->type->isAssignableFrom(klass->getValueType().get()))
-					reportError(statement, std::format("Cannot convert '{}' to '{}'", klass->getValueType()->toString(), value->type->toString()));
+					reportError(element, std::format("Cannot convert '{}' to '{}'", klass->getKeyType()->toString(), element->type->toString()));
+				if (!value->type->isAssignableFrom(klass->getValueType().get()))
+					reportError(value, std::format("Cannot convert '{}' to '{}'", klass->getValueType()->toString(), value->type->toString()));
 			}
 			break;
 		default:
-			reportError(statement, std::format("'foreach' invalid on '{}'", klass->class_->name));
+			reportError(statement->collection.get(), std::format("'foreach' invalid on '{}'", klass->class_->name));
 			break;
 		}
 	}
 	else
-		reportError(statement, std::format("'foreach' invalid on '{}'", statement->collection->type->toString()));
+		reportError(statement->collection.get(), std::format("'foreach' invalid on '{}'", statement->collection->type->toString()));
 	statement->setCompletesNormally(true);
 	visitStatement(statement->body);
 	closeScope();
@@ -6255,7 +6270,7 @@ void FuSema::visitReturn(FuReturn * statement)
 {
 	if (this->currentMethod->type->id == FuId::voidType) {
 		if (statement->value != nullptr)
-			reportError(statement, "Void method cannot return a value");
+			reportError(statement->value.get(), "Void method cannot return a value");
 	}
 	else if (statement->value == nullptr)
 		reportError(statement, "Missing return value");
@@ -6266,7 +6281,7 @@ void FuSema::visitReturn(FuReturn * statement)
 		const FuSymbolReference * symbol;
 		const FuVar * local;
 		if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol)) && ((local->type->isFinal() && !dynamic_cast<const FuStorageType *>(this->currentMethod->type.get())) || (local->type->id == FuId::stringStorageType && this->currentMethod->type->id != FuId::stringStorageType)))
-			reportError(statement, "Returning dangling reference to local storage");
+			reportError(symbol, "Returning dangling reference to local storage");
 		closeScope();
 	}
 }
@@ -6358,7 +6373,7 @@ void FuSema::visitThrow(FuThrow * statement)
 	if (statement->message != nullptr) {
 		statement->message = visitExpr(statement->message);
 		if (!dynamic_cast<const FuStringType *>(statement->message->type.get()))
-			reportError(statement, "Exception accepts a string argument");
+			reportError(statement->message.get(), "Exception accepts a string argument");
 	}
 }
 
@@ -6603,7 +6618,7 @@ void FuSema::resolveCode(FuClass * klass)
 							break;
 						}
 						if (!method->type->equalsType(baseMethod->type.get()))
-							reportError(method, "Base method has a different return type");
+							reportError(method->type.get(), "Base method has a different return type");
 						const FuVar * baseParam = baseMethod->firstParameter();
 						for (const FuVar * param = method->firstParameter();; param = param->nextVar()) {
 							if (param == nullptr) {
@@ -6612,11 +6627,11 @@ void FuSema::resolveCode(FuClass * klass)
 								break;
 							}
 							if (baseParam == nullptr) {
-								reportError(method, "More parameters than the overridden method");
+								reportError(param, "More parameters than the overridden method");
 								break;
 							}
 							if (!param->type->equalsType(baseParam->type.get())) {
-								reportError(method, "Base method has a different parameter type");
+								reportError(param->type.get(), "Base method has a different parameter type");
 								break;
 							}
 							baseParam = baseParam->nextVar();
@@ -6630,7 +6645,7 @@ void FuSema::resolveCode(FuClass * klass)
 				this->currentMethod = method;
 				visitStatement(method->body);
 				if (method->type->id != FuId::voidType && method->body->completesNormally())
-					reportError(method->body.get(), "Method can complete without a return value");
+					reportError(method, "Method can complete without a return value");
 				this->currentMethod = nullptr;
 			}
 		}

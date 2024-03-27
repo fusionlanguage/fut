@@ -437,6 +437,7 @@ class FuLiteralLong : FuLiteral
 class FuLiteralChar : FuLiteralLong
 {
 	public static FuLiteralChar# New(int value, int loc) => new FuLiteralChar { Loc = loc, Type = FuRangeType.New(value, value), Value = value };
+	public override int GetLocLength() => this.Value >= 0x10000 || this.Value == '\n' || this.Value == '\r' || this.Value == '\t' || this.Value == '\\' || this.Value == '\'' ? 4 : 3;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralChar(this.Value); }
 //	public override string() ToString()
 //	{
@@ -464,6 +465,7 @@ class FuLiteralString : FuLiteral
 {
 	internal string() Value;
 	public override bool IsDefaultValue() => false;
+	public override int GetLocLength() => this.Value.Length + 2;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralString(this.Value); }
 	public override string() GetLiteralString() => this.Value;
 	public override string() ToString() => $"\"{this.Value}\"";
@@ -538,6 +540,7 @@ public class FuInterpolatedString : FuExpr
 		part.Format = format;
 		part.Precision = precision;
 	}
+	public override int GetLocLength() => 2; // FIXME
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitInterpolatedString(this, parent); }
 	public override bool IsNewString(bool substringOffset) => true;
 //	public override string() ToString()
