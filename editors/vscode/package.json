@@ -45,6 +45,12 @@
         "scopeName": "source.fu",
         "path": "./syntaxes/fusion.tmLanguage.json"
       }
+    ],
+    "snippets": [
+      {
+        "language": "fusion",
+        "path": "./snippets.json"
+      }
     ]
   },
   "activationEvents": [
