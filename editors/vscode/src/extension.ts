@@ -121,6 +121,8 @@ class VsCodeDiagnostics extends VsCodeHost
 
 	check(document: vscode.TextDocument)
 	{
+		if (document.languageId != "fusion")
+			return;
 		this.#queue.set(document.uri.toString(), document);
 		if (this.#timeoutId !== null)
 			clearTimeout(this.#timeoutId);
