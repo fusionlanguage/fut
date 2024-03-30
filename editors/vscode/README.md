@@ -2,7 +2,8 @@ A Visual Studio Code extension for the [Fusion programming language](https://fus
 
 * Syntax highlighting
 * Error highlighting
-* Code navigation
+* Go to definition
+* Snippets
 
 Fusion is a language designed to be translated automatically to
 C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
