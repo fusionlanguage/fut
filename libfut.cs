@@ -4526,7 +4526,7 @@ namespace Fusion
 					continue;
 				}
 				if (visibility == FuVisibility.Public)
-					ReportError("Field cannot be public");
+					this.Host.ReportError(this.Host.Program.SourceFiles[^1].Filename, line, column, line, column + 6, "Field cannot be public");
 				if (callType != FuCallType.Normal)
 					ReportError($"Field cannot be {CallTypeToString(callType)}");
 				if (type == this.Host.Program.System.VoidType)

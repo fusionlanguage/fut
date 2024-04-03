@@ -4734,7 +4734,7 @@ export class FuParser extends FuLexer
 				continue;
 			}
 			if (visibility == FuVisibility.PUBLIC)
-				this.reportError("Field cannot be public");
+				this.host.reportError(this.host.program.sourceFiles.at(-1).filename, line, column, line, column + 6, "Field cannot be public");
 			if (callType != FuCallType.NORMAL)
 				this.reportError(`Field cannot be ${FuParser.#callTypeToString(callType)}`);
 			if (type == this.host.program.system.voidType)

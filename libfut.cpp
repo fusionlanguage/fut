@@ -4265,7 +4265,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			continue;
 		}
 		if (visibility == FuVisibility::public_)
-			reportError("Field cannot be public");
+			this->host->reportError(this->host->program->sourceFiles.back().filename, line, column, line, column + 6, "Field cannot be public");
 		if (callType != FuCallType::normal)
 			reportError(std::format("Field cannot be {}", callTypeToString(callType)));
 		if (type == this->host->program->system->voidType)
