@@ -1139,6 +1139,10 @@ public abstract class FuNamedValue : FuSymbol
 public abstract class FuMember : FuNamedValue
 {
 	internal FuVisibility Visibility;
+	internal int StartLine;
+	internal int StartColumn;
+	internal int EndLine;
+	internal int EndColumn;
 	protected FuMember()
 	{
 	}

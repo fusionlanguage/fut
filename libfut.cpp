@@ -3697,7 +3697,7 @@ std::shared_ptr<FuConst> FuParser::parseConst(FuVisibility visibility)
 	nextToken();
 	expect(FuToken::assign);
 	konst->value = parseConstInitializer();
-	expect(FuToken::semicolon);
+	closeMember(FuToken::semicolon, konst.get());
 	return konst;
 }
 
@@ -3733,14 +3733,14 @@ std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar)
 	}
 }
 
-std::shared_ptr<FuBlock> FuParser::parseBlock()
+std::shared_ptr<FuBlock> FuParser::parseBlock(FuMethodBase * method)
 {
 	std::shared_ptr<FuBlock> result = std::make_shared<FuBlock>();
 	result->loc = this->tokenLoc;
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile))
 		result->statements.push_back(parseStatement());
-	expect(FuToken::rightBrace);
+	closeMember(FuToken::rightBrace, method);
 	return result;
 }
 
@@ -3903,14 +3903,44 @@ std::shared_ptr<FuNative> FuParser::parseNative()
 	return result;
 }
 
-std::shared_ptr<FuReturn> FuParser::parseReturn()
+int FuParser::getCurrentLine() const
+{
+	return std::ssize(this->host->program->lineLocs) - this->host->program->sourceFiles.back().line - 1;
+}
+
+int FuParser::getTokenColumn() const
+{
+	return this->tokenLoc - this->host->program->lineLocs.back();
+}
+
+void FuParser::setMemberEnd(FuMember * member) const
+{
+	member->endLine = getCurrentLine();
+	member->endColumn = this->loc - this->host->program->lineLocs.back();
+}
+
+void FuParser::closeMember(FuToken expected, FuMember * member)
+{
+	if (member != nullptr)
+		setMemberEnd(member);
+	expect(expected);
+}
+
+void FuParser::closeContainer(FuContainerType * type)
+{
+	type->endLine = getCurrentLine();
+	type->endColumn = this->loc - this->host->program->lineLocs.back();
+	expect(FuToken::rightBrace);
+}
+
+std::shared_ptr<FuReturn> FuParser::parseReturn(FuMethod * method)
 {
 	std::shared_ptr<FuReturn> result = std::make_shared<FuReturn>();
 	result->loc = this->tokenLoc;
 	nextToken();
 	if (!see(FuToken::semicolon))
 		result->value = parseExpr();
-	expect(FuToken::semicolon);
+	closeMember(FuToken::semicolon, method);
 	return result;
 }
 
@@ -4003,7 +4033,7 @@ std::shared_ptr<FuStatement> FuParser::parseStatement()
 {
 	switch (this->currentToken) {
 	case FuToken::leftBrace:
-		return parseBlock();
+		return parseBlock(nullptr);
 	case FuToken::assert:
 		return parseAssert();
 	case FuToken::break_:
@@ -4025,7 +4055,7 @@ std::shared_ptr<FuStatement> FuParser::parseStatement()
 	case FuToken::native:
 		return parseNative();
 	case FuToken::return_:
-		return parseReturn();
+		return parseReturn(nullptr);
 	case FuToken::switch_:
 		return parseSwitch();
 	case FuToken::throw_:
@@ -4099,28 +4129,11 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 		while (eat(FuToken::comma));
 	}
 	if (method->callType == FuCallType::abstract)
-		expect(FuToken::semicolon);
+		closeMember(FuToken::semicolon, method.get());
 	else if (see(FuToken::fatArrow))
-		method->body = parseReturn();
+		method->body = parseReturn(method.get());
 	else if (check(FuToken::leftBrace))
-		method->body = parseBlock();
-}
-
-int FuParser::getCurrentLine() const
-{
-	return std::ssize(this->host->program->lineLocs) - this->host->program->sourceFiles.back().line - 1;
-}
-
-int FuParser::getTokenColumn() const
-{
-	return this->tokenLoc - this->host->program->lineLocs.back();
-}
-
-void FuParser::closeContainer(FuContainerType * type)
-{
-	type->endLine = getCurrentLine();
-	type->endColumn = this->loc - this->host->program->lineLocs.back();
-	expect(FuToken::rightBrace);
+		method->body = parseBlock(method.get());
 }
 
 std::string_view FuParser::callTypeToString(FuCallType callType)
@@ -4163,6 +4176,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile)) {
 		doc = parseDoc();
+		int line = getCurrentLine();
+		int column = getTokenColumn();
 		FuVisibility visibility;
 		switch (this->currentToken) {
 		case FuToken::internal:
@@ -4183,6 +4198,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		}
 		if (see(FuToken::const_)) {
 			std::shared_ptr<FuConst> konst = parseConst(visibility);
+			konst->startLine = line;
+			konst->startColumn = column;
 			konst->documentation = doc;
 			addSymbol(klass.get(), konst);
 			continue;
@@ -4206,16 +4223,18 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			if (visibility == FuVisibility::private_)
 				visibility = FuVisibility::internal;
 			std::shared_ptr<FuMethodBase> futemp0 = std::make_shared<FuMethodBase>();
+			futemp0->startLine = line;
+			futemp0->startColumn = column;
 			futemp0->loc = call->loc;
 			futemp0->documentation = doc;
 			futemp0->visibility = visibility;
 			futemp0->parent = klass.get();
 			futemp0->type = this->host->program->system->voidType;
 			futemp0->name = klass->name;
-			futemp0->body = parseBlock();
 			klass->constructor = futemp0;
 			klass->constructor->parameters.parent = klass.get();
 			klass->constructor->addThis(klass.get(), true);
+			klass->constructor->body = parseBlock(klass->constructor.get());
 			continue;
 		}
 		int loc = this->tokenLoc;
@@ -4234,6 +4253,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			if (visibility == FuVisibility::private_ && callType != FuCallType::static_ && callType != FuCallType::normal)
 				reportError(std::format("{} method cannot be private", callTypeToString(callType)));
 			std::shared_ptr<FuMethod> method = std::make_shared<FuMethod>();
+			method->startLine = line;
+			method->startColumn = column;
 			method->loc = loc;
 			method->documentation = doc;
 			method->visibility = visibility;
@@ -4250,6 +4271,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		if (type == this->host->program->system->voidType)
 			reportError("Field cannot be void");
 		std::shared_ptr<FuField> field = std::make_shared<FuField>();
+		field->startLine = line;
+		field->startColumn = column;
 		field->loc = loc;
 		field->documentation = doc;
 		field->visibility = visibility;
@@ -4257,7 +4280,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		field->name = name;
 		field->value = parseInitializer();
 		addSymbol(klass.get(), field);
-		expect(FuToken::semicolon);
+		closeMember(FuToken::semicolon, field.get());
 	}
 	closeContainer(klass.get());
 }
@@ -4284,12 +4307,15 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, int line, int column, b
 		konst->name = this->stringValue;
 		konst->type = enu;
 		konst->visitStatus = FuVisitStatus::notYet;
+		konst->startLine = getCurrentLine();
+		konst->startColumn = getTokenColumn();
 		expect(FuToken::id);
 		if (eat(FuToken::assign))
 			konst->value = parseExpr();
 		else if (flags)
 			reportError("enum* symbol must be assigned a value");
 		addSymbol(enu.get(), konst);
+		setMemberEnd(konst.get());
 	}
 	while (eat(FuToken::comma));
 	closeContainer(enu.get());

@@ -1238,6 +1238,10 @@ protected:
 	FuMember();
 public:
 	FuVisibility visibility;
+	int startLine;
+	int startColumn;
+	int endLine;
+	int endColumn;
 };
 
 class FuVar : public FuNamedValue
@@ -1604,7 +1608,7 @@ private:
 	std::shared_ptr<FuVar> parseVar(std::shared_ptr<FuExpr> type, bool initializer);
 	std::shared_ptr<FuConst> parseConst(FuVisibility visibility);
 	std::shared_ptr<FuExpr> parseAssign(bool allowVar);
-	std::shared_ptr<FuBlock> parseBlock();
+	std::shared_ptr<FuBlock> parseBlock(FuMethodBase * method);
 	std::shared_ptr<FuAssert> parseAssert();
 	std::shared_ptr<FuBreak> parseBreak();
 	std::shared_ptr<FuContinue> parseContinue();
@@ -1616,16 +1620,18 @@ private:
 	std::shared_ptr<FuIf> parseIf();
 	std::shared_ptr<FuLock> parseLock();
 	std::shared_ptr<FuNative> parseNative();
-	std::shared_ptr<FuReturn> parseReturn();
+	int getCurrentLine() const;
+	int getTokenColumn() const;
+	void setMemberEnd(FuMember * member) const;
+	void closeMember(FuToken expected, FuMember * member);
+	void closeContainer(FuContainerType * type);
+	std::shared_ptr<FuReturn> parseReturn(FuMethod * method);
 	std::shared_ptr<FuSwitch> parseSwitch();
 	std::shared_ptr<FuThrow> parseThrow();
 	std::shared_ptr<FuWhile> parseWhile();
 	std::shared_ptr<FuStatement> parseStatement();
 	FuCallType parseCallType();
 	void parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method);
-	int getCurrentLine() const;
-	int getTokenColumn() const;
-	void closeContainer(FuContainerType * type);
 	static std::string_view callTypeToString(FuCallType callType);
 	void parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic, FuCallType callType);
 	void parseEnum(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic);

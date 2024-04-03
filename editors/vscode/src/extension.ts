@@ -19,7 +19,7 @@
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
 import * as vscode from "vscode";
-import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuEnum } from "./fucheck.js";
+import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuContainerType, FuEnum, FuMember, FuField, FuMethod } from "./fucheck.js";
 
 class VsCodeHost extends FuSemaHost
 {
@@ -156,18 +156,36 @@ class VsCodeDefinitionProvider extends VsCodeHost
 
 class VsCodeSymbolProvider extends VsCodeHost
 {
+	#createSymbol(source: FuContainerType | FuMember, kind: vscode.SymbolKind): vscode.DocumentSymbol
+	{
+		const line = this.program.getLine(source.loc);
+		const column = source.loc - this.program.lineLocs[line];
+		return new vscode.DocumentSymbol(source.name, "", kind,
+			new vscode.Range(source.startLine, source.startColumn, source.endLine, source.endColumn),
+			new vscode.Range(line, column, line, column + source.getLocLength()));
+	}
+
 	provideSymbols(document: vscode.TextDocument): vscode.DocumentSymbol[]
 	{
 		this.parseDocument(document, this.createParser());
 		const symbols : vscode.DocumentSymbol[] = [];
 		for (let container = this.program.first; container != null; container = container.next) {
-			const loc = container.loc;
-			const line = this.program.getLine(loc);
-			const startColumn = loc - this.program.lineLocs[line];
-			const endColumn = startColumn + container.getLocLength();
-			symbols.push(new vscode.DocumentSymbol(container.name, "", container instanceof FuEnum ? vscode.SymbolKind.Enum : vscode.SymbolKind.Class,
-				new vscode.Range(container.startLine, container.startColumn, container.endLine, container.endColumn),
-				new vscode.Range(line, startColumn, line, endColumn)));
+			if (container instanceof FuEnum) {
+				const containerSymbol = this.#createSymbol(container, vscode.SymbolKind.Enum);
+				for (let member: FuMember = container.getFirstValue(); member != null; member = member.next)
+					containerSymbol.children.push(this.#createSymbol(member, vscode.SymbolKind.EnumMember));
+				symbols.push(containerSymbol);
+			}
+			else {
+				const containerSymbol = this.#createSymbol(container, vscode.SymbolKind.Class);
+				if (container.constructor_ != null)
+					containerSymbol.children.push(this.#createSymbol(container.constructor_, vscode.SymbolKind.Constructor));
+				for (let member = container.first; member != null; member = member.next) {
+					containerSymbol.children.push(this.#createSymbol(member, member instanceof FuMethod ? vscode.SymbolKind.Method :
+						member instanceof FuField ? vscode.SymbolKind.Field : vscode.SymbolKind.Constant));
+				}
+				symbols.push(containerSymbol);
+			}
 		}
 		return symbols;
 	}

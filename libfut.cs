@@ -2665,6 +2665,14 @@ namespace Fusion
 
 		internal FuVisibility Visibility;
 
+		internal int StartLine;
+
+		internal int StartColumn;
+
+		internal int EndLine;
+
+		internal int EndColumn;
+
 		public abstract bool IsStatic();
 	}
 
@@ -4012,7 +4020,7 @@ namespace Fusion
 			NextToken();
 			Expect(FuToken.Assign);
 			konst.Value = ParseConstInitializer();
-			Expect(FuToken.Semicolon);
+			CloseMember(FuToken.Semicolon, konst);
 			return konst;
 		}
 
@@ -4041,13 +4049,13 @@ namespace Fusion
 			}
 		}
 
-		FuBlock ParseBlock()
+		FuBlock ParseBlock(FuMethodBase method)
 		{
 			FuBlock result = new FuBlock { Loc = this.TokenLoc };
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile))
 				result.Statements.Add(ParseStatement());
-			Expect(FuToken.RightBrace);
+			CloseMember(FuToken.RightBrace, method);
 			return result;
 		}
 
@@ -4199,13 +4207,37 @@ namespace Fusion
 			return result;
 		}
 
-		FuReturn ParseReturn()
+		int GetCurrentLine() => this.Host.Program.LineLocs.Count - this.Host.Program.SourceFiles[^1].Line - 1;
+
+		int GetTokenColumn() => this.TokenLoc - this.Host.Program.LineLocs[^1];
+
+		void SetMemberEnd(FuMember member)
+		{
+			member.EndLine = GetCurrentLine();
+			member.EndColumn = this.Loc - this.Host.Program.LineLocs[^1];
+		}
+
+		void CloseMember(FuToken expected, FuMember member)
+		{
+			if (member != null)
+				SetMemberEnd(member);
+			Expect(expected);
+		}
+
+		void CloseContainer(FuContainerType type)
+		{
+			type.EndLine = GetCurrentLine();
+			type.EndColumn = this.Loc - this.Host.Program.LineLocs[^1];
+			Expect(FuToken.RightBrace);
+		}
+
+		FuReturn ParseReturn(FuMethod method)
 		{
 			FuReturn result = new FuReturn { Loc = this.TokenLoc };
 			NextToken();
 			if (!See(FuToken.Semicolon))
 				result.Value = ParseExpr();
-			Expect(FuToken.Semicolon);
+			CloseMember(FuToken.Semicolon, method);
 			return result;
 		}
 
@@ -4289,7 +4321,7 @@ namespace Fusion
 		{
 			switch (this.CurrentToken) {
 			case FuToken.LeftBrace:
-				return ParseBlock();
+				return ParseBlock(null);
 			case FuToken.Assert:
 				return ParseAssert();
 			case FuToken.Break:
@@ -4311,7 +4343,7 @@ namespace Fusion
 			case FuToken.Native:
 				return ParseNative();
 			case FuToken.Return:
-				return ParseReturn();
+				return ParseReturn(null);
 			case FuToken.Switch:
 				return ParseSwitch();
 			case FuToken.Throw:
@@ -4383,22 +4415,11 @@ namespace Fusion
 				while (Eat(FuToken.Comma));
 			}
 			if (method.CallType == FuCallType.Abstract)
-				Expect(FuToken.Semicolon);
+				CloseMember(FuToken.Semicolon, method);
 			else if (See(FuToken.FatArrow))
-				method.Body = ParseReturn();
+				method.Body = ParseReturn(method);
 			else if (Check(FuToken.LeftBrace))
-				method.Body = ParseBlock();
-		}
-
-		int GetCurrentLine() => this.Host.Program.LineLocs.Count - this.Host.Program.SourceFiles[^1].Line - 1;
-
-		int GetTokenColumn() => this.TokenLoc - this.Host.Program.LineLocs[^1];
-
-		void CloseContainer(FuContainerType type)
-		{
-			type.EndLine = GetCurrentLine();
-			type.EndColumn = this.Loc - this.Host.Program.LineLocs[^1];
-			Expect(FuToken.RightBrace);
+				method.Body = ParseBlock(method);
 		}
 
 		static string CallTypeToString(FuCallType callType)
@@ -4434,6 +4455,8 @@ namespace Fusion
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 				doc = ParseDoc();
+				int line = GetCurrentLine();
+				int column = GetTokenColumn();
 				FuVisibility visibility;
 				switch (this.CurrentToken) {
 				case FuToken.Internal:
@@ -4454,6 +4477,8 @@ namespace Fusion
 				}
 				if (See(FuToken.Const)) {
 					FuConst konst = ParseConst(visibility);
+					konst.StartLine = line;
+					konst.StartColumn = column;
 					konst.Documentation = doc;
 					AddSymbol(klass, konst);
 					continue;
@@ -4475,9 +4500,10 @@ namespace Fusion
 					}
 					if (visibility == FuVisibility.Private)
 						visibility = FuVisibility.Internal;
-					klass.Constructor = new FuMethodBase { Loc = call.Loc, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Host.Program.System.VoidType, Name = klass.Name, Body = ParseBlock() };
+					klass.Constructor = new FuMethodBase { StartLine = line, StartColumn = column, Loc = call.Loc, Documentation = doc, Visibility = visibility, Parent = klass, Type = this.Host.Program.System.VoidType, Name = klass.Name };
 					klass.Constructor.Parameters.Parent = klass;
 					klass.Constructor.AddThis(klass, true);
+					klass.Constructor.Body = ParseBlock(klass.Constructor);
 					continue;
 				}
 				int loc = this.TokenLoc;
@@ -4495,7 +4521,7 @@ namespace Fusion
 						ReportError("Virtual methods disallowed in a sealed class");
 					if (visibility == FuVisibility.Private && callType != FuCallType.Static && callType != FuCallType.Normal)
 						ReportError($"{CallTypeToString(callType)} method cannot be private");
-					FuMethod method = new FuMethod { Loc = loc, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
+					FuMethod method = new FuMethod { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 					ParseMethod(klass, method);
 					continue;
 				}
@@ -4505,9 +4531,9 @@ namespace Fusion
 					ReportError($"Field cannot be {CallTypeToString(callType)}");
 				if (type == this.Host.Program.System.VoidType)
 					ReportError("Field cannot be void");
-				FuField field = new FuField { Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
+				FuField field = new FuField { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 				AddSymbol(klass, field);
-				Expect(FuToken.Semicolon);
+				CloseMember(FuToken.Semicolon, field);
 			}
 			CloseContainer(klass);
 		}
@@ -4528,12 +4554,15 @@ namespace Fusion
 			Expect(FuToken.LeftBrace);
 			do {
 				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.TokenLoc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
+				konst.StartLine = GetCurrentLine();
+				konst.StartColumn = GetTokenColumn();
 				Expect(FuToken.Id);
 				if (Eat(FuToken.Assign))
 					konst.Value = ParseExpr();
 				else if (flags)
 					ReportError("enum* symbol must be assigned a value");
 				AddSymbol(enu, konst);
+				SetMemberEnd(konst);
 			}
 			while (Eat(FuToken.Comma));
 			CloseContainer(enu);

@@ -2,6 +2,7 @@ A Visual Studio Code extension for the [Fusion programming language](https://fus
 
 * Syntax highlighting
 * Error highlighting
+* Outline
 * Go to definition
 * Snippets
 
