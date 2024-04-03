@@ -21,7 +21,7 @@
 public abstract class FuParserHost
 {
 	internal FuProgram! Program;
-	public abstract void ReportError!(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message);
+	public abstract void ReportError!(string filename, int line, int startUtf16Column, int endUtf16Column, string message);
 }
 
 public enum FuToken
@@ -186,7 +186,7 @@ public abstract class FuLexer
 		FuSourceFile file = this.Host.Program.SourceFiles.Last();
 		int line = this.Host.Program.LineLocs.Count - file.Line - 1;
 		int lineLoc = this.Host.Program.LineLocs.Last();
-		this.Host.ReportError(file.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
+		this.Host.ReportError(file.Filename, line, this.TokenLoc - lineLoc, this.Loc - lineLoc, message);
 	}
 
 	int ReadByte!()

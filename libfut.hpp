@@ -473,7 +473,7 @@ class FuParserHost
 {
 public:
 	virtual ~FuParserHost() = default;
-	virtual void reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message) = 0;
+	virtual void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) = 0;
 protected:
 	FuParserHost() = default;
 public:
@@ -1661,7 +1661,7 @@ protected:
 class FuConsoleHost : public GenHost
 {
 public:
-	void reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message) override;
+	void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) override;
 protected:
 	FuConsoleHost() = default;
 public:

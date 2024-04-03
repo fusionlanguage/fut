@@ -26,7 +26,7 @@ class VsCodeHost extends FuSemaHost
 	#system = FuSystem.new();
 	#hasErrors = false;
 
-	reportError(filename: string, startLine: number, startUtf16Column: number, endLine: number, endUtf16Column: number, message: string): void
+	reportError(filename: string, line: number, startUtf16Column: number, endUtf16Column: number, message: string): void
 	{
 		this.#hasErrors = true;
 	}
@@ -82,12 +82,12 @@ class VsCodeDiagnostics extends VsCodeHost
 	#diagnostics: Map<string, vscode.Diagnostic[]> = new Map();
 	#diagnosticCollection = vscode.languages.createDiagnosticCollection("fusion");
 
-	reportError(filename: string, startLine: number, startUtf16Column: number, endLine: number, endUtf16Column: number, message: string): void
+	reportError(filename: string, line: number, startUtf16Column: number, endUtf16Column: number, message: string): void
 	{
-		super.reportError(filename, startLine, startUtf16Column, endLine, endUtf16Column, message);
+		super.reportError(filename, line, startUtf16Column, endUtf16Column, message);
 		const fileDiagnostics = this.#diagnostics.get(filename);
 		if (fileDiagnostics !== undefined)
-			fileDiagnostics .push(new vscode.Diagnostic(new vscode.Range(startLine, startUtf16Column, endLine, endUtf16Column), message));
+			fileDiagnostics .push(new vscode.Diagnostic(new vscode.Range(line, startUtf16Column, line, endUtf16Column), message));
 	}
 
 	parse(filename: string, input: Uint8Array, parser: FuParser): void

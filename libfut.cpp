@@ -61,7 +61,7 @@ void FuLexer::reportError(std::string_view message) const
 	const FuSourceFile * file = &static_cast<const FuSourceFile &>(this->host->program->sourceFiles.back());
 	int line = std::ssize(this->host->program->lineLocs) - file->line - 1;
 	int lineLoc = this->host->program->lineLocs.back();
-	this->host->reportError(file->filename, line, this->tokenLoc - lineLoc, line, this->loc - lineLoc, message);
+	this->host->reportError(file->filename, line, this->tokenLoc - lineLoc, this->loc - lineLoc, message);
 }
 
 int FuLexer::readByte()
@@ -4265,7 +4265,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			continue;
 		}
 		if (visibility == FuVisibility::public_)
-			this->host->reportError(this->host->program->sourceFiles.back().filename, line, column, line, column + 6, "Field cannot be public");
+			this->host->reportError(this->host->program->sourceFiles.back().filename, line, column, column + 6, "Field cannot be public");
 		if (callType != FuCallType::normal)
 			reportError(std::format("Field cannot be {}", callTypeToString(callType)));
 		if (type == this->host->program->system->voidType)
@@ -4352,10 +4352,10 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 	}
 }
 
-void FuConsoleHost::reportError(std::string_view filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, std::string_view message)
+void FuConsoleHost::reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message)
 {
 	this->hasErrors = true;
-	std::cerr << filename << "(" << (startLine + 1) << "): ERROR: " << message << '\n';
+	std::cerr << filename << "(" << (line + 1) << "): ERROR: " << message << '\n';
 }
 
 int FuSemaHost::getResourceLength(std::string_view name, const FuPrefixExpr * expr)
@@ -4368,8 +4368,7 @@ void FuSemaHost::reportStatementError(const FuStatement * statement, std::string
 	int line = this->program->getLine(statement->loc);
 	int column = statement->loc - this->program->lineLocs[line];
 	const FuSourceFile * file = this->program->getSourceFile(line);
-	line -= file->line;
-	reportError(file->filename, line, column, line, column + statement->getLocLength(), message);
+	reportError(file->filename, line - file->line, column, column + statement->getLocLength(), message);
 }
 FuSema::FuSema()
 {

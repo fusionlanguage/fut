@@ -172,7 +172,7 @@ export class FuLexer
 		let file = this.host.program.sourceFiles.at(-1);
 		let line = this.host.program.lineLocs.length - file.line - 1;
 		let lineLoc = this.host.program.lineLocs.at(-1);
-		this.host.reportError(file.filename, line, this.tokenLoc - lineLoc, line, this.loc - lineLoc, message);
+		this.host.reportError(file.filename, line, this.tokenLoc - lineLoc, this.loc - lineLoc, message);
 	}
 
 	#readByte()
@@ -4734,7 +4734,7 @@ export class FuParser extends FuLexer
 				continue;
 			}
 			if (visibility == FuVisibility.PUBLIC)
-				this.host.reportError(this.host.program.sourceFiles.at(-1).filename, line, column, line, column + 6, "Field cannot be public");
+				this.host.reportError(this.host.program.sourceFiles.at(-1).filename, line, column, column + 6, "Field cannot be public");
 			if (callType != FuCallType.NORMAL)
 				this.reportError(`Field cannot be ${FuParser.#callTypeToString(callType)}`);
 			if (type == this.host.program.system.voidType)
@@ -4821,8 +4821,7 @@ export class FuSemaHost extends FuParserHost
 		let line = this.program.getLine(statement.loc);
 		let column = statement.loc - this.program.lineLocs[line];
 		let file = this.program.getSourceFile(line);
-		line -= file.line;
-		this.reportError(file.filename, line, column, line, column + statement.getLocLength(), message);
+		this.reportError(file.filename, line - file.line, column, column + statement.getLocLength(), message);
 	}
 }
 
@@ -4834,10 +4833,10 @@ export class FuConsoleHost extends GenHost
 {
 	hasErrors = false;
 
-	reportError(filename, startLine, startUtf16Column, endLine, endUtf16Column, message)
+	reportError(filename, line, startUtf16Column, endUtf16Column, message)
 	{
 		this.hasErrors = true;
-		console.error(`${filename}(${startLine + 1}): ERROR: ${message}`);
+		console.error(`${filename}(${line + 1}): ERROR: ${message}`);
 	}
 }
 

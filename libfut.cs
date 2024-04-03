@@ -13,7 +13,7 @@ namespace Fusion
 
 		internal FuProgram Program;
 
-		public abstract void ReportError(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message);
+		public abstract void ReportError(string filename, int line, int startUtf16Column, int endUtf16Column, string message);
 	}
 
 	public enum FuToken
@@ -195,7 +195,7 @@ namespace Fusion
 			FuSourceFile file = this.Host.Program.SourceFiles[^1];
 			int line = this.Host.Program.LineLocs.Count - file.Line - 1;
 			int lineLoc = this.Host.Program.LineLocs[^1];
-			this.Host.ReportError(file.Filename, line, this.TokenLoc - lineLoc, line, this.Loc - lineLoc, message);
+			this.Host.ReportError(file.Filename, line, this.TokenLoc - lineLoc, this.Loc - lineLoc, message);
 		}
 
 		int ReadByte()
@@ -4526,7 +4526,7 @@ namespace Fusion
 					continue;
 				}
 				if (visibility == FuVisibility.Public)
-					this.Host.ReportError(this.Host.Program.SourceFiles[^1].Filename, line, column, line, column + 6, "Field cannot be public");
+					this.Host.ReportError(this.Host.Program.SourceFiles[^1].Filename, line, column, column + 6, "Field cannot be public");
 				if (callType != FuCallType.Normal)
 					ReportError($"Field cannot be {CallTypeToString(callType)}");
 				if (type == this.Host.Program.System.VoidType)
@@ -4605,10 +4605,10 @@ namespace Fusion
 
 		internal bool HasErrors = false;
 
-		public override void ReportError(string filename, int startLine, int startUtf16Column, int endLine, int endUtf16Column, string message)
+		public override void ReportError(string filename, int line, int startUtf16Column, int endUtf16Column, string message)
 		{
 			this.HasErrors = true;
-			Console.Error.WriteLine($"{filename}({startLine + 1}): ERROR: {message}");
+			Console.Error.WriteLine($"{filename}({line + 1}): ERROR: {message}");
 		}
 	}
 
@@ -4622,8 +4622,7 @@ namespace Fusion
 			int line = this.Program.GetLine(statement.Loc);
 			int column = statement.Loc - this.Program.LineLocs[line];
 			FuSourceFile file = this.Program.GetSourceFile(line);
-			line -= file.Line;
-			ReportError(file.Filename, line, column, line, column + statement.GetLocLength(), message);
+			ReportError(file.Filename, line - file.Line, column, column + statement.GetLocLength(), message);
 		}
 	}
 
