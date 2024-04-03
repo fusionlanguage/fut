@@ -2971,6 +2971,10 @@ class FuMethodGroup extends FuMember
 export class FuContainerType extends FuType
 {
 	isPublic;
+	startLine;
+	startColumn;
+	endLine;
+	endColumn;
 }
 
 export class FuEnum extends FuContainerType
@@ -4591,6 +4595,23 @@ export class FuParser extends FuLexer
 			method.body = this.#parseBlock();
 	}
 
+	#getCurrentLine()
+	{
+		return this.host.program.lineLocs.length - this.host.program.sourceFiles.at(-1).line - 1;
+	}
+
+	#getTokenColumn()
+	{
+		return this.tokenLoc - this.host.program.lineLocs.at(-1);
+	}
+
+	#closeContainer(type)
+	{
+		type.endLine = this.#getCurrentLine();
+		type.endColumn = this.loc - this.host.program.lineLocs.at(-1);
+		this.expect(FuToken.RIGHT_BRACE);
+	}
+
 	static #callTypeToString(callType)
 	{
 		switch (callType) {
@@ -4611,10 +4632,10 @@ export class FuParser extends FuLexer
 		}
 	}
 
-	#parseClass(doc, isPublic, callType)
+	#parseClass(doc, line, column, isPublic, callType)
 	{
 		this.expect(FuToken.CLASS);
-		let klass = Object.assign(new FuClass(), { loc: this.tokenLoc, documentation: doc, isPublic: isPublic, callType: callType, name: this.stringValue });
+		let klass = Object.assign(new FuClass(), { loc: this.tokenLoc, documentation: doc, startLine: line, startColumn: column, isPublic: isPublic, callType: callType, name: this.stringValue });
 		if (this.expect(FuToken.ID))
 			this.#addSymbol(this.host.program, klass);
 		if (this.eat(FuToken.COLON)) {
@@ -4700,16 +4721,18 @@ export class FuParser extends FuLexer
 			this.#addSymbol(klass, field);
 			this.expect(FuToken.SEMICOLON);
 		}
-		this.expect(FuToken.RIGHT_BRACE);
+		this.#closeContainer(klass);
 	}
 
-	#parseEnum(doc, isPublic)
+	#parseEnum(doc, line, column, isPublic)
 	{
 		this.expect(FuToken.ENUM);
 		let flags = this.eat(FuToken.ASTERISK);
 		let enu = this.host.program.system.newEnum(flags);
-		enu.loc = this.tokenLoc;
 		enu.documentation = doc;
+		enu.startLine = line;
+		enu.startColumn = column;
+		enu.loc = this.tokenLoc;
 		enu.isPublic = isPublic;
 		enu.name = this.stringValue;
 		if (this.expect(FuToken.ID))
@@ -4725,7 +4748,7 @@ export class FuParser extends FuLexer
 			this.#addSymbol(enu, konst);
 		}
 		while (this.eat(FuToken.COMMA));
-		this.expect(FuToken.RIGHT_BRACE);
+		this.#closeContainer(enu);
 	}
 
 	parse(filename, input, inputLength)
@@ -4733,18 +4756,20 @@ export class FuParser extends FuLexer
 		this.open(filename, input, inputLength);
 		while (!this.see(FuToken.END_OF_FILE)) {
 			let doc = this.#parseDoc();
+			let line = this.#getCurrentLine();
+			let column = this.#getTokenColumn();
 			let isPublic = this.eat(FuToken.PUBLIC);
 			switch (this.currentToken) {
 			case FuToken.CLASS:
-				this.#parseClass(doc, isPublic, FuCallType.NORMAL);
+				this.#parseClass(doc, line, column, isPublic, FuCallType.NORMAL);
 				break;
 			case FuToken.STATIC:
 			case FuToken.ABSTRACT:
 			case FuToken.SEALED:
-				this.#parseClass(doc, isPublic, this.#parseCallType());
+				this.#parseClass(doc, line, column, isPublic, this.#parseCallType());
 				break;
 			case FuToken.ENUM:
-				this.#parseEnum(doc, isPublic);
+				this.#parseEnum(doc, line, column, isPublic);
 				break;
 			case FuToken.NATIVE:
 				this.host.program.topLevelNatives.push(this.#parseNative().content);

@@ -19,7 +19,7 @@
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
 import * as vscode from "vscode";
-import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost } from "./fucheck.js";
+import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuEnum } from "./fucheck.js";
 
 class VsCodeHost extends FuSemaHost
 {
@@ -154,6 +154,25 @@ class VsCodeDefinitionProvider extends VsCodeHost
 	}
 }
 
+class VsCodeSymbolProvider extends VsCodeHost
+{
+	provideSymbols(document: vscode.TextDocument): vscode.DocumentSymbol[]
+	{
+		this.parseDocument(document, this.createParser());
+		const symbols : vscode.DocumentSymbol[] = [];
+		for (let container = this.program.first; container != null; container = container.next) {
+			const loc = container.loc;
+			const line = this.program.getLine(loc);
+			const startColumn = loc - this.program.lineLocs[line];
+			const endColumn = startColumn + container.getLocLength();
+			symbols.push(new vscode.DocumentSymbol(container.name, "", container instanceof FuEnum ? vscode.SymbolKind.Enum : vscode.SymbolKind.Class,
+				new vscode.Range(container.startLine, container.startColumn, container.endLine, container.endColumn),
+				new vscode.Range(line, startColumn, line, endColumn)));
+		}
+		return symbols;
+	}
+}
+
 export function activate(context: vscode.ExtensionContext): void
 {
 	const diagnostics = new VsCodeDiagnostics();
@@ -168,6 +187,11 @@ export function activate(context: vscode.ExtensionContext): void
 	vscode.languages.registerDefinitionProvider("fusion", {
 			provideDefinition(document, position, token) {
 				return new VsCodeDefinitionProvider().findDefinition(document, position);
+			}
+		});
+	vscode.languages.registerDocumentSymbolProvider("fusion", {
+			provideDocumentSymbols(document, token) {
+				return new VsCodeSymbolProvider().provideSymbols(document);
 			}
 		});
 }

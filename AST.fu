@@ -1277,6 +1277,10 @@ class FuMethodGroup : FuMember
 public abstract class FuContainerType : FuType
 {
 	internal bool IsPublic;
+	internal int StartLine;
+	internal int StartColumn;
+	internal int EndLine;
+	internal int EndColumn;
 }
 
 public class FuEnum : FuContainerType

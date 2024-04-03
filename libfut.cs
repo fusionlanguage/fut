@@ -2839,6 +2839,14 @@ namespace Fusion
 	{
 
 		internal bool IsPublic;
+
+		internal int StartLine;
+
+		internal int StartColumn;
+
+		internal int EndLine;
+
+		internal int EndColumn;
 	}
 
 	public class FuEnum : FuContainerType
@@ -4382,6 +4390,17 @@ namespace Fusion
 				method.Body = ParseBlock();
 		}
 
+		int GetCurrentLine() => this.Host.Program.LineLocs.Count - this.Host.Program.SourceFiles[^1].Line - 1;
+
+		int GetTokenColumn() => this.TokenLoc - this.Host.Program.LineLocs[^1];
+
+		void CloseContainer(FuContainerType type)
+		{
+			type.EndLine = GetCurrentLine();
+			type.EndColumn = this.Loc - this.Host.Program.LineLocs[^1];
+			Expect(FuToken.RightBrace);
+		}
+
 		static string CallTypeToString(FuCallType callType)
 		{
 			switch (callType) {
@@ -4402,10 +4421,10 @@ namespace Fusion
 			}
 		}
 
-		void ParseClass(FuCodeDoc doc, bool isPublic, FuCallType callType)
+		void ParseClass(FuCodeDoc doc, int line, int column, bool isPublic, FuCallType callType)
 		{
 			Expect(FuToken.Class);
-			FuClass klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
+			FuClass klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 			if (Expect(FuToken.Id))
 				AddSymbol(this.Host.Program, klass);
 			if (Eat(FuToken.Colon)) {
@@ -4490,16 +4509,18 @@ namespace Fusion
 				AddSymbol(klass, field);
 				Expect(FuToken.Semicolon);
 			}
-			Expect(FuToken.RightBrace);
+			CloseContainer(klass);
 		}
 
-		void ParseEnum(FuCodeDoc doc, bool isPublic)
+		void ParseEnum(FuCodeDoc doc, int line, int column, bool isPublic)
 		{
 			Expect(FuToken.Enum);
 			bool flags = Eat(FuToken.Asterisk);
 			FuEnum enu = this.Host.Program.System.NewEnum(flags);
-			enu.Loc = this.TokenLoc;
 			enu.Documentation = doc;
+			enu.StartLine = line;
+			enu.StartColumn = column;
+			enu.Loc = this.TokenLoc;
 			enu.IsPublic = isPublic;
 			enu.Name = this.StringValue;
 			if (Expect(FuToken.Id))
@@ -4515,7 +4536,7 @@ namespace Fusion
 				AddSymbol(enu, konst);
 			}
 			while (Eat(FuToken.Comma));
-			Expect(FuToken.RightBrace);
+			CloseContainer(enu);
 		}
 
 		public void Parse(string filename, byte[] input, int inputLength)
@@ -4523,18 +4544,20 @@ namespace Fusion
 			Open(filename, input, inputLength);
 			while (!See(FuToken.EndOfFile)) {
 				FuCodeDoc doc = ParseDoc();
+				int line = GetCurrentLine();
+				int column = GetTokenColumn();
 				bool isPublic = Eat(FuToken.Public);
 				switch (this.CurrentToken) {
 				case FuToken.Class:
-					ParseClass(doc, isPublic, FuCallType.Normal);
+					ParseClass(doc, line, column, isPublic, FuCallType.Normal);
 					break;
 				case FuToken.Static:
 				case FuToken.Abstract:
 				case FuToken.Sealed:
-					ParseClass(doc, isPublic, ParseCallType());
+					ParseClass(doc, line, column, isPublic, ParseCallType());
 					break;
 				case FuToken.Enum:
-					ParseEnum(doc, isPublic);
+					ParseEnum(doc, line, column, isPublic);
 					break;
 				case FuToken.Native:
 					this.Host.Program.TopLevelNatives.Add(ParseNative().Content);

@@ -4106,6 +4106,23 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 		method->body = parseBlock();
 }
 
+int FuParser::getCurrentLine() const
+{
+	return std::ssize(this->host->program->lineLocs) - this->host->program->sourceFiles.back().line - 1;
+}
+
+int FuParser::getTokenColumn() const
+{
+	return this->tokenLoc - this->host->program->lineLocs.back();
+}
+
+void FuParser::closeContainer(FuContainerType * type)
+{
+	type->endLine = getCurrentLine();
+	type->endColumn = this->loc - this->host->program->lineLocs.back();
+	expect(FuToken::rightBrace);
+}
+
 std::string_view FuParser::callTypeToString(FuCallType callType)
 {
 	switch (callType) {
@@ -4126,12 +4143,14 @@ std::string_view FuParser::callTypeToString(FuCallType callType)
 	}
 }
 
-void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallType callType)
+void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic, FuCallType callType)
 {
 	expect(FuToken::class_);
 	std::shared_ptr<FuClass> klass = std::make_shared<FuClass>();
 	klass->loc = this->tokenLoc;
 	klass->documentation = doc;
+	klass->startLine = line;
+	klass->startColumn = column;
 	klass->isPublic = isPublic;
 	klass->callType = callType;
 	klass->name = this->stringValue;
@@ -4240,16 +4259,18 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallT
 		addSymbol(klass.get(), field);
 		expect(FuToken::semicolon);
 	}
-	expect(FuToken::rightBrace);
+	closeContainer(klass.get());
 }
 
-void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
+void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic)
 {
 	expect(FuToken::enum_);
 	bool flags = eat(FuToken::asterisk);
 	std::shared_ptr<FuEnum> enu = this->host->program->system->newEnum(flags);
-	enu->loc = this->tokenLoc;
 	enu->documentation = doc;
+	enu->startLine = line;
+	enu->startColumn = column;
+	enu->loc = this->tokenLoc;
 	enu->isPublic = isPublic;
 	enu->name = this->stringValue;
 	if (expect(FuToken::id))
@@ -4271,7 +4292,7 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic)
 		addSymbol(enu.get(), konst);
 	}
 	while (eat(FuToken::comma));
-	expect(FuToken::rightBrace);
+	closeContainer(enu.get());
 }
 
 void FuParser::parse(std::string_view filename, uint8_t const * input, int inputLength)
@@ -4279,18 +4300,20 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 	open(filename, input, inputLength);
 	while (!see(FuToken::endOfFile)) {
 		std::shared_ptr<FuCodeDoc> doc = parseDoc();
+		int line = getCurrentLine();
+		int column = getTokenColumn();
 		bool isPublic = eat(FuToken::public_);
 		switch (this->currentToken) {
 		case FuToken::class_:
-			parseClass(doc, isPublic, FuCallType::normal);
+			parseClass(doc, line, column, isPublic, FuCallType::normal);
 			break;
 		case FuToken::static_:
 		case FuToken::abstract:
 		case FuToken::sealed:
-			parseClass(doc, isPublic, parseCallType());
+			parseClass(doc, line, column, isPublic, parseCallType());
 			break;
 		case FuToken::enum_:
-			parseEnum(doc, isPublic);
+			parseEnum(doc, line, column, isPublic);
 			break;
 		case FuToken::native:
 			this->host->program->topLevelNatives.push_back(parseNative()->content);

@@ -1341,6 +1341,10 @@ protected:
 	FuContainerType() = default;
 public:
 	bool isPublic;
+	int startLine;
+	int startColumn;
+	int endLine;
+	int endColumn;
 };
 
 class FuEnum : public FuContainerType
@@ -1619,9 +1623,12 @@ private:
 	std::shared_ptr<FuStatement> parseStatement();
 	FuCallType parseCallType();
 	void parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method);
+	int getCurrentLine() const;
+	int getTokenColumn() const;
+	void closeContainer(FuContainerType * type);
 	static std::string_view callTypeToString(FuCallType callType);
-	void parseClass(std::shared_ptr<FuCodeDoc> doc, bool isPublic, FuCallType callType);
-	void parseEnum(std::shared_ptr<FuCodeDoc> doc, bool isPublic);
+	void parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic, FuCallType callType);
+	void parseEnum(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic);
 };
 
 class FuSemaHost : public FuParserHost
