@@ -1,0 +1,4 @@
+public abstract class Test
+{
+	abstract bool Run(); //ERROR: Private method cannot be abstract
+}

@@ -1,0 +1,7 @@
+public class Test
+{
+	virtual bool Run() //ERROR: Private method cannot be virtual
+	{
+		return true;
+	}
+}

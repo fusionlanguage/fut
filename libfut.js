@@ -4634,8 +4634,6 @@ export class FuParser extends FuLexer
 		switch (callType) {
 		case FuCallType.STATIC:
 			return "static";
-		case FuCallType.NORMAL:
-			return "normal";
 		case FuCallType.ABSTRACT:
 			return "abstract";
 		case FuCallType.VIRTUAL:
@@ -4647,6 +4645,17 @@ export class FuParser extends FuLexer
 		default:
 			throw new Error();
 		}
+	}
+
+	#reportFormerError(line, column, length, message)
+	{
+		this.host.reportError(this.host.program.sourceFiles.at(-1).filename, line, column, column + length, message);
+	}
+
+	#reportCallTypeError(line, column, kind, callType)
+	{
+		let callTypeString = FuParser.#callTypeToString(callType);
+		this.#reportFormerError(line, column, callTypeString.length, `${kind} cannot be ${callTypeString}`);
 	}
 
 	#parseClass(doc, line, column, isPublic, callType)
@@ -4690,6 +4699,8 @@ export class FuParser extends FuLexer
 				this.#addSymbol(klass, konst);
 				continue;
 			}
+			let callTypeLine = this.#getCurrentLine();
+			let callTypeColumn = this.#getTokenColumn();
 			callType = this.#parseCallType();
 			let type = this.eat(FuToken.VOID) ? this.host.program.system.voidType : this.#parseType();
 			let call;
@@ -4700,7 +4711,7 @@ export class FuParser extends FuLexer
 					if (klass.callType == FuCallType.STATIC)
 						this.reportError("Constructor in a static class");
 					if (callType != FuCallType.NORMAL)
-						this.reportError(`Constructor cannot be ${FuParser.#callTypeToString(callType)}`);
+						this.#reportCallTypeError(callTypeLine, callTypeColumn, "Constructor", callType);
 					if (call.arguments_.length != 0)
 						this.reportError("Constructor parameters not supported");
 					if (klass.constructor_ != null)
@@ -4724,19 +4735,19 @@ export class FuParser extends FuLexer
 				else if (klass.callType == FuCallType.STATIC)
 					this.reportError("Only static methods allowed in a static class");
 				else if (callType == FuCallType.ABSTRACT)
-					this.reportError("Abstract methods allowed only in an abstract class");
+					this.#reportFormerError(callTypeLine, callTypeColumn, 8, "Abstract methods allowed only in an abstract class");
 				else if (klass.callType == FuCallType.SEALED && callType == FuCallType.VIRTUAL)
-					this.reportError("Virtual methods disallowed in a sealed class");
+					this.#reportFormerError(callTypeLine, callTypeColumn, 7, "Virtual methods disallowed in a sealed class");
 				if (visibility == FuVisibility.PRIVATE && callType != FuCallType.STATIC && callType != FuCallType.NORMAL)
-					this.reportError(`${FuParser.#callTypeToString(callType)} method cannot be private`);
+					this.#reportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 				let method = Object.assign(new FuMethod(), { startLine: line, startColumn: column, loc: loc, documentation: doc, visibility: visibility, callType: callType, typeExpr: type, name: name });
 				this.#parseMethod(klass, method);
 				continue;
 			}
 			if (visibility == FuVisibility.PUBLIC)
-				this.host.reportError(this.host.program.sourceFiles.at(-1).filename, line, column, column + 6, "Field cannot be public");
+				this.#reportFormerError(line, column, 6, "Field cannot be public");
 			if (callType != FuCallType.NORMAL)
-				this.reportError(`Field cannot be ${FuParser.#callTypeToString(callType)}`);
+				this.#reportCallTypeError(callTypeLine, callTypeColumn, "Field", callType);
 			if (type == this.host.program.system.voidType)
 				this.reportError("Field cannot be void");
 			let field = Object.assign(new FuField(), { startLine: line, startColumn: column, loc: loc, documentation: doc, visibility: visibility, typeExpr: type, name: name, value: this.#parseInitializer() });

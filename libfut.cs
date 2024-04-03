@@ -4427,8 +4427,6 @@ namespace Fusion
 			switch (callType) {
 			case FuCallType.Static:
 				return "static";
-			case FuCallType.Normal:
-				return "normal";
 			case FuCallType.Abstract:
 				return "abstract";
 			case FuCallType.Virtual:
@@ -4440,6 +4438,17 @@ namespace Fusion
 			default:
 				throw new NotImplementedException();
 			}
+		}
+
+		void ReportFormerError(int line, int column, int length, string message)
+		{
+			this.Host.ReportError(this.Host.Program.SourceFiles[^1].Filename, line, column, column + length, message);
+		}
+
+		void ReportCallTypeError(int line, int column, string kind, FuCallType callType)
+		{
+			string callTypeString = CallTypeToString(callType);
+			ReportFormerError(line, column, callTypeString.Length, $"{kind} cannot be {callTypeString}");
 		}
 
 		void ParseClass(FuCodeDoc doc, int line, int column, bool isPublic, FuCallType callType)
@@ -4483,6 +4492,8 @@ namespace Fusion
 					AddSymbol(klass, konst);
 					continue;
 				}
+				int callTypeLine = GetCurrentLine();
+				int callTypeColumn = GetTokenColumn();
 				callType = ParseCallType();
 				FuExpr type = Eat(FuToken.Void) ? this.Host.Program.System.VoidType : ParseType();
 				if (See(FuToken.LeftBrace) && type is FuCallExpr call) {
@@ -4492,7 +4503,7 @@ namespace Fusion
 						if (klass.CallType == FuCallType.Static)
 							ReportError("Constructor in a static class");
 						if (callType != FuCallType.Normal)
-							ReportError($"Constructor cannot be {CallTypeToString(callType)}");
+							ReportCallTypeError(callTypeLine, callTypeColumn, "Constructor", callType);
 						if (call.Arguments.Count != 0)
 							ReportError("Constructor parameters not supported");
 						if (klass.Constructor != null)
@@ -4516,19 +4527,19 @@ namespace Fusion
 					else if (klass.CallType == FuCallType.Static)
 						ReportError("Only static methods allowed in a static class");
 					else if (callType == FuCallType.Abstract)
-						ReportError("Abstract methods allowed only in an abstract class");
+						ReportFormerError(callTypeLine, callTypeColumn, 8, "Abstract methods allowed only in an abstract class");
 					else if (klass.CallType == FuCallType.Sealed && callType == FuCallType.Virtual)
-						ReportError("Virtual methods disallowed in a sealed class");
+						ReportFormerError(callTypeLine, callTypeColumn, 7, "Virtual methods disallowed in a sealed class");
 					if (visibility == FuVisibility.Private && callType != FuCallType.Static && callType != FuCallType.Normal)
-						ReportError($"{CallTypeToString(callType)} method cannot be private");
+						ReportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 					FuMethod method = new FuMethod { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 					ParseMethod(klass, method);
 					continue;
 				}
 				if (visibility == FuVisibility.Public)
-					this.Host.ReportError(this.Host.Program.SourceFiles[^1].Filename, line, column, column + 6, "Field cannot be public");
+					ReportFormerError(line, column, 6, "Field cannot be public");
 				if (callType != FuCallType.Normal)
-					ReportError($"Field cannot be {CallTypeToString(callType)}");
+					ReportCallTypeError(callTypeLine, callTypeColumn, "Field", callType);
 				if (type == this.Host.Program.System.VoidType)
 					ReportError("Field cannot be void");
 				FuField field = new FuField { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };

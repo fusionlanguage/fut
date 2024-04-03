@@ -4141,8 +4141,6 @@ std::string_view FuParser::callTypeToString(FuCallType callType)
 	switch (callType) {
 	case FuCallType::static_:
 		return "static";
-	case FuCallType::normal:
-		return "normal";
 	case FuCallType::abstract:
 		return "abstract";
 	case FuCallType::virtual_:
@@ -4154,6 +4152,17 @@ std::string_view FuParser::callTypeToString(FuCallType callType)
 	default:
 		std::abort();
 	}
+}
+
+void FuParser::reportFormerError(int line, int column, int length, std::string_view message) const
+{
+	this->host->reportError(this->host->program->sourceFiles.back().filename, line, column, column + length, message);
+}
+
+void FuParser::reportCallTypeError(int line, int column, std::string_view kind, FuCallType callType) const
+{
+	std::string_view callTypeString = callTypeToString(callType);
+	reportFormerError(line, column, std::ssize(callTypeString), std::format("{} cannot be {}", kind, callTypeString));
 }
 
 void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic, FuCallType callType)
@@ -4204,6 +4213,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			addSymbol(klass.get(), konst);
 			continue;
 		}
+		int callTypeLine = getCurrentLine();
+		int callTypeColumn = getTokenColumn();
 		callType = parseCallType();
 		std::shared_ptr<FuExpr> type = eat(FuToken::void_) ? this->host->program->system->voidType : parseType();
 		const FuCallExpr * call;
@@ -4214,7 +4225,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 				if (klass->callType == FuCallType::static_)
 					reportError("Constructor in a static class");
 				if (callType != FuCallType::normal)
-					reportError(std::format("Constructor cannot be {}", callTypeToString(callType)));
+					reportCallTypeError(callTypeLine, callTypeColumn, "Constructor", callType);
 				if (std::ssize(call->arguments) != 0)
 					reportError("Constructor parameters not supported");
 				if (klass->constructor != nullptr)
@@ -4247,11 +4258,11 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			else if (klass->callType == FuCallType::static_)
 				reportError("Only static methods allowed in a static class");
 			else if (callType == FuCallType::abstract)
-				reportError("Abstract methods allowed only in an abstract class");
+				reportFormerError(callTypeLine, callTypeColumn, 8, "Abstract methods allowed only in an abstract class");
 			else if (klass->callType == FuCallType::sealed && callType == FuCallType::virtual_)
-				reportError("Virtual methods disallowed in a sealed class");
+				reportFormerError(callTypeLine, callTypeColumn, 7, "Virtual methods disallowed in a sealed class");
 			if (visibility == FuVisibility::private_ && callType != FuCallType::static_ && callType != FuCallType::normal)
-				reportError(std::format("{} method cannot be private", callTypeToString(callType)));
+				reportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 			std::shared_ptr<FuMethod> method = std::make_shared<FuMethod>();
 			method->startLine = line;
 			method->startColumn = column;
@@ -4265,9 +4276,9 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			continue;
 		}
 		if (visibility == FuVisibility::public_)
-			this->host->reportError(this->host->program->sourceFiles.back().filename, line, column, column + 6, "Field cannot be public");
+			reportFormerError(line, column, 6, "Field cannot be public");
 		if (callType != FuCallType::normal)
-			reportError(std::format("Field cannot be {}", callTypeToString(callType)));
+			reportCallTypeError(callTypeLine, callTypeColumn, "Field", callType);
 		if (type == this->host->program->system->voidType)
 			reportError("Field cannot be void");
 		std::shared_ptr<FuField> field = std::make_shared<FuField>();
