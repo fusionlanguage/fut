@@ -4176,8 +4176,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile)) {
 		doc = parseDoc();
-		int line = getCurrentLine();
-		int column = getTokenColumn();
+		line = getCurrentLine();
+		column = getTokenColumn();
 		FuVisibility visibility;
 		switch (this->currentToken) {
 		case FuToken::internal:

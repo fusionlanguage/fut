@@ -4662,8 +4662,8 @@ export class FuParser extends FuLexer
 		this.expect(FuToken.LEFT_BRACE);
 		while (!this.see(FuToken.RIGHT_BRACE) && !this.see(FuToken.END_OF_FILE)) {
 			doc = this.#parseDoc();
-			let line = this.#getCurrentLine();
-			let column = this.#getTokenColumn();
+			line = this.#getCurrentLine();
+			column = this.#getTokenColumn();
 			let visibility;
 			switch (this.currentToken) {
 			case FuToken.INTERNAL:

@@ -4455,8 +4455,8 @@ namespace Fusion
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 				doc = ParseDoc();
-				int line = GetCurrentLine();
-				int column = GetTokenColumn();
+				line = GetCurrentLine();
+				column = GetTokenColumn();
 				FuVisibility visibility;
 				switch (this.CurrentToken) {
 				case FuToken.Internal:

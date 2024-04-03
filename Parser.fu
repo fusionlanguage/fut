@@ -981,9 +981,8 @@ public class FuParser : FuLexer
 
 		while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 			doc = ParseDoc();
-
-			int line = GetCurrentLine();
-			int column = GetTokenColumn();
+			line = GetCurrentLine();
+			column = GetTokenColumn();
 
 			FuVisibility visibility;
 			switch (this.CurrentToken) {
