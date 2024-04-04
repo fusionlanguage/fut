@@ -1075,6 +1075,10 @@
 				{
 					"name": "keyword.operator.arithmetic.fu",
 					"match": "[-+*/%]"
+				},
+				{
+					"name": "keyword.operator.expression.pattern.is.fu",
+					"match": "\\bis\\b"
 				}
 			]
 		},
