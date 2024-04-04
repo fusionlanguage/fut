@@ -996,7 +996,7 @@
 			]
 		},
 		"resource-expression": {
-			"begin": "\\b(resource)\\s*(<)\\s*(byte)\\s*([)\\s*(])\\s*(>)\\s*(\\()",
+			"begin": "\\b(resource)\\s*(<)\\s*(byte)\\s*(\\[)\\s*(\\])\\s*(>)\\s*(\\()",
 			"beginCaptures": {
 				"1": {
 					"name": "keyword.other.resource.fu"
