@@ -314,7 +314,7 @@ public abstract class FuVisitor
 
 public abstract class FuStatement
 {
-	internal int Loc;
+	internal int Loc = 0;
 	public virtual int GetLocLength() => 0;
 	public abstract bool CompletesNormally();
 	public abstract void AcceptStatement(FuVisitor! visitor);

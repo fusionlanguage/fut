@@ -1570,7 +1570,7 @@ namespace Fusion
 	public abstract class FuStatement
 	{
 
-		internal int Loc;
+		internal int Loc = 0;
 
 		public virtual int GetLocLength() => 0;
 
@@ -3511,6 +3511,8 @@ namespace Fusion
 			if (this.FoundDefinition == null || this.FoundDefinition.Symbol == null)
 				return null;
 			int loc = this.FoundDefinition.Symbol.Loc;
+			if (loc <= 0)
+				return null;
 			int line = this.Host.Program.GetLine(loc);
 			FuSourceFile file = this.Host.Program.GetSourceFile(line);
 			this.FindDefinitionLine = line - file.Line;

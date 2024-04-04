@@ -2998,6 +2998,8 @@ std::string_view FuParser::getFoundDefinitionFilename()
 	if (this->foundDefinition == nullptr || this->foundDefinition->symbol == nullptr)
 		return std::string_view();
 	int loc = this->foundDefinition->symbol->loc;
+	if (loc <= 0)
+		return std::string_view();
 	int line = this->host->program->getLine(loc);
 	const FuSourceFile * file = this->host->program->getSourceFile(line);
 	this->findDefinitionLine = line - file->line;

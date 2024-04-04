@@ -664,7 +664,7 @@ public:
 protected:
 	FuStatement() = default;
 public:
-	int loc;
+	int loc = 0;
 };
 
 class FuExpr : public FuStatement

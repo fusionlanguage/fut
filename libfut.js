@@ -1480,7 +1480,7 @@ export class FuVisitor
 
 export class FuStatement
 {
-	loc;
+	loc = 0;
 
 	getLocLength()
 	{
@@ -3704,6 +3704,8 @@ export class FuParser extends FuLexer
 		if (this.#foundDefinition == null || this.#foundDefinition.symbol == null)
 			return null;
 		let loc = this.#foundDefinition.symbol.loc;
+		if (loc <= 0)
+			return null;
 		let line = this.host.program.getLine(loc);
 		let file = this.host.program.getSourceFile(line);
 		this.#findDefinitionLine = line - file.line;
