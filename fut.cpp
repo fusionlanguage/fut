@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 			return 0;
 		}
 		else if (strcmp(arg, "--version") == 0) {
-			puts("Fusion Transpiler 3.2.1 (C++)");
+			puts("Fusion Transpiler 3.2.2 (C++)");
 			return 0;
 		}
 		else if (arg[1] != '\0' && arg[2] == '\0' && i + 1 < argc) {
