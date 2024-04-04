@@ -5,7 +5,8 @@ abstract class Base
 
 class Derived : Base
 {
-	override void Foo() //ERROR: Private method cannot be override
+	override //ERROR: Private method cannot be override
+		void Foo()
 	{
 	}
 }

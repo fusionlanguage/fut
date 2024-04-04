@@ -1,4 +1,5 @@
 public abstract class Test
 {
-	abstract bool Run(); //ERROR: Private method cannot be abstract
+	abstract //ERROR: Private method cannot be abstract
+		bool Run();
 }

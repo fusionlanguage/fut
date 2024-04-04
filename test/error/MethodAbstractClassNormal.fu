@@ -1,4 +1,6 @@
 public class Test
 {
-	protected abstract bool Run(); //ERROR: Abstract methods allowed only in an abstract class
+	protected
+		abstract //ERROR: Abstract methods allowed only in an abstract class
+		bool Run();
 }

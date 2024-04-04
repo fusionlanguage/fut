@@ -1,6 +1,7 @@
 public class Test
 {
-	virtual bool Run() //ERROR: Private method cannot be virtual
+	virtual //ERROR: Private method cannot be virtual
+		bool Run()
 	{
 		return true;
 	}
