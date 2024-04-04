@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		foreach (int i in what) { //ERROR: 'what' not found
+		}
+		return true;
+	}
+}

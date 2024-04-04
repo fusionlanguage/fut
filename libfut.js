@@ -6700,44 +6700,45 @@ export class FuSema
 		this.#openScope(statement);
 		let element = statement.getVar();
 		this.#resolveType(element);
-		this.#visitExpr(statement.collection);
-		let klass;
-		if ((klass = statement.collection.type) instanceof FuClassType) {
-			switch (klass.class.id) {
-			case FuId.STRING_CLASS:
-				if (statement.count() != 1 || !element.type.isAssignableFrom(this.#host.program.system.intType))
-					this.#reportError(element.type, "Expected 'int' iterator variable");
-				break;
-			case FuId.ARRAY_STORAGE_CLASS:
-			case FuId.LIST_CLASS:
-			case FuId.HASH_SET_CLASS:
-			case FuId.SORTED_SET_CLASS:
-				if (statement.count() != 1)
-					this.#reportError(statement.getValueVar(), "Expected one iterator variable");
-				else if (!element.type.isAssignableFrom(klass.getElementType()))
-					this.#reportError(element.type, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
-				break;
-			case FuId.DICTIONARY_CLASS:
-			case FuId.SORTED_DICTIONARY_CLASS:
-			case FuId.ORDERED_DICTIONARY_CLASS:
-				if (statement.count() != 2)
-					this.#reportError(element, "Expected '(TKey key, TValue value)' iterator");
-				else {
-					let value = statement.getValueVar();
-					this.#resolveType(value);
-					if (!element.type.isAssignableFrom(klass.getKeyType()))
-						this.#reportError(element, `Cannot convert '${klass.getKeyType()}' to '${element.type}'`);
-					if (!value.type.isAssignableFrom(klass.getValueType()))
-						this.#reportError(value, `Cannot convert '${klass.getValueType()}' to '${value.type}'`);
+		if (this.#visitExpr(statement.collection) != this.#poison) {
+			let klass;
+			if ((klass = statement.collection.type) instanceof FuClassType) {
+				switch (klass.class.id) {
+				case FuId.STRING_CLASS:
+					if (statement.count() != 1 || !element.type.isAssignableFrom(this.#host.program.system.intType))
+						this.#reportError(element.type, "Expected 'int' iterator variable");
+					break;
+				case FuId.ARRAY_STORAGE_CLASS:
+				case FuId.LIST_CLASS:
+				case FuId.HASH_SET_CLASS:
+				case FuId.SORTED_SET_CLASS:
+					if (statement.count() != 1)
+						this.#reportError(statement.getValueVar(), "Expected one iterator variable");
+					else if (!element.type.isAssignableFrom(klass.getElementType()))
+						this.#reportError(element.type, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
+					break;
+				case FuId.DICTIONARY_CLASS:
+				case FuId.SORTED_DICTIONARY_CLASS:
+				case FuId.ORDERED_DICTIONARY_CLASS:
+					if (statement.count() != 2)
+						this.#reportError(element, "Expected '(TKey key, TValue value)' iterator");
+					else {
+						let value = statement.getValueVar();
+						this.#resolveType(value);
+						if (!element.type.isAssignableFrom(klass.getKeyType()))
+							this.#reportError(element, `Cannot convert '${klass.getKeyType()}' to '${element.type}'`);
+						if (!value.type.isAssignableFrom(klass.getValueType()))
+							this.#reportError(value, `Cannot convert '${klass.getValueType()}' to '${value.type}'`);
+					}
+					break;
+				default:
+					this.#reportError(statement.collection, `'foreach' invalid on '${klass.class.name}'`);
+					break;
 				}
-				break;
-			default:
-				this.#reportError(statement.collection, `'foreach' invalid on '${klass.class.name}'`);
-				break;
 			}
+			else
+				this.#reportError(statement.collection, `'foreach' invalid on '${statement.collection.type}'`);
 		}
-		else
-			this.#reportError(statement.collection, `'foreach' invalid on '${statement.collection.type}'`);
 		statement.setCompletesNormally(true);
 		this.#visitStatement(statement.body);
 		this.#closeScope();

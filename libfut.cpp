@@ -6264,43 +6264,44 @@ void FuSema::visitForeach(FuForeach * statement)
 	openScope(statement);
 	FuVar * element = statement->getVar();
 	resolveType(element);
-	visitExpr(statement->collection);
-	if (const FuClassType *klass = dynamic_cast<const FuClassType *>(statement->collection->type.get())) {
-		switch (klass->class_->id) {
-		case FuId::stringClass:
-			if (statement->count() != 1 || !element->type->isAssignableFrom(this->host->program->system->intType.get()))
-				reportError(element->type.get(), "Expected 'int' iterator variable");
-			break;
-		case FuId::arrayStorageClass:
-		case FuId::listClass:
-		case FuId::hashSetClass:
-		case FuId::sortedSetClass:
-			if (statement->count() != 1)
-				reportError(statement->getValueVar(), "Expected one iterator variable");
-			else if (!element->type->isAssignableFrom(klass->getElementType().get()))
-				reportError(element->type.get(), std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
-			break;
-		case FuId::dictionaryClass:
-		case FuId::sortedDictionaryClass:
-		case FuId::orderedDictionaryClass:
-			if (statement->count() != 2)
-				reportError(element, "Expected '(TKey key, TValue value)' iterator");
-			else {
-				FuVar * value = statement->getValueVar();
-				resolveType(value);
-				if (!element->type->isAssignableFrom(klass->getKeyType()))
-					reportError(element, std::format("Cannot convert '{}' to '{}'", klass->getKeyType()->toString(), element->type->toString()));
-				if (!value->type->isAssignableFrom(klass->getValueType().get()))
-					reportError(value, std::format("Cannot convert '{}' to '{}'", klass->getValueType()->toString(), value->type->toString()));
+	if (visitExpr(statement->collection) != this->poison) {
+		if (const FuClassType *klass = dynamic_cast<const FuClassType *>(statement->collection->type.get())) {
+			switch (klass->class_->id) {
+			case FuId::stringClass:
+				if (statement->count() != 1 || !element->type->isAssignableFrom(this->host->program->system->intType.get()))
+					reportError(element->type.get(), "Expected 'int' iterator variable");
+				break;
+			case FuId::arrayStorageClass:
+			case FuId::listClass:
+			case FuId::hashSetClass:
+			case FuId::sortedSetClass:
+				if (statement->count() != 1)
+					reportError(statement->getValueVar(), "Expected one iterator variable");
+				else if (!element->type->isAssignableFrom(klass->getElementType().get()))
+					reportError(element->type.get(), std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
+				break;
+			case FuId::dictionaryClass:
+			case FuId::sortedDictionaryClass:
+			case FuId::orderedDictionaryClass:
+				if (statement->count() != 2)
+					reportError(element, "Expected '(TKey key, TValue value)' iterator");
+				else {
+					FuVar * value = statement->getValueVar();
+					resolveType(value);
+					if (!element->type->isAssignableFrom(klass->getKeyType()))
+						reportError(element, std::format("Cannot convert '{}' to '{}'", klass->getKeyType()->toString(), element->type->toString()));
+					if (!value->type->isAssignableFrom(klass->getValueType().get()))
+						reportError(value, std::format("Cannot convert '{}' to '{}'", klass->getValueType()->toString(), value->type->toString()));
+				}
+				break;
+			default:
+				reportError(statement->collection.get(), std::format("'foreach' invalid on '{}'", klass->class_->name));
+				break;
 			}
-			break;
-		default:
-			reportError(statement->collection.get(), std::format("'foreach' invalid on '{}'", klass->class_->name));
-			break;
 		}
+		else
+			reportError(statement->collection.get(), std::format("'foreach' invalid on '{}'", statement->collection->type->toString()));
 	}
-	else
-		reportError(statement->collection.get(), std::format("'foreach' invalid on '{}'", statement->collection->type->toString()));
 	statement->setCompletesNormally(true);
 	visitStatement(statement->body);
 	closeScope();

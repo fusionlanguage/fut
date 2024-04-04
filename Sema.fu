@@ -1815,43 +1815,44 @@ public class FuSema
 		OpenScope(statement);
 		FuVar! element = statement.GetVar();
 		ResolveType(element);
-		VisitExpr(statement.Collection);
-		if (statement.Collection.Type is FuClassType klass) {
-			switch (klass.Class.Id) {
-			case FuId.StringClass:
-				if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Host.Program.System.IntType))
-					ReportError(element.Type, "Expected 'int' iterator variable");
-				break;
-			case FuId.ArrayStorageClass:
-			case FuId.ListClass:
-			case FuId.HashSetClass:
-			case FuId.SortedSetClass:
-				if (statement.Count() != 1)
-					ReportError(statement.GetValueVar(), "Expected one iterator variable");
-				else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
-					ReportError(element.Type, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
-				break;
-			case FuId.DictionaryClass:
-			case FuId.SortedDictionaryClass:
-			case FuId.OrderedDictionaryClass:
-				if (statement.Count() != 2)
-					ReportError(element, "Expected '(TKey key, TValue value)' iterator");
-				else {
-					FuVar! value = statement.GetValueVar();
-					ResolveType(value);
-					if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
-						ReportError(element, $"Cannot convert '{klass.GetKeyType()}' to '{element.Type}'");
-					if (!value.Type.IsAssignableFrom(klass.GetValueType()))
-						ReportError(value, $"Cannot convert '{klass.GetValueType()}' to '{value.Type}'");
+		if (VisitExpr(statement.Collection) != this.Poison) {
+			if (statement.Collection.Type is FuClassType klass) {
+				switch (klass.Class.Id) {
+				case FuId.StringClass:
+					if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Host.Program.System.IntType))
+						ReportError(element.Type, "Expected 'int' iterator variable");
+					break;
+				case FuId.ArrayStorageClass:
+				case FuId.ListClass:
+				case FuId.HashSetClass:
+				case FuId.SortedSetClass:
+					if (statement.Count() != 1)
+						ReportError(statement.GetValueVar(), "Expected one iterator variable");
+					else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
+						ReportError(element.Type, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
+					break;
+				case FuId.DictionaryClass:
+				case FuId.SortedDictionaryClass:
+				case FuId.OrderedDictionaryClass:
+					if (statement.Count() != 2)
+						ReportError(element, "Expected '(TKey key, TValue value)' iterator");
+					else {
+						FuVar! value = statement.GetValueVar();
+						ResolveType(value);
+						if (!element.Type.IsAssignableFrom(klass.GetKeyType()))
+							ReportError(element, $"Cannot convert '{klass.GetKeyType()}' to '{element.Type}'");
+						if (!value.Type.IsAssignableFrom(klass.GetValueType()))
+							ReportError(value, $"Cannot convert '{klass.GetValueType()}' to '{value.Type}'");
+					}
+					break;
+				default:
+					ReportError(statement.Collection, $"'foreach' invalid on '{klass.Class.Name}'");
+					break;
 				}
-				break;
-			default:
-				ReportError(statement.Collection, $"'foreach' invalid on '{klass.Class.Name}'");
-				break;
 			}
+			else
+				ReportError(statement.Collection, $"'foreach' invalid on '{statement.Collection.Type}'");
 		}
-		else
-			ReportError(statement.Collection, $"'foreach' invalid on '{statement.Collection.Type}'");
 		statement.SetCompletesNormally(true);
 		VisitStatement(statement.Body);
 		CloseScope();
