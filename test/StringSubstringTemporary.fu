@@ -5,7 +5,7 @@ public static class Test
 	public static bool Run()
 	{
 		string s = "foobar";
-		Accept(s.Substring(1, 3)); //FAIL: swift TODO; cl
+		Accept(s.Substring(1, 3)); //FAIL: cl
 		bool b = Accept(s.Substring(1, 3));
 		if (!b)
 			return false;

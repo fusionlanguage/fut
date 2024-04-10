@@ -8,6 +8,6 @@ public static class Test
 
 	public static bool Run()
 	{
-		return GetMap().Count == 0; //FAIL: c leak TODO
+		return GetMap().Count == 0;
 	}
 }

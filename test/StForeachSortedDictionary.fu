@@ -9,7 +9,7 @@ public static class Test
 		int lastKey = 0;
 		int keySum = 0;
 		int valueSum = 0;
-		foreach ((int key, int value) in dict) { //FAIL: c - needs glib-2.68
+		foreach ((int key, int value) in dict) {
 			if (lastKey >= key)
 				return false;
 			lastKey = key;
