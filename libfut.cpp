@@ -9599,9 +9599,7 @@ void GenC::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 {
 	if (const FuForeach *forEach = dynamic_cast<const FuForeach *>(symbol->parent)) {
 		const FuClassType * klass = static_cast<const FuClassType *>(forEach->collection->type.get());
-		switch (klass->class_->id) {
-		case FuId::stringClass:
-		case FuId::listClass:
+		if (klass->class_->id == FuId::stringClass || (klass->class_->id == FuId::listClass && !dynamic_cast<const FuStorageType *>(klass->getElementType().get()))) {
 			if (parent == FuPriority::primary)
 				writeChar('(');
 			writeChar('*');
@@ -9609,7 +9607,8 @@ void GenC::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 			if (parent == FuPriority::primary)
 				writeChar(')');
 			return;
-		case FuId::arrayStorageClass:
+		}
+		else if (klass->class_->id == FuId::arrayStorageClass) {
 			if (dynamic_cast<const FuStorageType *>(klass->getElementType().get())) {
 				if (parent > FuPriority::add)
 					writeChar('(');
@@ -9622,8 +9621,6 @@ void GenC::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 			else
 				writeForeachArrayIndexing(forEach, symbol);
 			return;
-		default:
-			break;
 		}
 	}
 	if (dynamic_cast<const FuField *>(symbol))
@@ -12037,7 +12034,7 @@ void GenC::visitForeach(const FuForeach * statement)
 				writePostfix(statement->collection.get(), "->data, ");
 				for (; elementType->isArray(); elementType = elementType->asClassType()->getElementType().get())
 					writeChar('*');
-				if (dynamic_cast<const FuClassType *>(elementType))
+				if (dynamic_cast<const FuClassType *>(elementType) && !dynamic_cast<const FuStorageType *>(elementType))
 					write("* const ");
 				write("*fuend = ");
 				writeCamelCaseNotKeyword(element);

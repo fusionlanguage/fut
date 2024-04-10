@@ -330,7 +330,7 @@ public class GenC : GenCCpp
 			assert forEach.Collection.Type is FuClassType klass;
 			switch (klass.Class.Id) {
 			case FuId.StringClass:
-			case FuId.ListClass:
+			case FuId.ListClass when !(klass.GetElementType() is FuStorageType):
 				if (parent == FuPriority.Primary)
 					WriteChar('(');
 				WriteChar('*');
@@ -2744,7 +2744,7 @@ public class GenC : GenCCpp
 				WritePostfix(statement.Collection, "->data, ");
 				for (; elementType.IsArray(); elementType = elementType.AsClassType().GetElementType())
 					WriteChar('*');
-				if (elementType is FuClassType)
+				if (elementType is FuClassType && !(elementType is FuStorageType))
 					Write("* const ");
 				Write("*fuend = ");
 				WriteCamelCaseNotKeyword(element);

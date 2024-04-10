@@ -9870,7 +9870,7 @@ namespace Fusion
 				FuClassType klass = (FuClassType) forEach.Collection.Type;
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
-				case FuId.ListClass:
+				case FuId.ListClass when !(klass.GetElementType() is FuStorageType):
 					if (parent == FuPriority.Primary)
 						WriteChar('(');
 					WriteChar('*');
@@ -12263,7 +12263,7 @@ namespace Fusion
 					WritePostfix(statement.Collection, "->data, ");
 					for (; elementType.IsArray(); elementType = elementType.AsClassType().GetElementType())
 						WriteChar('*');
-					if (elementType is FuClassType)
+					if (elementType is FuClassType && !(elementType is FuStorageType))
 						Write("* const ");
 					Write("*fuend = ");
 					WriteCamelCaseNotKeyword(element);

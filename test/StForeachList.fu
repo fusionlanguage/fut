@@ -36,7 +36,7 @@ public class Test
 		ol[0].Foo = 5;
 		ol.Add();
 		ol[1].Foo = 10;
-		foreach (Test inline in ol) //FAIL: c TODO
+		foreach (Test inline in ol)
 			sum += inline.Foo;
 
 		List<Test#>() dl;

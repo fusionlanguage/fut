@@ -10256,9 +10256,7 @@ export class GenC extends GenCCpp
 		let forEach;
 		if ((forEach = symbol.parent) instanceof FuForeach) {
 			let klass = forEach.collection.type;
-			switch (klass.class.id) {
-			case FuId.STRING_CLASS:
-			case FuId.LIST_CLASS:
+			if (klass.class.id == FuId.STRING_CLASS || (klass.class.id == FuId.LIST_CLASS && !(klass.getElementType() instanceof FuStorageType))) {
 				if (parent == FuPriority.PRIMARY)
 					this.writeChar(40);
 				this.writeChar(42);
@@ -10266,7 +10264,8 @@ export class GenC extends GenCCpp
 				if (parent == FuPriority.PRIMARY)
 					this.writeChar(41);
 				return;
-			case FuId.ARRAY_STORAGE_CLASS:
+			}
+			else if (klass.class.id == FuId.ARRAY_STORAGE_CLASS) {
 				if (klass.getElementType() instanceof FuStorageType) {
 					if (parent > FuPriority.ADD)
 						this.writeChar(40);
@@ -10279,8 +10278,6 @@ export class GenC extends GenCCpp
 				else
 					this.#writeForeachArrayIndexing(forEach, symbol);
 				return;
-			default:
-				break;
 			}
 		}
 		if (symbol instanceof FuField)
@@ -12703,7 +12700,7 @@ export class GenC extends GenCCpp
 				this.writePostfix(statement.collection, "->data, ");
 				for (; elementType.isArray(); elementType = elementType.asClassType().getElementType())
 					this.writeChar(42);
-				if (elementType instanceof FuClassType)
+				if (elementType instanceof FuClassType && !(elementType instanceof FuStorageType))
 					this.write("* const ");
 				this.write("*fuend = ");
 				this.writeCamelCaseNotKeyword(element);
