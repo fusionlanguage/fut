@@ -56,7 +56,7 @@ jobs:
         with:
           version: 13
       - run: pip install mypy
-      - uses: swift-actions/setup-swift@main
+      - uses: pfusik/setup-swift@gpg-www
       - uses: actions/checkout@main
       - run: make -j3 test-py test-swift
   host-diff:
