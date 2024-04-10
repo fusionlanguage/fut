@@ -455,6 +455,7 @@ Dynamic array references can be assigned to other dynamic array references.
 The dynamic array is alive as long as there's at least one dynamic
 array reference to it.
 In C++, dynamic array references are implemented as `std::shared_ptr`.
+In C, a custom equivalent of `std::shared_ptr` is generated.
 
 Read-only and read-write array references can point to either array storage
 or dynamic arrays. Read-only and read-write references must be used with care
