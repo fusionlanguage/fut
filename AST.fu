@@ -1318,10 +1318,10 @@ public class FuClass : FuContainerType
 	internal FuCallType CallType;
 	internal int TypeParameterCount = 0;
 	internal bool HasSubclasses = false;
-	internal string() BaseClassName = "";
+	internal FuSymbolReference() BaseClass;
 	internal FuMethodBase#? Constructor;
 	internal List<FuConst>() ConstArrays;
-	public bool HasBaseClass() => this.BaseClassName.Length > 0;
+	public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
 	public bool AddsVirtualMethods()
 	{
 		for (FuSymbol? symbol = this.First; symbol != null; symbol = symbol.Next) {

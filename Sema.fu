@@ -60,14 +60,15 @@ public class FuSema
 	{
 		if (klass.HasBaseClass()) {
 			this.CurrentScope = klass;
-			if (this.Host.Program.TryLookup(klass.BaseClassName, true) is FuClass! baseClass) {
+			if (this.Host.Program.TryLookup(klass.BaseClass.Name, true) is FuClass! baseClass) {
 				if (klass.IsPublic && !baseClass.IsPublic)
-					ReportError(klass, "Public class cannot derive from an internal class");
+					ReportError(klass.BaseClass, "Public class cannot derive from an internal class");
+				klass.BaseClass.Symbol = baseClass;
 				baseClass.HasSubclasses = true;
 				klass.Parent = baseClass;
 			}
 			else
-				ReportError(klass, $"Base class '{klass.BaseClassName}' not found");
+				ReportError(klass.BaseClass, $"Base class '{klass.BaseClass.Name}' not found");
 		}
 		this.Host.Program.Classes.Add(klass);
 	}

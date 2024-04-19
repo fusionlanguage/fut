@@ -1757,12 +1757,12 @@ public class GenCpp : GenCCpp
 		if (constructor) {
 			if (klass.Id == FuId.ExceptionClass) {
 				Write("using ");
-				if (klass.BaseClassName == "Exception")
+				if (klass.BaseClass.Name == "Exception")
 					Write("std::runtime_error::runtime_error");
 				else {
-					Write(klass.BaseClassName);
+					Write(klass.BaseClass.Name);
 					Write("::");
-					Write(klass.BaseClassName);
+					Write(klass.BaseClass.Name);
 				}
 			}
 			else {

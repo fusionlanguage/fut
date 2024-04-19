@@ -985,10 +985,10 @@ public class FuParser : FuLexer
 		FuClass# klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 		if (Expect(FuToken.Id))
 			AddSymbol(this.Host.Program, klass);
-		if (Eat(FuToken.Colon)) {
-			klass.BaseClassName = this.StringValue;
-			Expect(FuToken.Id);
-		}
+		if (Eat(FuToken.Colon))
+			ParseSymbolReference(klass.BaseClass);
+		else
+			klass.BaseClass.Name = "";
 		Expect(FuToken.LeftBrace);
 
 		while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {

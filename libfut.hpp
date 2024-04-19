@@ -1384,7 +1384,7 @@ public:
 	FuCallType callType;
 	int typeParameterCount = 0;
 	bool hasSubclasses = false;
-	std::string baseClassName{""};
+	FuSymbolReference baseClass;
 	std::shared_ptr<FuMethodBase> constructor;
 	std::vector<const FuConst *> constArrays;
 };

@@ -3015,13 +3015,13 @@ export class FuClass extends FuContainerType
 	callType;
 	typeParameterCount = 0;
 	hasSubclasses = false;
-	baseClassName = "";
+	baseClass = new FuSymbolReference();
 	constructor_;
 	constArrays = [];
 
 	hasBaseClass()
 	{
-		return this.baseClassName.length > 0;
+		return this.baseClass.name.length > 0;
 	}
 
 	addsVirtualMethods()
@@ -4666,10 +4666,10 @@ export class FuParser extends FuLexer
 		let klass = Object.assign(new FuClass(), { loc: this.tokenLoc, documentation: doc, startLine: line, startColumn: column, isPublic: isPublic, callType: callType, name: this.stringValue });
 		if (this.expect(FuToken.ID))
 			this.#addSymbol(this.host.program, klass);
-		if (this.eat(FuToken.COLON)) {
-			klass.baseClassName = this.stringValue;
-			this.expect(FuToken.ID);
-		}
+		if (this.eat(FuToken.COLON))
+			this.#parseSymbolReference(klass.baseClass);
+		else
+			klass.baseClass.name = "";
 		this.expect(FuToken.LEFT_BRACE);
 		while (!this.see(FuToken.RIGHT_BRACE) && !this.see(FuToken.END_OF_FILE)) {
 			doc = this.#parseDoc();
@@ -4883,14 +4883,15 @@ export class FuSema
 		if (klass.hasBaseClass()) {
 			this.#currentScope = klass;
 			let baseClass;
-			if ((baseClass = this.#host.program.tryLookup(klass.baseClassName, true)) instanceof FuClass) {
+			if ((baseClass = this.#host.program.tryLookup(klass.baseClass.name, true)) instanceof FuClass) {
 				if (klass.isPublic && !baseClass.isPublic)
-					this.#reportError(klass, "Public class cannot derive from an internal class");
+					this.#reportError(klass.baseClass, "Public class cannot derive from an internal class");
+				klass.baseClass.symbol = baseClass;
 				baseClass.hasSubclasses = true;
 				klass.parent = baseClass;
 			}
 			else
-				this.#reportError(klass, `Base class '${klass.baseClassName}' not found`);
+				this.#reportError(klass.baseClass, `Base class '${klass.baseClass.name}' not found`);
 		}
 		this.#host.program.classes.push(klass);
 	}
@@ -15875,12 +15876,12 @@ export class GenCpp extends GenCCpp
 		if (constructor) {
 			if (klass.id == FuId.EXCEPTION_CLASS) {
 				this.write("using ");
-				if (klass.baseClassName == "Exception")
+				if (klass.baseClass.name == "Exception")
 					this.write("std::runtime_error::runtime_error");
 				else {
-					this.write(klass.baseClassName);
+					this.write(klass.baseClass.name);
 					this.write("::");
-					this.write(klass.baseClassName);
+					this.write(klass.baseClass.name);
 				}
 			}
 			else {

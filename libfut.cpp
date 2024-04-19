@@ -2326,7 +2326,7 @@ void FuEnum::acceptValues(FuVisitor * visitor) const
 
 bool FuClass::hasBaseClass() const
 {
-	return !this->baseClassName.empty();
+	return !this->baseClass.name.empty();
 }
 
 bool FuClass::addsVirtualMethods() const
@@ -4180,10 +4180,10 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 	klass->name = this->stringValue;
 	if (expect(FuToken::id))
 		addSymbol(this->host->program, klass);
-	if (eat(FuToken::colon)) {
-		klass->baseClassName = this->stringValue;
-		expect(FuToken::id);
-	}
+	if (eat(FuToken::colon))
+		parseSymbolReference(&klass->baseClass);
+	else
+		klass->baseClass.name = "";
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile)) {
 		doc = parseDoc();
@@ -4408,14 +4408,15 @@ void FuSema::resolveBase(FuClass * klass)
 {
 	if (klass->hasBaseClass()) {
 		this->currentScope = klass;
-		if (FuClass *baseClass = dynamic_cast<FuClass *>(this->host->program->tryLookup(klass->baseClassName, true).get())) {
+		if (FuClass *baseClass = dynamic_cast<FuClass *>(this->host->program->tryLookup(klass->baseClass.name, true).get())) {
 			if (klass->isPublic && !baseClass->isPublic)
-				reportError(klass, "Public class cannot derive from an internal class");
+				reportError(&klass->baseClass, "Public class cannot derive from an internal class");
+			klass->baseClass.symbol = baseClass;
 			baseClass->hasSubclasses = true;
 			klass->parent = baseClass;
 		}
 		else
-			reportError(klass, std::format("Base class '{}' not found", klass->baseClassName));
+			reportError(&klass->baseClass, std::format("Base class '{}' not found", klass->baseClass.name));
 	}
 	this->host->program->classes.push_back(klass);
 }
@@ -15063,12 +15064,12 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 	if (constructor) {
 		if (klass->id == FuId::exceptionClass) {
 			write("using ");
-			if (klass->baseClassName == "Exception")
+			if (klass->baseClass.name == "Exception")
 				write("std::runtime_error::runtime_error");
 			else {
-				write(klass->baseClassName);
+				write(klass->baseClass.name);
 				write("::");
-				write(klass->baseClassName);
+				write(klass->baseClass.name);
 			}
 		}
 		else {

@@ -2895,13 +2895,13 @@ namespace Fusion
 
 		internal bool HasSubclasses = false;
 
-		internal string BaseClassName = "";
+		internal readonly FuSymbolReference BaseClass = new FuSymbolReference();
 
 		internal FuMethodBase Constructor;
 
 		internal readonly List<FuConst> ConstArrays = new List<FuConst>();
 
-		public bool HasBaseClass() => this.BaseClassName.Length > 0;
+		public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
 
 		public bool AddsVirtualMethods()
 		{
@@ -4459,10 +4459,10 @@ namespace Fusion
 			FuClass klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
 			if (Expect(FuToken.Id))
 				AddSymbol(this.Host.Program, klass);
-			if (Eat(FuToken.Colon)) {
-				klass.BaseClassName = this.StringValue;
-				Expect(FuToken.Id);
-			}
+			if (Eat(FuToken.Colon))
+				ParseSymbolReference(klass.BaseClass);
+			else
+				klass.BaseClass.Name = "";
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 				doc = ParseDoc();
@@ -4674,14 +4674,15 @@ namespace Fusion
 		{
 			if (klass.HasBaseClass()) {
 				this.CurrentScope = klass;
-				if (this.Host.Program.TryLookup(klass.BaseClassName, true) is FuClass baseClass) {
+				if (this.Host.Program.TryLookup(klass.BaseClass.Name, true) is FuClass baseClass) {
 					if (klass.IsPublic && !baseClass.IsPublic)
-						ReportError(klass, "Public class cannot derive from an internal class");
+						ReportError(klass.BaseClass, "Public class cannot derive from an internal class");
+					klass.BaseClass.Symbol = baseClass;
 					baseClass.HasSubclasses = true;
 					klass.Parent = baseClass;
 				}
 				else
-					ReportError(klass, $"Base class '{klass.BaseClassName}' not found");
+					ReportError(klass.BaseClass, $"Base class '{klass.BaseClass.Name}' not found");
 			}
 			this.Host.Program.Classes.Add(klass);
 		}
@@ -15401,12 +15402,12 @@ namespace Fusion
 			if (constructor) {
 				if (klass.Id == FuId.ExceptionClass) {
 					Write("using ");
-					if (klass.BaseClassName == "Exception")
+					if (klass.BaseClass.Name == "Exception")
 						Write("std::runtime_error::runtime_error");
 					else {
-						Write(klass.BaseClassName);
+						Write(klass.BaseClass.Name);
 						Write("::");
-						Write(klass.BaseClassName);
+						Write(klass.BaseClass.Name);
 					}
 				}
 				else {
