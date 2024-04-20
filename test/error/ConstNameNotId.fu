@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		const bool "wtf" = true; //ERROR: Expected identifier, got string constant
+		return wtf;
+	}
+}

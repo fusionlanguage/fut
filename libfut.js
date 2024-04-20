@@ -4232,8 +4232,8 @@ export class FuParser extends FuLexer
 	#parseConst(visibility)
 	{
 		this.expect(FuToken.CONST);
-		let konst = Object.assign(new FuConst(), { visibility: visibility, typeExpr: this.#parseType(), loc: this.tokenLoc, name: this.stringValue, visitStatus: FuVisitStatus.NOT_YET });
-		this.nextToken();
+		let konst = Object.assign(new FuConst(), { visibility: visibility, typeExpr: this.#parseType(), visitStatus: FuVisitStatus.NOT_YET });
+		this.#parseName(konst);
 		this.expect(FuToken.ASSIGN);
 		konst.value = this.#parseConstInitializer();
 		this.#closeMember(FuToken.SEMICOLON, konst);

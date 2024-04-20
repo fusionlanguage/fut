@@ -4030,8 +4030,8 @@ namespace Fusion
 		FuConst ParseConst(FuVisibility visibility)
 		{
 			Expect(FuToken.Const);
-			FuConst konst = new FuConst { Visibility = visibility, TypeExpr = ParseType(), Loc = this.TokenLoc, Name = this.StringValue, VisitStatus = FuVisitStatus.NotYet };
-			NextToken();
+			FuConst konst = new FuConst { Visibility = visibility, TypeExpr = ParseType(), VisitStatus = FuVisitStatus.NotYet };
+			ParseName(konst);
 			Expect(FuToken.Assign);
 			konst.Value = ParseConstInitializer();
 			CloseMember(FuToken.Semicolon, konst);
