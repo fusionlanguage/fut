@@ -1623,6 +1623,8 @@ namespace Fusion
 		internal string Name = "";
 
 		public override int GetLocLength() => this.Name.Length;
+
+		public abstract FuSymbol GetSymbol();
 	}
 
 	public abstract class FuSymbol : FuName
@@ -1635,6 +1637,8 @@ namespace Fusion
 		internal FuScope Parent;
 
 		internal FuCodeDoc Documentation = null;
+
+		public override FuSymbol GetSymbol() => this;
 
 		public override string ToString() => this.Name;
 	}
@@ -1943,6 +1947,8 @@ namespace Fusion
 		public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 
 		public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
+
+		public override FuSymbol GetSymbol() => this.Symbol;
 
 		public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 	}
@@ -3496,7 +3502,7 @@ namespace Fusion
 
 		int FindDefinitionColumn;
 
-		FuSymbolReference FoundDefinition = null;
+		FuName FoundDefinition = null;
 
 		public void FindDefinition(string filename, int line, int column)
 		{
@@ -3508,9 +3514,9 @@ namespace Fusion
 
 		public string GetFoundDefinitionFilename()
 		{
-			if (this.FoundDefinition == null || this.FoundDefinition.Symbol == null)
+			if (this.FoundDefinition == null || this.FoundDefinition.GetSymbol() == null)
 				return null;
-			int loc = this.FoundDefinition.Symbol.Loc;
+			int loc = this.FoundDefinition.GetSymbol().Loc;
 			if (loc <= 0)
 				return null;
 			int line = this.Host.Program.GetLine(loc);
@@ -3673,17 +3679,23 @@ namespace Fusion
 			return result;
 		}
 
-		void ParseSymbolReference(FuSymbolReference result)
+		bool IsFindDefinition()
 		{
 			FuSourceFile file = this.Host.Program.SourceFiles[^1];
 			if (this.Host.Program.LineLocs.Count - file.Line - 1 == this.FindDefinitionLine && file.Filename == this.FindDefinitionFilename) {
 				int loc = this.Host.Program.LineLocs[^1] + this.FindDefinitionColumn;
-				if (loc >= this.TokenLoc && loc <= this.Loc)
-					this.FoundDefinition = result;
+				return loc >= this.TokenLoc && loc <= this.Loc;
 			}
+			return false;
+		}
+
+		bool ParseName(FuName result)
+		{
+			if (IsFindDefinition())
+				this.FoundDefinition = result;
 			result.Loc = this.TokenLoc;
 			result.Name = this.StringValue;
-			Expect(FuToken.Id);
+			return Expect(FuToken.Id);
 		}
 
 		void ParseCollection(List<FuExpr> result, FuToken closing)
@@ -3750,7 +3762,7 @@ namespace Fusion
 				break;
 			case FuToken.Id:
 				FuSymbolReference symbol = new FuSymbolReference();
-				ParseSymbolReference(symbol);
+				ParseName(symbol);
 				if (Eat(FuToken.FatArrow)) {
 					FuLambdaExpr lambda = new FuLambdaExpr { Loc = symbol.Loc };
 					lambda.Add(FuVar.New(null, symbol.Name));
@@ -3790,7 +3802,7 @@ namespace Fusion
 				case FuToken.Dot:
 					NextToken();
 					FuSymbolReference path = new FuSymbolReference { Left = result };
-					ParseSymbolReference(path);
+					ParseName(path);
 					result = path;
 					break;
 				case FuToken.LeftParenthesis:
@@ -3981,7 +3993,7 @@ namespace Fusion
 			do {
 				int loc = this.TokenLoc;
 				FuSymbolReference field = new FuSymbolReference();
-				ParseSymbolReference(field);
+				ParseName(field);
 				Expect(FuToken.Assign);
 				result.Items.Add(new FuBinaryExpr { Loc = loc, Left = field, Op = FuToken.Assign, Right = ParseExpr() });
 			}
@@ -4302,7 +4314,7 @@ namespace Fusion
 			FuThrow result = new FuThrow { Loc = this.TokenLoc };
 			Expect(FuToken.Throw);
 			result.Class = new FuSymbolReference();
-			ParseSymbolReference(result.Class);
+			ParseName(result.Class);
 			ExpectOrSkip(FuToken.LeftParenthesis);
 			result.Message = See(FuToken.RightParenthesis) ? null : ParseExpr();
 			Expect(FuToken.RightParenthesis);
@@ -4411,7 +4423,7 @@ namespace Fusion
 					}
 					else
 						decl.Documentation = throwsDoc;
-					ParseSymbolReference(decl);
+					ParseName(decl);
 					method.Throws.Add(decl);
 				}
 				while (Eat(FuToken.Comma));
@@ -4456,11 +4468,11 @@ namespace Fusion
 		void ParseClass(FuCodeDoc doc, int line, int column, bool isPublic, FuCallType callType)
 		{
 			Expect(FuToken.Class);
-			FuClass klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
-			if (Expect(FuToken.Id))
+			FuClass klass = new FuClass { Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType };
+			if (ParseName(klass))
 				AddSymbol(this.Host.Program, klass);
 			if (Eat(FuToken.Colon))
-				ParseSymbolReference(klass.BaseClass);
+				ParseName(klass.BaseClass);
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 				doc = ParseDoc();
@@ -4517,6 +4529,7 @@ namespace Fusion
 					klass.Constructor.Body = ParseBlock(klass.Constructor);
 					continue;
 				}
+				bool foundDefinition = IsFindDefinition();
 				int loc = this.TokenLoc;
 				string name = this.StringValue;
 				if (!Expect(FuToken.Id))
@@ -4534,6 +4547,8 @@ namespace Fusion
 						ReportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 					FuMethod method = new FuMethod { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 					ParseMethod(klass, method);
+					if (foundDefinition)
+						this.FoundDefinition = method;
 					continue;
 				}
 				if (visibility == FuVisibility.Public)
@@ -4545,6 +4560,8 @@ namespace Fusion
 				FuField field = new FuField { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 				AddSymbol(klass, field);
 				CloseMember(FuToken.Semicolon, field);
+				if (foundDefinition)
+					this.FoundDefinition = field;
 			}
 			CloseContainer(klass);
 		}
@@ -4557,17 +4574,15 @@ namespace Fusion
 			enu.Documentation = doc;
 			enu.StartLine = line;
 			enu.StartColumn = column;
-			enu.Loc = this.TokenLoc;
 			enu.IsPublic = isPublic;
-			enu.Name = this.StringValue;
-			if (Expect(FuToken.Id))
+			if (ParseName(enu))
 				AddSymbol(this.Host.Program, enu);
 			Expect(FuToken.LeftBrace);
 			do {
-				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.TokenLoc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
+				FuConst konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Type = enu, VisitStatus = FuVisitStatus.NotYet };
 				konst.StartLine = GetCurrentLine();
 				konst.StartColumn = GetTokenColumn();
-				Expect(FuToken.Id);
+				ParseName(konst);
 				if (Eat(FuToken.Assign))
 					konst.Value = ParseExpr();
 				else if (flags)

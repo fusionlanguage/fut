@@ -1172,6 +1172,11 @@ int FuName::getLocLength() const
 	return std::ssize(this->name);
 }
 
+const FuSymbol * FuSymbol::getSymbol() const
+{
+	return this;
+}
+
 std::string FuSymbol::toString() const
 {
 	return this->name;
@@ -1486,6 +1491,11 @@ bool FuSymbolReference::isReferenceTo(const FuSymbol * symbol) const
 bool FuSymbolReference::isNewString(bool substringOffset) const
 {
 	return this->symbol->id == FuId::matchValue;
+}
+
+const FuSymbol * FuSymbolReference::getSymbol() const
+{
+	return this->symbol;
 }
 
 std::string FuSymbolReference::toString() const
@@ -2990,9 +3000,9 @@ void FuParser::findDefinition(std::string_view filename, int line, int column)
 
 std::string_view FuParser::getFoundDefinitionFilename()
 {
-	if (this->foundDefinition == nullptr || this->foundDefinition->symbol == nullptr)
+	if (this->foundDefinition == nullptr || this->foundDefinition->getSymbol() == nullptr)
 		return std::string_view();
-	int loc = this->foundDefinition->symbol->loc;
+	int loc = this->foundDefinition->getSymbol()->loc;
 	if (loc <= 0)
 		return std::string_view();
 	int line = this->host->program->getLine(loc);
@@ -3178,17 +3188,23 @@ std::shared_ptr<FuExpr> FuParser::parseParenthesized()
 	return result;
 }
 
-void FuParser::parseSymbolReference(FuSymbolReference * result)
+bool FuParser::isFindDefinition() const
 {
 	const FuSourceFile * file = &static_cast<const FuSourceFile &>(this->host->program->sourceFiles.back());
 	if (std::ssize(this->host->program->lineLocs) - file->line - 1 == this->findDefinitionLine && file->filename == this->findDefinitionFilename) {
 		int loc = this->host->program->lineLocs.back() + this->findDefinitionColumn;
-		if (loc >= this->tokenLoc && loc <= this->loc)
-			this->foundDefinition = result;
+		return loc >= this->tokenLoc && loc <= this->loc;
 	}
+	return false;
+}
+
+bool FuParser::parseName(FuName * result)
+{
+	if (isFindDefinition())
+		this->foundDefinition = result;
 	result->loc = this->tokenLoc;
 	result->name = this->stringValue;
-	expect(FuToken::id);
+	return expect(FuToken::id);
 }
 
 void FuParser::parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, FuToken closing)
@@ -3293,7 +3309,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 	case FuToken::id:
 		{
 			std::shared_ptr<FuSymbolReference> symbol = std::make_shared<FuSymbolReference>();
-			parseSymbolReference(symbol.get());
+			parseName(symbol.get());
 			if (eat(FuToken::fatArrow)) {
 				std::shared_ptr<FuLambdaExpr> lambda = std::make_shared<FuLambdaExpr>();
 				lambda->loc = symbol->loc;
@@ -3345,7 +3361,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			{
 				std::shared_ptr<FuSymbolReference> path = std::make_shared<FuSymbolReference>();
 				path->left = result;
-				parseSymbolReference(path.get());
+				parseName(path.get());
 				result = path;
 				break;
 			}
@@ -3640,7 +3656,7 @@ std::shared_ptr<FuAggregateInitializer> FuParser::parseObjectLiteral()
 	do {
 		int loc = this->tokenLoc;
 		std::shared_ptr<FuSymbolReference> field = std::make_shared<FuSymbolReference>();
-		parseSymbolReference(field.get());
+		parseName(field.get());
 		expect(FuToken::assign);
 		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
 		futemp0->loc = loc;
@@ -4008,7 +4024,7 @@ std::shared_ptr<FuThrow> FuParser::parseThrow()
 	result->loc = this->tokenLoc;
 	expect(FuToken::throw_);
 	result->class_ = std::make_shared<FuSymbolReference>();
-	parseSymbolReference(result->class_.get());
+	parseName(result->class_.get());
 	expectOrSkip(FuToken::leftParenthesis);
 	result->message = see(FuToken::rightParenthesis) ? nullptr : parseExpr();
 	expect(FuToken::rightParenthesis);
@@ -4120,7 +4136,7 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 			}
 			else
 				decl->documentation = throwsDoc;
-			parseSymbolReference(decl.get());
+			parseName(decl.get());
 			method->throws.push_back(decl);
 		}
 		while (eat(FuToken::comma));
@@ -4166,17 +4182,15 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 {
 	expect(FuToken::class_);
 	std::shared_ptr<FuClass> klass = std::make_shared<FuClass>();
-	klass->loc = this->tokenLoc;
 	klass->documentation = doc;
 	klass->startLine = line;
 	klass->startColumn = column;
 	klass->isPublic = isPublic;
 	klass->callType = callType;
-	klass->name = this->stringValue;
-	if (expect(FuToken::id))
+	if (parseName(klass.get()))
 		addSymbol(this->host->program, klass);
 	if (eat(FuToken::colon))
-		parseSymbolReference(&klass->baseClass);
+		parseName(&klass->baseClass);
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile)) {
 		doc = parseDoc();
@@ -4243,6 +4257,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			klass->constructor->body = parseBlock(klass->constructor.get());
 			continue;
 		}
+		bool foundDefinition = isFindDefinition();
 		int loc = this->tokenLoc;
 		std::string name{this->stringValue};
 		if (!expect(FuToken::id))
@@ -4268,6 +4283,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			method->typeExpr = type;
 			method->name = name;
 			parseMethod(klass.get(), method);
+			if (foundDefinition)
+				this->foundDefinition = method.get();
 			continue;
 		}
 		if (visibility == FuVisibility::public_)
@@ -4287,6 +4304,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		field->value = parseInitializer();
 		addSymbol(klass.get(), field);
 		closeMember(FuToken::semicolon, field.get());
+		if (foundDefinition)
+			this->foundDefinition = field.get();
 	}
 	closeContainer(klass.get());
 }
@@ -4299,23 +4318,19 @@ void FuParser::parseEnum(std::shared_ptr<FuCodeDoc> doc, int line, int column, b
 	enu->documentation = doc;
 	enu->startLine = line;
 	enu->startColumn = column;
-	enu->loc = this->tokenLoc;
 	enu->isPublic = isPublic;
-	enu->name = this->stringValue;
-	if (expect(FuToken::id))
+	if (parseName(enu.get()))
 		addSymbol(this->host->program, enu);
 	expect(FuToken::leftBrace);
 	do {
 		std::shared_ptr<FuConst> konst = std::make_shared<FuConst>();
 		konst->visibility = FuVisibility::public_;
 		konst->documentation = parseDoc();
-		konst->loc = this->tokenLoc;
-		konst->name = this->stringValue;
 		konst->type = enu;
 		konst->visitStatus = FuVisitStatus::notYet;
 		konst->startLine = getCurrentLine();
 		konst->startColumn = getTokenColumn();
-		expect(FuToken::id);
+		parseName(konst.get());
 		if (eat(FuToken::assign))
 			konst->value = parseExpr();
 		else if (flags)

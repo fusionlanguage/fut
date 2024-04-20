@@ -1560,6 +1560,11 @@ export class FuSymbol extends FuName
 	parent;
 	documentation = null;
 
+	getSymbol()
+	{
+		return this;
+	}
+
 	toString()
 	{
 		return this.name;
@@ -1942,6 +1947,11 @@ export class FuSymbolReference extends FuName
 	isNewString(substringOffset)
 	{
 		return this.symbol.id == FuId.MATCH_VALUE;
+	}
+
+	getSymbol()
+	{
+		return this.symbol;
 	}
 
 	toString()
@@ -3699,9 +3709,9 @@ export class FuParser extends FuLexer
 
 	getFoundDefinitionFilename()
 	{
-		if (this.#foundDefinition == null || this.#foundDefinition.symbol == null)
+		if (this.#foundDefinition == null || this.#foundDefinition.getSymbol() == null)
 			return null;
-		let loc = this.#foundDefinition.symbol.loc;
+		let loc = this.#foundDefinition.getSymbol().loc;
 		if (loc <= 0)
 			return null;
 		let line = this.host.program.getLine(loc);
@@ -3870,17 +3880,23 @@ export class FuParser extends FuLexer
 		return result;
 	}
 
-	#parseSymbolReference(result)
+	#isFindDefinition()
 	{
 		let file = this.host.program.sourceFiles.at(-1);
 		if (this.host.program.lineLocs.length - file.line - 1 == this.#findDefinitionLine && file.filename == this.#findDefinitionFilename) {
 			let loc = this.host.program.lineLocs.at(-1) + this.#findDefinitionColumn;
-			if (loc >= this.tokenLoc && loc <= this.loc)
-				this.#foundDefinition = result;
+			return loc >= this.tokenLoc && loc <= this.loc;
 		}
+		return false;
+	}
+
+	#parseName(result)
+	{
+		if (this.#isFindDefinition())
+			this.#foundDefinition = result;
 		result.loc = this.tokenLoc;
 		result.name = this.stringValue;
-		this.expect(FuToken.ID);
+		return this.expect(FuToken.ID);
 	}
 
 	#parseCollection(result, closing)
@@ -3947,7 +3963,7 @@ export class FuParser extends FuLexer
 			break;
 		case FuToken.ID:
 			let symbol = new FuSymbolReference();
-			this.#parseSymbolReference(symbol);
+			this.#parseName(symbol);
 			if (this.eat(FuToken.FAT_ARROW)) {
 				let lambda = Object.assign(new FuLambdaExpr(), { loc: symbol.loc });
 				lambda.add(FuVar.new(null, symbol.name));
@@ -3987,7 +4003,7 @@ export class FuParser extends FuLexer
 			case FuToken.DOT:
 				this.nextToken();
 				let path = Object.assign(new FuSymbolReference(), { left: result });
-				this.#parseSymbolReference(path);
+				this.#parseName(path);
 				result = path;
 				break;
 			case FuToken.LEFT_PARENTHESIS:
@@ -4179,7 +4195,7 @@ export class FuParser extends FuLexer
 		do {
 			let loc = this.tokenLoc;
 			let field = new FuSymbolReference();
-			this.#parseSymbolReference(field);
+			this.#parseName(field);
 			this.expect(FuToken.ASSIGN);
 			result.items.push(Object.assign(new FuBinaryExpr(), { loc: loc, left: field, op: FuToken.ASSIGN, right: this.#parseExpr() }));
 		}
@@ -4507,7 +4523,7 @@ export class FuParser extends FuLexer
 		let result = Object.assign(new FuThrow(), { loc: this.tokenLoc });
 		this.expect(FuToken.THROW);
 		result.class = new FuSymbolReference();
-		this.#parseSymbolReference(result.class);
+		this.#parseName(result.class);
 		this.expectOrSkip(FuToken.LEFT_PARENTHESIS);
 		result.message = this.see(FuToken.RIGHT_PARENTHESIS) ? null : this.#parseExpr();
 		this.expect(FuToken.RIGHT_PARENTHESIS);
@@ -4616,7 +4632,7 @@ export class FuParser extends FuLexer
 				}
 				else
 					decl.documentation = throwsDoc;
-				this.#parseSymbolReference(decl);
+				this.#parseName(decl);
 				method.throws.push(decl);
 			}
 			while (this.eat(FuToken.COMMA));
@@ -4661,11 +4677,11 @@ export class FuParser extends FuLexer
 	#parseClass(doc, line, column, isPublic, callType)
 	{
 		this.expect(FuToken.CLASS);
-		let klass = Object.assign(new FuClass(), { loc: this.tokenLoc, documentation: doc, startLine: line, startColumn: column, isPublic: isPublic, callType: callType, name: this.stringValue });
-		if (this.expect(FuToken.ID))
+		let klass = Object.assign(new FuClass(), { documentation: doc, startLine: line, startColumn: column, isPublic: isPublic, callType: callType });
+		if (this.#parseName(klass))
 			this.#addSymbol(this.host.program, klass);
 		if (this.eat(FuToken.COLON))
-			this.#parseSymbolReference(klass.baseClass);
+			this.#parseName(klass.baseClass);
 		this.expect(FuToken.LEFT_BRACE);
 		while (!this.see(FuToken.RIGHT_BRACE) && !this.see(FuToken.END_OF_FILE)) {
 			doc = this.#parseDoc();
@@ -4723,6 +4739,7 @@ export class FuParser extends FuLexer
 				klass.constructor_.body = this.#parseBlock(klass.constructor_);
 				continue;
 			}
+			let foundDefinition = this.#isFindDefinition();
 			let loc = this.tokenLoc;
 			let name = this.stringValue;
 			if (!this.expect(FuToken.ID))
@@ -4740,6 +4757,8 @@ export class FuParser extends FuLexer
 					this.#reportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 				let method = Object.assign(new FuMethod(), { startLine: line, startColumn: column, loc: loc, documentation: doc, visibility: visibility, callType: callType, typeExpr: type, name: name });
 				this.#parseMethod(klass, method);
+				if (foundDefinition)
+					this.#foundDefinition = method;
 				continue;
 			}
 			if (visibility == FuVisibility.PUBLIC)
@@ -4751,6 +4770,8 @@ export class FuParser extends FuLexer
 			let field = Object.assign(new FuField(), { startLine: line, startColumn: column, loc: loc, documentation: doc, visibility: visibility, typeExpr: type, name: name, value: this.#parseInitializer() });
 			this.#addSymbol(klass, field);
 			this.#closeMember(FuToken.SEMICOLON, field);
+			if (foundDefinition)
+				this.#foundDefinition = field;
 		}
 		this.#closeContainer(klass);
 	}
@@ -4763,17 +4784,15 @@ export class FuParser extends FuLexer
 		enu.documentation = doc;
 		enu.startLine = line;
 		enu.startColumn = column;
-		enu.loc = this.tokenLoc;
 		enu.isPublic = isPublic;
-		enu.name = this.stringValue;
-		if (this.expect(FuToken.ID))
+		if (this.#parseName(enu))
 			this.#addSymbol(this.host.program, enu);
 		this.expect(FuToken.LEFT_BRACE);
 		do {
-			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), loc: this.tokenLoc, name: this.stringValue, type: enu, visitStatus: FuVisitStatus.NOT_YET });
+			let konst = Object.assign(new FuConst(), { visibility: FuVisibility.PUBLIC, documentation: this.#parseDoc(), type: enu, visitStatus: FuVisitStatus.NOT_YET });
 			konst.startLine = this.#getCurrentLine();
 			konst.startColumn = this.#getTokenColumn();
-			this.expect(FuToken.ID);
+			this.#parseName(konst);
 			if (this.eat(FuToken.ASSIGN))
 				konst.value = this.#parseExpr();
 			else if (flags)

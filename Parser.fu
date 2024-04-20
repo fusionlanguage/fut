@@ -27,7 +27,7 @@ public class FuParser : FuLexer
 	string() FindDefinitionFilename;
 	int FindDefinitionLine = -1;
 	int FindDefinitionColumn;
-	FuSymbolReference? FoundDefinition = null;
+	FuName? FoundDefinition = null;
 
 	public void FindDefinition!(string filename, int line, int column)
 	{
@@ -39,9 +39,9 @@ public class FuParser : FuLexer
 
 	public string? GetFoundDefinitionFilename!()
 	{
-		if (this.FoundDefinition == null || this.FoundDefinition.Symbol == null)
+		if (this.FoundDefinition == null || this.FoundDefinition.GetSymbol() == null)
 			return null;
-		int loc = this.FoundDefinition.Symbol.Loc;
+		int loc = this.FoundDefinition.GetSymbol().Loc;
 		if (loc <= 0)
 			return null;
 		int line = this.Host.Program.GetLine(loc);
@@ -200,18 +200,23 @@ public class FuParser : FuLexer
 		return result;
 	}
 
-	void ParseSymbolReference!(FuSymbolReference! result)
+	bool IsFindDefinition()
 	{
 		FuSourceFile file = this.Host.Program.SourceFiles.Last();
 		if (this.Host.Program.LineLocs.Count - file.Line - 1 == this.FindDefinitionLine && file.Filename == this.FindDefinitionFilename) {
 			int loc = this.Host.Program.LineLocs.Last() + this.FindDefinitionColumn;
-			if (loc >= this.TokenLoc && loc <= this.Loc)
-				this.FoundDefinition = result;
+			return loc >= this.TokenLoc && loc <= this.Loc;
 		}
+		return false;
+	}
 
+	bool ParseName!(FuName! result)
+	{
+		if (IsFindDefinition())
+			this.FoundDefinition = result;
 		result.Loc = this.TokenLoc;
 		result.Name = this.StringValue;
-		Expect(FuToken.Id);
+		return Expect(FuToken.Id);
 	}
 
 	void ParseCollection!(List<FuExpr#>! result, FuToken closing)
@@ -278,7 +283,7 @@ public class FuParser : FuLexer
 			break;
 		case FuToken.Id:
 			FuSymbolReference# symbol = new FuSymbolReference();
-			ParseSymbolReference(symbol);
+			ParseName(symbol);
 			if (Eat(FuToken.FatArrow)) {
 				FuLambdaExpr# lambda = new FuLambdaExpr { Loc = symbol.Loc };
 				lambda.Add(FuVar.New(null, symbol.Name));
@@ -323,7 +328,7 @@ public class FuParser : FuLexer
 			case FuToken.Dot:
 				NextToken();
 				FuSymbolReference# path = new FuSymbolReference { Left = result };
-				ParseSymbolReference(path);
+				ParseName(path);
 				result = path;
 				break;
 			case FuToken.LeftParenthesis:
@@ -514,7 +519,7 @@ public class FuParser : FuLexer
 		do {
 			int loc = this.TokenLoc;
 			FuSymbolReference# field = new FuSymbolReference();
-			ParseSymbolReference(field);
+			ParseName(field);
 			Expect(FuToken.Assign);
 			result.Items.Add(new FuBinaryExpr { Loc = loc, Left = field, Op = FuToken.Assign, Right = ParseExpr() });
 		} while (Eat(FuToken.Comma));
@@ -836,7 +841,7 @@ public class FuParser : FuLexer
 		FuThrow# result = new FuThrow { Loc = this.TokenLoc };
 		Expect(FuToken.Throw);
 		result.Class = new FuSymbolReference();
-		ParseSymbolReference(result.Class);
+		ParseName(result.Class);
 		ExpectOrSkip(FuToken.LeftParenthesis);
 		result.Message = See(FuToken.RightParenthesis) ? null : ParseExpr();
 		Expect(FuToken.RightParenthesis);
@@ -944,7 +949,7 @@ public class FuParser : FuLexer
 				}
 				else
 					decl.Documentation = throwsDoc;
-				ParseSymbolReference(decl);
+				ParseName(decl);
 				method.Throws.Add(decl);
 			} while (Eat(FuToken.Comma));
 		}
@@ -982,11 +987,11 @@ public class FuParser : FuLexer
 	void ParseClass!(FuCodeDoc# doc, int line, int column, bool isPublic, FuCallType callType)
 	{
 		Expect(FuToken.Class);
-		FuClass# klass = new FuClass { Loc = this.TokenLoc, Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType, Name = this.StringValue };
-		if (Expect(FuToken.Id))
+		FuClass# klass = new FuClass { Documentation = doc, StartLine = line, StartColumn = column, IsPublic = isPublic, CallType = callType };
+		if (ParseName(klass))
 			AddSymbol(this.Host.Program, klass);
 		if (Eat(FuToken.Colon))
-			ParseSymbolReference(klass.BaseClass);
+			ParseName(klass.BaseClass);
 		Expect(FuToken.LeftBrace);
 
 		while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
@@ -1051,6 +1056,7 @@ public class FuParser : FuLexer
 				continue;
 			}
 
+			bool foundDefinition = IsFindDefinition();
 			int loc = this.TokenLoc;
 			string() name = this.StringValue;
 			if (!Expect(FuToken.Id))
@@ -1082,6 +1088,8 @@ public class FuParser : FuLexer
 				FuMethod# method = new FuMethod { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc,
 					Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 				ParseMethod(klass, method);
+				if (foundDefinition)
+					this.FoundDefinition = method;
 				continue;
 			}
 
@@ -1096,6 +1104,8 @@ public class FuParser : FuLexer
 				Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 			AddSymbol(klass, field);
 			CloseMember(FuToken.Semicolon, field);
+			if (foundDefinition)
+				this.FoundDefinition = field;
 		}
 		CloseContainer(klass);
 	}
@@ -1108,17 +1118,15 @@ public class FuParser : FuLexer
 		enu.Documentation = doc;
 		enu.StartLine = line;
 		enu.StartColumn = column;
-		enu.Loc = this.TokenLoc;
 		enu.IsPublic = isPublic;
-		enu.Name = this.StringValue;
-		if (Expect(FuToken.Id))
+		if (ParseName(enu))
 			AddSymbol(this.Host.Program, enu);
 		Expect(FuToken.LeftBrace);
 		do {
-			FuConst# konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Loc = this.TokenLoc, Name = this.StringValue, Type = enu, VisitStatus = FuVisitStatus.NotYet };
+			FuConst# konst = new FuConst { Visibility = FuVisibility.Public, Documentation = ParseDoc(), Type = enu, VisitStatus = FuVisitStatus.NotYet };
 			konst.StartLine = GetCurrentLine();
 			konst.StartColumn = GetTokenColumn();
-			Expect(FuToken.Id);
+			ParseName(konst);
 			if (Eat(FuToken.Assign))
 				konst.Value = ParseExpr();
 			else if (flags)

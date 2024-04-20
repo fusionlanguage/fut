@@ -339,6 +339,7 @@ public abstract class FuName : FuExpr
 {
 	internal string() Name = "";
 	public override int GetLocLength() => this.Name.Length;
+	public abstract FuSymbol? GetSymbol();
 }
 
 public abstract class FuSymbol : FuName
@@ -347,6 +348,7 @@ public abstract class FuSymbol : FuName
 	internal FuSymbol!? Next;
 	internal FuScope!? Parent;
 	internal FuCodeDoc#? Documentation = null;
+	public override FuSymbol? GetSymbol() => this;
 	public override string() ToString() => this.Name;
 }
 
@@ -592,6 +594,7 @@ public class FuSymbolReference : FuName
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
 	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 	public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
+	public override FuSymbol? GetSymbol() => this.Symbol;
 	public override string() ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
 

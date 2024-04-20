@@ -693,6 +693,7 @@ class FuName : public FuExpr
 public:
 	virtual ~FuName() = default;
 	int getLocLength() const override;
+	virtual const FuSymbol * getSymbol() const = 0;
 protected:
 	FuName() = default;
 public:
@@ -703,6 +704,7 @@ class FuSymbol : public FuName
 {
 public:
 	virtual ~FuSymbol() = default;
+	const FuSymbol * getSymbol() const override;
 	std::string toString() const override;
 protected:
 	FuSymbol() = default;
@@ -877,6 +879,7 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isReferenceTo(const FuSymbol * symbol) const override;
 	bool isNewString(bool substringOffset) const override;
+	const FuSymbol * getSymbol() const override;
 	std::string toString() const override;
 public:
 	std::shared_ptr<FuExpr> left = nullptr;
@@ -1585,7 +1588,7 @@ private:
 	std::string findDefinitionFilename;
 	int findDefinitionLine = -1;
 	int findDefinitionColumn;
-	const FuSymbolReference * foundDefinition = nullptr;
+	const FuName * foundDefinition = nullptr;
 	bool docParseLine(FuDocPara * para);
 	void docParsePara(FuDocPara * para);
 	std::shared_ptr<FuCodeDoc> parseDoc();
@@ -1594,7 +1597,8 @@ private:
 	bool seeDigit() const;
 	std::shared_ptr<FuInterpolatedString> parseInterpolatedString();
 	std::shared_ptr<FuExpr> parseParenthesized();
-	void parseSymbolReference(FuSymbolReference * result);
+	bool isFindDefinition() const;
+	bool parseName(FuName * result);
 	void parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, FuToken closing);
 	std::shared_ptr<FuExpr> parsePrimaryExpr(bool type);
 	std::shared_ptr<FuExpr> parseMulExpr();
