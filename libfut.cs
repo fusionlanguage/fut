@@ -4021,8 +4021,8 @@ namespace Fusion
 
 		FuVar ParseVar(FuExpr type, bool initializer)
 		{
-			FuVar result = new FuVar { Loc = this.TokenLoc, TypeExpr = type, Name = this.StringValue };
-			NextToken();
+			FuVar result = new FuVar { TypeExpr = type };
+			ParseName(result);
 			result.Value = initializer ? ParseInitializer() : null;
 			return result;
 		}

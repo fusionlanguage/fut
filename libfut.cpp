@@ -3690,10 +3690,8 @@ void FuParser::addSymbol(FuScope * scope, std::shared_ptr<FuSymbol> symbol)
 std::shared_ptr<FuVar> FuParser::parseVar(std::shared_ptr<FuExpr> type, bool initializer)
 {
 	std::shared_ptr<FuVar> result = std::make_shared<FuVar>();
-	result->loc = this->tokenLoc;
 	result->typeExpr = type;
-	result->name = this->stringValue;
-	nextToken();
+	parseName(result.get());
 	result->value = initializer ? parseInitializer() : nullptr;
 	return result;
 }

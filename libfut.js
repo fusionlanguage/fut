@@ -4223,8 +4223,8 @@ export class FuParser extends FuLexer
 
 	#parseVar(type, initializer)
 	{
-		let result = Object.assign(new FuVar(), { loc: this.tokenLoc, typeExpr: type, name: this.stringValue });
-		this.nextToken();
+		let result = Object.assign(new FuVar(), { typeExpr: type });
+		this.#parseName(result);
 		result.value = initializer ? this.#parseInitializer() : null;
 		return result;
 	}

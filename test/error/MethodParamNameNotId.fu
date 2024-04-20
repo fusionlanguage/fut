@@ -1,0 +1,9 @@
+public static class Test
+{
+	static int Id(int "bar") => bar; //ERROR: Expected identifier, got string constant
+
+	public static bool Run()
+	{
+		return Id(42) == 42;
+	}
+}
