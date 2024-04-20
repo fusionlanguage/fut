@@ -87,7 +87,7 @@ class VsCodeDiagnostics extends VsCodeHost
 		super.reportError(filename, line, startUtf16Column, endUtf16Column, message);
 		const fileDiagnostics = this.#diagnostics.get(filename);
 		if (fileDiagnostics !== undefined)
-			fileDiagnostics .push(new vscode.Diagnostic(new vscode.Range(line, startUtf16Column, line, endUtf16Column), message));
+			fileDiagnostics.push(new vscode.Diagnostic(new vscode.Range(line, startUtf16Column, line, endUtf16Column), message));
 	}
 
 	parse(filename: string, input: Uint8Array, parser: FuParser): void

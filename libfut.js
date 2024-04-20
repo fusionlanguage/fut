@@ -1543,18 +1543,22 @@ export class FuExpr extends FuStatement
 	}
 }
 
-export class FuSymbol extends FuExpr
+export class FuName extends FuExpr
 {
-	id = FuId.NONE;
 	name = "";
-	next;
-	parent;
-	documentation = null;
 
 	getLocLength()
 	{
 		return this.name.length;
 	}
+}
+
+export class FuSymbol extends FuName
+{
+	id = FuId.NONE;
+	next;
+	parent;
+	documentation = null;
 
 	toString()
 	{
@@ -1909,16 +1913,10 @@ class FuImplicitEnumValue extends FuExpr
 	}
 }
 
-export class FuSymbolReference extends FuExpr
+export class FuSymbolReference extends FuName
 {
 	left = null;
-	name;
 	symbol;
-
-	getLocLength()
-	{
-		return this.name.length;
-	}
 
 	isConstEnum()
 	{
@@ -4668,8 +4666,6 @@ export class FuParser extends FuLexer
 			this.#addSymbol(this.host.program, klass);
 		if (this.eat(FuToken.COLON))
 			this.#parseSymbolReference(klass.baseClass);
-		else
-			klass.baseClass.name = "";
 		this.expect(FuToken.LEFT_BRACE);
 		while (!this.see(FuToken.RIGHT_BRACE) && !this.see(FuToken.END_OF_FILE)) {
 			doc = this.#parseDoc();

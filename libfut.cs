@@ -1617,20 +1617,24 @@ namespace Fusion
 		public virtual bool IsNewString(bool substringOffset) => false;
 	}
 
-	public abstract class FuSymbol : FuExpr
+	public abstract class FuName : FuExpr
+	{
+
+		internal string Name = "";
+
+		public override int GetLocLength() => this.Name.Length;
+	}
+
+	public abstract class FuSymbol : FuName
 	{
 
 		internal FuId Id = FuId.None;
-
-		internal string Name = "";
 
 		internal FuSymbol Next;
 
 		internal FuScope Parent;
 
 		internal FuCodeDoc Documentation = null;
-
-		public override int GetLocLength() => this.Name.Length;
 
 		public override string ToString() => this.Name;
 	}
@@ -1916,16 +1920,12 @@ namespace Fusion
 		public override int IntValue() => this.Value;
 	}
 
-	public class FuSymbolReference : FuExpr
+	public class FuSymbolReference : FuName
 	{
 
 		internal FuExpr Left = null;
 
-		internal string Name;
-
 		internal FuSymbol Symbol;
-
-		public override int GetLocLength() => this.Name.Length;
 
 		public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
 
@@ -4461,8 +4461,6 @@ namespace Fusion
 				AddSymbol(this.Host.Program, klass);
 			if (Eat(FuToken.Colon))
 				ParseSymbolReference(klass.BaseClass);
-			else
-				klass.BaseClass.Name = "";
 			Expect(FuToken.LeftBrace);
 			while (!See(FuToken.RightBrace) && !See(FuToken.EndOfFile)) {
 				doc = ParseDoc();

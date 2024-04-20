@@ -1167,7 +1167,7 @@ bool FuExpr::isNewString(bool substringOffset) const
 	return false;
 }
 
-int FuSymbol::getLocLength() const
+int FuName::getLocLength() const
 {
 	return std::ssize(this->name);
 }
@@ -1460,11 +1460,6 @@ bool FuInterpolatedString::isNewString(bool substringOffset) const
 int FuImplicitEnumValue::intValue() const
 {
 	return this->value;
-}
-
-int FuSymbolReference::getLocLength() const
-{
-	return std::ssize(this->name);
 }
 
 bool FuSymbolReference::isConstEnum() const
@@ -4182,8 +4177,6 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		addSymbol(this->host->program, klass);
 	if (eat(FuToken::colon))
 		parseSymbolReference(&klass->baseClass);
-	else
-		klass->baseClass.name = "";
 	expect(FuToken::leftBrace);
 	while (!see(FuToken::rightBrace) && !see(FuToken::endOfFile)) {
 		doc = parseDoc();

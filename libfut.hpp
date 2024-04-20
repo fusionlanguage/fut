@@ -368,6 +368,7 @@ class FuCodeDoc;
 class FuVisitor;
 class FuStatement;
 class FuExpr;
+class FuName;
 class FuSymbol;
 class FuScope;
 class FuAggregateInitializer;
@@ -687,17 +688,26 @@ public:
 	std::shared_ptr<FuType> type;
 };
 
-class FuSymbol : public FuExpr
+class FuName : public FuExpr
+{
+public:
+	virtual ~FuName() = default;
+	int getLocLength() const override;
+protected:
+	FuName() = default;
+public:
+	std::string name{""};
+};
+
+class FuSymbol : public FuName
 {
 public:
 	virtual ~FuSymbol() = default;
-	int getLocLength() const override;
 	std::string toString() const override;
 protected:
 	FuSymbol() = default;
 public:
 	FuId id = FuId::none;
-	std::string name{""};
 	FuSymbol * next;
 	FuScope * parent;
 	std::shared_ptr<FuCodeDoc> documentation = nullptr;
@@ -857,12 +867,11 @@ public:
 	int value;
 };
 
-class FuSymbolReference : public FuExpr
+class FuSymbolReference : public FuName
 {
 public:
 	FuSymbolReference() = default;
 	virtual ~FuSymbolReference() = default;
-	int getLocLength() const override;
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
@@ -871,7 +880,6 @@ public:
 	std::string toString() const override;
 public:
 	std::shared_ptr<FuExpr> left = nullptr;
-	std::string name;
 	FuSymbol * symbol;
 };
 
