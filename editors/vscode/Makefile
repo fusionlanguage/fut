@@ -6,7 +6,7 @@ run: fusion-$(VERSION).vsix
 fusion-$(VERSION).vsix: package.json fu-logo.png fu-file.svg language-configuration.json tsconfig.json syntaxes/fusion.tmLanguage.json src/extension.ts src/fucheck.js node_modules
 	vsce package
 
-src/fucheck.js: ../../Lexer.fu ../../AST.fu ../../Parser.fu ../../Sema.fu
+src/fucheck.js: ../../Lexer.fu ../../AST.fu ../../Parser.fu ../../Sema.fu ../../SymbolReferenceVisitor.fu
 	fut -o $@ $^
 
 node_modules: package.json

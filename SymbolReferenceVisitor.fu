@@ -1,0 +1,292 @@
+// SymbolReferenceVisitor.fu - visitor of symbol references
+//
+// Copyright (C) 2024  Piotr Fusik
+//
+// This file is part of Fusion Transpiler,
+// see https://github.com/fusionlanguage/fut
+//
+// Fusion Transpiler is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// Fusion Transpiler is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
+
+public abstract class FuSymbolReferenceVisitor : FuVisitor
+{
+	FuSymbol Symbol;
+
+	protected abstract void VisitFound(FuStatement reference);
+
+	void VisitReference(FuStatement reference, FuSymbol symbol)
+	{
+		if (symbol == this.Symbol)
+			VisitFound(reference);
+	}
+
+	void VisitType(FuType type)
+	{
+		if (type is FuClassType klass) {
+			VisitReference(klass, klass.Class);
+			if (klass.TypeArg0 != null) {
+				VisitType(klass.TypeArg0);
+				if (klass.TypeArg1 != null)
+					VisitType(klass.TypeArg1);
+			}
+		}
+	}
+
+	internal override void VisitConst!(FuConst statement)
+	{
+		VisitType(statement.Type);
+		statement.Value.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitExpr!(FuExpr expr)
+	{
+		expr.Accept(this, FuPriority.Statement);
+	}
+
+	void VisitStatements!(List<FuStatement#> statements)
+	{
+		foreach (FuStatement statement in statements)
+			statement.AcceptStatement(this);
+	}
+
+	internal override void VisitBlock!(FuBlock block)
+	{
+		VisitStatements(block.Statements);
+	}
+
+	internal override void VisitAssert!(FuAssert statement)
+	{
+		statement.Cond.Accept(this, FuPriority.Statement);
+		VisitOptionalStatement(statement.Message);
+	}
+
+	internal override void VisitBreak!(FuBreak statement)
+	{
+	}
+
+	internal override void VisitContinue!(FuContinue statement)
+	{
+	}
+
+	internal override void VisitDoWhile!(FuDoWhile statement)
+	{
+		statement.Body.AcceptStatement(this);
+		statement.Cond.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitFor!(FuFor statement)
+	{
+		VisitOptionalStatement(statement.Init);
+		VisitOptionalStatement(statement.Cond);
+		VisitOptionalStatement(statement.Advance);
+		statement.Body.AcceptStatement(this);
+	}
+
+	internal override void VisitForeach!(FuForeach statement)
+	{
+		FuVar element = statement.GetVar();
+		VisitType(element.Type);
+		if (element.Next != null)
+			VisitType(element.Next.Type);
+		statement.Collection.Accept(this, FuPriority.Statement);
+		statement.Body.AcceptStatement(this);
+	}
+
+	internal override void VisitIf!(FuIf statement)
+	{
+		statement.Cond.Accept(this, FuPriority.Statement);
+		statement.OnTrue.AcceptStatement(this);
+		VisitOptionalStatement(statement.OnFalse);
+	}
+
+	internal override void VisitLock!(FuLock statement)
+	{
+		statement.Lock.Accept(this, FuPriority.Statement);
+		statement.Body.AcceptStatement(this);
+	}
+
+	internal override void VisitNative!(FuNative statement)
+	{
+	}
+
+	internal override void VisitReturn!(FuReturn statement)
+	{
+		VisitOptionalStatement(statement.Value);
+	}
+
+	internal override void VisitSwitch!(FuSwitch statement)
+	{
+		statement.Value.Accept(this, FuPriority.Statement);
+		foreach (FuCase kase in statement.Cases) {
+			foreach (FuExpr value in kase.Values)
+				value.Accept(this, FuPriority.Statement);
+			VisitStatements(kase.Body);
+		}	
+		VisitStatements(statement.DefaultBody);
+	}
+
+	internal override void VisitThrow!(FuThrow statement)
+	{
+		VisitSymbolReference(statement.Class, FuPriority.Statement);
+		VisitOptionalStatement(statement.Message);
+	}
+
+	internal override void VisitWhile!(FuWhile statement)
+	{
+		statement.Cond.Accept(this, FuPriority.Statement);
+		statement.Body.AcceptStatement(this);
+	}
+
+	internal override void VisitEnumValue!(FuConst konst, FuConst? previous)
+	{
+		assert false;
+	}
+
+	internal override void VisitLiteralNull!()
+	{
+	}
+
+	internal override void VisitLiteralFalse!()
+	{
+	}
+
+	internal override void VisitLiteralTrue!()
+	{
+	}
+
+	internal override void VisitLiteralLong!(long value)
+	{
+	}
+
+	internal override void VisitLiteralChar!(int value)
+	{
+	}
+
+	internal override void VisitLiteralDouble!(double value)
+	{
+	}
+
+	internal override void VisitLiteralString!(string value)
+	{
+	}
+
+	internal override void VisitAggregateInitializer!(FuAggregateInitializer expr)
+	{
+		foreach (FuExpr item in expr.Items)
+			item.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
+	{
+		foreach (FuInterpolatedPart part in expr.Parts) {
+			part.Argument.Accept(this, FuPriority.Statement);
+			VisitOptionalStatement(part.WidthExpr);
+		}
+	}
+
+	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
+	{
+		VisitReference(expr, expr.Symbol);
+	}
+
+	internal override void VisitPrefixExpr!(FuPrefixExpr expr, FuPriority parent)
+	{
+		if (expr.Op == FuToken.New)
+			VisitType(expr.Type);
+		VisitOptionalStatement(expr.Inner);
+	}
+
+	internal override void VisitPostfixExpr!(FuPostfixExpr expr, FuPriority parent)
+	{
+		expr.Inner.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitBinaryExpr!(FuBinaryExpr expr, FuPriority parent)
+	{
+		expr.Left.Accept(this, FuPriority.Statement);
+		expr.Right.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitSelectExpr!(FuSelectExpr expr, FuPriority parent)
+	{
+		expr.Cond.Accept(this, FuPriority.Statement);
+		expr.OnTrue.Accept(this, FuPriority.Statement);
+		expr.OnFalse.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitCallExpr!(FuCallExpr expr, FuPriority parent)
+	{
+		VisitSymbolReference(expr.Method, FuPriority.Statement);
+		foreach (FuExpr arg in expr.Arguments)
+			arg.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitLambdaExpr!(FuLambdaExpr expr)
+	{
+		expr.Body.Accept(this, FuPriority.Statement);
+	}
+
+	internal override void VisitVar!(FuVar expr)
+	{
+		VisitType(expr.Type);
+		VisitOptionalStatement(expr.Value);
+	}
+
+	void VisitClass!(FuClass klass)
+	{
+		if (klass.HasBaseClass())
+			VisitSymbolReference(klass.BaseClass, FuPriority.Statement);
+		if (klass.Constructor != null)
+			klass.Constructor.Body.AcceptStatement(this);
+		for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
+			VisitType(symbol.Type);
+			switch (symbol) {
+			case FuConst konst:
+				konst.Value.Accept(this, FuPriority.Statement);
+				break;
+			case FuField field:
+				VisitOptionalStatement(field.Value);
+				break;
+			case FuMethod method:
+				for (FuVar? param = method.FirstParameter(); param != null; param = param.NextVar())
+					VisitVar(param);
+				foreach (FuThrowsDeclaration decl in method.Throws)
+					VisitSymbolReference(decl, FuPriority.Statement);
+				VisitOptionalStatement(method.Body);
+				break;
+			default:
+				assert false;
+			}
+		}
+	}
+
+	public void FindReferences!(FuProgram program, FuSymbol symbol)
+	{
+		this.Symbol = symbol;
+		for (FuSymbol? type = program.First; type != null; type = type.Next) {
+			switch (type) {
+			case FuClass klass:
+				VisitClass(klass);
+				break;
+			case FuEnum enu:
+				for (FuSymbol? symbol = enu.First; symbol != null; symbol = symbol.Next) {
+					if (symbol is FuConst konst && !(konst.Value is FuImplicitEnumValue))
+						konst.Value.Accept(this, FuPriority.Statement);
+				}
+				break;
+			default:
+				assert false;
+			}
+		}
+	}
+}

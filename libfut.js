@@ -3694,41 +3694,22 @@ export class FuParser extends FuLexer
 	#xcrementParent = null;
 	#currentLoop = null;
 	#currentLoopOrSwitch = null;
-	#findDefinitionFilename;
-	#findDefinitionLine = -1;
-	#findDefinitionColumn;
-	#foundDefinition = null;
+	#findNameFilename;
+	#findNameLine = -1;
+	#findNameColumn;
+	#foundName = null;
 
-	findDefinition(filename, line, column)
+	findName(filename, line, column)
 	{
-		this.#findDefinitionFilename = filename;
-		this.#findDefinitionLine = line;
-		this.#findDefinitionColumn = column;
-		this.#foundDefinition = null;
+		this.#findNameFilename = filename;
+		this.#findNameLine = line;
+		this.#findNameColumn = column;
+		this.#foundName = null;
 	}
 
-	getFoundDefinitionFilename()
+	getFoundDefinition()
 	{
-		if (this.#foundDefinition == null || this.#foundDefinition.getSymbol() == null)
-			return null;
-		let loc = this.#foundDefinition.getSymbol().loc;
-		if (loc <= 0)
-			return null;
-		let line = this.host.program.getLine(loc);
-		let file = this.host.program.getSourceFile(line);
-		this.#findDefinitionLine = line - file.line;
-		this.#findDefinitionColumn = loc - this.host.program.lineLocs[line];
-		return file.filename;
-	}
-
-	getFoundDefinitionLine()
-	{
-		return this.#findDefinitionLine;
-	}
-
-	getFoundDefinitionColumn()
-	{
-		return this.#findDefinitionColumn;
+		return this.#foundName == null ? null : this.#foundName.getSymbol();
 	}
 
 	#docParseLine(para)
@@ -3880,11 +3861,11 @@ export class FuParser extends FuLexer
 		return result;
 	}
 
-	#isFindDefinition()
+	#isFindName()
 	{
 		let file = this.host.program.sourceFiles.at(-1);
-		if (this.host.program.lineLocs.length - file.line - 1 == this.#findDefinitionLine && file.filename == this.#findDefinitionFilename) {
-			let loc = this.host.program.lineLocs.at(-1) + this.#findDefinitionColumn;
+		if (this.host.program.lineLocs.length - file.line - 1 == this.#findNameLine && file.filename == this.#findNameFilename) {
+			let loc = this.host.program.lineLocs.at(-1) + this.#findNameColumn;
 			return loc >= this.tokenLoc && loc <= this.loc;
 		}
 		return false;
@@ -3892,8 +3873,8 @@ export class FuParser extends FuLexer
 
 	#parseName(result)
 	{
-		if (this.#isFindDefinition())
-			this.#foundDefinition = result;
+		if (this.#isFindName())
+			this.#foundName = result;
 		result.loc = this.tokenLoc;
 		result.name = this.stringValue;
 		return this.expect(FuToken.ID);
@@ -4739,7 +4720,7 @@ export class FuParser extends FuLexer
 				klass.constructor_.body = this.#parseBlock(klass.constructor_);
 				continue;
 			}
-			let foundDefinition = this.#isFindDefinition();
+			let foundName = this.#isFindName();
 			let loc = this.tokenLoc;
 			let name = this.stringValue;
 			if (!this.expect(FuToken.ID))
@@ -4757,8 +4738,8 @@ export class FuParser extends FuLexer
 					this.#reportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 				let method = Object.assign(new FuMethod(), { startLine: line, startColumn: column, loc: loc, documentation: doc, visibility: visibility, callType: callType, typeExpr: type, name: name });
 				this.#parseMethod(klass, method);
-				if (foundDefinition)
-					this.#foundDefinition = method;
+				if (foundName)
+					this.#foundName = method;
 				continue;
 			}
 			if (visibility == FuVisibility.PUBLIC)
@@ -4770,8 +4751,8 @@ export class FuParser extends FuLexer
 			let field = Object.assign(new FuField(), { startLine: line, startColumn: column, loc: loc, documentation: doc, visibility: visibility, typeExpr: type, name: name, value: this.#parseInitializer() });
 			this.#addSymbol(klass, field);
 			this.#closeMember(FuToken.SEMICOLON, field);
-			if (foundDefinition)
-				this.#foundDefinition = field;
+			if (foundName)
+				this.#foundName = field;
 		}
 		this.#closeContainer(klass);
 	}

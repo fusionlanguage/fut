@@ -2990,36 +2990,17 @@ const FuSourceFile * FuProgram::getSourceFile(int line) const
 	return &this->sourceFiles[l];
 }
 
-void FuParser::findDefinition(std::string_view filename, int line, int column)
+void FuParser::findName(std::string_view filename, int line, int column)
 {
-	this->findDefinitionFilename = filename;
-	this->findDefinitionLine = line;
-	this->findDefinitionColumn = column;
-	this->foundDefinition = nullptr;
+	this->findNameFilename = filename;
+	this->findNameLine = line;
+	this->findNameColumn = column;
+	this->foundName = nullptr;
 }
 
-std::string_view FuParser::getFoundDefinitionFilename()
+const FuSymbol * FuParser::getFoundDefinition() const
 {
-	if (this->foundDefinition == nullptr || this->foundDefinition->getSymbol() == nullptr)
-		return std::string_view();
-	int loc = this->foundDefinition->getSymbol()->loc;
-	if (loc <= 0)
-		return std::string_view();
-	int line = this->host->program->getLine(loc);
-	const FuSourceFile * file = this->host->program->getSourceFile(line);
-	this->findDefinitionLine = line - file->line;
-	this->findDefinitionColumn = loc - this->host->program->lineLocs[line];
-	return file->filename;
-}
-
-int FuParser::getFoundDefinitionLine() const
-{
-	return this->findDefinitionLine;
-}
-
-int FuParser::getFoundDefinitionColumn() const
-{
-	return this->findDefinitionColumn;
+	return this->foundName == nullptr ? nullptr : this->foundName->getSymbol();
 }
 
 bool FuParser::docParseLine(FuDocPara * para)
@@ -3188,11 +3169,11 @@ std::shared_ptr<FuExpr> FuParser::parseParenthesized()
 	return result;
 }
 
-bool FuParser::isFindDefinition() const
+bool FuParser::isFindName() const
 {
 	const FuSourceFile * file = &static_cast<const FuSourceFile &>(this->host->program->sourceFiles.back());
-	if (std::ssize(this->host->program->lineLocs) - file->line - 1 == this->findDefinitionLine && file->filename == this->findDefinitionFilename) {
-		int loc = this->host->program->lineLocs.back() + this->findDefinitionColumn;
+	if (std::ssize(this->host->program->lineLocs) - file->line - 1 == this->findNameLine && file->filename == this->findNameFilename) {
+		int loc = this->host->program->lineLocs.back() + this->findNameColumn;
 		return loc >= this->tokenLoc && loc <= this->loc;
 	}
 	return false;
@@ -3200,8 +3181,8 @@ bool FuParser::isFindDefinition() const
 
 bool FuParser::parseName(FuName * result)
 {
-	if (isFindDefinition())
-		this->foundDefinition = result;
+	if (isFindName())
+		this->foundName = result;
 	result->loc = this->tokenLoc;
 	result->name = this->stringValue;
 	return expect(FuToken::id);
@@ -4253,7 +4234,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			klass->constructor->body = parseBlock(klass->constructor.get());
 			continue;
 		}
-		bool foundDefinition = isFindDefinition();
+		bool foundName = isFindName();
 		int loc = this->tokenLoc;
 		std::string name{this->stringValue};
 		if (!expect(FuToken::id))
@@ -4279,8 +4260,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			method->typeExpr = type;
 			method->name = name;
 			parseMethod(klass.get(), method);
-			if (foundDefinition)
-				this->foundDefinition = method.get();
+			if (foundName)
+				this->foundName = method.get();
 			continue;
 		}
 		if (visibility == FuVisibility::public_)
@@ -4300,8 +4281,8 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		field->value = parseInitializer();
 		addSymbol(klass.get(), field);
 		closeMember(FuToken::semicolon, field.get());
-		if (foundDefinition)
-			this->foundDefinition = field.get();
+		if (foundName)
+			this->foundName = field.get();
 	}
 	closeContainer(klass.get());
 }

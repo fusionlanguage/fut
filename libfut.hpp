@@ -1576,19 +1576,17 @@ class FuParser : public FuLexer
 {
 public:
 	FuParser() = default;
-	void findDefinition(std::string_view filename, int line, int column);
-	std::string_view getFoundDefinitionFilename();
-	int getFoundDefinitionLine() const;
-	int getFoundDefinitionColumn() const;
+	void findName(std::string_view filename, int line, int column);
+	const FuSymbol * getFoundDefinition() const;
 	void parse(std::string_view filename, uint8_t const * input, int inputLength);
 private:
 	std::string_view xcrementParent = std::string_view();
 	const FuLoop * currentLoop = nullptr;
 	FuCondCompletionStatement * currentLoopOrSwitch = nullptr;
-	std::string findDefinitionFilename;
-	int findDefinitionLine = -1;
-	int findDefinitionColumn;
-	const FuName * foundDefinition = nullptr;
+	std::string findNameFilename;
+	int findNameLine = -1;
+	int findNameColumn;
+	const FuName * foundName = nullptr;
 	bool docParseLine(FuDocPara * para);
 	void docParsePara(FuDocPara * para);
 	std::shared_ptr<FuCodeDoc> parseDoc();
@@ -1597,7 +1595,7 @@ private:
 	bool seeDigit() const;
 	std::shared_ptr<FuInterpolatedString> parseInterpolatedString();
 	std::shared_ptr<FuExpr> parseParenthesized();
-	bool isFindDefinition() const;
+	bool isFindName() const;
 	bool parseName(FuName * result);
 	void parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, FuToken closing);
 	std::shared_ptr<FuExpr> parsePrimaryExpr(bool type);

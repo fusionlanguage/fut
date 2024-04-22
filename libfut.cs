@@ -3496,39 +3496,23 @@ namespace Fusion
 
 		FuCondCompletionStatement CurrentLoopOrSwitch = null;
 
-		string FindDefinitionFilename;
+		string FindNameFilename;
 
-		int FindDefinitionLine = -1;
+		int FindNameLine = -1;
 
-		int FindDefinitionColumn;
+		int FindNameColumn;
 
-		FuName FoundDefinition = null;
+		FuName FoundName = null;
 
-		public void FindDefinition(string filename, int line, int column)
+		public void FindName(string filename, int line, int column)
 		{
-			this.FindDefinitionFilename = filename;
-			this.FindDefinitionLine = line;
-			this.FindDefinitionColumn = column;
-			this.FoundDefinition = null;
+			this.FindNameFilename = filename;
+			this.FindNameLine = line;
+			this.FindNameColumn = column;
+			this.FoundName = null;
 		}
 
-		public string GetFoundDefinitionFilename()
-		{
-			if (this.FoundDefinition == null || this.FoundDefinition.GetSymbol() == null)
-				return null;
-			int loc = this.FoundDefinition.GetSymbol().Loc;
-			if (loc <= 0)
-				return null;
-			int line = this.Host.Program.GetLine(loc);
-			FuSourceFile file = this.Host.Program.GetSourceFile(line);
-			this.FindDefinitionLine = line - file.Line;
-			this.FindDefinitionColumn = loc - this.Host.Program.LineLocs[line];
-			return file.Filename;
-		}
-
-		public int GetFoundDefinitionLine() => this.FindDefinitionLine;
-
-		public int GetFoundDefinitionColumn() => this.FindDefinitionColumn;
+		public FuSymbol GetFoundDefinition() => this.FoundName == null ? null : this.FoundName.GetSymbol();
 
 		bool DocParseLine(FuDocPara para)
 		{
@@ -3679,11 +3663,11 @@ namespace Fusion
 			return result;
 		}
 
-		bool IsFindDefinition()
+		bool IsFindName()
 		{
 			FuSourceFile file = this.Host.Program.SourceFiles[^1];
-			if (this.Host.Program.LineLocs.Count - file.Line - 1 == this.FindDefinitionLine && file.Filename == this.FindDefinitionFilename) {
-				int loc = this.Host.Program.LineLocs[^1] + this.FindDefinitionColumn;
+			if (this.Host.Program.LineLocs.Count - file.Line - 1 == this.FindNameLine && file.Filename == this.FindNameFilename) {
+				int loc = this.Host.Program.LineLocs[^1] + this.FindNameColumn;
 				return loc >= this.TokenLoc && loc <= this.Loc;
 			}
 			return false;
@@ -3691,8 +3675,8 @@ namespace Fusion
 
 		bool ParseName(FuName result)
 		{
-			if (IsFindDefinition())
-				this.FoundDefinition = result;
+			if (IsFindName())
+				this.FoundName = result;
 			result.Loc = this.TokenLoc;
 			result.Name = this.StringValue;
 			return Expect(FuToken.Id);
@@ -4529,7 +4513,7 @@ namespace Fusion
 					klass.Constructor.Body = ParseBlock(klass.Constructor);
 					continue;
 				}
-				bool foundDefinition = IsFindDefinition();
+				bool foundName = IsFindName();
 				int loc = this.TokenLoc;
 				string name = this.StringValue;
 				if (!Expect(FuToken.Id))
@@ -4547,8 +4531,8 @@ namespace Fusion
 						ReportCallTypeError(callTypeLine, callTypeColumn, "Private method", callType);
 					FuMethod method = new FuMethod { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, CallType = callType, TypeExpr = type, Name = name };
 					ParseMethod(klass, method);
-					if (foundDefinition)
-						this.FoundDefinition = method;
+					if (foundName)
+						this.FoundName = method;
 					continue;
 				}
 				if (visibility == FuVisibility.Public)
@@ -4560,8 +4544,8 @@ namespace Fusion
 				FuField field = new FuField { StartLine = line, StartColumn = column, Loc = loc, Documentation = doc, Visibility = visibility, TypeExpr = type, Name = name, Value = ParseInitializer() };
 				AddSymbol(klass, field);
 				CloseMember(FuToken.Semicolon, field);
-				if (foundDefinition)
-					this.FoundDefinition = field;
+				if (foundName)
+					this.FoundName = field;
 			}
 			CloseContainer(klass);
 		}

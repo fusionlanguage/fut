@@ -19,7 +19,7 @@
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
 import * as vscode from "vscode";
-import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuContainerType, FuEnum, FuMember, FuField, FuMethod } from "./fucheck.js";
+import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuSymbolReferenceVisitor, FuStatement, FuSymbol, FuContainerType, FuEnum, FuMember, FuField, FuMethod } from "./fucheck.js";
 
 class VsCodeHost extends FuSemaHost
 {
@@ -73,6 +73,29 @@ class VsCodeHost extends FuSemaHost
 		sema.setHost(this);
 		sema.process();
 	}
+
+	async findSymbol(document: vscode.TextDocument, position: vscode.Position): Promise<FuSymbol | null>
+	{
+		const parser = this.createParser();
+		const filename = document.uri.toString();
+		parser.findName(filename, position.line, position.character);
+		const files = await vscode.workspace.findFiles("*.fu");
+		if (files.some(uri => uri.toString() == filename))
+			await this.parseFolder(files, parser);
+		else
+			this.parseDocument(document, parser);
+		this.doSema();
+		return parser.getFoundDefinition();
+	}
+
+	toLocation(statement: FuStatement): vscode.Location | null
+	{
+		if (statement.loc <= 0)
+			return null;
+		const line = this.program.getLine(statement.loc);
+		const file = this.program.getSourceFile(line);
+		return new vscode.Location(vscode.Uri.parse(file.filename), new vscode.Position(line - file.line, statement.loc - this.program.lineLocs[line]));
+	}
 }
 
 class VsCodeDiagnostics extends VsCodeHost
@@ -119,7 +142,7 @@ class VsCodeDiagnostics extends VsCodeHost
 		this.#diagnostics.clear();
 	}
 
-	check(document: vscode.TextDocument)
+	check(document: vscode.TextDocument): void
 	{
 		if (document.languageId != "fusion")
 			return;
@@ -129,7 +152,7 @@ class VsCodeDiagnostics extends VsCodeHost
 		this.#timeoutId = setTimeout(() => this.#process(), 1000);
 	}
 
-	delete(document: vscode.TextDocument)
+	delete(document: vscode.TextDocument): void
 	{
 		this.#queue.delete(document.uri.toString());
 		this.#diagnosticCollection.delete(document.uri);
@@ -140,17 +163,40 @@ class VsCodeDefinitionProvider extends VsCodeHost
 {
 	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location | null>
 	{
-		const parser = this.createParser();
-		const filename = document.uri.toString();
-		parser.findDefinition(filename, position.line, position.character);
-		const files = await vscode.workspace.findFiles("*.fu");
-		if (files.some(uri => uri.toString() == filename))
-			await this.parseFolder(files, parser);
-		else
-			this.parseDocument(document, parser);
-		this.doSema();
-		const definitionFilename: string | null = parser.getFoundDefinitionFilename();
-		return definitionFilename == null ? null : new vscode.Location(vscode.Uri.parse(definitionFilename), new vscode.Position(parser.getFoundDefinitionLine(), parser.getFoundDefinitionColumn()));
+		const symbol = await this.findSymbol(document, position);
+		return symbol == null ? null : this.toLocation(symbol);
+	}
+}
+
+class VsCodeReferenceCollector extends FuSymbolReferenceVisitor
+{
+	host: VsCodeHost;
+	result: vscode.Location[] = [];
+
+	constructor(host: VsCodeHost)
+	{
+		super();
+		this.host = host;
+	}
+
+	visitFound(reference: FuStatement): void
+	{
+		const location = this.host.toLocation(reference);
+		if (location != null)
+			this.result.push(location);
+	}
+}
+
+class VsCodeReferenceProvider extends VsCodeHost
+{
+	async findReferences(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
+	{
+		const symbol = await this.findSymbol(document, position);
+		if (symbol == null)
+			return [];
+		const collector = new VsCodeReferenceCollector(this);
+		collector.findReferences(this.program, symbol);
+		return collector.result;
 	}
 }
 
@@ -205,6 +251,11 @@ export function activate(context: vscode.ExtensionContext): void
 	vscode.languages.registerDefinitionProvider("fusion", {
 			provideDefinition(document, position, token) {
 				return new VsCodeDefinitionProvider().findDefinition(document, position);
+			}
+		});
+	vscode.languages.registerReferenceProvider("fusion", {
+			provideReferences(document, position, context, token) {
+				return new VsCodeReferenceProvider().findReferences(document, position);
 			}
 		});
 	vscode.languages.registerDocumentSymbolProvider("fusion", {
