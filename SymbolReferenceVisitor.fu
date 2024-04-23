@@ -196,6 +196,7 @@ public abstract class FuSymbolReferenceVisitor : FuVisitor
 
 	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
+		VisitOptionalStatement(expr.Left);
 		VisitReference(expr, expr.Symbol);
 	}
 
