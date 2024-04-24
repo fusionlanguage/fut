@@ -287,6 +287,20 @@ install: fut
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/fut
 
+install-vim: editors/vim/syntax/fusion.vim editors/vim/ftdetect/fusion.vim
+	$(INSTALL) -D editors/vim/syntax/fusion.vim ~/.vim/syntax/fusion.vim
+	$(INSTALL) -D editors/vim/ftdetect/fusion.vim ~/.vim/ftdetect/fusion.vim
+
+uninstall-vim:
+	$(RM) ~/.vim/ftdetect/fusion.vim ~/.vim/syntax/fusion.vim
+
+install-nvim install-neovim: editors/vim/syntax/fusion.vim editors/vim/ftdetect/fusion.vim
+	$(INSTALL) -D editors/vim/syntax/fusion.vim ~/.config/nvim/syntax/fusion.vim
+	$(INSTALL) -D editors/vim/ftdetect/fusion.vim ~/.config/nvim/ftdetect/fusion.vim
+
+uninstall-nvim uninstall-neovim:
+	$(RM) ~/.config/nvim/ftdetect/fusion.vim ~/.config/nvim/syntax/fusion.vim
+
 srcdist:
 	git archive -o ../fut-$(VERSION).tar.gz --prefix=fut-$(VERSION)/ -9 HEAD
 
@@ -304,7 +318,9 @@ clean:
 	$(RM) fut fut.exe
 	$(RM) -r test/bin test/cpp test/cs test/node
 
-.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile coverage/output.xml coverage codecov host-diff host-diff-java install uninstall srcdist deb64 rpm64 clean
+.PHONY: all test test-c test-cpp test-cs test-d test-java test-js test-ts test-py test-swift test-cl test-error test-transpile \
+	coverage/output.xml coverage codecov host-diff host-diff-java install uninstall \
+	install-vim uninstall-vim install-nvim install-neovim uninstall-nvim uninstall-neovim srcdist deb64 rpm64 clean
 
 .DELETE_ON_ERROR:
 
