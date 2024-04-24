@@ -2804,6 +2804,8 @@ namespace Fusion
 
 		public bool IsAbstractOrVirtual() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual;
 
+		public bool IsAbstractVirtualOrOverride() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual || this.CallType == FuCallType.Override;
+
 		public FuVar FirstParameter()
 		{
 			FuVar first = (FuVar) this.Parameters.First;
@@ -6757,20 +6759,13 @@ namespace Fusion
 					if (method.Body != null) {
 						if (method.CallType == FuCallType.Override || method.CallType == FuCallType.Sealed) {
 							if (klass.Parent.TryLookup(method.Name, false) is FuMethod baseMethod) {
-								switch (baseMethod.CallType) {
-								case FuCallType.Abstract:
-								case FuCallType.Virtual:
-								case FuCallType.Override:
-									if (method.IsMutator() != baseMethod.IsMutator()) {
-										if (method.IsMutator())
-											ReportError(method, "Mutating method cannot override a non-mutating method");
-										else
-											ReportError(method, "Non-mutating method cannot override a mutating method");
-									}
-									break;
-								default:
+								if (!baseMethod.IsAbstractVirtualOrOverride())
 									ReportError(method, "Base method is not abstract or virtual");
-									break;
+								else if (method.IsMutator() != baseMethod.IsMutator()) {
+									if (method.IsMutator())
+										ReportError(method, "Mutating method cannot override a non-mutating method");
+									else
+										ReportError(method, "Non-mutating method cannot override a mutating method");
 								}
 								if (!method.Type.EqualsType(baseMethod.Type))
 									ReportError(method.Type, "Base method has a different return type");
@@ -11334,11 +11329,8 @@ namespace Fusion
 				WriteUpcast(declaringClass, klass.Parent);
 			}
 			else {
-				FuClass definingClass = declaringClass;
-				switch (method.CallType) {
-				case FuCallType.Abstract:
-				case FuCallType.Virtual:
-				case FuCallType.Override:
+				if (method.IsAbstractVirtualOrOverride()) {
+					FuClass definingClass = declaringClass;
 					if (method.CallType == FuCallType.Override) {
 						FuClass declaringClass1 = (FuClass) method.GetDeclaringMethod().Parent;
 						declaringClass = declaringClass1;
@@ -11363,11 +11355,9 @@ namespace Fusion
 						WriteChar(')');
 					Write("->");
 					WriteCamelCase(method.Name);
-					break;
-				default:
-					WriteName(method);
-					break;
 				}
+				else
+					WriteName(method);
 				WriteChar('(');
 				if (method.CallType != FuCallType.Static) {
 					if (obj != null)

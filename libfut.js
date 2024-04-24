@@ -2935,6 +2935,11 @@ export class FuMethod extends FuMethodBase
 		return this.callType == FuCallType.ABSTRACT || this.callType == FuCallType.VIRTUAL;
 	}
 
+	isAbstractVirtualOrOverride()
+	{
+		return this.callType == FuCallType.ABSTRACT || this.callType == FuCallType.VIRTUAL || this.callType == FuCallType.OVERRIDE;
+	}
+
 	firstParameter()
 	{
 		let first = this.parameters.first;
@@ -7131,20 +7136,13 @@ export class FuSema
 					if (method.callType == FuCallType.OVERRIDE || method.callType == FuCallType.SEALED) {
 						let baseMethod;
 						if ((baseMethod = klass.parent.tryLookup(method.name, false)) instanceof FuMethod) {
-							switch (baseMethod.callType) {
-							case FuCallType.ABSTRACT:
-							case FuCallType.VIRTUAL:
-							case FuCallType.OVERRIDE:
-								if (method.isMutator() != baseMethod.isMutator()) {
-									if (method.isMutator())
-										this.#reportError(method, "Mutating method cannot override a non-mutating method");
-									else
-										this.#reportError(method, "Non-mutating method cannot override a mutating method");
-								}
-								break;
-							default:
+							if (!baseMethod.isAbstractVirtualOrOverride())
 								this.#reportError(method, "Base method is not abstract or virtual");
-								break;
+							else if (method.isMutator() != baseMethod.isMutator()) {
+								if (method.isMutator())
+									this.#reportError(method, "Mutating method cannot override a non-mutating method");
+								else
+									this.#reportError(method, "Non-mutating method cannot override a mutating method");
 							}
 							if (!method.type.equalsType(baseMethod.type))
 								this.#reportError(method.type, "Base method has a different return type");
@@ -11763,11 +11761,8 @@ export class GenC extends GenCCpp
 			this.#writeUpcast(declaringClass, klass.parent);
 		}
 		else {
-			let definingClass = declaringClass;
-			switch (method.callType) {
-			case FuCallType.ABSTRACT:
-			case FuCallType.VIRTUAL:
-			case FuCallType.OVERRIDE:
+			if (method.isAbstractVirtualOrOverride()) {
+				let definingClass = declaringClass;
 				if (method.callType == FuCallType.OVERRIDE) {
 					let declaringClass1 = method.getDeclaringMethod().parent;
 					declaringClass = declaringClass1;
@@ -11792,11 +11787,9 @@ export class GenC extends GenCCpp
 					this.writeChar(41);
 				this.write("->");
 				this.writeCamelCase(method.name);
-				break;
-			default:
-				this.writeName(method);
-				break;
 			}
+			else
+				this.writeName(method);
 			this.writeChar(40);
 			if (method.callType != FuCallType.STATIC) {
 				if (obj != null)

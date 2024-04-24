@@ -2270,6 +2270,11 @@ bool FuMethod::isAbstractOrVirtual() const
 	return this->callType == FuCallType::abstract || this->callType == FuCallType::virtual_;
 }
 
+bool FuMethod::isAbstractVirtualOrOverride() const
+{
+	return this->callType == FuCallType::abstract || this->callType == FuCallType::virtual_ || this->callType == FuCallType::override_;
+}
+
 FuVar * FuMethod::firstParameter() const
 {
 	FuVar * first = static_cast<FuVar *>(this->parameters.first);
@@ -6650,20 +6655,13 @@ void FuSema::resolveCode(FuClass * klass)
 			if (method->body != nullptr) {
 				if (method->callType == FuCallType::override_ || method->callType == FuCallType::sealed) {
 					if (FuMethod *baseMethod = dynamic_cast<FuMethod *>(klass->parent->tryLookup(method->name, false).get())) {
-						switch (baseMethod->callType) {
-						case FuCallType::abstract:
-						case FuCallType::virtual_:
-						case FuCallType::override_:
-							if (method->isMutator() != baseMethod->isMutator()) {
-								if (method->isMutator())
-									reportError(method, "Mutating method cannot override a non-mutating method");
-								else
-									reportError(method, "Non-mutating method cannot override a mutating method");
-							}
-							break;
-						default:
+						if (!baseMethod->isAbstractVirtualOrOverride())
 							reportError(method, "Base method is not abstract or virtual");
-							break;
+						else if (method->isMutator() != baseMethod->isMutator()) {
+							if (method->isMutator())
+								reportError(method, "Mutating method cannot override a non-mutating method");
+							else
+								reportError(method, "Non-mutating method cannot override a mutating method");
 						}
 						if (!method->type->equalsType(baseMethod->type.get()))
 							reportError(method->type.get(), "Base method has a different return type");
@@ -11067,42 +11065,35 @@ void GenC::writeCCall(const FuExpr * obj, const FuMethod * method, const std::ve
 		writeUpcast(declaringClass, klass->parent);
 	}
 	else {
-		const FuClass * definingClass = declaringClass;
-		switch (method->callType) {
-		case FuCallType::abstract:
-		case FuCallType::virtual_:
-		case FuCallType::override_:
+		if (method->isAbstractVirtualOrOverride()) {
+			const FuClass * definingClass = declaringClass;
 			if (method->callType == FuCallType::override_) {
 				const FuClass * declaringClass1 = static_cast<const FuClass *>(method->getDeclaringMethod()->parent);
 				declaringClass = declaringClass1;
 			}
 			if (obj != nullptr)
 				klass = obj->type->asClassType()->class_;
-			{
-				const FuClass * ptrClass = getVtblPtrClass(klass);
-				const FuClass * structClass = getVtblStructClass(definingClass);
-				if (structClass != ptrClass) {
-					write("((const ");
-					writeName(structClass);
-					write("Vtbl *) ");
-				}
-				if (obj != nullptr) {
-					obj->accept(this, FuPriority::primary);
-					writeMemberAccess(obj->type.get(), ptrClass);
-				}
-				else
-					writeSelfForField(ptrClass);
-				write("vtbl");
-				if (structClass != ptrClass)
-					writeChar(')');
-				write("->");
-				writeCamelCase(method->name);
-				break;
+			const FuClass * ptrClass = getVtblPtrClass(klass);
+			const FuClass * structClass = getVtblStructClass(definingClass);
+			if (structClass != ptrClass) {
+				write("((const ");
+				writeName(structClass);
+				write("Vtbl *) ");
 			}
-		default:
-			writeName(method);
-			break;
+			if (obj != nullptr) {
+				obj->accept(this, FuPriority::primary);
+				writeMemberAccess(obj->type.get(), ptrClass);
+			}
+			else
+				writeSelfForField(ptrClass);
+			write("vtbl");
+			if (structClass != ptrClass)
+				writeChar(')');
+			write("->");
+			writeCamelCase(method->name);
 		}
+		else
+			writeName(method);
 		writeChar('(');
 		if (method->callType != FuCallType::static_) {
 			if (obj != nullptr)

@@ -1331,6 +1331,7 @@ public:
 	static std::shared_ptr<FuMethod> new_(const FuClass * klass, FuVisibility visibility, FuCallType callType, std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
 	bool isStatic() const override;
 	bool isAbstractOrVirtual() const;
+	bool isAbstractVirtualOrOverride() const;
 	FuVar * firstParameter() const;
 	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;

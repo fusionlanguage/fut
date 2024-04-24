@@ -1813,11 +1813,8 @@ public class GenC : GenCCpp
 			WriteUpcast(declaringClass, klass.Parent);
 		}
 		else {
-			FuClass definingClass = declaringClass;
-			switch (method.CallType) {
-			case FuCallType.Abstract:
-			case FuCallType.Virtual:
-			case FuCallType.Override:
+			if (method.IsAbstractVirtualOrOverride()) {
+				FuClass definingClass = declaringClass;
 				if (method.CallType == FuCallType.Override) {
 					assert method.GetDeclaringMethod().Parent is FuClass declaringClass1;
 					declaringClass = declaringClass1;
@@ -1842,11 +1839,9 @@ public class GenC : GenCCpp
 					WriteChar(')');
 				Write("->");
 				WriteCamelCase(method.Name);
-				break;
-			default:
-				WriteName(method);
-				break;
 			}
+			else
+				WriteName(method);
 			WriteChar('(');
 			if (method.CallType != FuCallType.Static) {
 				if (obj != null)
