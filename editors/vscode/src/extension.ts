@@ -139,7 +139,6 @@ class VsCodeDiagnostics extends VsCodeHost
 class VsCodeReferenceCollector extends FuSymbolReferenceVisitor
 {
 	provider: VsCodeGotoProvider;
-	result: vscode.Location[] = [];
 
 	constructor(provider: VsCodeGotoProvider)
 	{
@@ -149,12 +148,14 @@ class VsCodeReferenceCollector extends FuSymbolReferenceVisitor
 
 	visitFound(reference: FuStatement): void
 	{
-		this.provider.pushLocation(this.result, reference);
+		this.provider.pushLocation(reference);
 	}
 }
 
 class VsCodeGotoProvider extends VsCodeHost
 {
+	#locations: vscode.Location[] = [];
+
 	async #findSymbol(document: vscode.TextDocument, position: vscode.Position): Promise<FuSymbol | null>
 	{
 		const parser = this.createParser();
@@ -169,59 +170,51 @@ class VsCodeGotoProvider extends VsCodeHost
 		return parser.getFoundDefinition();
 	}
 
-	#toLocation(statement: FuStatement): vscode.Location | null
+	pushLocation(statement: FuStatement): void
 	{
-		if (statement.loc <= 0)
-			return null;
-		const line = this.program.getLine(statement.loc);
-		const file = this.program.getSourceFile(line);
-		return new vscode.Location(vscode.Uri.parse(file.filename), new vscode.Position(line - file.line, statement.loc - this.program.lineLocs[line]));
+		if (statement.loc > 0) {
+			const line = this.program.getLine(statement.loc);
+			const file = this.program.getSourceFile(line);
+			this.#locations.push(new vscode.Location(vscode.Uri.parse(file.filename), new vscode.Position(line - file.line, statement.loc - this.program.lineLocs[line])));
+		}
 	}
 
-	pushLocation(result: vscode.Location[], statement: FuStatement): void
-	{
-		const location = this.#toLocation(statement);
-		if (location != null)
-			result.push(location);
-	}
-
-	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location | null>
+	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
 		const symbol = await this.#findSymbol(document, position);
-		return symbol == null ? null : this.#toLocation(symbol);
+		if (symbol != null)
+			this.pushLocation(symbol);
+		return this.#locations;
 	}
 
 	async findImplementations(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
 		const symbol = await this.#findSymbol(document, position);
-		const result: vscode.Location[] = [];
 		if (symbol != null) {
 			if (symbol instanceof FuClass) {
 				for (const subclass of this.program.classes) {
 					if (symbol.isSameOrBaseOf(subclass))
-						this.pushLocation(result, subclass);
+						this.pushLocation(subclass);
 				}
 			}
 			else if (symbol instanceof FuMethod && symbol.isAbstractVirtualOrOverride()) {
 				for (const subclass of this.program.classes) {
 					if (symbol.parent.isSameOrBaseOf(subclass) && subclass.contains(symbol))
-						this.pushLocation(result, subclass.tryLookup(symbol.name, false));
+						this.pushLocation(subclass.tryLookup(symbol.name, false));
 				}
 			}
 			else
-				this.pushLocation(result, symbol);
+				this.pushLocation(symbol);
 		}
-		return result;
+		return this.#locations;
 	}
 
 	async findReferences(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
 		const symbol = await this.#findSymbol(document, position);
-		if (symbol == null)
-			return [];
-		const collector = new VsCodeReferenceCollector(this);
-		collector.findReferences(this.program, symbol);
-		return collector.result;
+		if (symbol != null)
+			new VsCodeReferenceCollector(this).findReferences(this.program, symbol);
+		return this.#locations;
 	}
 }
 
