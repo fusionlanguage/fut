@@ -31,7 +31,6 @@ endif
 DC = dmd
 PYTHON = python3 -B
 MYPY = mypy
-INSTALL = install
 
 ifdef V
 DO =
@@ -282,21 +281,24 @@ host-diff-java:
 	diff -ruI "[0-9][Ee][-+][0-9]\|\.0" test/cpp test/java
 
 install: fut
-	$(INSTALL) -D $< $(DESTDIR)$(bindir)/fut
+	mkdir -p $(DESTDIR)$(bindir)
+	cp $< $(DESTDIR)$(bindir)/
 
 uninstall:
 	$(RM) $(DESTDIR)$(bindir)/fut
 
 install-vim: editors/vim/syntax/fusion.vim editors/vim/ftdetect/fusion.vim
-	$(INSTALL) -D editors/vim/syntax/fusion.vim ~/.vim/syntax/fusion.vim
-	$(INSTALL) -D editors/vim/ftdetect/fusion.vim ~/.vim/ftdetect/fusion.vim
+	mkdir -p ~/.vim/syntax ~/.vim/ftdetect
+	cp editors/vim/syntax/fusion.vim ~/.vim/syntax/
+	cp editors/vim/ftdetect/fusion.vim ~/.vim/ftdetect/
 
 uninstall-vim:
 	$(RM) ~/.vim/ftdetect/fusion.vim ~/.vim/syntax/fusion.vim
 
 install-nvim install-neovim: editors/vim/syntax/fusion.vim editors/vim/ftdetect/fusion.vim
-	$(INSTALL) -D editors/vim/syntax/fusion.vim ~/.config/nvim/syntax/fusion.vim
-	$(INSTALL) -D editors/vim/ftdetect/fusion.vim ~/.config/nvim/ftdetect/fusion.vim
+	mkdir -p ~/.config/nvim/syntax ~/.config/nvim/ftdetect
+	cp editors/vim/syntax/fusion.vim ~/.config/nvim/syntax/
+	cp editors/vim/ftdetect/fusion.vim ~/.config/nvim/ftdetect/
 
 uninstall-nvim uninstall-neovim:
 	$(RM) ~/.config/nvim/ftdetect/fusion.vim ~/.config/nvim/syntax/fusion.vim
