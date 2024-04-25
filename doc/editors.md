@@ -11,6 +11,10 @@ Install syntax highlighting in your home directory:
 
     make install-vim
 
+If you are using macOS system Vim, enable syntax highlighting with:
+
+    echo syntax on >> ~/.vimrc
+
 ## Neovim
 
 Install syntax highlighting in your home directory:
