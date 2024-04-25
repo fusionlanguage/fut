@@ -1,5 +1,5 @@
 Name: fut
-Version: 3.2.2
+Version: 3.2.3
 Release: 1
 Summary: Fusion Transpiler
 License: GPLv3+
@@ -24,6 +24,9 @@ make DESTDIR=%{buildroot} prefix=%{_prefix} install
 %{_bindir}/fut
 
 %changelog
+* Thu Apr 25 2024 Piotr Fusik <piotr@fusion-lang.org>
+- 3.2.3-1
+
 * Thu Apr 4 2024 Piotr Fusik <piotr@fusion-lang.org>
 - 3.2.2-1
 

@@ -223,7 +223,7 @@ for (let i = 2; i < process.argv.length; i++) {
 		process.exit(0);
 	}
 	else if (arg == "--version") {
-		console.log("Fusion Transpiler 3.2.2 (Node.js)");
+		console.log("Fusion Transpiler 3.2.3 (Node.js)");
 		process.exit(0);
 	}
 	else if (i + 1 < process.argv.length) {
