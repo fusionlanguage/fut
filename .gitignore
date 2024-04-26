@@ -1,10 +1,9 @@
-/.vs
-/.vscode
-/bin
+.vs
+.vscode
+bin
+obj
 /coverage
 /fut
 /fut.exe
 /java
-/obj
 /Properties
-/tags

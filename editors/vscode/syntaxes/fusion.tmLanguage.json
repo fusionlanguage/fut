@@ -1,4 +1,8 @@
 {
+	"name": "Fusion",
+	"fileTypes": [
+		"fu"
+	],
 	"scopeName": "source.fu",
 	"patterns": [
 		{
@@ -1022,7 +1026,9 @@
 			},
 			"end": "\\)",
 			"endCaptures": {
-				"name": "punctuation.parenthesis.close.fu"
+				"1": {
+					"name": "punctuation.parenthesis.close.fu"
+				}
 			},
 			"patterns": [
 				{
