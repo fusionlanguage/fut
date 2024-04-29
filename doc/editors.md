@@ -5,6 +5,11 @@
 Install the [Fusion](https://marketplace.visualstudio.com/items?itemName=fusionlanguage.fusion)
 extension from the VS Code Extension Marketplace.
 
+## Visual Studio 2022
+
+Install the [Fusion Programming Language](https://marketplace.visualstudio.com/items?itemName=fusionlanguage.fusion-vs)
+extension from the Visual Studio Extension Marketplace.
+
 ## Vim
 
 Install syntax highlighting in your home directory:
