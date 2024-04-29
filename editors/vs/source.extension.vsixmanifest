@@ -5,6 +5,7 @@
         <DisplayName>Fusion Programming Language</DisplayName>
         <Description xml:space="preserve">A Visual Studio extension with syntax highlighting for the Fusion programming language.</Description>
         <MoreInfo>http://github.com/fusionlanguage/fut</MoreInfo>
+        <License>LICENSE</License>
         <Icon>fu-logo.png</Icon>
         <PreviewImage>fu-logo.png</PreviewImage>
         <Tags>fusion, fut, transpiler</Tags>
