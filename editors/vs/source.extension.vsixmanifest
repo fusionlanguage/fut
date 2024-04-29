@@ -4,14 +4,21 @@
         <Identity Id="fusionlanguage.fusion-vs" Version="3.2.3" Language="en-US" Publisher="Fusion Programming Language" />
         <DisplayName>Fusion Programming Language</DisplayName>
         <Description xml:space="preserve">A Visual Studio extension with syntax highlighting for the Fusion programming language.</Description>
+        <MoreInfo>http://github.com/fusionlanguage/fut</MoreInfo>
+        <Icon>fu-logo.png</Icon>
+        <PreviewImage>fu-logo.png</PreviewImage>
         <Tags>fusion, fut, transpiler</Tags>
     </Metadata>
     <Installation>
-        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0,18.0)">
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[15.0,17.0)" />
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
             <ProductArchitecture>amd64</ProductArchitecture>
+        </InstallationTarget>
+        <InstallationTarget Id="Microsoft.VisualStudio.Community" Version="[17.0,18.0)">
+            <ProductArchitecture>arm64</ProductArchitecture>
         </InstallationTarget>
     </Installation>
     <Prerequisites>
-        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,18.0)" DisplayName="Visual Studio core editor" />
+        <Prerequisite Id="Microsoft.VisualStudio.Component.CoreEditor" Version="[15.0,)" DisplayName="Visual Studio core editor" />
     </Prerequisites>
 </PackageManifest>
