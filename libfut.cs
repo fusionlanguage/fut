@@ -5434,11 +5434,11 @@ namespace Fusion
 		void CheckIsVar(FuExpr left, FuVar def, FuExpr expr, string op, string alwaysMessage, string neverMessage)
 		{
 			if (!(def.Type is FuClassType rightPtr) || rightPtr is FuStorageType)
-				ReportError(def.Type, $"'{op}' with non-reference type");
+				ReportError(def.TypeExpr, $"'{op}' with non-reference type");
 			else {
 				FuClassType leftPtr = (FuClassType) left.Type;
 				if (rightPtr is FuReadWriteClassType && !(leftPtr is FuDynamicPtrType) && (rightPtr is FuDynamicPtrType || !(leftPtr is FuReadWriteClassType)))
-					ReportError(rightPtr, $"'{leftPtr}' cannot be casted to '{rightPtr}'");
+					ReportError(def.TypeExpr, $"'{leftPtr}' cannot be casted to '{rightPtr}'");
 				else {
 					CheckIsHierarchy(leftPtr, left, rightPtr.Class, expr, op, alwaysMessage, neverMessage);
 				}
@@ -6214,8 +6214,6 @@ namespace Fusion
 			}
 			else
 				baseType = ToBaseType(expr, ptrModifier, nullable);
-			if (!(baseType is FuEnum))
-				baseType.Loc = expr.Loc;
 			if (outerArray == null)
 				return baseType;
 			innerArray.TypeArg0 = baseType;
@@ -6358,7 +6356,7 @@ namespace Fusion
 					switch (klass.Class.Id) {
 					case FuId.StringClass:
 						if (statement.Count() != 1 || !element.Type.IsAssignableFrom(this.Host.Program.System.IntType))
-							ReportError(element.Type, "Expected 'int' iterator variable");
+							ReportError(element.TypeExpr, "Expected 'int' iterator variable");
 						break;
 					case FuId.ArrayStorageClass:
 					case FuId.ListClass:
@@ -6367,7 +6365,7 @@ namespace Fusion
 						if (statement.Count() != 1)
 							ReportError(statement.GetValueVar(), "Expected one iterator variable");
 						else if (!element.Type.IsAssignableFrom(klass.GetElementType()))
-							ReportError(element.Type, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
+							ReportError(element.TypeExpr, $"Cannot convert '{klass.GetElementType()}' to '{element.Type}'");
 						break;
 					case FuId.DictionaryClass:
 					case FuId.SortedDictionaryClass:
@@ -6702,7 +6700,7 @@ namespace Fusion
 						if (method.Visibility != FuVisibility.Public || method.CallType != FuCallType.Static)
 							ReportError(method, "'Main' method must be 'public static'");
 						if (method.Type.Id != FuId.VoidType && method.Type.Id != FuId.IntType)
-							ReportError(method.Type, "'Main' method must return 'void' or 'int'");
+							ReportError(method.TypeExpr, "'Main' method must return 'void' or 'int'");
 						switch (method.GetParametersCount()) {
 						case 0:
 							break;
@@ -6768,7 +6766,7 @@ namespace Fusion
 										ReportError(method, "Non-mutating method cannot override a mutating method");
 								}
 								if (!method.Type.EqualsType(baseMethod.Type))
-									ReportError(method.Type, "Base method has a different return type");
+									ReportError(method.TypeExpr, "Base method has a different return type");
 								FuVar baseParam = baseMethod.FirstParameter();
 								for (FuVar param = method.FirstParameter();; param = param.NextVar()) {
 									if (param == null) {
@@ -6781,7 +6779,7 @@ namespace Fusion
 										break;
 									}
 									if (!param.Type.EqualsType(baseParam.Type)) {
-										ReportError(param.Type, "Base method has a different parameter type");
+										ReportError(param.TypeExpr, "Base method has a different parameter type");
 										break;
 									}
 									baseParam = baseParam.NextVar();

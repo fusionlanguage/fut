@@ -5688,11 +5688,11 @@ export class FuSema
 	{
 		let rightPtr;
 		if (!((rightPtr = def.type) instanceof FuClassType) || rightPtr instanceof FuStorageType)
-			this.#reportError(def.type, `'${op}' with non-reference type`);
+			this.#reportError(def.typeExpr, `'${op}' with non-reference type`);
 		else {
 			let leftPtr = left.type;
 			if (rightPtr instanceof FuReadWriteClassType && !(leftPtr instanceof FuDynamicPtrType) && (rightPtr instanceof FuDynamicPtrType || !(leftPtr instanceof FuReadWriteClassType)))
-				this.#reportError(rightPtr, `'${leftPtr}' cannot be casted to '${rightPtr}'`);
+				this.#reportError(def.typeExpr, `'${leftPtr}' cannot be casted to '${rightPtr}'`);
 			else {
 				this.#checkIsHierarchy(leftPtr, left, rightPtr.class, expr, op, alwaysMessage, neverMessage);
 			}
@@ -6560,8 +6560,6 @@ export class FuSema
 		}
 		else
 			baseType = this.#toBaseType(expr, ptrModifier, nullable);
-		if (!(baseType instanceof FuEnum))
-			baseType.loc = expr.loc;
 		if (outerArray == null)
 			return baseType;
 		innerArray.typeArg0 = baseType;
@@ -6710,7 +6708,7 @@ export class FuSema
 				switch (klass.class.id) {
 				case FuId.STRING_CLASS:
 					if (statement.count() != 1 || !element.type.isAssignableFrom(this.#host.program.system.intType))
-						this.#reportError(element.type, "Expected 'int' iterator variable");
+						this.#reportError(element.typeExpr, "Expected 'int' iterator variable");
 					break;
 				case FuId.ARRAY_STORAGE_CLASS:
 				case FuId.LIST_CLASS:
@@ -6719,7 +6717,7 @@ export class FuSema
 					if (statement.count() != 1)
 						this.#reportError(statement.getValueVar(), "Expected one iterator variable");
 					else if (!element.type.isAssignableFrom(klass.getElementType()))
-						this.#reportError(element.type, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
+						this.#reportError(element.typeExpr, `Cannot convert '${klass.getElementType()}' to '${element.type}'`);
 					break;
 				case FuId.DICTIONARY_CLASS:
 				case FuId.SORTED_DICTIONARY_CLASS:
@@ -7077,7 +7075,7 @@ export class FuSema
 					if (method.visibility != FuVisibility.PUBLIC || method.callType != FuCallType.STATIC)
 						this.#reportError(method, "'Main' method must be 'public static'");
 					if (method.type.id != FuId.VOID_TYPE && method.type.id != FuId.INT_TYPE)
-						this.#reportError(method.type, "'Main' method must return 'void' or 'int'");
+						this.#reportError(method.typeExpr, "'Main' method must return 'void' or 'int'");
 					switch (method.getParametersCount()) {
 					case 0:
 						break;
@@ -7145,7 +7143,7 @@ export class FuSema
 									this.#reportError(method, "Non-mutating method cannot override a mutating method");
 							}
 							if (!method.type.equalsType(baseMethod.type))
-								this.#reportError(method.type, "Base method has a different return type");
+								this.#reportError(method.typeExpr, "Base method has a different return type");
 							let baseParam = baseMethod.firstParameter();
 							for (let param = method.firstParameter();; param = param.nextVar()) {
 								if (param == null) {
@@ -7158,7 +7156,7 @@ export class FuSema
 									break;
 								}
 								if (!param.type.equalsType(baseParam.type)) {
-									this.#reportError(param.type, "Base method has a different parameter type");
+									this.#reportError(param.typeExpr, "Base method has a different parameter type");
 									break;
 								}
 								baseParam = baseParam.nextVar();

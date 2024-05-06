@@ -5225,11 +5225,11 @@ void FuSema::checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * e
 {
 	const FuClassType * rightPtr;
 	if (!(rightPtr = dynamic_cast<const FuClassType *>(def->type.get())) || dynamic_cast<const FuStorageType *>(rightPtr))
-		reportError(def->type.get(), std::format("'{}' with non-reference type", op));
+		reportError(def->typeExpr.get(), std::format("'{}' with non-reference type", op));
 	else {
 		const FuClassType * leftPtr = static_cast<const FuClassType *>(left->type.get());
 		if (dynamic_cast<const FuReadWriteClassType *>(rightPtr) && !dynamic_cast<const FuDynamicPtrType *>(leftPtr) && (dynamic_cast<const FuDynamicPtrType *>(rightPtr) || !dynamic_cast<const FuReadWriteClassType *>(leftPtr)))
-			reportError(rightPtr, std::format("'{}' cannot be casted to '{}'", leftPtr->toString(), rightPtr->toString()));
+			reportError(def->typeExpr.get(), std::format("'{}' cannot be casted to '{}'", leftPtr->toString(), rightPtr->toString()));
 		else {
 			checkIsHierarchy(leftPtr, left, rightPtr->class_, expr, op, alwaysMessage, neverMessage);
 		}
@@ -6116,8 +6116,6 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 	}
 	else
 		baseType = toBaseType(expr.get(), ptrModifier, nullable);
-	if (!dynamic_cast<const FuEnum *>(baseType.get()))
-		baseType->loc = expr->loc;
 	if (outerArray == nullptr)
 		return baseType;
 	innerArray->typeArg0 = baseType;
@@ -6262,7 +6260,7 @@ void FuSema::visitForeach(FuForeach * statement)
 			switch (klass->class_->id) {
 			case FuId::stringClass:
 				if (statement->count() != 1 || !element->type->isAssignableFrom(this->host->program->system->intType.get()))
-					reportError(element->type.get(), "Expected 'int' iterator variable");
+					reportError(element->typeExpr.get(), "Expected 'int' iterator variable");
 				break;
 			case FuId::arrayStorageClass:
 			case FuId::listClass:
@@ -6271,7 +6269,7 @@ void FuSema::visitForeach(FuForeach * statement)
 				if (statement->count() != 1)
 					reportError(statement->getValueVar(), "Expected one iterator variable");
 				else if (!element->type->isAssignableFrom(klass->getElementType().get()))
-					reportError(element->type.get(), std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
+					reportError(element->typeExpr.get(), std::format("Cannot convert '{}' to '{}'", klass->getElementType()->toString(), element->type->toString()));
 				break;
 			case FuId::dictionaryClass:
 			case FuId::sortedDictionaryClass:
@@ -6597,7 +6595,7 @@ void FuSema::resolveTypes(FuClass * klass)
 				if (method->visibility != FuVisibility::public_ || method->callType != FuCallType::static_)
 					reportError(method, "'Main' method must be 'public static'");
 				if (method->type->id != FuId::voidType && method->type->id != FuId::intType)
-					reportError(method->type.get(), "'Main' method must return 'void' or 'int'");
+					reportError(method->typeExpr.get(), "'Main' method must return 'void' or 'int'");
 				switch (method->getParametersCount()) {
 				case 0:
 					break;
@@ -6664,7 +6662,7 @@ void FuSema::resolveCode(FuClass * klass)
 								reportError(method, "Non-mutating method cannot override a mutating method");
 						}
 						if (!method->type->equalsType(baseMethod->type.get()))
-							reportError(method->type.get(), "Base method has a different return type");
+							reportError(method->typeExpr.get(), "Base method has a different return type");
 						const FuVar * baseParam = baseMethod->firstParameter();
 						for (const FuVar * param = method->firstParameter();; param = param->nextVar()) {
 							if (param == nullptr) {
@@ -6677,7 +6675,7 @@ void FuSema::resolveCode(FuClass * klass)
 								break;
 							}
 							if (!param->type->equalsType(baseParam->type.get())) {
-								reportError(param->type.get(), "Base method has a different parameter type");
+								reportError(param->typeExpr.get(), "Base method has a different parameter type");
 								break;
 							}
 							baseParam = baseParam->nextVar();
