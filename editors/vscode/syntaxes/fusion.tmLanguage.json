@@ -881,6 +881,9 @@
 					"include": "#class-builtin"
 				},
 				{
+					"include": "#type-storage-suffix"
+				},
+				{
 					"include": "#type-array-suffix"
 				}
 			]
@@ -928,6 +931,17 @@
 					"include": "#punctuation-comma"
 				}
 			]
+		},
+		"type-storage-suffix": {
+			"match": "(\\()\\s*(\\))",
+			"captures": {
+				"1": {
+					"name": "punctuation.parenthesis.open.fu"
+				},
+				"2": {
+					"name": "punctuation.parenthesis.close.fu"
+				}
+			}
 		},
 		"type-array-suffix": {
 			"begin": "\\[",
