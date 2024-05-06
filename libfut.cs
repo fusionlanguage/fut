@@ -6071,7 +6071,7 @@ namespace Fusion
 			foreach (FuExpr typeArgExpr in typeArgExprs.Items)
 				typeArgs.Add(ToType(typeArgExpr, false));
 			if (typeArgs.Count != klass.TypeParameterCount) {
-				ReportError(result, $"Expected {klass.TypeParameterCount} type arguments for '{klass.Name}', got {typeArgs.Count}");
+				ReportError(typeArgExprs, $"Expected {klass.TypeParameterCount} type arguments for '{klass.Name}', got {typeArgs.Count}");
 				return;
 			}
 			result.Class = klass;
@@ -6124,8 +6124,8 @@ namespace Fusion
 				if (call.Arguments.Count != 0)
 					return PoisonError(call, "Expected empty parentheses for storage type");
 				if (call.Method.Left is FuAggregateInitializer typeArgExprs2) {
-					FuStorageType storage = new FuStorageType { Loc = call.Loc };
 					if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass) {
+						FuStorageType storage = new FuStorageType();
 						FillGenericClass(storage, klass, typeArgExprs2);
 						return storage;
 					}

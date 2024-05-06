@@ -3,6 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		List<int, float>() l; //ERROR: Expected 1 type arguments for 'List', got 2
+		List<int, float>? p = null; //ERROR: Expected 1 type arguments for 'List', got 2
 		return true;
 	}
 }

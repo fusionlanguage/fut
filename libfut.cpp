@@ -5962,7 +5962,7 @@ void FuSema::fillGenericClass(FuClassType * result, const FuClass * klass, const
 	for (const std::shared_ptr<FuExpr> &typeArgExpr : typeArgExprs->items)
 		typeArgs.push_back(toType(typeArgExpr, false));
 	if (std::ssize(typeArgs) != klass->typeParameterCount) {
-		reportError(result, std::format("Expected {} type arguments for '{}', got {}", klass->typeParameterCount, klass->name, std::ssize(typeArgs)));
+		reportError(typeArgExprs, std::format("Expected {} type arguments for '{}', got {}", klass->typeParameterCount, klass->name, std::ssize(typeArgs)));
 		return;
 	}
 	result->class_ = klass;
@@ -6015,9 +6015,8 @@ std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, b
 		if (std::ssize(call->arguments) != 0)
 			return poisonError(call, "Expected empty parentheses for storage type");
 		if (const FuAggregateInitializer *typeArgExprs2 = dynamic_cast<const FuAggregateInitializer *>(call->method->left.get())) {
-			std::shared_ptr<FuStorageType> storage = std::make_shared<FuStorageType>();
-			storage->loc = call->loc;
 			if (const FuClass *klass = dynamic_cast<const FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
+				std::shared_ptr<FuStorageType> storage = std::make_shared<FuStorageType>();
 				fillGenericClass(storage.get(), klass, typeArgExprs2);
 				return storage;
 			}

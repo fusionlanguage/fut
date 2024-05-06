@@ -6404,7 +6404,7 @@ export class FuSema
 		for (const typeArgExpr of typeArgExprs.items)
 			typeArgs.push(this.#toType(typeArgExpr, false));
 		if (typeArgs.length != klass.typeParameterCount) {
-			this.#reportError(result, `Expected ${klass.typeParameterCount} type arguments for '${klass.name}', got ${typeArgs.length}`);
+			this.#reportError(typeArgExprs, `Expected ${klass.typeParameterCount} type arguments for '${klass.name}', got ${typeArgs.length}`);
 			return;
 		}
 		result.class = klass;
@@ -6463,9 +6463,9 @@ export class FuSema
 				return this.#poisonError(call, "Expected empty parentheses for storage type");
 			let typeArgExprs2;
 			if ((typeArgExprs2 = call.method.left) instanceof FuAggregateInitializer) {
-				let storage = Object.assign(new FuStorageType(), { loc: call.loc });
 				let klass;
 				if ((klass = this.#host.program.tryLookup(call.method.name, true)) instanceof FuClass) {
+					let storage = new FuStorageType();
 					this.#fillGenericClass(storage, klass, typeArgExprs2);
 					return storage;
 				}
