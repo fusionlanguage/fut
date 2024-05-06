@@ -16077,8 +16077,8 @@ export class GenCpp extends GenCCpp
 			this.writeLine("template <class T, class... Args>");
 			this.writeLine("bool FuNumber_TryParse(T &number, std::string_view s, Args... args)");
 			this.openBlock();
-			this.writeLine("const char *end = s.begin() + s.size();");
-			this.writeLine("auto result = std::from_chars(s.begin(), end, number, args...);");
+			this.writeLine("const char *end = s.data() + s.size();");
+			this.writeLine("auto result = std::from_chars(s.data(), end, number, args...);");
 			this.writeLine("return result.ec == std::errc{} && result.ptr == end;");
 			this.closeBlock();
 		}

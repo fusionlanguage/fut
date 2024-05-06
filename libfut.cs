@@ -15598,8 +15598,8 @@ namespace Fusion
 				WriteLine("template <class T, class... Args>");
 				WriteLine("bool FuNumber_TryParse(T &number, std::string_view s, Args... args)");
 				OpenBlock();
-				WriteLine("const char *end = s.begin() + s.size();");
-				WriteLine("auto result = std::from_chars(s.begin(), end, number, args...);");
+				WriteLine("const char *end = s.data() + s.size();");
+				WriteLine("auto result = std::from_chars(s.data(), end, number, args...);");
 				WriteLine("return result.ec == std::errc{} && result.ptr == end;");
 				CloseBlock();
 			}

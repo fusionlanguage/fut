@@ -10,8 +10,8 @@
 template <class T, class... Args>
 bool FuNumber_TryParse(T &number, std::string_view s, Args... args)
 {
-	const char *end = s.begin() + s.size();
-	auto result = std::from_chars(s.begin(), end, number, args...);
+	const char *end = s.data() + s.size();
+	auto result = std::from_chars(s.data(), end, number, args...);
 	return result.ec == std::errc{} && result.ptr == end;
 }
 
@@ -15246,8 +15246,8 @@ void GenCpp::writeProgram(const FuProgram * program)
 		writeLine("template <class T, class... Args>");
 		writeLine("bool FuNumber_TryParse(T &number, std::string_view s, Args... args)");
 		openBlock();
-		writeLine("const char *end = s.begin() + s.size();");
-		writeLine("auto result = std::from_chars(s.begin(), end, number, args...);");
+		writeLine("const char *end = s.data() + s.size();");
+		writeLine("auto result = std::from_chars(s.data(), end, number, args...);");
 		writeLine("return result.ec == std::errc{} && result.ptr == end;");
 		closeBlock();
 	}
