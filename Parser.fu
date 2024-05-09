@@ -523,7 +523,7 @@ public class FuParser : FuLexer
 	void AddSymbol!(FuScope! scope, FuSymbol# symbol)
 	{
 		if (scope.Contains(symbol))
-			ReportError("Duplicate symbol");
+			this.Host.ReportStatementError(symbol, "Duplicate symbol");
 		else
 			scope.Add(symbol);
 	}

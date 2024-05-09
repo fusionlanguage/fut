@@ -1,9 +1,0 @@
-public class Test
-{
-}
-
-public class Test
-// FIXME: line
-{ //ERROR: Duplicate symbol
-	public static bool Run() => true;
-}

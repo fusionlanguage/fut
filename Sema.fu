@@ -21,14 +21,6 @@
 public abstract class FuSemaHost : FuParserHost
 {
 	internal virtual int GetResourceLength!(string name, FuPrefixExpr expr) => 0;
-
-	internal void ReportStatementError!(FuStatement statement, string message)
-	{
-		int line = this.Program.GetLine(statement.Loc);
-		int column = statement.Loc - this.Program.LineLocs[line];
-		FuSourceFile file = this.Program.GetSourceFile(line);
-		ReportError(file.Filename, line - file.Line, column, column + statement.GetLocLength(), message);
-	}
 }
 
 public class FuSema

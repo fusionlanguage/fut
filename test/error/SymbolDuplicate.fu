@@ -1,0 +1,9 @@
+public class Foo
+{
+	public const int A = 0;
+	public const int A = 0; //ERROR: Duplicate symbol
+}
+
+public class Foo //ERROR: Duplicate symbol
+{
+}

@@ -14,6 +14,14 @@ namespace Fusion
 		internal FuProgram Program;
 
 		public abstract void ReportError(string filename, int line, int startUtf16Column, int endUtf16Column, string message);
+
+		internal void ReportStatementError(FuStatement statement, string message)
+		{
+			int line = this.Program.GetLine(statement.Loc);
+			int column = statement.Loc - this.Program.LineLocs[line];
+			FuSourceFile file = this.Program.GetSourceFile(line);
+			ReportError(file.Filename, line - file.Line, column, column + statement.GetLocLength(), message);
+		}
 	}
 
 	public enum FuToken
@@ -4000,7 +4008,7 @@ namespace Fusion
 		void AddSymbol(FuScope scope, FuSymbol symbol)
 		{
 			if (scope.Contains(symbol))
-				ReportError("Duplicate symbol");
+				this.Host.ReportStatementError(symbol, "Duplicate symbol");
 			else
 				scope.Add(symbol);
 		}
@@ -4628,14 +4636,6 @@ namespace Fusion
 	{
 
 		internal virtual int GetResourceLength(string name, FuPrefixExpr expr) => 0;
-
-		internal void ReportStatementError(FuStatement statement, string message)
-		{
-			int line = this.Program.GetLine(statement.Loc);
-			int column = statement.Loc - this.Program.LineLocs[line];
-			FuSourceFile file = this.Program.GetSourceFile(line);
-			ReportError(file.Filename, line - file.Line, column, column + statement.GetLocLength(), message);
-		}
 	}
 
 	public class FuSema

@@ -10,6 +10,14 @@ export const RegexOptions = {
 export class FuParserHost
 {
 	program;
+
+	reportStatementError(statement, message)
+	{
+		let line = this.program.getLine(statement.loc);
+		let column = statement.loc - this.program.lineLocs[line];
+		let file = this.program.getSourceFile(line);
+		this.reportError(file.filename, line - file.line, column, column + statement.getLocLength(), message);
+	}
 }
 
 export const FuToken = {
@@ -4202,7 +4210,7 @@ export class FuParser extends FuLexer
 	#addSymbol(scope, symbol)
 	{
 		if (scope.contains(symbol))
-			this.reportError("Duplicate symbol");
+			this.host.reportStatementError(symbol, "Duplicate symbol");
 		else
 			scope.add(symbol);
 	}
@@ -4828,14 +4836,6 @@ export class FuSemaHost extends FuParserHost
 	getResourceLength(name, expr)
 	{
 		return 0;
-	}
-
-	reportStatementError(statement, message)
-	{
-		let line = this.program.getLine(statement.loc);
-		let column = statement.loc - this.program.lineLocs[line];
-		let file = this.program.getSourceFile(line);
-		this.reportError(file.filename, line - file.line, column, column + statement.getLocLength(), message);
 	}
 }
 

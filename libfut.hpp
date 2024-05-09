@@ -479,6 +479,7 @@ protected:
 	FuParserHost() = default;
 public:
 	FuProgram * program;
+	void reportStatementError(const FuStatement * statement, std::string_view message);
 };
 
 class FuLexer
@@ -1658,7 +1659,6 @@ protected:
 	FuSemaHost() = default;
 public:
 	virtual int getResourceLength(std::string_view name, const FuPrefixExpr * expr);
-	void reportStatementError(const FuStatement * statement, std::string_view message);
 };
 
 class GenHost : public FuSemaHost

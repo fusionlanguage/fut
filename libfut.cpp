@@ -31,6 +31,14 @@ static std::string FuString_Replace(std::string_view s, std::string_view oldValu
 	}
 }
 
+void FuParserHost::reportStatementError(const FuStatement * statement, std::string_view message)
+{
+	int line = this->program->getLine(statement->loc);
+	int column = statement->loc - this->program->lineLocs[line];
+	const FuSourceFile * file = this->program->getSourceFile(line);
+	reportError(file->filename, line - file->line, column, column + statement->getLocLength(), message);
+}
+
 void FuLexer::setHost(FuParserHost * host)
 {
 	this->host = host;
@@ -3668,7 +3676,7 @@ std::shared_ptr<FuExpr> FuParser::parseInitializer()
 void FuParser::addSymbol(FuScope * scope, std::shared_ptr<FuSymbol> symbol)
 {
 	if (scope->contains(symbol.get()))
-		reportError("Duplicate symbol");
+		this->host->reportStatementError(symbol.get(), "Duplicate symbol");
 	else
 		scope->add(symbol);
 }
@@ -4364,14 +4372,6 @@ void FuConsoleHost::reportError(std::string_view filename, int line, int startUt
 int FuSemaHost::getResourceLength(std::string_view name, const FuPrefixExpr * expr)
 {
 	return 0;
-}
-
-void FuSemaHost::reportStatementError(const FuStatement * statement, std::string_view message)
-{
-	int line = this->program->getLine(statement->loc);
-	int column = statement->loc - this->program->lineLocs[line];
-	const FuSourceFile * file = this->program->getSourceFile(line);
-	reportError(file->filename, line - file->line, column, column + statement->getLocLength(), message);
 }
 FuSema::FuSema()
 {
