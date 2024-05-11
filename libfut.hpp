@@ -522,7 +522,7 @@ private:
 	int nextChar;
 	std::unordered_set<std::string> preSymbols;
 	bool lineMode = false;
-	bool enableDocComments = true;
+	bool skippingUnmet = false;
 	std::stack<bool> preElseStack;
 	int readByte();
 	static constexpr int replacementChar = 65533;

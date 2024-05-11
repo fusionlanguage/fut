@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+#if false
+        int a = 0;
+        Console.WriteLine($"{a}");
+#endif
+		return true;
+	}
+}

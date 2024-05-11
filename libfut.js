@@ -146,7 +146,7 @@ export class FuLexer
 	stringValue;
 	#preSymbols = new Set();
 	#lineMode = false;
-	#enableDocComments = true;
+	#skippingUnmet = false;
 	parsingTypeArg = false;
 	#preElseStack = [];
 
@@ -444,7 +444,7 @@ export class FuLexer
 
 	readString(interpolated)
 	{
-		for (let offset = this.charOffset;; this.#readCharLiteral()) {
+		for (let offset = this.charOffset;;) {
 			switch (this.peekChar()) {
 			case -1:
 				this.reportError("Unterminated string literal");
@@ -464,13 +464,27 @@ export class FuLexer
 				if (interpolated) {
 					let endOffset = this.charOffset;
 					this.readChar();
-					if (this.peekChar() != 123) {
+					if (this.#eatChar(123))
+						break;
+					if (!this.#skippingUnmet) {
 						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset));
 						return FuToken.INTERPOLATED_STRING;
 					}
+					for (;;) {
+						let token = this.#readPreToken();
+						if (token == FuToken.RIGHT_BRACE)
+							break;
+						if (token == FuToken.END_OF_FILE) {
+							this.reportError("Unterminated string literal");
+							return FuToken.END_OF_FILE;
+						}
+					}
 				}
+				else
+					this.readChar();
 				break;
 			default:
+				this.#readCharLiteral();
 				break;
 			}
 		}
@@ -579,7 +593,7 @@ export class FuLexer
 			case 47:
 				if (this.#eatChar(47)) {
 					c = this.readChar();
-					if (c == 47 && this.#enableDocComments) {
+					if (c == 47 && !this.#skippingUnmet) {
 						this.#skipWhitespace();
 						switch (this.peekChar()) {
 						case 10:
@@ -1119,7 +1133,7 @@ export class FuLexer
 
 	#skipUnmet(state)
 	{
-		this.#enableDocComments = false;
+		this.#skippingUnmet = true;
 		for (;;) {
 			switch (this.#readPreToken()) {
 			case FuToken.END_OF_FILE:
@@ -1159,7 +1173,7 @@ export class FuLexer
 	#readToken()
 	{
 		for (;;) {
-			this.#enableDocComments = true;
+			this.#skippingUnmet = false;
 			let token = this.#readPreToken();
 			let matched;
 			switch (token) {

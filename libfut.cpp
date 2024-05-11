@@ -333,7 +333,7 @@ int FuLexer::readCharLiteral()
 
 FuToken FuLexer::readString(bool interpolated)
 {
-	for (int offset = this->charOffset;; readCharLiteral()) {
+	for (int offset = this->charOffset;;) {
 		switch (peekChar()) {
 		case -1:
 			reportError("Unterminated string literal");
@@ -353,13 +353,27 @@ FuToken FuLexer::readString(bool interpolated)
 			if (interpolated) {
 				int endOffset = this->charOffset;
 				readChar();
-				if (peekChar() != '{') {
+				if (eatChar('{'))
+					break;
+				if (!this->skippingUnmet) {
 					this->stringValue = std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset);
 					return FuToken::interpolatedString;
 				}
+				for (;;) {
+					FuToken token = readPreToken();
+					if (token == FuToken::rightBrace)
+						break;
+					if (token == FuToken::endOfFile) {
+						reportError("Unterminated string literal");
+						return FuToken::endOfFile;
+					}
+				}
 			}
+			else
+				readChar();
 			break;
 		default:
+			readCharLiteral();
 			break;
 		}
 	}
@@ -468,7 +482,7 @@ FuToken FuLexer::readPreToken()
 		case '/':
 			if (eatChar('/')) {
 				c = readChar();
-				if (c == '/' && this->enableDocComments) {
+				if (c == '/' && !this->skippingUnmet) {
 					skipWhitespace();
 					switch (peekChar()) {
 					case '\n':
@@ -1004,7 +1018,7 @@ bool FuLexer::popPreElse(std::string_view directive)
 
 void FuLexer::skipUnmet(FuPreState state)
 {
-	this->enableDocComments = false;
+	this->skippingUnmet = true;
 	for (;;) {
 		switch (readPreToken()) {
 		case FuToken::endOfFile:
@@ -1044,7 +1058,7 @@ void FuLexer::skipUnmet(FuPreState state)
 FuToken FuLexer::readToken()
 {
 	for (;;) {
-		this->enableDocComments = true;
+		this->skippingUnmet = false;
 		FuToken token = readPreToken();
 		bool matched;
 		switch (token) {

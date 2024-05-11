@@ -167,7 +167,7 @@ namespace Fusion
 
 		bool LineMode = false;
 
-		bool EnableDocComments = true;
+		bool SkippingUnmet = false;
 
 		protected bool ParsingTypeArg = false;
 
@@ -466,7 +466,7 @@ namespace Fusion
 
 		protected FuToken ReadString(bool interpolated)
 		{
-			for (int offset = this.CharOffset;; ReadCharLiteral()) {
+			for (int offset = this.CharOffset;;) {
 				switch (PeekChar()) {
 				case -1:
 					ReportError("Unterminated string literal");
@@ -486,13 +486,27 @@ namespace Fusion
 					if (interpolated) {
 						int endOffset = this.CharOffset;
 						ReadChar();
-						if (PeekChar() != '{') {
+						if (EatChar('{'))
+							break;
+						if (!this.SkippingUnmet) {
 							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
 							return FuToken.InterpolatedString;
 						}
+						for (;;) {
+							FuToken token = ReadPreToken();
+							if (token == FuToken.RightBrace)
+								break;
+							if (token == FuToken.EndOfFile) {
+								ReportError("Unterminated string literal");
+								return FuToken.EndOfFile;
+							}
+						}
 					}
+					else
+						ReadChar();
 					break;
 				default:
+					ReadCharLiteral();
 					break;
 				}
 			}
@@ -595,7 +609,7 @@ namespace Fusion
 				case '/':
 					if (EatChar('/')) {
 						c = ReadChar();
-						if (c == '/' && this.EnableDocComments) {
+						if (c == '/' && !this.SkippingUnmet) {
 							SkipWhitespace();
 							switch (PeekChar()) {
 							case '\n':
@@ -1130,7 +1144,7 @@ namespace Fusion
 
 		void SkipUnmet(FuPreState state)
 		{
-			this.EnableDocComments = false;
+			this.SkippingUnmet = true;
 			for (;;) {
 				switch (ReadPreToken()) {
 				case FuToken.EndOfFile:
@@ -1170,7 +1184,7 @@ namespace Fusion
 		FuToken ReadToken()
 		{
 			for (;;) {
-				this.EnableDocComments = true;
+				this.SkippingUnmet = false;
 				FuToken token = ReadPreToken();
 				bool matched;
 				switch (token) {
