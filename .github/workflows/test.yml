@@ -8,7 +8,7 @@ jobs:
         with:
           version: 13
       - uses: actions/checkout@main
-      - run: make -j3 test-c test-cl test-error
+      - run: make -j4 test-c test-cl test-error
   cpp-java:
     runs-on: ubuntu-22.04
     steps:
@@ -20,7 +20,7 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: actions/checkout@main
-      - run: make -j3 test-cpp test-java
+      - run: make -j4 test-cpp test-java
   cs:
     runs-on: ubuntu-22.04
     steps:
@@ -29,7 +29,7 @@ jobs:
           version: 13
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
-      - run: make -j3 test-cs
+      - run: make -j4 test-cs
   d:
     runs-on: ubuntu-22.04
     steps:
@@ -40,7 +40,7 @@ jobs:
         with:
           compiler: dmd-latest
       - uses: actions/checkout@main
-      - run: make -j3 test-d
+      - run: make -j4 test-d
   js-ts:
     runs-on: ubuntu-22.04
     steps:
@@ -48,7 +48,7 @@ jobs:
         with:
           version: 13
       - uses: actions/checkout@main
-      - run: make -j3 test-js test-ts
+      - run: make -j4 test-js test-ts
   py-swift:
     runs-on: ubuntu-22.04
     steps:
@@ -58,7 +58,7 @@ jobs:
       - run: pip install mypy
       - uses: pfusik/setup-swift@gpg-www
       - uses: actions/checkout@main
-      - run: make -j3 test-py test-swift
+      - run: make -j4 test-py test-swift
   host-diff:
     runs-on: ubuntu-22.04
     steps:
@@ -71,9 +71,9 @@ jobs:
           java-version: 21
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
-      - run: make -j3 host-diff
-      - run: make -j3 java/GenBase.java
-      - run: make -j3 host-diff-java
-      - run: make -j3 test-error FUT_HOST=cs
-      - run: make -j3 test-error FUT_HOST=java
-      - run: make -j3 test-error FUT_HOST=node
+      - run: make -j4 host-diff
+      - run: make -j4 java/GenBase.java
+      - run: make -j4 host-diff-java
+      - run: make -j4 test-error FUT_HOST=cs
+      - run: make -j4 test-error FUT_HOST=java
+      - run: make -j4 test-error FUT_HOST=node
