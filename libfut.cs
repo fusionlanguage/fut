@@ -2735,6 +2735,8 @@ namespace Fusion
 
 		internal FuMethodBase InMethod;
 
+		internal int InMethodIndex = 0;
+
 		internal FuVisitStatus VisitStatus;
 
 		public override void AcceptStatement(FuVisitor visitor)
@@ -6259,6 +6261,16 @@ namespace Fusion
 					this.CurrentScope.Add(konst);
 					if (konst.Type is FuArrayStorageType) {
 						FuClass klass = (FuClass) GetCurrentContainer();
+						FuConst last = null;
+						foreach (FuConst previous in klass.ConstArrays) {
+							if (previous.Name == konst.Name && previous.InMethod == konst.InMethod)
+								last = previous;
+						}
+						if (last != null) {
+							if (last.InMethodIndex == 0)
+								last.InMethodIndex = 1;
+							konst.InMethodIndex = last.InMethodIndex + 1;
+						}
 						klass.ConstArrays.Add(konst);
 					}
 				}
@@ -7115,6 +7127,19 @@ namespace Fusion
 		{
 			Write(s);
 			WriteNewLine();
+		}
+
+		protected void WriteUppercaseConstName(FuConst konst)
+		{
+			if (konst.InMethod != null) {
+				WriteUppercaseWithUnderscores(konst.InMethod.Name);
+				WriteChar('_');
+			}
+			WriteUppercaseWithUnderscores(konst.Name);
+			if (konst.InMethodIndex > 0) {
+				WriteChar('_');
+				VisitLiteralLong(konst.InMethodIndex);
+			}
 		}
 
 		protected abstract void WriteName(FuSymbol symbol);
@@ -15778,8 +15803,13 @@ namespace Fusion
 
 		protected override void WriteName(FuSymbol symbol)
 		{
-			if (symbol is FuConst konst && konst.InMethod != null)
+			if (symbol is FuConst konst && konst.InMethod != null) {
 				Write(konst.InMethod.Name);
+				Write(symbol.Name);
+				if (konst.InMethodIndex > 0)
+					VisitLiteralLong(konst.InMethodIndex);
+				return;
+			}
 			Write(symbol.Name);
 			switch (symbol.Name) {
 			case "as":
@@ -18481,11 +18511,7 @@ namespace Fusion
 				Write(symbol.Name);
 				break;
 			case FuConst konst:
-				if (konst.InMethod != null) {
-					WriteUppercaseWithUnderscores(konst.InMethod.Name);
-					WriteChar('_');
-				}
-				WriteUppercaseWithUnderscores(symbol.Name);
+				WriteUppercaseConstName(konst);
 				break;
 			case FuVar:
 				if (symbol.Parent is FuForeach forEach && forEach.Count() == 2) {
@@ -19797,11 +19823,7 @@ namespace Fusion
 			case FuConst konst:
 				if (konst.Visibility == FuVisibility.Private)
 					WriteChar('#');
-				if (konst.InMethod != null) {
-					WriteUppercaseWithUnderscores(konst.InMethod.Name);
-					WriteChar('_');
-				}
-				WriteUppercaseWithUnderscores(symbol.Name);
+				WriteUppercaseConstName(konst);
 				break;
 			case FuVar:
 				WriteCamelCaseNotKeyword(symbol.Name);
@@ -21999,6 +22021,8 @@ namespace Fusion
 			case FuConst konst when konst.InMethod != null:
 				WriteCamelCase(konst.InMethod.Name);
 				WritePascalCase(symbol.Name);
+				if (konst.InMethodIndex > 0)
+					VisitLiteralLong(konst.InMethodIndex);
 				break;
 			case FuVar:
 			case FuMember:
@@ -23932,11 +23956,7 @@ namespace Fusion
 			case FuConst konst:
 				if (konst.Visibility != FuVisibility.Public)
 					WriteChar('_');
-				if (konst.InMethod != null) {
-					WriteUppercaseWithUnderscores(konst.InMethod.Name);
-					WriteChar('_');
-				}
-				WriteUppercaseWithUnderscores(symbol.Name);
+				WriteUppercaseConstName(konst);
 				break;
 			case FuVar:
 				WriteNameNotKeyword(symbol.Name);

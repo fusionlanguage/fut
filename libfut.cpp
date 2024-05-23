@@ -6160,6 +6160,16 @@ bool FuSema::resolveStatements(const std::vector<std::shared_ptr<FuStatement>> *
 			this->currentScope->add(konst);
 			if (dynamic_cast<const FuArrayStorageType *>(konst->type.get())) {
 				FuClass * klass = static_cast<FuClass *>(getCurrentContainer());
+				FuConst * last = nullptr;
+				for (FuConst * previous : klass->constArrays) {
+					if (previous->name == konst->name && previous->inMethod == konst->inMethod)
+						last = previous;
+				}
+				if (last != nullptr) {
+					if (last->inMethodIndex == 0)
+						last->inMethodIndex = 1;
+					konst->inMethodIndex = last->inMethodIndex + 1;
+				}
 				klass->constArrays.push_back(konst.get());
 			}
 		}
@@ -6974,6 +6984,19 @@ void GenBase::writeLine(std::string_view s)
 {
 	write(s);
 	writeNewLine();
+}
+
+void GenBase::writeUppercaseConstName(const FuConst * konst)
+{
+	if (konst->inMethod != nullptr) {
+		writeUppercaseWithUnderscores(konst->inMethod->name);
+		writeChar('_');
+	}
+	writeUppercaseWithUnderscores(konst->name);
+	if (konst->inMethodIndex > 0) {
+		writeChar('_');
+		visitLiteralLong(konst->inMethodIndex);
+	}
 }
 
 void GenBase::writeBanner()
@@ -15419,8 +15442,13 @@ void GenCs::writeDoc(const FuCodeDoc * doc)
 void GenCs::writeName(const FuSymbol * symbol)
 {
 	const FuConst * konst;
-	if ((konst = dynamic_cast<const FuConst *>(symbol)) && konst->inMethod != nullptr)
+	if ((konst = dynamic_cast<const FuConst *>(symbol)) && konst->inMethod != nullptr) {
 		write(konst->inMethod->name);
+		write(symbol->name);
+		if (konst->inMethodIndex > 0)
+			visitLiteralLong(konst->inMethodIndex);
+		return;
+	}
 	write(symbol->name);
 	if (symbol->name == "as" || symbol->name == "await" || symbol->name == "catch" || symbol->name == "char" || symbol->name == "checked" || symbol->name == "decimal" || symbol->name == "delegate" || symbol->name == "event" || symbol->name == "explicit" || symbol->name == "extern" || symbol->name == "finally" || symbol->name == "fixed" || symbol->name == "goto" || symbol->name == "implicit" || symbol->name == "interface" || symbol->name == "is" || symbol->name == "lock" || symbol->name == "namespace" || symbol->name == "object" || symbol->name == "operator" || symbol->name == "out" || symbol->name == "params" || symbol->name == "private" || symbol->name == "readonly" || symbol->name == "ref" || symbol->name == "sbyte" || symbol->name == "sizeof" || symbol->name == "stackalloc" || symbol->name == "struct" || symbol->name == "try" || symbol->name == "typeof" || symbol->name == "ulong" || symbol->name == "unchecked" || symbol->name == "unsafe" || symbol->name == "using" || symbol->name == "volatile")
 		writeChar('_');
@@ -17851,13 +17879,8 @@ void GenJava::writeName(const FuSymbol * symbol)
 {
 	if (dynamic_cast<const FuContainerType *>(symbol))
 		write(symbol->name);
-	else if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol)) {
-		if (konst->inMethod != nullptr) {
-			writeUppercaseWithUnderscores(konst->inMethod->name);
-			writeChar('_');
-		}
-		writeUppercaseWithUnderscores(symbol->name);
-	}
+	else if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol))
+		writeUppercaseConstName(konst);
 	else if (dynamic_cast<const FuVar *>(symbol)) {
 		const FuForeach * forEach;
 		if ((forEach = dynamic_cast<const FuForeach *>(symbol->parent)) && forEach->count() == 2) {
@@ -19162,11 +19185,7 @@ void GenJsNoModule::writeName(const FuSymbol * symbol)
 	else if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol)) {
 		if (konst->visibility == FuVisibility::private_)
 			writeChar('#');
-		if (konst->inMethod != nullptr) {
-			writeUppercaseWithUnderscores(konst->inMethod->name);
-			writeChar('_');
-		}
-		writeUppercaseWithUnderscores(symbol->name);
+		writeUppercaseConstName(konst);
 	}
 	else if (dynamic_cast<const FuVar *>(symbol))
 		writeCamelCaseNotKeyword(symbol->name);
@@ -21230,6 +21249,8 @@ void GenSwift::writeName(const FuSymbol * symbol)
 	else if ((konst = dynamic_cast<const FuConst *>(symbol)) && konst->inMethod != nullptr) {
 		writeCamelCase(konst->inMethod->name);
 		writePascalCase(symbol->name);
+		if (konst->inMethodIndex > 0)
+			visitLiteralLong(konst->inMethodIndex);
 	}
 	else if (dynamic_cast<const FuVar *>(symbol) || dynamic_cast<const FuMember *>(symbol))
 		writeCamelCaseNotKeyword(symbol->name);
@@ -23078,11 +23099,7 @@ void GenPy::writeName(const FuSymbol * symbol)
 	else if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol)) {
 		if (konst->visibility != FuVisibility::public_)
 			writeChar('_');
-		if (konst->inMethod != nullptr) {
-			writeUppercaseWithUnderscores(konst->inMethod->name);
-			writeChar('_');
-		}
-		writeUppercaseWithUnderscores(symbol->name);
+		writeUppercaseConstName(konst);
 	}
 	else if (dynamic_cast<const FuVar *>(symbol))
 		writeNameNotKeyword(symbol->name);

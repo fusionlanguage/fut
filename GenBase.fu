@@ -246,6 +246,19 @@ public abstract class GenBase : FuVisitor
 		WriteNewLine();
 	}
 
+	protected void WriteUppercaseConstName!(FuConst konst)
+	{
+		if (konst.InMethod != null) {
+			WriteUppercaseWithUnderscores(konst.InMethod.Name);
+			WriteChar('_');
+		}
+		WriteUppercaseWithUnderscores(konst.Name);
+		if (konst.InMethodIndex > 0) {
+			WriteChar('_');
+			VisitLiteralLong(konst.InMethodIndex);
+		}
+	}
+
 	protected abstract void WriteName!(FuSymbol symbol);
 
 	protected virtual void WriteBanner!()

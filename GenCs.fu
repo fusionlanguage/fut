@@ -99,8 +99,13 @@ public class GenCs : GenTyped
 
 	protected override void WriteName!(FuSymbol symbol)
 	{
-		if (symbol is FuConst konst && konst.InMethod != null)
+		if (symbol is FuConst konst && konst.InMethod != null) {
 			Write(konst.InMethod.Name);
+			Write(symbol.Name);
+			if (konst.InMethodIndex > 0)
+				VisitLiteralLong(konst.InMethodIndex);
+			return;
+		}
 		Write(symbol.Name);
 		switch (symbol.Name) {
 		case "as":

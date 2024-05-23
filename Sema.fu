@@ -1691,6 +1691,16 @@ public class FuSema
 				this.CurrentScope.Add(konst);
 				if (konst.Type is FuArrayStorageType) {
 					assert GetCurrentContainer() is FuClass! klass;
+					FuConst!? last = null;
+					foreach (FuConst! previous in klass.ConstArrays) {
+						if (previous.Name == konst.Name && previous.InMethod == konst.InMethod)
+							last = previous;
+					}
+					if (last != null) {
+						if (last.InMethodIndex == 0)
+							last.InMethodIndex = 1;
+						konst.InMethodIndex = last.InMethodIndex + 1;
+					}
 					klass.ConstArrays.Add(konst);
 				}
 			}

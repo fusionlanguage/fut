@@ -179,11 +179,7 @@ public class GenJava : GenTyped
 			Write(symbol.Name);
 			break;
 		case FuConst konst:
-			if (konst.InMethod != null) {
-				WriteUppercaseWithUnderscores(konst.InMethod.Name);
-				WriteChar('_');
-			}
-			WriteUppercaseWithUnderscores(symbol.Name);
+			WriteUppercaseConstName(konst);
 			break;
 		case FuVar:
 			if (symbol.Parent is FuForeach forEach && forEach.Count() == 2) {

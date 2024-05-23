@@ -1275,6 +1275,7 @@ public:
 	bool isStatic() const override;
 public:
 	const FuMethodBase * inMethod;
+	int inMethodIndex = 0;
 	FuVisitStatus visitStatus;
 };
 
@@ -1399,7 +1400,7 @@ public:
 	bool hasSubclasses = false;
 	FuSymbolReference baseClass;
 	std::shared_ptr<FuMethodBase> constructor;
-	std::vector<const FuConst *> constArrays;
+	std::vector<FuConst *> constArrays;
 };
 
 class FuClassType : public FuType
@@ -1813,6 +1814,7 @@ protected:
 	void writeNewLine();
 	void writeCharLine(int c);
 	void writeLine(std::string_view s);
+	void writeUppercaseConstName(const FuConst * konst);
 	virtual void writeName(const FuSymbol * symbol) = 0;
 	virtual void writeBanner();
 	void createFile(std::string_view directory, std::string_view filename);

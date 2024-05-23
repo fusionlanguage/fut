@@ -1177,6 +1177,7 @@ enum FuVisitStatus
 public class FuConst : FuMember
 {
 	internal FuMethodBase? InMethod;
+	internal int InMethodIndex = 0;
 	internal FuVisitStatus VisitStatus;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
@@ -1326,7 +1327,7 @@ public class FuClass : FuContainerType
 	internal bool HasSubclasses = false;
 	internal FuSymbolReference() BaseClass;
 	internal FuMethodBase#? Constructor;
-	internal List<FuConst>() ConstArrays;
+	internal List<FuConst!>() ConstArrays;
 	public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
 	public bool AddsVirtualMethods()
 	{

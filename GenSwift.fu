@@ -157,6 +157,8 @@ public class GenSwift : GenPySwift
 		case FuConst konst when konst.InMethod != null:
 			WriteCamelCase(konst.InMethod.Name);
 			WritePascalCase(symbol.Name);
+			if (konst.InMethodIndex > 0)
+				VisitLiteralLong(konst.InMethodIndex);
 			break;
 		case FuVar:
 		case FuMember:

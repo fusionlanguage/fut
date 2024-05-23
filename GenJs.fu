@@ -68,11 +68,7 @@ public class GenJsNoModule : GenBase
 		case FuConst konst:
 			if (konst.Visibility == FuVisibility.Private)
 				WriteChar('#');
-			if (konst.InMethod != null) {
-				WriteUppercaseWithUnderscores(konst.InMethod.Name);
-				WriteChar('_');
-			}
-			WriteUppercaseWithUnderscores(symbol.Name);
+			WriteUppercaseConstName(konst);
 			break;
 		case FuVar:
 			WriteCamelCaseNotKeyword(symbol.Name);

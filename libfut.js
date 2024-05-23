@@ -2843,6 +2843,7 @@ const FuVisitStatus = {
 export class FuConst extends FuMember
 {
 	inMethod;
+	inMethodIndex = 0;
 	visitStatus;
 
 	acceptStatement(visitor)
@@ -6606,6 +6607,16 @@ export class FuSema
 				this.#currentScope.add(konst);
 				if (konst.type instanceof FuArrayStorageType) {
 					let klass = this.#getCurrentContainer();
+					let last = null;
+					for (const previous of klass.constArrays) {
+						if (previous.name == konst.name && previous.inMethod == konst.inMethod)
+							last = previous;
+					}
+					if (last != null) {
+						if (last.inMethodIndex == 0)
+							last.inMethodIndex = 1;
+						konst.inMethodIndex = last.inMethodIndex + 1;
+					}
 					klass.constArrays.push(konst);
 				}
 			}
@@ -7469,6 +7480,19 @@ export class GenBase extends FuVisitor
 	{
 		this.write(s);
 		this.writeNewLine();
+	}
+
+	writeUppercaseConstName(konst)
+	{
+		if (konst.inMethod != null) {
+			this.writeUppercaseWithUnderscores(konst.inMethod.name);
+			this.writeChar(95);
+		}
+		this.writeUppercaseWithUnderscores(konst.name);
+		if (konst.inMethodIndex > 0) {
+			this.writeChar(95);
+			this.visitLiteralLong(BigInt(konst.inMethodIndex));
+		}
 	}
 
 	writeBanner()
@@ -16261,8 +16285,13 @@ export class GenCs extends GenTyped
 	writeName(symbol)
 	{
 		let konst;
-		if ((konst = symbol) instanceof FuConst && konst.inMethod != null)
+		if ((konst = symbol) instanceof FuConst && konst.inMethod != null) {
 			this.write(konst.inMethod.name);
+			this.write(symbol.name);
+			if (konst.inMethodIndex > 0)
+				this.visitLiteralLong(BigInt(konst.inMethodIndex));
+			return;
+		}
 		this.write(symbol.name);
 		switch (symbol.name) {
 		case "as":
@@ -19025,11 +19054,7 @@ export class GenJava extends GenTyped
 			this.write(symbol.name);
 		else if (symbol instanceof FuConst) {
 			const konst = symbol;
-			if (konst.inMethod != null) {
-				this.writeUppercaseWithUnderscores(konst.inMethod.name);
-				this.writeChar(95);
-			}
-			this.writeUppercaseWithUnderscores(symbol.name);
+			this.writeUppercaseConstName(konst);
 		}
 		else if (symbol instanceof FuVar) {
 			let forEach;
@@ -20380,11 +20405,7 @@ export class GenJsNoModule extends GenBase
 			const konst = symbol;
 			if (konst.visibility == FuVisibility.PRIVATE)
 				this.writeChar(35);
-			if (konst.inMethod != null) {
-				this.writeUppercaseWithUnderscores(konst.inMethod.name);
-				this.writeChar(95);
-			}
-			this.writeUppercaseWithUnderscores(symbol.name);
+			this.writeUppercaseConstName(konst);
 		}
 		else if (symbol instanceof FuVar)
 			this.#writeCamelCaseNotKeyword(symbol.name);
@@ -22596,6 +22617,8 @@ export class GenSwift extends GenPySwift
 		else if ((konst = symbol) instanceof FuConst && konst.inMethod != null) {
 			this.writeCamelCase(konst.inMethod.name);
 			this.writePascalCase(symbol.name);
+			if (konst.inMethodIndex > 0)
+				this.visitLiteralLong(BigInt(konst.inMethodIndex));
 		}
 		else if (symbol instanceof FuVar || symbol instanceof FuMember)
 			this.#writeCamelCaseNotKeyword(symbol.name);
@@ -24551,11 +24574,7 @@ export class GenPy extends GenPySwift
 			const konst = symbol;
 			if (konst.visibility != FuVisibility.PUBLIC)
 				this.writeChar(95);
-			if (konst.inMethod != null) {
-				this.writeUppercaseWithUnderscores(konst.inMethod.name);
-				this.writeChar(95);
-			}
-			this.writeUppercaseWithUnderscores(symbol.name);
+			this.writeUppercaseConstName(konst);
 		}
 		else if (symbol instanceof FuVar)
 			this.#writeNameNotKeyword(symbol.name);
