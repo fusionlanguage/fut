@@ -15444,6 +15444,7 @@ void GenCs::writeName(const FuSymbol * symbol)
 	const FuConst * konst;
 	if ((konst = dynamic_cast<const FuConst *>(symbol)) && konst->inMethod != nullptr) {
 		write(konst->inMethod->name);
+		writeChar('_');
 		write(symbol->name);
 		if (konst->inMethodIndex > 0)
 			visitLiteralLong(konst->inMethodIndex);

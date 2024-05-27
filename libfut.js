@@ -16287,6 +16287,7 @@ export class GenCs extends GenTyped
 		let konst;
 		if ((konst = symbol) instanceof FuConst && konst.inMethod != null) {
 			this.write(konst.inMethod.name);
+			this.writeChar(95);
 			this.write(symbol.name);
 			if (konst.inMethodIndex > 0)
 				this.visitLiteralLong(BigInt(konst.inMethodIndex));

@@ -15805,6 +15805,7 @@ namespace Fusion
 		{
 			if (symbol is FuConst konst && konst.InMethod != null) {
 				Write(konst.InMethod.Name);
+				WriteChar('_');
 				Write(symbol.Name);
 				if (konst.InMethodIndex > 0)
 					VisitLiteralLong(konst.InMethodIndex);
