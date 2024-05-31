@@ -57,4 +57,5 @@ jobs:
     script:
       - make -j5 host-diff CXX=g++-13
       - make -j5 test-error FUT_HOST=cs
+      - rm test/bin/*/error.txt
       - make -j5 test-error FUT_HOST=node

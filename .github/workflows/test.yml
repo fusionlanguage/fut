@@ -75,5 +75,7 @@ jobs:
       - run: make -j4 java/GenBase.java
       - run: make -j4 host-diff-java
       - run: make -j4 test-error FUT_HOST=cs
+      - run: rm test/bin/*/error.txt
       - run: make -j4 test-error FUT_HOST=java
+      - run: rm test/bin/*/error.txt
       - run: make -j4 test-error FUT_HOST=node
