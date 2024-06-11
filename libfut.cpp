@@ -1189,6 +1189,15 @@ bool FuExpr::isNewString(bool substringOffset) const
 	return false;
 }
 
+bool FuExpr::isUnique() const
+{
+	return false;
+}
+
+void FuExpr::setShared() const
+{
+}
+
 int FuName::getLocLength() const
 {
 	return std::ssize(this->name);
@@ -1267,6 +1276,11 @@ bool FuLiteralNull::isDefaultValue() const
 void FuLiteralNull::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitLiteralNull();
+}
+
+bool FuLiteralNull::isUnique() const
+{
+	return true;
 }
 
 std::string FuLiteralNull::toString() const
@@ -1515,6 +1529,14 @@ bool FuSymbolReference::isNewString(bool substringOffset) const
 	return this->symbol->id == FuId::matchValue;
 }
 
+void FuSymbolReference::setShared() const
+{
+	const FuNamedValue * varOrField;
+	FuDynamicPtrType * dynamic;
+	if ((varOrField = dynamic_cast<const FuNamedValue *>(this->symbol)) && (dynamic = dynamic_cast<FuDynamicPtrType *>(varOrField->type.get())))
+		dynamic->unique = false;
+}
+
 const FuSymbol * FuSymbolReference::getSymbol() const
 {
 	return this->symbol;
@@ -1560,6 +1582,11 @@ int FuPrefixExpr::intValue() const
 void FuPrefixExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitPrefixExpr(this, parent);
+}
+
+bool FuPrefixExpr::isUnique() const
+{
+	return this->op == FuToken::new_ && !dynamic_cast<const FuAggregateInitializer *>(this->inner.get());
 }
 
 void FuPostfixExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1768,6 +1795,17 @@ int FuSelectExpr::getLocLength() const
 void FuSelectExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitSelectExpr(this, parent);
+}
+
+bool FuSelectExpr::isUnique() const
+{
+	return this->onTrue->isUnique() && this->onFalse->isUnique();
+}
+
+void FuSelectExpr::setShared() const
+{
+	this->onTrue->setShared();
+	this->onFalse->setShared();
 }
 
 std::string FuSelectExpr::toString() const
@@ -5227,6 +5265,14 @@ std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::
 	return futemp0;
 }
 
+void FuSema::setSharedAssign(const FuExpr * left, const FuExpr * right) const
+{
+	if (dynamic_cast<const FuDynamicPtrType *>(left->type.get()) && !right->isUnique()) {
+		left->setShared();
+		right->setShared();
+	}
+}
+
 void FuSema::checkIsHierarchy(const FuClassType * leftPtr, const FuExpr * left, const FuClass * rightClass, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const
 {
 	if (rightClass->isSameOrBaseOf(leftPtr->class_))
@@ -5237,8 +5283,8 @@ void FuSema::checkIsHierarchy(const FuClassType * leftPtr, const FuExpr * left, 
 
 void FuSema::checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const
 {
-	const FuClassType * rightPtr;
-	if (!(rightPtr = dynamic_cast<const FuClassType *>(def->type.get())) || dynamic_cast<const FuStorageType *>(rightPtr))
+	FuClassType * rightPtr;
+	if (!(rightPtr = dynamic_cast<FuClassType *>(def->type.get())) || dynamic_cast<const FuStorageType *>(rightPtr))
 		reportError(def->typeExpr.get(), std::format("'{}' with non-reference type", op));
 	else {
 		const FuClassType * leftPtr = static_cast<const FuClassType *>(left->type.get());
@@ -5246,6 +5292,10 @@ void FuSema::checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * e
 			reportError(def->typeExpr.get(), std::format("'{}' cannot be casted to '{}'", leftPtr->toString(), rightPtr->toString()));
 		else {
 			checkIsHierarchy(leftPtr, left, rightPtr->class_, expr, op, alwaysMessage, neverMessage);
+			if (FuDynamicPtrType *dynamic = dynamic_cast<FuDynamicPtrType *>(rightPtr)) {
+				left->setShared();
+				dynamic->unique = false;
+			}
 		}
 	}
 }
@@ -5517,6 +5567,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	case FuToken::assign:
 		checkLValue(left.get());
 		coercePermanent(right.get(), left->type.get());
+		setSharedAssign(left.get(), right.get());
 		expr->left = left;
 		expr->right = right;
 		expr->type = left->type;
@@ -5796,8 +5847,11 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			coerce(lambda->body.get(), this->host->program->system->boolType.get());
 			coerce(lambda->body.get(), this->host->program->system->boolType.get());
 		}
-		else
+		else {
 			coerce(arg, type.get());
+			if (dynamic_cast<const FuDynamicPtrType *>(type.get()))
+				arg->setShared();
+		}
 	}
 	if (i < std::ssize(*arguments))
 		return poisonError((*arguments)[i].get(), std::format("Too many arguments for '{}'", method->name));
@@ -5873,9 +5927,20 @@ void FuSema::resolveObjectLiteral(const FuClassType * klass, const FuAggregateIn
 		if (dynamic_cast<const FuField *>(symbol->symbol)) {
 			field->right = visitExpr(field->right);
 			coerce(field->right.get(), symbol->type.get());
+			setSharedAssign(field->left.get(), field->right.get());
 		}
 		else
 			reportError(field->left.get(), "Expected a field");
+	}
+}
+
+void FuSema::initUnique(const FuNamedValue * varOrField)
+{
+	if (FuDynamicPtrType *dynamic = dynamic_cast<FuDynamicPtrType *>(varOrField->type.get())) {
+		if (varOrField->value == nullptr || varOrField->value->isUnique())
+			dynamic->unique = true;
+		else
+			varOrField->value->setShared();
 	}
 }
 
@@ -5900,6 +5965,7 @@ void FuSema::visitVar(std::shared_ptr<FuVar> expr)
 			}
 		}
 	}
+	initUnique(expr.get());
 	this->currentScope->add(expr);
 }
 
@@ -6352,6 +6418,8 @@ void FuSema::visitReturn(FuReturn * statement)
 		openScope(statement);
 		statement->value = visitExpr(statement->value);
 		coercePermanent(statement->value.get(), this->currentMethod->type.get());
+		if (dynamic_cast<const FuDynamicPtrType *>(this->currentMethod->type.get()))
+			statement->value->setShared();
 		const FuSymbolReference * symbol;
 		const FuVar * local;
 		if ((symbol = dynamic_cast<const FuSymbolReference *>(statement->value.get())) && (local = dynamic_cast<const FuVar *>(symbol->symbol)) && ((local->type->isFinal() && !dynamic_cast<const FuStorageType *>(this->currentMethod->type.get())) || (local->type->id == FuId::stringStorageType && this->currentMethod->type->id != FuId::stringStorageType)))
@@ -6598,8 +6666,11 @@ void FuSema::resolveTypes(FuClass * klass)
 {
 	this->currentScope = klass;
 	for (FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		if (FuField *field = dynamic_cast<FuField *>(symbol))
+		if (FuField *field = dynamic_cast<FuField *>(symbol)) {
 			resolveType(field);
+			if (field->visibility != FuVisibility::protected_)
+				initUnique(field);
+		}
 		else if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
 			if (method->typeExpr == this->host->program->system->voidType)
 				method->type = this->host->program->system->voidType;
@@ -13531,6 +13602,14 @@ void GenCpp::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 	writeName(symbol);
 }
 
+void GenCpp::writeSharedUnique(std::string_view prefix, bool unique, std::string_view suffix)
+{
+	include("memory");
+	write(prefix);
+	write(unique ? "unique" : "shared");
+	write(suffix);
+}
+
 void GenCpp::writeCollectionType(std::string_view name, const FuType * elementType)
 {
 	include(name);
@@ -13642,14 +13721,12 @@ void GenCpp::writeType(const FuType * type, bool promote)
 			write("std::regex");
 			break;
 		case FuId::arrayPtrClass:
-			include("memory");
-			write("std::shared_ptr<");
+			writeSharedUnique("std::", dynamic->unique, "_ptr<");
 			writeType(dynamic->getElementType().get(), false);
 			write("[]>");
 			break;
 		default:
-			include("memory");
-			write("std::shared_ptr<");
+			writeSharedUnique("std::", dynamic->unique, "_ptr<");
 			writeClassType(dynamic);
 			writeChar('>');
 			break;
@@ -13670,20 +13747,28 @@ void GenCpp::writeType(const FuType * type, bool promote)
 		write(type->name);
 }
 
-void GenCpp::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
+void GenCpp::writeNewUniqueArray(bool unique, const FuType * elementType, const FuExpr * lengthExpr)
 {
-	include("memory");
-	write("std::make_shared<");
+	writeSharedUnique("std::make_", unique, "<");
 	writeType(elementType, false);
 	writeCall("[]>", lengthExpr);
 }
 
-void GenCpp::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
+void GenCpp::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
-	include("memory");
-	write("std::make_shared<");
+	writeNewUniqueArray(false, elementType, lengthExpr);
+}
+
+void GenCpp::writeNewUnique(bool unique, const FuReadWriteClassType * klass)
+{
+	writeSharedUnique("std::make_", unique, "<");
 	writeClassType(klass);
 	write(">()");
+}
+
+void GenCpp::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
+{
+	writeNewUnique(false, klass);
 }
 
 void GenCpp::writeStorageInit(const FuNamedValue * def)
@@ -14578,8 +14663,21 @@ void GenCpp::writeArrayPtr(const FuExpr * expr, FuPriority parent)
 
 void GenCpp::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
 {
-	const FuClassType * klass;
-	if ((klass = dynamic_cast<const FuClassType *>(type)) && !dynamic_cast<const FuOwningType *>(klass)) {
+	if (dynamic_cast<const FuStorageType *>(type)) {
+	}
+	else if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) {
+		const FuPrefixExpr * prefix;
+		if (dynamic->unique && (prefix = dynamic_cast<const FuPrefixExpr *>(expr))) {
+			assert(prefix->op == FuToken::new_);
+			const FuDynamicPtrType * newClass = static_cast<const FuDynamicPtrType *>(prefix->type.get());
+			if (newClass->class_->id == FuId::arrayPtrClass)
+				writeNewUniqueArray(true, newClass->getElementType().get(), prefix->inner.get());
+			else
+				writeNewUnique(true, newClass);
+			return;
+		}
+	}
+	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
 		if (klass->class_->id == FuId::stringClass) {
 			if (expr->type->id == FuId::nullType) {
 				include("string_view");

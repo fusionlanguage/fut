@@ -200,6 +200,14 @@ public class GenCpp : GenCCpp
 		WriteName(symbol);
 	}
 
+	void WriteSharedUnique!(string prefix, bool unique, string suffix)
+	{
+		Include("memory");
+		Write(prefix);
+		Write(unique ? "unique" : "shared");
+		Write(suffix);
+	}
+
 	void WriteCollectionType!(string name, FuType elementType)
 	{
 		Include(name);
@@ -313,14 +321,12 @@ public class GenCpp : GenCCpp
 				Write("std::regex");
 				break;
 			case FuId.ArrayPtrClass:
-				Include("memory");
-				Write("std::shared_ptr<");
+				WriteSharedUnique("std::", dynamic.Unique, "_ptr<");
 				WriteType(dynamic.GetElementType(), false);
 				Write("[]>");
 				break;
 			default:
-				Include("memory");
-				Write("std::shared_ptr<");
+				WriteSharedUnique("std::", dynamic.Unique, "_ptr<");
 				WriteClassType(dynamic);
 				WriteChar('>');
 				break;
@@ -343,20 +349,28 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
+	void WriteNewUniqueArray!(bool unique, FuType elementType, FuExpr lengthExpr)
 	{
-		Include("memory");
-		Write("std::make_shared<");
+		WriteSharedUnique("std::make_", unique, "<");
 		WriteType(elementType, false);
 		WriteCall("[]>", lengthExpr);
 	}
 
-	protected override void WriteNew!(FuReadWriteClassType klass, FuPriority parent)
+	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 	{
-		Include("memory");
-		Write("std::make_shared<");
+		WriteNewUniqueArray(false, elementType, lengthExpr);
+	}
+
+	void WriteNewUnique!(bool unique, FuReadWriteClassType klass)
+	{
+		WriteSharedUnique("std::make_", unique, "<");
 		WriteClassType(klass);
 		Write(">()");
+	}
+
+	protected override void WriteNew!(FuReadWriteClassType klass, FuPriority parent)
+	{
+		WriteNewUnique(false, klass);
 	}
 
 	protected override void WriteStorageInit!(FuNamedValue def)
@@ -1252,7 +1266,23 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
 	{
-		if (type is FuClassType klass && !(klass is FuOwningType)) {
+		switch (type) {
+		case FuStorageType:
+			break;
+		case FuDynamicPtrType dynamic:
+			if (dynamic.Unique && expr is FuPrefixExpr prefix) {
+				assert prefix.Op == FuToken.New;
+				assert prefix.Type is FuDynamicPtrType newClass;
+				if (newClass.Class.Id == FuId.ArrayPtrClass)
+					WriteNewUniqueArray(true, newClass.GetElementType(), prefix.Inner);
+				// else if (prefix.Inner is FuAggregateInitializer && TryWriteTemporary(expr)) { // TODO
+				// }
+				else
+					WriteNewUnique(true, newClass);
+				return;
+			}
+			break;
+		case FuClassType klass:
 			if (klass.Class.Id == FuId.StringClass) {
 				if (expr.Type.Id == FuId.NullType) {
 					Include("string_view");
@@ -1288,6 +1318,9 @@ public class GenCpp : GenCCpp
 					expr.Accept(this, FuPriority.Primary);
 				return;
 			}
+			break;
+		default:
+			break;
 		}
 		base.WriteCoercedInternal(type, expr, parent);
 	}

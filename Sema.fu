@@ -819,6 +819,14 @@ public class FuSema
 		return new FuBinaryExpr { Loc = expr.Loc, Left = left, Op = expr.Op, Right = right, Type = this.Host.Program.System.BoolType };
 	}
 
+	void SetSharedAssign(FuExpr left, FuExpr right)
+	{
+		if (left.Type is FuDynamicPtrType && !right.IsUnique()) {
+			left.SetShared();
+			right.SetShared();
+		}
+	}
+
 	void CheckIsHierarchy(FuClassType leftPtr, FuExpr left, FuClass rightClass, FuExpr expr, string op, string alwaysMessage, string neverMessage)
 	{
 		if (rightClass.IsSameOrBaseOf(leftPtr.Class))
@@ -829,7 +837,7 @@ public class FuSema
 
 	void CheckIsVar(FuExpr left, FuVar def, FuExpr expr, string op, string alwaysMessage, string neverMessage)
 	{
-		if (!(def.Type is FuClassType rightPtr) || rightPtr is FuStorageType)
+		if (!(def.Type is FuClassType! rightPtr) || rightPtr is FuStorageType)
 			ReportError(def.TypeExpr, $"'{op}' with non-reference type");
 		else{
 			assert left.Type is FuClassType leftPtr;
@@ -840,6 +848,10 @@ public class FuSema
 			else {
 				// TODO: outside assert NotSupported(expr, "'is' operator", "c", "py", "swift", "cl");
 				CheckIsHierarchy(leftPtr, left, rightPtr.Class, expr, op, alwaysMessage, neverMessage);
+				if (rightPtr is FuDynamicPtrType! dynamic) {
+					left.SetShared();
+					dynamic.Unique = false;
+				}
 			}
 		}
 	}
@@ -1077,6 +1089,7 @@ public class FuSema
 		case FuToken.Assign:
 			CheckLValue(left);
 			CoercePermanent(right, left.Type);
+			SetSharedAssign(left, right);
 			expr.Left = left;
 			expr.Right = right;
 			expr.Type = left.Type;
@@ -1331,8 +1344,11 @@ public class FuSema
 				Coerce(lambda.Body, this.Host.Program.System.BoolType);
 				Coerce(lambda.Body, this.Host.Program.System.BoolType);
 			}
-			else
+			else {
 				Coerce(arg, type);
+				if (type is FuDynamicPtrType)
+					arg.SetShared();
+			}
 		}
 		if (i < arguments.Count)
 			return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
@@ -1412,9 +1428,20 @@ public class FuSema
 			if (symbol.Symbol is FuField) {
 				field.Right = VisitExpr(field.Right);
 				Coerce(field.Right, symbol.Type);
+				SetSharedAssign(field.Left, field.Right);
 			}
 			else
 				ReportError(field.Left, "Expected a field");
+		}
+	}
+
+	static void InitUnique(FuNamedValue varOrField)
+	{
+		if (varOrField.Type is FuDynamicPtrType! dynamic) {
+			if (varOrField.Value == null || varOrField.Value.IsUnique())
+				dynamic.Unique = true;
+			else
+				varOrField.Value.SetShared();
 		}
 	}
 
@@ -1436,6 +1463,7 @@ public class FuSema
 				}
 			}
 		}
+		InitUnique(expr);
 		this.CurrentScope.Add(expr);
 	}
 
@@ -1890,6 +1918,8 @@ public class FuSema
 			OpenScope(statement);
 			statement.Value = VisitExpr(statement.Value);
 			CoercePermanent(statement.Value, this.CurrentMethod.Type);
+			if (this.CurrentMethod.Type is FuDynamicPtrType)
+				statement.Value.SetShared();
 			if (statement.Value is FuSymbolReference symbol
 			 && symbol.Symbol is FuVar local
 			 && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType))
@@ -2151,6 +2181,8 @@ public class FuSema
 			switch (symbol) {
 			case FuField! field:
 				ResolveType(field);
+				if (field.Visibility != FuVisibility.Protected)
+					InitUnique(field);
 				break;
 			case FuMethod! method:
 				if (method.TypeExpr == this.Host.Program.System.VoidType)

@@ -333,6 +333,8 @@ public abstract class FuExpr : FuStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitExpr(this); }
 	public virtual bool IsReferenceTo(FuSymbol symbol) => false;
 	public virtual bool IsNewString(bool substringOffset) => false;
+	public virtual bool IsUnique() => false;
+	public virtual void SetShared() { }
 }
 
 public abstract class FuName : FuExpr
@@ -410,6 +412,7 @@ class FuLiteralNull : FuLiteral
 	public override int GetLocLength() => 4;
 	public override bool IsDefaultValue() => true;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralNull(); }
+	public override bool IsUnique() => true;
 	public override string() ToString() => "null";
 }
 
@@ -594,6 +597,11 @@ public class FuSymbolReference : FuName
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
 	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 	public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
+	public override void SetShared()
+	{
+		if (this.Symbol is FuNamedValue varOrField && varOrField.Type is FuDynamicPtrType! dynamic)
+			dynamic.Unique = false;
+	}
 	public override FuSymbol? GetSymbol() => this.Symbol;
 	public override string() ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
 }
@@ -633,6 +641,7 @@ public class FuPrefixExpr : FuUnaryExpr
 		return ~this.Inner.IntValue();
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitPrefixExpr(this, parent); }
+	public override bool IsUnique() => this.Op == FuToken.New && !(this.Inner is FuAggregateInitializer);
 }
 
 public class FuPostfixExpr : FuUnaryExpr
@@ -827,6 +836,12 @@ public class FuSelectExpr : FuExpr
 	internal FuExpr# OnFalse;
 	public override int GetLocLength() => 1;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSelectExpr(this, parent); }
+	public override bool IsUnique() => this.OnTrue.IsUnique() && this.OnFalse.IsUnique();
+	public override void SetShared()
+	{
+		this.OnTrue.SetShared();
+		this.OnFalse.SetShared();
+	}
 	public override string() ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
 }
 
@@ -1447,6 +1462,7 @@ public class FuStorageType : FuOwningType
 
 class FuDynamicPtrType : FuOwningType
 {
+	internal bool Unique = false;
 	public override bool IsAssignableFrom(FuType right)
 	{
 		return (this.Nullable && right.Id == FuId.NullType)

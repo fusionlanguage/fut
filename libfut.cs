@@ -1637,6 +1637,12 @@ namespace Fusion
 		public virtual bool IsReferenceTo(FuSymbol symbol) => false;
 
 		public virtual bool IsNewString(bool substringOffset) => false;
+
+		public virtual bool IsUnique() => false;
+
+		public virtual void SetShared()
+		{
+		}
 	}
 
 	public abstract class FuName : FuExpr
@@ -1742,6 +1748,8 @@ namespace Fusion
 		{
 			visitor.VisitLiteralNull();
 		}
+
+		public override bool IsUnique() => true;
 
 		public override string ToString() => "null";
 	}
@@ -1970,6 +1978,12 @@ namespace Fusion
 
 		public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 
+		public override void SetShared()
+		{
+			if (this.Symbol is FuNamedValue varOrField && varOrField.Type is FuDynamicPtrType dynamic)
+				dynamic.Unique = false;
+		}
+
 		public override FuSymbol GetSymbol() => this.Symbol;
 
 		public override string ToString() => this.Left != null ? $"{this.Left}.{this.Name}" : this.Name;
@@ -2019,6 +2033,8 @@ namespace Fusion
 		{
 			visitor.VisitPrefixExpr(this, parent);
 		}
+
+		public override bool IsUnique() => this.Op == FuToken.New && !(this.Inner is FuAggregateInitializer);
 	}
 
 	public class FuPostfixExpr : FuUnaryExpr
@@ -2238,6 +2254,14 @@ namespace Fusion
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
 			visitor.VisitSelectExpr(this, parent);
+		}
+
+		public override bool IsUnique() => this.OnTrue.IsUnique() && this.OnFalse.IsUnique();
+
+		public override void SetShared()
+		{
+			this.OnTrue.SetShared();
+			this.OnFalse.SetShared();
 		}
 
 		public override string ToString() => $"({this.Cond} ? {this.OnTrue} : {this.OnFalse})";
@@ -3072,6 +3096,8 @@ namespace Fusion
 
 	class FuDynamicPtrType : FuOwningType
 	{
+
+		internal bool Unique = false;
 
 		public override bool IsAssignableFrom(FuType right)
 		{
@@ -5439,6 +5465,14 @@ namespace Fusion
 			return new FuBinaryExpr { Loc = expr.Loc, Left = left, Op = expr.Op, Right = right, Type = this.Host.Program.System.BoolType };
 		}
 
+		void SetSharedAssign(FuExpr left, FuExpr right)
+		{
+			if (left.Type is FuDynamicPtrType && !right.IsUnique()) {
+				left.SetShared();
+				right.SetShared();
+			}
+		}
+
 		void CheckIsHierarchy(FuClassType leftPtr, FuExpr left, FuClass rightClass, FuExpr expr, string op, string alwaysMessage, string neverMessage)
 		{
 			if (rightClass.IsSameOrBaseOf(leftPtr.Class))
@@ -5457,6 +5491,10 @@ namespace Fusion
 					ReportError(def.TypeExpr, $"'{leftPtr}' cannot be casted to '{rightPtr}'");
 				else {
 					CheckIsHierarchy(leftPtr, left, rightPtr.Class, expr, op, alwaysMessage, neverMessage);
+					if (rightPtr is FuDynamicPtrType dynamic) {
+						left.SetShared();
+						dynamic.Unique = false;
+					}
 				}
 			}
 		}
@@ -5670,6 +5708,7 @@ namespace Fusion
 			case FuToken.Assign:
 				CheckLValue(left);
 				CoercePermanent(right, left.Type);
+				SetSharedAssign(left, right);
 				expr.Left = left;
 				expr.Right = right;
 				expr.Type = left.Type;
@@ -5915,8 +5954,11 @@ namespace Fusion
 					Coerce(lambda.Body, this.Host.Program.System.BoolType);
 					Coerce(lambda.Body, this.Host.Program.System.BoolType);
 				}
-				else
+				else {
 					Coerce(arg, type);
+					if (type is FuDynamicPtrType)
+						arg.SetShared();
+				}
 			}
 			if (i < arguments.Count)
 				return PoisonError(arguments[i], $"Too many arguments for '{method.Name}'");
@@ -5989,9 +6031,20 @@ namespace Fusion
 				if (symbol.Symbol is FuField) {
 					field.Right = VisitExpr(field.Right);
 					Coerce(field.Right, symbol.Type);
+					SetSharedAssign(field.Left, field.Right);
 				}
 				else
 					ReportError(field.Left, "Expected a field");
+			}
+		}
+
+		static void InitUnique(FuNamedValue varOrField)
+		{
+			if (varOrField.Type is FuDynamicPtrType dynamic) {
+				if (varOrField.Value == null || varOrField.Value.IsUnique())
+					dynamic.Unique = true;
+				else
+					varOrField.Value.SetShared();
 			}
 		}
 
@@ -6013,6 +6066,7 @@ namespace Fusion
 					}
 				}
 			}
+			InitUnique(expr);
 			this.CurrentScope.Add(expr);
 		}
 
@@ -6451,6 +6505,8 @@ namespace Fusion
 				OpenScope(statement);
 				statement.Value = VisitExpr(statement.Value);
 				CoercePermanent(statement.Value, this.CurrentMethod.Type);
+				if (this.CurrentMethod.Type is FuDynamicPtrType)
+					statement.Value.SetShared();
 				if (statement.Value is FuSymbolReference symbol && symbol.Symbol is FuVar local && ((local.Type.IsFinal() && !(this.CurrentMethod.Type is FuStorageType)) || (local.Type.Id == FuId.StringStorageType && this.CurrentMethod.Type.Id != FuId.StringStorageType)))
 					ReportError(symbol, "Returning dangling reference to local storage");
 				CloseScope();
@@ -6707,6 +6763,8 @@ namespace Fusion
 				switch (symbol) {
 				case FuField field:
 					ResolveType(field);
+					if (field.Visibility != FuVisibility.Protected)
+						InitUnique(field);
 					break;
 				case FuMethod method:
 					if (method.TypeExpr == this.Host.Program.System.VoidType)
@@ -13889,6 +13947,14 @@ namespace Fusion
 			WriteName(symbol);
 		}
 
+		void WriteSharedUnique(string prefix, bool unique, string suffix)
+		{
+			Include("memory");
+			Write(prefix);
+			Write(unique ? "unique" : "shared");
+			Write(suffix);
+		}
+
 		void WriteCollectionType(string name, FuType elementType)
 		{
 			Include(name);
@@ -14002,14 +14068,12 @@ namespace Fusion
 					Write("std::regex");
 					break;
 				case FuId.ArrayPtrClass:
-					Include("memory");
-					Write("std::shared_ptr<");
+					WriteSharedUnique("std::", dynamic.Unique, "_ptr<");
 					WriteType(dynamic.GetElementType(), false);
 					Write("[]>");
 					break;
 				default:
-					Include("memory");
-					Write("std::shared_ptr<");
+					WriteSharedUnique("std::", dynamic.Unique, "_ptr<");
 					WriteClassType(dynamic);
 					WriteChar('>');
 					break;
@@ -14032,20 +14096,28 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
+		void WriteNewUniqueArray(bool unique, FuType elementType, FuExpr lengthExpr)
 		{
-			Include("memory");
-			Write("std::make_shared<");
+			WriteSharedUnique("std::make_", unique, "<");
 			WriteType(elementType, false);
 			WriteCall("[]>", lengthExpr);
 		}
 
-		protected override void WriteNew(FuReadWriteClassType klass, FuPriority parent)
+		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
-			Include("memory");
-			Write("std::make_shared<");
+			WriteNewUniqueArray(false, elementType, lengthExpr);
+		}
+
+		void WriteNewUnique(bool unique, FuReadWriteClassType klass)
+		{
+			WriteSharedUnique("std::make_", unique, "<");
 			WriteClassType(klass);
 			Write(">()");
+		}
+
+		protected override void WriteNew(FuReadWriteClassType klass, FuPriority parent)
+		{
+			WriteNewUnique(false, klass);
 		}
 
 		protected override void WriteStorageInit(FuNamedValue def)
@@ -14931,7 +15003,21 @@ namespace Fusion
 
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
 		{
-			if (type is FuClassType klass && !(klass is FuOwningType)) {
+			switch (type) {
+			case FuStorageType:
+				break;
+			case FuDynamicPtrType dynamic:
+				if (dynamic.Unique && expr is FuPrefixExpr prefix) {
+					Debug.Assert(prefix.Op == FuToken.New);
+					FuDynamicPtrType newClass = (FuDynamicPtrType) prefix.Type;
+					if (newClass.Class.Id == FuId.ArrayPtrClass)
+						WriteNewUniqueArray(true, newClass.GetElementType(), prefix.Inner);
+					else
+						WriteNewUnique(true, newClass);
+					return;
+				}
+				break;
+			case FuClassType klass:
 				if (klass.Class.Id == FuId.StringClass) {
 					if (expr.Type.Id == FuId.NullType) {
 						Include("string_view");
@@ -14967,6 +15053,9 @@ namespace Fusion
 						expr.Accept(this, FuPriority.Primary);
 					return;
 				}
+				break;
+			default:
+				break;
 			}
 			base.WriteCoercedInternal(type, expr, parent);
 		}

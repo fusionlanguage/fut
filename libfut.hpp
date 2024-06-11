@@ -683,6 +683,8 @@ public:
 	void acceptStatement(FuVisitor * visitor) const override;
 	virtual bool isReferenceTo(const FuSymbol * symbol) const;
 	virtual bool isNewString(bool substringOffset) const;
+	virtual bool isUnique() const;
+	virtual void setShared() const;
 protected:
 	FuExpr() = default;
 public:
@@ -760,6 +762,7 @@ public:
 	int getLocLength() const override;
 	bool isDefaultValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	bool isUnique() const override;
 	std::string toString() const override;
 };
 
@@ -880,6 +883,7 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isReferenceTo(const FuSymbol * symbol) const override;
 	bool isNewString(bool substringOffset) const override;
+	void setShared() const override;
 	const FuSymbol * getSymbol() const override;
 	std::string toString() const override;
 public:
@@ -906,6 +910,7 @@ public:
 	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	bool isUnique() const override;
 };
 
 class FuPostfixExpr : public FuUnaryExpr
@@ -941,6 +946,8 @@ public:
 	FuSelectExpr() = default;
 	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	bool isUnique() const override;
+	void setShared() const override;
 	std::string toString() const override;
 public:
 	std::shared_ptr<FuExpr> cond;
@@ -1468,6 +1475,8 @@ public:
 	bool equalsType(const FuType * right) const override;
 	std::string getArraySuffix() const override;
 	std::string_view getClassSuffix() const override;
+public:
+	bool unique = false;
 };
 
 class FuArrayStorageType : public FuStorageType
@@ -1527,7 +1536,7 @@ public:
 	std::shared_ptr<FuClass> arrayPtrClass = FuClass::new_(FuCallType::normal, FuId::arrayPtrClass, "ArrayPtr", 1);
 	std::shared_ptr<FuClass> arrayStorageClass = FuClass::new_(FuCallType::normal, FuId::arrayStorageClass, "ArrayStorage", 1);
 	std::shared_ptr<FuEnum> regexOptionsEnum;
-	std::shared_ptr<FuReadWriteClassType> lockPtrType = std::make_shared<FuReadWriteClassType>();
+	std::unique_ptr<FuReadWriteClassType> lockPtrType = std::make_unique<FuReadWriteClassType>();
 	std::shared_ptr<FuLiteralLong> newLiteralLong(int64_t value, int loc = 0) const;
 	std::shared_ptr<FuLiteralString> newLiteralString(std::string_view value, int loc = 0) const;
 	std::shared_ptr<FuType> promoteIntegerTypes(const FuType * left, const FuType * right) const;
@@ -1734,6 +1743,7 @@ private:
 	std::shared_ptr<FuExpr> visitPostfixExpr(std::shared_ptr<FuPostfixExpr> expr);
 	static bool canCompareEqual(const FuType * left, const FuType * right);
 	std::shared_ptr<FuExpr> resolveEquality(const FuBinaryExpr * expr, std::shared_ptr<FuExpr> left, std::shared_ptr<FuExpr> right) const;
+	void setSharedAssign(const FuExpr * left, const FuExpr * right) const;
 	void checkIsHierarchy(const FuClassType * leftPtr, const FuExpr * left, const FuClass * rightClass, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const;
 	void checkIsVar(const FuExpr * left, const FuVar * def, const FuExpr * expr, std::string_view op, std::string_view alwaysMessage, std::string_view neverMessage) const;
 	std::shared_ptr<FuExpr> resolveIs(std::shared_ptr<FuBinaryExpr> expr, std::shared_ptr<FuExpr> left, const FuExpr * right) const;
@@ -1748,6 +1758,7 @@ private:
 	std::shared_ptr<FuExpr> resolveCallWithArguments(std::shared_ptr<FuCallExpr> expr, const std::vector<std::shared_ptr<FuExpr>> * arguments);
 	std::shared_ptr<FuExpr> visitCallExpr(std::shared_ptr<FuCallExpr> expr);
 	void resolveObjectLiteral(const FuClassType * klass, const FuAggregateInitializer * init);
+	static void initUnique(const FuNamedValue * varOrField);
 	void visitVar(std::shared_ptr<FuVar> expr);
 	std::shared_ptr<FuExpr> visitExpr(std::shared_ptr<FuExpr> expr);
 	std::shared_ptr<FuExpr> resolveBool(std::shared_ptr<FuExpr> expr);
@@ -2400,8 +2411,11 @@ private:
 	bool stringToUpper;
 	void startMethodCall(const FuExpr * obj);
 	void writeCamelCaseNotKeyword(std::string_view name);
+	void writeSharedUnique(std::string_view prefix, bool unique, std::string_view suffix);
 	void writeCollectionType(std::string_view name, const FuType * elementType);
 	void writeClassType(const FuClassType * klass);
+	void writeNewUniqueArray(bool unique, const FuType * elementType, const FuExpr * lengthExpr);
+	void writeNewUnique(bool unique, const FuReadWriteClassType * klass);
 	static bool isSharedPtr(const FuExpr * expr);
 	static bool needStringPtrData(const FuExpr * expr);
 	static bool isClassPtr(const FuType * type);
