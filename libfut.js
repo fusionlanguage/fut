@@ -10856,15 +10856,25 @@ export class GenC extends GenCCpp
 			throw new Error();
 	}
 
+	static #isUnique(dynamic)
+	{
+		return dynamic.unique && dynamic.class.id == FuId.ARRAY_PTR_CLASS && !GenC.#hasDictionaryDestroy(dynamic.getElementType());
+	}
+
 	#writeDestructMethodName(klass)
 	{
 		switch (klass.class.id) {
 		case FuId.NONE:
 		case FuId.ARRAY_PTR_CLASS:
 		case FuId.JSON_ELEMENT_CLASS:
-			if (klass instanceof FuDynamicPtrType) {
-				this.#sharedRelease = true;
-				this.write("FuShared_Release");
+			let dynamic;
+			if ((dynamic = klass) instanceof FuDynamicPtrType) {
+				if (GenC.#isUnique(dynamic))
+					this.write("free");
+				else {
+					this.#sharedRelease = true;
+					this.write("FuShared_Release");
+				}
 				return false;
 			}
 			this.writeName(klass.class);
@@ -11253,6 +11263,13 @@ export class GenC extends GenCCpp
 				if (dynamic.class.id == FuId.REGEX_CLASS) {
 					super.writeAssign(expr, parent);
 				}
+				else if (GenC.#isUnique(dynamic)) {
+					this.ensureChildBlock();
+					this.write("free(");
+					expr.left.accept(this, FuPriority.ARGUMENT);
+					this.writeLine(");");
+					super.writeAssign(expr, parent);
+				}
 				else {
 					this.#sharedAssign = true;
 					this.write("FuShared_Assign((void **) &");
@@ -11526,18 +11543,35 @@ export class GenC extends GenCCpp
 
 	writeCoercedInternal(type, expr, parent)
 	{
-		let dynamic;
 		let klass;
-		if ((dynamic = type) instanceof FuDynamicPtrType && expr instanceof FuSymbolReference && parent != FuPriority.EQUALITY) {
-			if (dynamic.class.id == FuId.ARRAY_PTR_CLASS)
-				this.#writeDynamicArrayCast(dynamic.getElementType());
-			else {
-				this.writeChar(40);
-				this.writeName(dynamic.class);
-				this.write(" *) ");
+		if (type instanceof FuDynamicPtrType) {
+			const dynamic = type;
+			let prefix;
+			if (GenC.#isUnique(dynamic) && (prefix = expr) instanceof FuPrefixExpr) {
+				console.assert(prefix.op == FuToken.NEW);
+				let newClass = prefix.type;
+				this.#writeDynamicArrayCast(newClass.getElementType());
+				this.write("malloc(");
+				prefix.inner.accept(this, FuPriority.MUL);
+				this.write(" * sizeof(");
+				this.writeType(newClass.getElementType(), false);
+				this.write("))");
 			}
-			this.#sharedAddRef = true;
-			this.writeCall("FuShared_AddRef", expr);
+			else if (expr instanceof FuSymbolReference && parent != FuPriority.EQUALITY) {
+				if (dynamic.class.id == FuId.ARRAY_PTR_CLASS)
+					this.#writeDynamicArrayCast(dynamic.getElementType());
+				else {
+					this.writeChar(40);
+					this.writeName(dynamic.class);
+					this.write(" *) ");
+				}
+				this.#sharedAddRef = true;
+				this.writeCall("FuShared_AddRef", expr);
+			}
+			else if (dynamic.class.id != FuId.ARRAY_PTR_CLASS)
+				this.#writeClassPtr(dynamic.class, expr, parent);
+			else
+				super.writeCoercedInternal(type, expr, parent);
 		}
 		else if ((klass = type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && klass.class.id != FuId.ARRAY_PTR_CLASS && !(klass instanceof FuStorageType)) {
 			if (klass.class.id == FuId.QUEUE_CLASS && expr.type instanceof FuStorageType)

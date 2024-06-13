@@ -2257,6 +2257,7 @@ private:
 	void writeListFree(const FuClassType * elementType);
 	static const FuExpr * getStringSubstringLength(const FuCallExpr * call);
 	void writeStringStorageValue(const FuExpr * expr);
+	static bool isUnique(const FuDynamicPtrType * dynamic);
 	bool writeDestructMethodName(const FuClassType * klass);
 	void startDestructCall(const FuClassType * klass);
 	static bool hasDictionaryDestroy(const FuType * type);

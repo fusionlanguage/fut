@@ -10439,15 +10439,21 @@ namespace Fusion
 			}
 		}
 
+		static bool IsUnique(FuDynamicPtrType dynamic) => dynamic.Unique && dynamic.Class.Id == FuId.ArrayPtrClass && !HasDictionaryDestroy(dynamic.GetElementType());
+
 		bool WriteDestructMethodName(FuClassType klass)
 		{
 			switch (klass.Class.Id) {
 			case FuId.None:
 			case FuId.ArrayPtrClass:
 			case FuId.JsonElementClass:
-				if (klass is FuDynamicPtrType) {
-					this.SharedRelease = true;
-					Write("FuShared_Release");
+				if (klass is FuDynamicPtrType dynamic) {
+					if (IsUnique(dynamic))
+						Write("free");
+					else {
+						this.SharedRelease = true;
+						Write("FuShared_Release");
+					}
 					return false;
 				}
 				WriteName(klass.Class);
@@ -10831,6 +10837,13 @@ namespace Fusion
 				if (dynamic.Class.Id == FuId.RegexClass) {
 					base.WriteAssign(expr, parent);
 				}
+				else if (IsUnique(dynamic)) {
+					EnsureChildBlock();
+					Write("free(");
+					expr.Left.Accept(this, FuPriority.Argument);
+					WriteLine(");");
+					base.WriteAssign(expr, parent);
+				}
 				else {
 					this.SharedAssign = true;
 					Write("FuShared_Assign((void **) &");
@@ -11091,16 +11104,32 @@ namespace Fusion
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
 		{
 			switch (type) {
-			case FuDynamicPtrType dynamic when expr is FuSymbolReference && parent != FuPriority.Equality:
-				if (dynamic.Class.Id == FuId.ArrayPtrClass)
-					WriteDynamicArrayCast(dynamic.GetElementType());
-				else {
-					WriteChar('(');
-					WriteName(dynamic.Class);
-					Write(" *) ");
+			case FuDynamicPtrType dynamic:
+				if (IsUnique(dynamic) && expr is FuPrefixExpr prefix) {
+					Debug.Assert(prefix.Op == FuToken.New);
+					FuDynamicPtrType newClass = (FuDynamicPtrType) prefix.Type;
+					WriteDynamicArrayCast(newClass.GetElementType());
+					Write("malloc(");
+					prefix.Inner.Accept(this, FuPriority.Mul);
+					Write(" * sizeof(");
+					WriteType(newClass.GetElementType(), false);
+					Write("))");
 				}
-				this.SharedAddRef = true;
-				WriteCall("FuShared_AddRef", expr);
+				else if (expr is FuSymbolReference && parent != FuPriority.Equality) {
+					if (dynamic.Class.Id == FuId.ArrayPtrClass)
+						WriteDynamicArrayCast(dynamic.GetElementType());
+					else {
+						WriteChar('(');
+						WriteName(dynamic.Class);
+						Write(" *) ");
+					}
+					this.SharedAddRef = true;
+					WriteCall("FuShared_AddRef", expr);
+				}
+				else if (dynamic.Class.Id != FuId.ArrayPtrClass)
+					WriteClassPtr(dynamic.Class, expr, parent);
+				else
+					base.WriteCoercedInternal(type, expr, parent);
 				break;
 			case FuClassType klass when klass.Class.Id != FuId.StringClass && klass.Class.Id != FuId.ArrayPtrClass && !(klass is FuStorageType):
 				if (klass.Class.Id == FuId.QueueClass && expr.Type is FuStorageType)

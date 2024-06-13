@@ -10176,15 +10176,24 @@ void GenC::writeArrayStorageInit(const FuArrayStorageType * array, const FuExpr 
 		std::abort();
 }
 
+bool GenC::isUnique(const FuDynamicPtrType * dynamic)
+{
+	return dynamic->unique && dynamic->class_->id == FuId::arrayPtrClass && !hasDictionaryDestroy(dynamic->getElementType().get());
+}
+
 bool GenC::writeDestructMethodName(const FuClassType * klass)
 {
 	switch (klass->class_->id) {
 	case FuId::none:
 	case FuId::arrayPtrClass:
 	case FuId::jsonElementClass:
-		if (dynamic_cast<const FuDynamicPtrType *>(klass)) {
-			this->sharedRelease = true;
-			write("FuShared_Release");
+		if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(klass)) {
+			if (isUnique(dynamic))
+				write("free");
+			else {
+				this->sharedRelease = true;
+				write("FuShared_Release");
+			}
 			return false;
 		}
 		writeName(klass->class_);
@@ -10570,6 +10579,13 @@ void GenC::writeAssign(const FuBinaryExpr * expr, FuPriority parent)
 		if (dynamic->class_->id == FuId::regexClass) {
 			GenBase::writeAssign(expr, parent);
 		}
+		else if (isUnique(dynamic)) {
+			ensureChildBlock();
+			write("free(");
+			expr->left->accept(this, FuPriority::argument);
+			writeLine(");");
+			GenBase::writeAssign(expr, parent);
+		}
 		else {
 			this->sharedAssign = true;
 			write("FuShared_Assign((void **) &");
@@ -10837,18 +10853,34 @@ void GenC::writeArrayPtr(const FuExpr * expr, FuPriority parent)
 
 void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
 {
-	const FuDynamicPtrType * dynamic;
 	const FuClassType * klass;
-	if ((dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) && dynamic_cast<const FuSymbolReference *>(expr) && parent != FuPriority::equality) {
-		if (dynamic->class_->id == FuId::arrayPtrClass)
-			writeDynamicArrayCast(dynamic->getElementType().get());
-		else {
-			writeChar('(');
-			writeName(dynamic->class_);
-			write(" *) ");
+	if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(type)) {
+		const FuPrefixExpr * prefix;
+		if (isUnique(dynamic) && (prefix = dynamic_cast<const FuPrefixExpr *>(expr))) {
+			assert(prefix->op == FuToken::new_);
+			const FuDynamicPtrType * newClass = static_cast<const FuDynamicPtrType *>(prefix->type.get());
+			writeDynamicArrayCast(newClass->getElementType().get());
+			write("malloc(");
+			prefix->inner->accept(this, FuPriority::mul);
+			write(" * sizeof(");
+			writeType(newClass->getElementType().get(), false);
+			write("))");
 		}
-		this->sharedAddRef = true;
-		writeCall("FuShared_AddRef", expr);
+		else if (dynamic_cast<const FuSymbolReference *>(expr) && parent != FuPriority::equality) {
+			if (dynamic->class_->id == FuId::arrayPtrClass)
+				writeDynamicArrayCast(dynamic->getElementType().get());
+			else {
+				writeChar('(');
+				writeName(dynamic->class_);
+				write(" *) ");
+			}
+			this->sharedAddRef = true;
+			writeCall("FuShared_AddRef", expr);
+		}
+		else if (dynamic->class_->id != FuId::arrayPtrClass)
+			writeClassPtr(dynamic->class_, expr, parent);
+		else
+			GenTyped::writeCoercedInternal(type, expr, parent);
 	}
 	else if ((klass = dynamic_cast<const FuClassType *>(type)) && klass->class_->id != FuId::stringClass && klass->class_->id != FuId::arrayPtrClass && !dynamic_cast<const FuStorageType *>(klass)) {
 		if (klass->class_->id == FuId::queueClass && dynamic_cast<const FuStorageType *>(expr->type.get()))
