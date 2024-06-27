@@ -5147,8 +5147,12 @@ export class FuSema
 		let baseSymbol;
 		let isBase = (baseSymbol = left) instanceof FuSymbolReference && baseSymbol.symbol.id == FuId.BASE_PTR;
 		if (isBase) {
+			if (this.#currentMethod == null)
+				return this.#poisonError(left, "'base' invalid outside methods");
+			if (this.#currentMethod.isStatic())
+				return this.#poisonError(left, "'base' invalid in static context");
 			let baseClass;
-			if (this.#currentMethod == null || !((baseClass = this.#currentMethod.parent.parent) instanceof FuClass))
+			if (!((baseClass = this.#currentMethod.parent.parent) instanceof FuClass))
 				return this.#poisonError(left, "No base class");
 			scope = baseClass;
 		}

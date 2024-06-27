@@ -1,0 +1,12 @@
+public abstract class Base
+{
+	protected bool Foo() => true;
+}
+
+public class Test : Base
+{
+	public static bool Run()
+	{
+		return base.Foo(); //ERROR: 'base' invalid in static context
+	}
+}

@@ -4911,7 +4911,11 @@ namespace Fusion
 			FuScope scope;
 			bool isBase = left is FuSymbolReference baseSymbol && baseSymbol.Symbol.Id == FuId.BasePtr;
 			if (isBase) {
-				if (this.CurrentMethod == null || !(this.CurrentMethod.Parent.Parent is FuClass baseClass))
+				if (this.CurrentMethod == null)
+					return PoisonError(left, "'base' invalid outside methods");
+				if (this.CurrentMethod.IsStatic())
+					return PoisonError(left, "'base' invalid in static context");
+				if (!(this.CurrentMethod.Parent.Parent is FuClass baseClass))
 					return PoisonError(left, "No base class");
 				scope = baseClass;
 			}

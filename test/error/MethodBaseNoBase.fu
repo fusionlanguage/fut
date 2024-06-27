@@ -1,7 +1,6 @@
-public static class Test
+public class Test
 {
-	public static bool Run()
-	{
-		return base.Foo(); //ERROR: No base class
-	}
+	bool Foo() => base.Bar(); //ERROR: No base class
+
+	public static bool Run() => true;
 }

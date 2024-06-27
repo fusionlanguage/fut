@@ -4,8 +4,7 @@ public class Base
 
 public class Test : Base
 {
-	public static bool Run()
-	{
-		return base.Foo(); //ERROR: 'Foo' not found
-	}
+	bool Foo() => base.Bar(); //ERROR: 'Bar' not found
+
+	public static bool Run() => true;
 }

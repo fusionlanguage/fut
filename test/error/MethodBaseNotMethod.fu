@@ -1,12 +1,11 @@
 public class Base
 {
-	internal int Foo;
+	internal int Bar;
 }
 
 public class Test : Base
 {
-	public static bool Run()
-	{
-		return base.Foo(); //ERROR: Expected a method
-	}
+	bool Foo() => base.Bar(); //ERROR: Expected a method
+
+	public static bool Run() => true;
 }

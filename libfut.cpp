@@ -4655,8 +4655,12 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 	const FuSymbolReference * baseSymbol;
 	bool isBase = (baseSymbol = dynamic_cast<const FuSymbolReference *>(left.get())) && baseSymbol->symbol->id == FuId::basePtr;
 	if (isBase) {
+		if (this->currentMethod == nullptr)
+			return poisonError(left.get(), "'base' invalid outside methods");
+		if (this->currentMethod->isStatic())
+			return poisonError(left.get(), "'base' invalid in static context");
 		const FuClass * baseClass;
-		if (this->currentMethod == nullptr || !(baseClass = dynamic_cast<const FuClass *>(this->currentMethod->parent->parent)))
+		if (!(baseClass = dynamic_cast<const FuClass *>(this->currentMethod->parent->parent)))
 			return poisonError(left.get(), "No base class");
 		scope = baseClass;
 	}

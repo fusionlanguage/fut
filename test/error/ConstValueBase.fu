@@ -1,6 +1,6 @@
 public static class Test
 {
-	const int Foo = base.Bar(); //ERROR: No base class
+	const int Foo = base.Bar(); //ERROR: 'base' invalid outside methods
 
 	public static bool Run()
 	{
