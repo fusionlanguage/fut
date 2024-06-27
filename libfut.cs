@@ -5975,7 +5975,7 @@ namespace Fusion
 					ReportError(expr.Method, $"Method marked 'throws {exception.Name}' called from a method without it");
 			}
 			symbol.Symbol = method;
-			if (method.CallType == FuCallType.Static && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
+			if (method.IsStatic() && method.Body is FuReturn ret && arguments.TrueForAll(arg => arg is FuLiteral) && !this.CurrentPureMethods.Contains(method)) {
 				this.CurrentPureMethods.Add(method);
 				i = 0;
 				for (FuVar param = method.FirstParameter(); param != null; param = param.NextVar()) {

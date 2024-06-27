@@ -1303,7 +1303,6 @@ public class FuSema
 			return PoisonError(symbol, "Expected a method");
 		}
 
-		// TODO: check static
 		if (!method.IsStatic() && method.IsMutator()) {
 			if (symbol.Left == null) {
 				if (!this.CurrentMethod.IsMutator())
@@ -1367,7 +1366,7 @@ public class FuSema
 
 		symbol.Symbol = method;
 
-		if (method.CallType == FuCallType.Static
+		if (method.IsStatic()
 		 && method.Body is FuReturn! ret
 		 && arguments.All(arg => arg is FuLiteral)
 		 && !this.CurrentPureMethods.Contains(method)) {

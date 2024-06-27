@@ -5870,7 +5870,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	}
 	symbol->symbol = method;
 	FuReturn * ret;
-	if (method->callType == FuCallType::static_ && (ret = dynamic_cast<FuReturn *>(method->body.get())) && std::all_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuLiteral *>(arg.get()); }) && !this->currentPureMethods.contains(method)) {
+	if (method->isStatic() && (ret = dynamic_cast<FuReturn *>(method->body.get())) && std::all_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuLiteral *>(arg.get()); }) && !this->currentPureMethods.contains(method)) {
 		this->currentPureMethods.insert(method);
 		i = 0;
 		for (const FuVar * param = method->firstParameter(); param != nullptr; param = param->nextVar()) {

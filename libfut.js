@@ -6298,7 +6298,7 @@ export class FuSema
 		}
 		symbol.symbol = method;
 		let ret;
-		if (method.callType == FuCallType.STATIC && (ret = method.body) instanceof FuReturn && arguments_.every(arg => arg instanceof FuLiteral) && !this.#currentPureMethods.has(method)) {
+		if (method.isStatic() && (ret = method.body) instanceof FuReturn && arguments_.every(arg => arg instanceof FuLiteral) && !this.#currentPureMethods.has(method)) {
 			this.#currentPureMethods.add(method);
 			i = 0;
 			for (let param = method.firstParameter(); param != null; param = param.nextVar()) {
