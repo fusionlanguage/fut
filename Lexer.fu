@@ -160,6 +160,7 @@ public abstract class FuLexer
 	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralChar
 	protected string() StringValue; // for FuToken.LiteralString, FuToken.InterpolatedString, FuToken.Id
 	HashSet<string()>() PreSymbols;
+	bool AtLineStart = true;
 	bool LineMode = false;
 	bool SkippingUnmet = false;
 	protected bool ParsingTypeArg = false;
@@ -262,9 +263,11 @@ public abstract class FuLexer
 			break;
 		case '\n':
 			this.Host.Program.LineLocs.Add(this.Loc);
+			this.AtLineStart = true;
 			break;
 		default:
 			this.Loc += c < 0x10000 ? 1 : 2;
+			this.AtLineStart = false;
 			break;
 		}
 		FillNextChar();
@@ -506,6 +509,7 @@ public abstract class FuLexer
 	FuToken ReadPreToken!()
 	{
 		for (;;) {
+			bool atLineStart = this.AtLineStart;
 			this.TokenLoc = this.Loc;
 			this.LexemeOffset = this.CharOffset;
 			int c = ReadChar();
@@ -521,7 +525,7 @@ public abstract class FuLexer
 					return FuToken.EndOfLine;
 				break;
 			case '#':
-				if (this.TokenLoc != this.Host.Program.LineLocs.Last())
+				if (!atLineStart)
 					return FuToken.Hash;
 				switch (PeekChar()) {
 				case 'i':

@@ -140,9 +140,11 @@ int FuLexer::readChar()
 		break;
 	case '\n':
 		this->host->program->lineLocs.push_back(this->loc);
+		this->atLineStart = true;
 		break;
 	default:
 		this->loc += c < 65536 ? 1 : 2;
+		this->atLineStart = false;
 		break;
 	}
 	fillNextChar();
@@ -392,6 +394,7 @@ std::string FuLexer::getLexeme() const
 FuToken FuLexer::readPreToken()
 {
 	for (;;) {
+		bool atLineStart = this->atLineStart;
 		this->tokenLoc = this->loc;
 		this->lexemeOffset = this->charOffset;
 		int c = readChar();
@@ -407,7 +410,7 @@ FuToken FuLexer::readPreToken()
 				return FuToken::endOfLine;
 			break;
 		case '#':
-			if (this->tokenLoc != this->host->program->lineLocs.back())
+			if (!atLineStart)
 				return FuToken::hash;
 			switch (peekChar()) {
 			case 'i':

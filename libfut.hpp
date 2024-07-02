@@ -521,6 +521,7 @@ private:
 	int nextOffset;
 	int nextChar;
 	std::unordered_set<std::string> preSymbols;
+	bool atLineStart = true;
 	bool lineMode = false;
 	bool skippingUnmet = false;
 	std::stack<bool> preElseStack;

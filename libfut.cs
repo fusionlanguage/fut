@@ -165,6 +165,8 @@ namespace Fusion
 
 		readonly HashSet<string> PreSymbols = new HashSet<string>();
 
+		bool AtLineStart = true;
+
 		bool LineMode = false;
 
 		bool SkippingUnmet = false;
@@ -273,9 +275,11 @@ namespace Fusion
 				break;
 			case '\n':
 				this.Host.Program.LineLocs.Add(this.Loc);
+				this.AtLineStart = true;
 				break;
 			default:
 				this.Loc += c < 65536 ? 1 : 2;
+				this.AtLineStart = false;
 				break;
 			}
 			FillNextChar();
@@ -519,6 +523,7 @@ namespace Fusion
 		FuToken ReadPreToken()
 		{
 			for (;;) {
+				bool atLineStart = this.AtLineStart;
 				this.TokenLoc = this.Loc;
 				this.LexemeOffset = this.CharOffset;
 				int c = ReadChar();
@@ -534,7 +539,7 @@ namespace Fusion
 						return FuToken.EndOfLine;
 					break;
 				case '#':
-					if (this.TokenLoc != this.Host.Program.LineLocs[^1])
+					if (!atLineStart)
 						return FuToken.Hash;
 					switch (PeekChar()) {
 					case 'i':
