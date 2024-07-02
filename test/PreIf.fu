@@ -2,8 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-#if true
-		return true;
-#endif
+		#if true
+			return true;
+		#endif
 	}
 }
