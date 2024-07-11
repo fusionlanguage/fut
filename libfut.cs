@@ -18317,24 +18317,7 @@ namespace Fusion
 				Include("std.exception");
 				WriteLine("mixin basicExceptionCtors;");
 			}
-			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (!(symbol is FuMember))
-					continue;
-				switch (symbol) {
-				case FuConst konst:
-					WriteConst(konst);
-					break;
-				case FuField field:
-					WriteField(field);
-					break;
-				case FuMethod method:
-					WriteMethod(method);
-					this.CurrentTemporaries.Clear();
-					break;
-				default:
-					throw new NotImplementedException();
-				}
-			}
+			WriteMembers(klass, false);
 			CloseBlock();
 		}
 

@@ -18868,25 +18868,7 @@ export class GenD extends GenCCppD
 			this.include("std.exception");
 			this.writeLine("mixin basicExceptionCtors;");
 		}
-		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
-			if (!(symbol instanceof FuMember))
-				continue;
-			if (symbol instanceof FuConst) {
-				const konst = symbol;
-				this.writeConst(konst);
-			}
-			else if (symbol instanceof FuField) {
-				const field = symbol;
-				this.writeField(field);
-			}
-			else if (symbol instanceof FuMethod) {
-				const method = symbol;
-				this.writeMethod(method);
-				this.currentTemporaries.length = 0;
-			}
-			else
-				throw new Error();
-		}
+		this.writeMembers(klass, false);
 		this.closeBlock();
 	}
 

@@ -17776,20 +17776,7 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 		include("std.exception");
 		writeLine("mixin basicExceptionCtors;");
 	}
-	for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		if (!dynamic_cast<const FuMember *>(symbol))
-			continue;
-		if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol))
-			writeConst(konst);
-		else if (const FuField *field = dynamic_cast<const FuField *>(symbol))
-			writeField(field);
-		else if (const FuMethod *method = dynamic_cast<const FuMethod *>(symbol)) {
-			writeMethod(method);
-			this->currentTemporaries.clear();
-		}
-		else
-			std::abort();
-	}
+	writeMembers(klass, false);
 	closeBlock();
 }
 
