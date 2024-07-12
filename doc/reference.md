@@ -1402,8 +1402,11 @@ native {
 
 Generally, native blocks should be used inside `#if` (see below).
 
-Native blocks are allowed as statements in method bodies and at the top level
-(for `import` / `using` declarations).
+Native blocks are allowed:
+
+* as statements in method bodies
+* inside `class` (to add class members or decorations to emitted class members)
+* at the top level (for `import` / `using` declarations).
 
 ## Conditional compilation
 
