@@ -2471,7 +2471,7 @@ namespace Fusion
 		}
 	}
 
-	class FuNative : FuSymbol
+	public class FuNative : FuSymbol
 	{
 
 		internal string Content;

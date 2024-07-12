@@ -960,7 +960,7 @@ class FuLock : FuStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitLock(this); }
 }
 
-class FuNative : FuSymbol
+public class FuNative : FuSymbol
 {
 	internal string() Content;
 	public override int GetLocLength() => 6;

@@ -2523,7 +2523,7 @@ class FuLock extends FuStatement
 	}
 }
 
-class FuNative extends FuSymbol
+export class FuNative extends FuSymbol
 {
 	content;
 
