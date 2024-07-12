@@ -358,7 +358,7 @@ public abstract class FuScope : FuSymbol
 {
 	protected Dictionary<string, FuSymbol#>() Dict;
 	internal FuSymbol!? First = null;
-	FuSymbol!? Last;
+	internal FuSymbol!? Last = null;
 
 	public int Count() => this.Dict.Count;
 
@@ -966,6 +966,14 @@ public class FuNative : FuSymbol
 	public override int GetLocLength() => 6;
 	public override bool CompletesNormally() => true;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitNative(this); }
+	public FuMember? GetFollowingMember()
+	{
+		for (FuSymbol? symbol = this.Next; symbol != null; symbol = symbol.Next) {
+			if (symbol is FuMember member)
+				return member;
+		}
+		return null;
+	}
 }
 
 class FuReturn : FuScope

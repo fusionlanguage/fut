@@ -734,8 +734,7 @@ protected:
 	void addToList(std::shared_ptr<FuSymbol> symbol);
 public:
 	FuSymbol * first = nullptr;
-private:
-	FuSymbol * last;
+	FuSymbol * last = nullptr;
 };
 
 class FuAggregateInitializer : public FuExpr
@@ -1109,6 +1108,7 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
+	const FuMember * getFollowingMember() const;
 public:
 	std::string content;
 };

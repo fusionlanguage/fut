@@ -1683,7 +1683,7 @@ namespace Fusion
 
 		internal FuSymbol First = null;
 
-		FuSymbol Last;
+		internal FuSymbol Last = null;
 
 		public int Count() => this.Dict.Count;
 
@@ -2483,6 +2483,15 @@ namespace Fusion
 		public override void AcceptStatement(FuVisitor visitor)
 		{
 			visitor.VisitNative(this);
+		}
+
+		public FuMember GetFollowingMember()
+		{
+			for (FuSymbol symbol = this.Next; symbol != null; symbol = symbol.Next) {
+				if (symbol is FuMember member)
+					return member;
+			}
+			return null;
 		}
 	}
 
@@ -15571,7 +15580,8 @@ namespace Fusion
 		{
 			bool constructor = GetConstructorVisibility(klass) == visibility;
 			bool destructor = visibility == FuVisibility.Public && (klass.HasSubclasses || klass.AddsVirtualMethods());
-			if (!constructor && !destructor && !HasMembersOfVisibility(klass, visibility))
+			bool trailingNative = visibility == FuVisibility.Private && klass.Last is FuNative;
+			if (!constructor && !destructor && !trailingNative && !HasMembersOfVisibility(klass, visibility))
 				return;
 			Write(visibilityKeyword);
 			WriteCharLine(':');
@@ -15605,17 +15615,20 @@ namespace Fusion
 				WriteLine("() = default;");
 			}
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (!(symbol is FuMember member) || member.Visibility != visibility || member.Id == FuId.Main)
-					continue;
-				switch (member) {
+				switch (symbol) {
 				case FuConst konst:
+					if (konst.Visibility != visibility)
+						continue;
 					WriteDoc(konst.Documentation);
 					WriteConst(konst);
 					break;
 				case FuField field:
-					WriteField(field);
+					if (field.Visibility == visibility)
+						WriteField(field);
 					break;
 				case FuMethod method:
+					if (method.Visibility != visibility || method.Id == FuId.Main)
+						continue;
 					WriteMethodDoc(method);
 					switch (method.CallType) {
 					case FuCallType.Static:
@@ -15644,6 +15657,11 @@ namespace Fusion
 						break;
 					}
 					WriteCharLine(';');
+					break;
+				case FuNative nat:
+					FuMember followingMember = nat.GetFollowingMember();
+					if (visibility == (followingMember != null ? followingMember.Visibility : FuVisibility.Private))
+						VisitNative(nat);
 					break;
 				default:
 					throw new NotImplementedException();

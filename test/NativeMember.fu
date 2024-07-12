@@ -24,7 +24,6 @@ public class Test
 		var ok = true
 	}
 #else
-	//FAIL: cpp TODO
 	native {
 		bool ok = true;
 	}
@@ -43,6 +42,17 @@ public class Test
 		native {
 		result = o.ok;
 		}
+#if CPP
+		native {
+			result &= o.trailing;
+		}
+#endif
 		return result;
 	}
+
+#if CPP
+	native {
+		bool trailing = true;
+	}
+#endif
 }

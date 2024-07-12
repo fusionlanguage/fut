@@ -1977,6 +1977,15 @@ void FuNative::acceptStatement(FuVisitor * visitor) const
 	visitor->visitNative(this);
 }
 
+const FuMember * FuNative::getFollowingMember() const
+{
+	for (const FuSymbol * symbol = this->next; symbol != nullptr; symbol = symbol->next) {
+		if (const FuMember *member = dynamic_cast<const FuMember *>(symbol))
+			return member;
+	}
+	return nullptr;
+}
+
 int FuReturn::getLocLength() const
 {
 	return 6;
@@ -15221,7 +15230,8 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 {
 	bool constructor = getConstructorVisibility(klass) == visibility;
 	bool destructor = visibility == FuVisibility::public_ && (klass->hasSubclasses || klass->addsVirtualMethods());
-	if (!constructor && !destructor && !hasMembersOfVisibility(klass, visibility))
+	bool trailingNative = visibility == FuVisibility::private_ && dynamic_cast<const FuNative *>(klass->last);
+	if (!constructor && !destructor && !trailingNative && !hasMembersOfVisibility(klass, visibility))
 		return;
 	write(visibilityKeyword);
 	writeCharLine(':');
@@ -15255,16 +15265,19 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 		writeLine("() = default;");
 	}
 	for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
-		const FuMember * member;
-		if (!(member = dynamic_cast<const FuMember *>(symbol)) || member->visibility != visibility || member->id == FuId::main)
-			continue;
-		if (const FuConst *konst = dynamic_cast<const FuConst *>(member)) {
+		if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol)) {
+			if (konst->visibility != visibility)
+				continue;
 			writeDoc(konst->documentation.get());
 			writeConst(konst);
 		}
-		else if (const FuField *field = dynamic_cast<const FuField *>(member))
-			writeField(field);
-		else if (const FuMethod *method = dynamic_cast<const FuMethod *>(member)) {
+		else if (const FuField *field = dynamic_cast<const FuField *>(symbol)) {
+			if (field->visibility == visibility)
+				writeField(field);
+		}
+		else if (const FuMethod *method = dynamic_cast<const FuMethod *>(symbol)) {
+			if (method->visibility != visibility || method->id == FuId::main)
+				continue;
 			writeMethodDoc(method);
 			switch (method->callType) {
 			case FuCallType::static_:
@@ -15293,6 +15306,11 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 				break;
 			}
 			writeCharLine(';');
+		}
+		else if (const FuNative *nat = dynamic_cast<const FuNative *>(symbol)) {
+			const FuMember * followingMember = nat->getFollowingMember();
+			if (visibility == (followingMember != nullptr ? followingMember->visibility : FuVisibility::private_))
+				visitNative(nat);
 		}
 		else
 			std::abort();

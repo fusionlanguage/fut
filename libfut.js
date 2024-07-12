@@ -1610,7 +1610,7 @@ export class FuScope extends FuSymbol
 {
 	dict = {};
 	first = null;
-	#last;
+	last = null;
 
 	count()
 	{
@@ -1638,8 +1638,8 @@ export class FuScope extends FuSymbol
 		if (this.first == null)
 			this.first = symbol;
 		else
-			this.#last.next = symbol;
-		this.#last = symbol;
+			this.last.next = symbol;
+		this.last = symbol;
 	}
 
 	add(symbol)
@@ -2540,6 +2540,16 @@ export class FuNative extends FuSymbol
 	acceptStatement(visitor)
 	{
 		visitor.visitNative(this);
+	}
+
+	getFollowingMember()
+	{
+		for (let symbol = this.next; symbol != null; symbol = symbol.next) {
+			let member;
+			if ((member = symbol) instanceof FuMember)
+				return member;
+		}
+		return null;
 	}
 }
 
@@ -16060,7 +16070,8 @@ export class GenCpp extends GenCCpp
 	{
 		let constructor = GenCpp.#getConstructorVisibility(klass) == visibility;
 		let destructor = visibility == FuVisibility.PUBLIC && (klass.hasSubclasses || klass.addsVirtualMethods());
-		if (!constructor && !destructor && !GenCpp.#hasMembersOfVisibility(klass, visibility))
+		let trailingNative = visibility == FuVisibility.PRIVATE && klass.last instanceof FuNative;
+		if (!constructor && !destructor && !trailingNative && !GenCpp.#hasMembersOfVisibility(klass, visibility))
 			return;
 		this.write(visibilityKeyword);
 		this.writeCharLine(58);
@@ -16094,20 +16105,22 @@ export class GenCpp extends GenCCpp
 			this.writeLine("() = default;");
 		}
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
-			let member;
-			if (!((member = symbol) instanceof FuMember) || member.visibility != visibility || member.id == FuId.MAIN)
-				continue;
-			if (member instanceof FuConst) {
-				const konst = member;
+			if (symbol instanceof FuConst) {
+				const konst = symbol;
+				if (konst.visibility != visibility)
+					continue;
 				this.writeDoc(konst.documentation);
 				this.writeConst(konst);
 			}
-			else if (member instanceof FuField) {
-				const field = member;
-				this.writeField(field);
+			else if (symbol instanceof FuField) {
+				const field = symbol;
+				if (field.visibility == visibility)
+					this.writeField(field);
 			}
-			else if (member instanceof FuMethod) {
-				const method = member;
+			else if (symbol instanceof FuMethod) {
+				const method = symbol;
+				if (method.visibility != visibility || method.id == FuId.MAIN)
+					continue;
 				this.writeMethodDoc(method);
 				switch (method.callType) {
 				case FuCallType.STATIC:
@@ -16136,6 +16149,12 @@ export class GenCpp extends GenCCpp
 					break;
 				}
 				this.writeCharLine(59);
+			}
+			else if (symbol instanceof FuNative) {
+				const nat = symbol;
+				let followingMember = nat.getFollowingMember();
+				if (visibility == (followingMember != null ? followingMember.visibility : FuVisibility.PRIVATE))
+					this.visitNative(nat);
 			}
 			else
 				throw new Error();
