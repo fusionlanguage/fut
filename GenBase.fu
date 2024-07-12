@@ -2091,6 +2091,9 @@ public abstract class GenBase : FuVisitor
 				this.SwitchesWithGoto.Clear();
 				this.CurrentTemporaries.Clear();
 				break;
+			case FuNative nat:
+				VisitNative(nat);
+				break;
 			default:
 				assert false;
 			}

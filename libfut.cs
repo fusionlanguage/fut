@@ -1698,9 +1698,8 @@ namespace Fusion
 			return null;
 		}
 
-		public void Add(FuSymbol symbol)
+		protected void AddToList(FuSymbol symbol)
 		{
-			this.Dict[symbol.Name] = symbol;
 			symbol.Next = null;
 			symbol.Parent = this;
 			if (this.First == null)
@@ -1708,6 +1707,12 @@ namespace Fusion
 			else
 				this.Last.Next = symbol;
 			this.Last = symbol;
+		}
+
+		public void Add(FuSymbol symbol)
+		{
+			this.Dict[symbol.Name] = symbol;
+			AddToList(symbol);
 		}
 
 		public bool Encloses(FuSymbol symbol)
@@ -2466,7 +2471,7 @@ namespace Fusion
 		}
 	}
 
-	class FuNative : FuStatement
+	class FuNative : FuSymbol
 	{
 
 		internal string Content;
@@ -2962,6 +2967,8 @@ namespace Fusion
 
 		internal readonly List<FuConst> ConstArrays = new List<FuConst>();
 
+		readonly List<FuNative> Natives = new List<FuNative>();
+
 		public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
 
 		public bool AddsVirtualMethods()
@@ -2983,6 +2990,12 @@ namespace Fusion
 		public void AddStaticMethod(FuType type, FuId id, string name, FuVar param0, FuVar param1 = null, FuVar param2 = null)
 		{
 			Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Static, type, id, name, false, param0, param1, param2));
+		}
+
+		public void AddNative(FuNative nat)
+		{
+			AddToList(nat);
+			this.Natives.Add(nat);
 		}
 
 		public bool IsSameOrBaseOf(FuClass derived)
@@ -4533,6 +4546,9 @@ namespace Fusion
 					visibility = FuVisibility.Public;
 					NextToken();
 					break;
+				case FuToken.Native:
+					klass.AddNative(ParseNative());
+					continue;
 				default:
 					visibility = FuVisibility.Private;
 					break;
@@ -9035,6 +9051,9 @@ namespace Fusion
 					this.SwitchesWithGoto.Clear();
 					this.CurrentTemporaries.Clear();
 					break;
+				case FuNative nat:
+					VisitNative(nat);
+					break;
 				default:
 					throw new NotImplementedException();
 				}
@@ -12806,10 +12825,17 @@ namespace Fusion
 					WriteLine(" base;");
 				}
 				for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
-					if (symbol is FuField field) {
+					switch (symbol) {
+					case FuField field:
 						WriteDoc(field.Documentation);
 						WriteTypeAndName(field);
 						WriteCharLine(';');
+						break;
+					case FuNative nat:
+						VisitNative(nat);
+						break;
+					default:
+						break;
 					}
 				}
 				this.Indent--;

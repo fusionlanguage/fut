@@ -997,6 +997,9 @@ public class FuParser : FuLexer
 				visibility = FuVisibility.Public;
 				NextToken();
 				break;
+			case FuToken.Native:
+				klass.AddNative(ParseNative());
+				continue;
 			default:
 				visibility = FuVisibility.Private;
 				break;

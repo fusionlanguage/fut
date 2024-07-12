@@ -373,9 +373,8 @@ public abstract class FuScope : FuSymbol
 		return null;
 	}
 
-	public void Add!(FuSymbol# symbol)
+	protected void AddToList!(FuSymbol# symbol)
 	{
-		this.Dict[symbol.Name] = symbol;
 		symbol.Next = null;
 		symbol.Parent = this;
 		if (this.First == null)
@@ -383,6 +382,12 @@ public abstract class FuScope : FuSymbol
 		else
 			this.Last.Next = symbol;
 		this.Last = symbol;
+	}
+
+	public void Add!(FuSymbol# symbol)
+	{
+		this.Dict[symbol.Name] = symbol;
+		AddToList(symbol);
 	}
 
 	public bool Encloses(FuSymbol symbol)
@@ -955,7 +960,7 @@ class FuLock : FuStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitLock(this); }
 }
 
-class FuNative : FuStatement
+class FuNative : FuSymbol
 {
 	internal string() Content;
 	public override int GetLocLength() => 6;
@@ -1343,6 +1348,7 @@ public class FuClass : FuContainerType
 	internal FuSymbolReference() BaseClass;
 	internal FuMethodBase#? Constructor;
 	internal List<FuConst!>() ConstArrays;
+	List<FuNative#>() Natives; // FIXME: avoid by moving the ownership from the dictionary to the linked list?
 	public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
 	public bool AddsVirtualMethods()
 	{
@@ -1360,9 +1366,16 @@ public class FuClass : FuContainerType
 	{
 		Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Normal, type, id, name, isMutator, param0, param1, param2, param3));
 	}
+
 	public void AddStaticMethod!(FuType# type, FuId id, string name, FuVar#? param0, FuVar#? param1 = null, FuVar#? param2 = null)
 	{
 		Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Static, type, id, name, false, param0, param1, param2));
+	}
+
+	public void AddNative!(FuNative# nat)
+	{
+		AddToList(nat);
+		this.Natives.Add(nat);
 	}
 
 	public bool IsSameOrBaseOf(FuClass derived)

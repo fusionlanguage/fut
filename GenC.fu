@@ -3201,10 +3201,17 @@ public class GenC : GenCCpp
 				WriteLine(" base;");
 			}
 			for (FuSymbol? symbol = klass.First; symbol != null; symbol = symbol.Next) {
-				if (symbol is FuField field) {
+				switch (symbol) {
+				case FuField field:
 					WriteDoc(field.Documentation);
 					WriteTypeAndName(field);
 					WriteCharLine(';');
+					break;
+				case FuNative nat:
+					VisitNative(nat);
+					break;
+				default:
+					break;
 				}
 			}
 			this.Indent--;

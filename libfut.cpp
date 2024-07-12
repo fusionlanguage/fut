@@ -1235,9 +1235,8 @@ std::shared_ptr<FuSymbol> FuScope::tryLookup(std::string_view name, bool global)
 	return nullptr;
 }
 
-void FuScope::add(std::shared_ptr<FuSymbol> symbol)
+void FuScope::addToList(std::shared_ptr<FuSymbol> symbol)
 {
-	this->dict[symbol->name] = symbol;
 	symbol->next = nullptr;
 	symbol->parent = this;
 	if (this->first == nullptr)
@@ -1245,6 +1244,12 @@ void FuScope::add(std::shared_ptr<FuSymbol> symbol)
 	else
 		this->last->next = symbol.get();
 	this->last = symbol.get();
+}
+
+void FuScope::add(std::shared_ptr<FuSymbol> symbol)
+{
+	this->dict[symbol->name] = symbol;
+	addToList(symbol);
 }
 
 bool FuScope::encloses(const FuSymbol * symbol) const
@@ -2430,6 +2435,12 @@ void FuClass::addMethod(std::shared_ptr<FuType> type, FuId id, std::string_view 
 void FuClass::addStaticMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1, std::shared_ptr<FuVar> param2)
 {
 	add(FuMethod::new_(this, FuVisibility::public_, FuCallType::static_, type, id, name, false, param0, param1, param2));
+}
+
+void FuClass::addNative(std::shared_ptr<FuNative> nat)
+{
+	addToList(nat);
+	this->natives.push_back(nat);
 }
 
 bool FuClass::isSameOrBaseOf(const FuClass * derived) const
@@ -4255,6 +4266,9 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			visibility = FuVisibility::public_;
 			nextToken();
 			break;
+		case FuToken::native:
+			klass->addNative(parseNative());
+			continue;
 		default:
 			visibility = FuVisibility::private_;
 			break;
@@ -8887,6 +8901,8 @@ void GenBase::writeMembers(const FuClass * klass, bool constArrays)
 			this->switchesWithGoto.clear();
 			this->currentTemporaries.clear();
 		}
+		else if (const FuNative *nat = dynamic_cast<const FuNative *>(symbol))
+			visitNative(nat);
 		else
 			std::abort();
 	}
@@ -12590,6 +12606,8 @@ void GenC::writeClassInternal(const FuClass * klass)
 				writeTypeAndName(field);
 				writeCharLine(';');
 			}
+			else if (const FuNative *nat = dynamic_cast<const FuNative *>(symbol))
+				visitNative(nat);
 		}
 		this->indent--;
 		writeLine("};");

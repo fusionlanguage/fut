@@ -731,6 +731,7 @@ public:
 protected:
 	FuScope() = default;
 	std::unordered_map<std::string_view, std::shared_ptr<FuSymbol>> dict;
+	void addToList(std::shared_ptr<FuSymbol> symbol);
 public:
 	FuSymbol * first = nullptr;
 private:
@@ -1101,7 +1102,7 @@ public:
 	std::shared_ptr<FuStatement> body;
 };
 
-class FuNative : public FuStatement
+class FuNative : public FuSymbol
 {
 public:
 	FuNative() = default;
@@ -1399,6 +1400,7 @@ public:
 	static std::shared_ptr<FuClass> new_(FuCallType callType, FuId id, std::string_view name, int typeParameterCount = 0);
 	void addMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
 	void addStaticMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr);
+	void addNative(std::shared_ptr<FuNative> nat);
 	bool isSameOrBaseOf(const FuClass * derived) const;
 	bool hasToString() const;
 	bool addsToString() const;
@@ -1409,6 +1411,8 @@ public:
 	FuSymbolReference baseClass;
 	std::shared_ptr<FuMethodBase> constructor;
 	std::vector<FuConst *> constArrays;
+private:
+	std::vector<std::shared_ptr<FuNative>> natives;
 };
 
 class FuClassType : public FuType

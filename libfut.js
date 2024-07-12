@@ -1631,9 +1631,8 @@ export class FuScope extends FuSymbol
 		return null;
 	}
 
-	add(symbol)
+	addToList(symbol)
 	{
-		this.dict[symbol.name] = symbol;
 		symbol.next = null;
 		symbol.parent = this;
 		if (this.first == null)
@@ -1641,6 +1640,12 @@ export class FuScope extends FuSymbol
 		else
 			this.#last.next = symbol;
 		this.#last = symbol;
+	}
+
+	add(symbol)
+	{
+		this.dict[symbol.name] = symbol;
+		this.addToList(symbol);
 	}
 
 	encloses(symbol)
@@ -2518,7 +2523,7 @@ class FuLock extends FuStatement
 	}
 }
 
-class FuNative extends FuStatement
+class FuNative extends FuSymbol
 {
 	content;
 
@@ -3096,6 +3101,7 @@ export class FuClass extends FuContainerType
 	baseClass = new FuSymbolReference();
 	constructor_;
 	constArrays = [];
+	#natives = [];
 
 	hasBaseClass()
 	{
@@ -3125,6 +3131,12 @@ export class FuClass extends FuContainerType
 	addStaticMethod(type, id, name, param0, param1 = null, param2 = null)
 	{
 		this.add(FuMethod.new(this, FuVisibility.PUBLIC, FuCallType.STATIC, type, id, name, false, param0, param1, param2));
+	}
+
+	addNative(nat)
+	{
+		this.addToList(nat);
+		this.#natives.push(nat);
 	}
 
 	isSameOrBaseOf(derived)
@@ -4753,6 +4765,9 @@ export class FuParser extends FuLexer
 				visibility = FuVisibility.PUBLIC;
 				this.nextToken();
 				break;
+			case FuToken.NATIVE:
+				klass.addNative(this.#parseNative());
+				continue;
 			default:
 				visibility = FuVisibility.PRIVATE;
 				break;
@@ -9444,6 +9459,10 @@ export class GenBase extends FuVisitor
 				this.switchesWithGoto.length = 0;
 				this.currentTemporaries.length = 0;
 			}
+			else if (symbol instanceof FuNative) {
+				const nat = symbol;
+				this.visitNative(nat);
+			}
 			else
 				throw new Error();
 		}
@@ -13276,11 +13295,15 @@ export class GenC extends GenCCpp
 				this.writeLine(" base;");
 			}
 			for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
-				let field;
-				if ((field = symbol) instanceof FuField) {
+				if (symbol instanceof FuField) {
+					const field = symbol;
 					this.writeDoc(field.documentation);
 					this.writeTypeAndName(field);
 					this.writeCharLine(59);
+				}
+				else if (symbol instanceof FuNative) {
+					const nat = symbol;
+					this.visitNative(nat);
 				}
 			}
 			this.indent--;
