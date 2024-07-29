@@ -1472,23 +1472,23 @@ namespace Fusion
 		MathTruncate
 	}
 
-	abstract class FuDocInline
+	public abstract class FuDocInline
 	{
 	}
 
-	class FuDocText : FuDocInline
-	{
-
-		internal string Text;
-	}
-
-	class FuDocCode : FuDocInline
+	public class FuDocText : FuDocInline
 	{
 
 		internal string Text;
 	}
 
-	class FuDocLine : FuDocInline
+	public class FuDocCode : FuDocInline
+	{
+
+		internal string Text;
+	}
+
+	public class FuDocLine : FuDocInline
 	{
 	}
 

@@ -19,8 +19,8 @@
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
 import * as vscode from "vscode";
-import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuSymbolReferenceVisitor, FuStatement, FuSymbol, FuContainerType,
-	FuEnum, FuClass, FuMember, FuConst, FuVar, FuParameters, FuField, FuCallType, FuMethod } from "./fucheck.js";
+import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuSymbolReferenceVisitor, FuStatement, FuSymbol, FuContainerType, FuEnum, FuClass,
+	FuMember, FuConst, FuVar, FuParameters, FuField, FuCallType, FuMethod, FuDocText, FuDocCode, FuDocPara, FuDocList, FuCodeDoc } from "./fucheck.js";
 
 class VsCodeHost extends FuSemaHost
 {
@@ -155,12 +155,12 @@ class VsCodeSymbolLocator extends VsCodeHost
 
 	static #getSignature(method: FuMethod): string
 	{
-		var code = method.callType == FuCallType.NORMAL ? "" : FuMethod.callTypeToString(method.callType) + " ";
+		let code = method.callType == FuCallType.NORMAL ? "" : FuMethod.callTypeToString(method.callType) + " ";
 		code = `${code}${method.type} ${method.name}`;
 		if (!method.isStatic() && method.isMutator())
 			code += "!";
 		code += "(";
-		for (var param = method.firstParameter(); param != null;) {
+		for (let param = method.firstParameter(); param != null;) {
 			code = `${code}${param.type} ${param.name}`;
 			param = param.nextVar();
 			if (param == null)
@@ -170,12 +170,30 @@ class VsCodeSymbolLocator extends VsCodeHost
 		return code + ")";
 	}
 
+	static #convertDocPara(para: FuDocPara): string
+	{
+		let markdown = "";
+		for (const inline of para.children)
+			markdown += inline instanceof FuDocText ? inline.text
+				: inline instanceof FuDocCode ? `\`${inline.text}\``
+				: "\n";
+		return markdown;
+	}
+
+	static #convertDocList(list: FuDocList): string
+	{
+		let markdown = "";
+		for (const item of list.items)
+			markdown = `${markdown}* ${VsCodeSymbolLocator.#convertDocPara(item)}\n`;
+		return markdown;
+	}
+
 	async getHover(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Hover | null>
 	{
 		const symbol = await this.findSymbol(document, position);
 		if (symbol == null)
 			return null;
-		var code = symbol.name;
+		let code = symbol.name;
 		if (symbol instanceof FuClass)
 			code = `class ${code}`;
 		else if (symbol instanceof FuEnum)
@@ -190,7 +208,15 @@ class VsCodeSymbolLocator extends VsCodeHost
 			code = `(field) ${symbol.type} ${code}`;
 		else if (symbol instanceof FuMember) // property
 			code = `${symbol.type} ${code}`;
-		return new vscode.Hover(new vscode.MarkdownString().appendCodeblock(code, "fusion"));
+		const hover = new vscode.MarkdownString().appendCodeblock(code, "fusion");
+		if (symbol.documentation != null) {
+			const doc: FuCodeDoc = symbol.documentation;
+			let markdown = VsCodeSymbolLocator.#convertDocPara(doc.summary);
+			for (const block of doc.details)
+				markdown = `${markdown}\n\n${block instanceof FuDocList ? VsCodeSymbolLocator.#convertDocList(block) : VsCodeSymbolLocator.#convertDocPara(block)}`;
+			hover.appendMarkdown(markdown);
+		}
+		return new vscode.Hover(hover);
 	}
 }
 

@@ -1456,21 +1456,21 @@ export const FuId = {
 	MATH_TRUNCATE : 167
 }
 
-class FuDocInline
+export class FuDocInline
 {
 }
 
-class FuDocText extends FuDocInline
-{
-	text;
-}
-
-class FuDocCode extends FuDocInline
+export class FuDocText extends FuDocInline
 {
 	text;
 }
 
-class FuDocLine extends FuDocInline
+export class FuDocCode extends FuDocInline
+{
+	text;
+}
+
+export class FuDocLine extends FuDocInline
 {
 }
 
