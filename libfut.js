@@ -3020,6 +3020,24 @@ export class FuMethod extends FuMethodBase
 		return this.callType == FuCallType.ABSTRACT || this.callType == FuCallType.VIRTUAL || this.callType == FuCallType.OVERRIDE;
 	}
 
+	static callTypeToString(callType)
+	{
+		switch (callType) {
+		case FuCallType.STATIC:
+			return "static";
+		case FuCallType.ABSTRACT:
+			return "abstract";
+		case FuCallType.VIRTUAL:
+			return "virtual";
+		case FuCallType.OVERRIDE:
+			return "override";
+		case FuCallType.SEALED:
+			return "sealed";
+		default:
+			throw new Error();
+		}
+	}
+
 	firstParameter()
 	{
 		let first = this.parameters.first;
@@ -4719,24 +4737,6 @@ export class FuParser extends FuLexer
 			method.body = this.#parseBlock(method);
 	}
 
-	static #callTypeToString(callType)
-	{
-		switch (callType) {
-		case FuCallType.STATIC:
-			return "static";
-		case FuCallType.ABSTRACT:
-			return "abstract";
-		case FuCallType.VIRTUAL:
-			return "virtual";
-		case FuCallType.OVERRIDE:
-			return "override";
-		case FuCallType.SEALED:
-			return "sealed";
-		default:
-			throw new Error();
-		}
-	}
-
 	#reportFormerError(line, column, length, message)
 	{
 		this.host.reportError(this.host.program.sourceFiles.at(-1).filename, line, column, column + length, message);
@@ -4744,7 +4744,7 @@ export class FuParser extends FuLexer
 
 	#reportCallTypeError(line, column, kind, callType)
 	{
-		let callTypeString = FuParser.#callTypeToString(callType);
+		let callTypeString = FuMethod.callTypeToString(callType);
 		this.#reportFormerError(line, column, callTypeString.length, `${kind} cannot be ${callTypeString}`);
 	}
 

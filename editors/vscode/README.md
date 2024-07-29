@@ -6,6 +6,7 @@ A Visual Studio Code extension for the [Fusion programming language](https://fus
 * Go to / Peek definition
 * Go to / Peek / Find all implementations
 * Go to / Peek / Find all references
+* Hovers
 * Snippets
 
 Fusion is a language designed to be translated automatically to

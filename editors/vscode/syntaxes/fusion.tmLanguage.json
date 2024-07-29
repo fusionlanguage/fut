@@ -12,8 +12,7 @@
 			"include": "#comment"
 		},
 		{
-			"name": "storage.modifier.fu",
-			"match": "\\bpublic\\b"
+			"include": "#storage-modifier"
 		},
 		{
 			"include": "#enum-declaration"
@@ -23,6 +22,12 @@
 		},
 		{
 			"include": "#native-statement"
+		},
+		{
+			"include": "#type"
+		},
+		{
+			"include": "#method-declaration"
 		}
 	],
 	"repository": {

@@ -19,7 +19,8 @@
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
 import * as vscode from "vscode";
-import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuSymbolReferenceVisitor, FuStatement, FuSymbol, FuContainerType, FuEnum, FuClass, FuMember, FuField, FuMethod } from "./fucheck.js";
+import { FuParser, FuProgram, FuSystem, FuSema, FuSemaHost, FuSymbolReferenceVisitor, FuStatement, FuSymbol, FuContainerType,
+	FuEnum, FuClass, FuMember, FuConst, FuVar, FuParameters, FuField, FuCallType, FuMethod } from "./fucheck.js";
 
 class VsCodeHost extends FuSemaHost
 {
@@ -136,6 +137,63 @@ class VsCodeDiagnostics extends VsCodeHost
 	}
 }
 
+class VsCodeSymbolLocator extends VsCodeHost
+{
+	protected async findSymbol(document: vscode.TextDocument, position: vscode.Position): Promise<FuSymbol | null>
+	{
+		const parser = this.createParser();
+		const filename = document.uri.toString();
+		parser.findName(filename, position.line, position.character);
+		const files = await vscode.workspace.findFiles("*.fu");
+		if (files.some(uri => uri.toString() == filename))
+			await this.parseFolder(files, parser);
+		else
+			this.parseDocument(document, parser);
+		this.doSema();
+		return parser.getFoundDefinition();
+	}
+
+	static #getSignature(method: FuMethod): string
+	{
+		var code = method.callType == FuCallType.NORMAL ? "" : FuMethod.callTypeToString(method.callType) + " ";
+		code = `${code}${method.type} ${method.name}`;
+		if (!method.isStatic() && method.isMutator())
+			code += "!";
+		code += "(";
+		for (var param = method.firstParameter(); param != null;) {
+			code = `${code}${param.type} ${param.name}`;
+			param = param.nextVar();
+			if (param == null)
+				break;
+			code += ", ";
+		}
+		return code + ")";
+	}
+
+	async getHover(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Hover | null>
+	{
+		const symbol = await this.findSymbol(document, position);
+		if (symbol == null)
+			return null;
+		var code = symbol.name;
+		if (symbol instanceof FuClass)
+			code = `class ${code}`;
+		else if (symbol instanceof FuEnum)
+			code = `enum ${code}`;
+		else if (symbol instanceof FuConst)
+			code = `const ${symbol.type} ${code}`;
+		else if (symbol instanceof FuVar)
+			code = `(${symbol.parent instanceof FuParameters ? "parameter" : "local variable"}) ${symbol.type} ${code}`;
+		else if (symbol instanceof FuMethod)
+			code = VsCodeSymbolLocator.#getSignature(symbol);
+		else if (symbol instanceof FuField)
+			code = `(field) ${symbol.type} ${code}`;
+		else if (symbol instanceof FuMember) // property
+			code = `${symbol.type} ${code}`;
+		return new vscode.Hover(new vscode.MarkdownString().appendCodeblock(code, "fusion"));
+	}
+}
+
 class VsCodeReferenceCollector extends FuSymbolReferenceVisitor
 {
 	provider: VsCodeGotoProvider;
@@ -152,23 +210,9 @@ class VsCodeReferenceCollector extends FuSymbolReferenceVisitor
 	}
 }
 
-class VsCodeGotoProvider extends VsCodeHost
+class VsCodeGotoProvider extends VsCodeSymbolLocator
 {
 	#locations: vscode.Location[] = [];
-
-	async #findSymbol(document: vscode.TextDocument, position: vscode.Position): Promise<FuSymbol | null>
-	{
-		const parser = this.createParser();
-		const filename = document.uri.toString();
-		parser.findName(filename, position.line, position.character);
-		const files = await vscode.workspace.findFiles("*.fu");
-		if (files.some(uri => uri.toString() == filename))
-			await this.parseFolder(files, parser);
-		else
-			this.parseDocument(document, parser);
-		this.doSema();
-		return parser.getFoundDefinition();
-	}
 
 	pushLocation(statement: FuStatement): void
 	{
@@ -181,7 +225,7 @@ class VsCodeGotoProvider extends VsCodeHost
 
 	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
-		const symbol = await this.#findSymbol(document, position);
+		const symbol = await this.findSymbol(document, position);
 		if (symbol != null)
 			this.pushLocation(symbol);
 		return this.#locations;
@@ -189,7 +233,7 @@ class VsCodeGotoProvider extends VsCodeHost
 
 	async findImplementations(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
-		const symbol = await this.#findSymbol(document, position);
+		const symbol = await this.findSymbol(document, position);
 		if (symbol != null) {
 			if (symbol instanceof FuClass) {
 				for (const subclass of this.program.classes) {
@@ -211,7 +255,7 @@ class VsCodeGotoProvider extends VsCodeHost
 
 	async findReferences(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
-		const symbol = await this.#findSymbol(document, position);
+		const symbol = await this.findSymbol(document, position);
 		if (symbol != null)
 			new VsCodeReferenceCollector(this).findReferences(this.program, symbol);
 		return this.#locations;
@@ -266,6 +310,11 @@ export function activate(context: vscode.ExtensionContext): void
 		}));
 	context.subscriptions.push(vscode.workspace.onDidChangeTextDocument(e => diagnostics.check(e.document)));
 	context.subscriptions.push(vscode.workspace.onDidCloseTextDocument(document => diagnostics.delete(document)));
+	vscode.languages.registerHoverProvider("fusion", {
+			provideHover(document, position, token) {
+				return new VsCodeSymbolLocator().getHover(document, position);
+			}
+		});
 	vscode.languages.registerDefinitionProvider("fusion", {
 			provideDefinition(document, position, token) {
 				return new VsCodeGotoProvider().findDefinition(document, position);

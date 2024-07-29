@@ -2352,6 +2352,24 @@ bool FuMethod::isAbstractVirtualOrOverride() const
 	return this->callType == FuCallType::abstract || this->callType == FuCallType::virtual_ || this->callType == FuCallType::override_;
 }
 
+std::string_view FuMethod::callTypeToString(FuCallType callType)
+{
+	switch (callType) {
+	case FuCallType::static_:
+		return "static";
+	case FuCallType::abstract:
+		return "abstract";
+	case FuCallType::virtual_:
+		return "virtual";
+	case FuCallType::override_:
+		return "override";
+	case FuCallType::sealed:
+		return "sealed";
+	default:
+		std::abort();
+	}
+}
+
 FuVar * FuMethod::firstParameter() const
 {
 	FuVar * first = static_cast<FuVar *>(this->parameters.first);
@@ -4214,24 +4232,6 @@ void FuParser::parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method)
 		method->body = parseBlock(method.get());
 }
 
-std::string_view FuParser::callTypeToString(FuCallType callType)
-{
-	switch (callType) {
-	case FuCallType::static_:
-		return "static";
-	case FuCallType::abstract:
-		return "abstract";
-	case FuCallType::virtual_:
-		return "virtual";
-	case FuCallType::override_:
-		return "override";
-	case FuCallType::sealed:
-		return "sealed";
-	default:
-		std::abort();
-	}
-}
-
 void FuParser::reportFormerError(int line, int column, int length, std::string_view message) const
 {
 	this->host->reportError(this->host->program->sourceFiles.back().filename, line, column, column + length, message);
@@ -4239,7 +4239,7 @@ void FuParser::reportFormerError(int line, int column, int length, std::string_v
 
 void FuParser::reportCallTypeError(int line, int column, std::string_view kind, FuCallType callType) const
 {
-	std::string_view callTypeString = callTypeToString(callType);
+	std::string_view callTypeString = FuMethod::callTypeToString(callType);
 	reportFormerError(line, column, std::ssize(callTypeString), std::format("{} cannot be {}", kind, callTypeString));
 }
 

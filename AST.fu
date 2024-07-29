@@ -1276,6 +1276,17 @@ public class FuMethod : FuMethodBase
 	public override bool IsStatic() => this.CallType == FuCallType.Static;
 	public bool IsAbstractOrVirtual() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual;
 	public bool IsAbstractVirtualOrOverride() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual || this.CallType == FuCallType.Override;
+	public static string CallTypeToString(FuCallType callType)
+	{
+		switch (callType) {
+		case FuCallType.Static: return "static";
+		case FuCallType.Abstract: return "abstract";
+		case FuCallType.Virtual: return "virtual";
+		case FuCallType.Override: return "override";
+		case FuCallType.Sealed: return "sealed";
+		default: assert false;
+		}
+	}
 	public FuVar!? FirstParameter()
 	{
 		assert this.Parameters.First is FuVar! first; // FIXME: FuVar!?

@@ -945,18 +945,6 @@ public class FuParser : FuLexer
 			method.Body = ParseBlock(method);
 	}
 
-	static string CallTypeToString(FuCallType callType)
-	{
-		switch (callType) {
-		case FuCallType.Static: return "static";
-		case FuCallType.Abstract: return "abstract";
-		case FuCallType.Virtual: return "virtual";
-		case FuCallType.Override: return "override";
-		case FuCallType.Sealed: return "sealed";
-		default: assert false;
-		}
-	}
-
 	void ReportFormerError(int line, int column, int length, string message)
 	{
 		this.Host.ReportError(this.Host.Program.SourceFiles.Last().Filename, line, column, column + length, message);
@@ -964,7 +952,7 @@ public class FuParser : FuLexer
 
 	void ReportCallTypeError(int line, int column, string kind, FuCallType callType)
 	{
-		string callTypeString = CallTypeToString(callType);
+		string callTypeString = FuMethod.CallTypeToString(callType);
 		ReportFormerError(line, column, callTypeString.Length, $"{kind} cannot be {callTypeString}");
 	}
 

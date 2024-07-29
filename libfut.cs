@@ -2873,6 +2873,24 @@ namespace Fusion
 
 		public bool IsAbstractVirtualOrOverride() => this.CallType == FuCallType.Abstract || this.CallType == FuCallType.Virtual || this.CallType == FuCallType.Override;
 
+		public static string CallTypeToString(FuCallType callType)
+		{
+			switch (callType) {
+			case FuCallType.Static:
+				return "static";
+			case FuCallType.Abstract:
+				return "abstract";
+			case FuCallType.Virtual:
+				return "virtual";
+			case FuCallType.Override:
+				return "override";
+			case FuCallType.Sealed:
+				return "sealed";
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
 		public FuVar FirstParameter()
 		{
 			FuVar first = (FuVar) this.Parameters.First;
@@ -4499,24 +4517,6 @@ namespace Fusion
 				method.Body = ParseBlock(method);
 		}
 
-		static string CallTypeToString(FuCallType callType)
-		{
-			switch (callType) {
-			case FuCallType.Static:
-				return "static";
-			case FuCallType.Abstract:
-				return "abstract";
-			case FuCallType.Virtual:
-				return "virtual";
-			case FuCallType.Override:
-				return "override";
-			case FuCallType.Sealed:
-				return "sealed";
-			default:
-				throw new NotImplementedException();
-			}
-		}
-
 		void ReportFormerError(int line, int column, int length, string message)
 		{
 			this.Host.ReportError(this.Host.Program.SourceFiles[^1].Filename, line, column, column + length, message);
@@ -4524,7 +4524,7 @@ namespace Fusion
 
 		void ReportCallTypeError(int line, int column, string kind, FuCallType callType)
 		{
-			string callTypeString = CallTypeToString(callType);
+			string callTypeString = FuMethod.CallTypeToString(callType);
 			ReportFormerError(line, column, callTypeString.Length, $"{kind} cannot be {callTypeString}");
 		}
 

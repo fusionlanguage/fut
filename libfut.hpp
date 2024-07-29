@@ -1343,6 +1343,7 @@ public:
 	bool isStatic() const override;
 	bool isAbstractOrVirtual() const;
 	bool isAbstractVirtualOrOverride() const;
+	static std::string_view callTypeToString(FuCallType callType);
 	FuVar * firstParameter() const;
 	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;
@@ -1659,7 +1660,6 @@ private:
 	std::shared_ptr<FuStatement> parseStatement();
 	FuCallType parseCallType();
 	void parseMethod(FuClass * klass, std::shared_ptr<FuMethod> method);
-	static std::string_view callTypeToString(FuCallType callType);
 	void reportFormerError(int line, int column, int length, std::string_view message) const;
 	void reportCallTypeError(int line, int column, std::string_view kind, FuCallType callType) const;
 	void parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic, FuCallType callType);
