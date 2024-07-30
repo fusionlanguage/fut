@@ -192,7 +192,7 @@ by using one of the above methods that return an integer:
 
 ```csharp
 double d = 10.5;
-int i = Math.Trunc(d); // translated to: (int) d
+int i = Math.Truncate(d); // translated to: (int) d
 int j = Math.Ceiling(d);
 int k = Math.Floor(d);
 int n = Math.Round(d);
