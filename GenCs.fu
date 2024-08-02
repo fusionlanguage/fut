@@ -513,7 +513,7 @@ public class GenCs : GenTyped
 			Write("Array.Copy(");
 			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteArgs(method, args);
+			WriteCoercedArgs(method, args);
 			WriteChar(')');
 			break;
 		case FuId.ArrayFillAll:
@@ -567,7 +567,7 @@ public class GenCs : GenTyped
 			break;
 		case FuId.ListSortPart:
 			WritePostfix(obj, ".Sort(");
-			WriteArgs(method, args);
+			WriteCoercedArgs(method, args);
 			Write(", null)");
 			break;
 		case FuId.DictionaryAdd:
@@ -620,7 +620,7 @@ public class GenCs : GenTyped
 			obj.Accept(this, FuPriority.Primary);
 			WriteChar('.');
 			Write(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.UTF8GetByteCount:
 			Include("System.Text");
@@ -640,12 +640,12 @@ public class GenCs : GenTyped
 		case FuId.UTF8GetString:
 			Include("System.Text");
 			Write("Encoding.UTF8.GetString");
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.RegexCompile:
 			Include("System.Text.RegularExpressions");
 			Write("new Regex");
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.RegexEscape:
 		case FuId.RegexIsMatchStr:
@@ -654,14 +654,14 @@ public class GenCs : GenTyped
 			obj.Accept(this, FuPriority.Primary);
 			WriteChar('.');
 			Write(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MatchFindStr:
 			Include("System.Text.RegularExpressions");
 			WriteChar('(');
 			obj.Accept(this, FuPriority.Assign);
 			Write(" = Regex.Match");
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			Write(").Success");
 			break;
 		case FuId.MatchFindRegex:
@@ -714,21 +714,29 @@ public class GenCs : GenTyped
 			WritePostfix(obj, ".EnumerateArray().ToList()");
 			break;
 		case FuId.MathMethod:
-		case FuId.MathAbs:
 		case FuId.MathCeiling:
-		case FuId.MathClamp:
 		case FuId.MathFusedMultiplyAdd:
 		case FuId.MathLog2:
+		case FuId.MathRound:
+		case FuId.MathTruncate:
+			Include("System");
+			Write("Math");
+			if (!args.Any(arg => arg.Type.Id == FuId.DoubleType))
+				WriteChar('F');
+			WriteChar('.');
+			Write(method.Name);
+			WriteInParentheses(args);
+			break;
+		case FuId.MathAbs:
+		case FuId.MathClamp:
 		case FuId.MathMaxInt:
 		case FuId.MathMaxDouble:
 		case FuId.MathMinInt:
 		case FuId.MathMinDouble:
-		case FuId.MathRound:
-		case FuId.MathTruncate:
 			Include("System");
 			Write("Math.");
 			Write(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathIsFinite:
 		case FuId.MathIsInfinity:
@@ -742,7 +750,7 @@ public class GenCs : GenTyped
 				WriteChar('.');
 			}
 			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		}
 	}

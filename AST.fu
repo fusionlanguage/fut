@@ -76,6 +76,7 @@ public enum FuId
 	FloatType,
 	DoubleType,
 	FloatIntType,
+	FloatingType,
 	BoolType,
 	StringClass,
 	StringPtrType,
@@ -1554,7 +1555,7 @@ public class FuSystem : FuScope
 	FuRangeType# UIntType = FuRangeType.New(0, int.MaxValue);
 	internal FuIntegerType# LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
 	internal FuRangeType# ByteType = FuRangeType.New(0, 0xff);
-	FuFloatingType# FloatType = new FuFloatingType { Id = FuId.FloatType, Name = "float" };
+	internal FuFloatingType# FloatType = new FuFloatingType { Id = FuId.FloatType, Name = "float" };
 	internal FuFloatingType# DoubleType = new FuFloatingType { Id = FuId.DoubleType, Name = "double" };
 	internal FuRangeType# CharType = FuRangeType.New(-0x80, 0xffff);
 	internal FuEnum# BoolType = new FuEnum { Id = FuId.BoolType, Name = "bool" };
@@ -1828,31 +1829,32 @@ public class FuSystem : FuScope
 		Add(jsonElementClass);
 
 		FuFloatingType# floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
+		FuFloatingType# floatingType = new FuFloatingType { Id = FuId.FloatingType, Name = "float" };
 		FuClass# mathClass = FuClass.New(FuCallType.Static, FuId.None, "Math");
 		mathClass.Add(FuMethodGroup.New(
 			FuMethod.New(null, FuVisibility.Public, FuCallType.Static, IntType, FuId.MathAbs, "Abs", false, FuVar.New(LongType, "a")),
 			FuMethod.New(null, FuVisibility.Public, FuCallType.Static, FloatType, FuId.MathAbs, "Abs", false, FuVar.New(DoubleType, "a"))));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Acos", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Asin", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Atan", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Atan2", FuVar.New(DoubleType, "y"), FuVar.New(DoubleType, "x"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Cbrt", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Acos", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Asin", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Atan", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Atan2", FuVar.New(DoubleType, "y"), FuVar.New(DoubleType, "x"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Cbrt", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatIntType, FuId.MathCeiling, "Ceiling", FuVar.New(DoubleType, "a"));
 		mathClass.Add(FuMethodGroup.New(
 			FuMethod.New(null, FuVisibility.Public, FuCallType.Static, IntType, FuId.MathClamp, "Clamp", false, FuVar.New(LongType, "value"), FuVar.New(LongType, "min"), FuVar.New(LongType, "max")),
 			FuMethod.New(null, FuVisibility.Public, FuCallType.Static, FloatType, FuId.MathClamp, "Clamp", false, FuVar.New(DoubleType, "value"), FuVar.New(DoubleType, "min"), FuVar.New(DoubleType, "max"))));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Cos", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Cosh", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Cos", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Cosh", FuVar.New(DoubleType, "a"));
 		mathClass.Add(NewConstDouble("E", Math.E));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Exp", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Exp", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatIntType, FuId.MathMethod, "Floor", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathFusedMultiplyAdd, "FusedMultiplyAdd", FuVar.New(DoubleType, "x"), FuVar.New(DoubleType, "y"), FuVar.New(DoubleType, "z"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathFusedMultiplyAdd, "FusedMultiplyAdd", FuVar.New(DoubleType, "x"), FuVar.New(DoubleType, "y"), FuVar.New(DoubleType, "z"));
 		mathClass.AddStaticMethod(BoolType, FuId.MathIsFinite, "IsFinite", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(BoolType, FuId.MathIsInfinity, "IsInfinity", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(BoolType, FuId.MathIsNaN, "IsNaN", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Log", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathLog2, "Log2", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Log10", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Log", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathLog2, "Log2", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Log10", FuVar.New(DoubleType, "a"));
 		mathClass.Add(FuMethodGroup.New(
 			FuMethod.New(null, FuVisibility.Public, FuCallType.Static, IntType, FuId.MathMaxInt, "Max", false, FuVar.New(LongType, "a"), FuVar.New(LongType, "b")),
 			FuMethod.New(null, FuVisibility.Public, FuCallType.Static, FloatType, FuId.MathMaxDouble, "Max", false, FuVar.New(DoubleType, "a"), FuVar.New(DoubleType, "b"))));
@@ -1863,13 +1865,13 @@ public class FuSystem : FuScope
 		mathClass.Add(FuStaticProperty.New(FloatType, FuId.MathNegativeInfinity, "NegativeInfinity"));
 		mathClass.Add(NewConstDouble("PI", Math.PI));
 		mathClass.Add(FuStaticProperty.New(FloatType, FuId.MathPositiveInfinity, "PositiveInfinity"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Pow", FuVar.New(DoubleType, "x"), FuVar.New(DoubleType, "y"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Pow", FuVar.New(DoubleType, "x"), FuVar.New(DoubleType, "y"));
 		mathClass.AddStaticMethod(floatIntType, FuId.MathRound, "Round", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Sin", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Sinh", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Sqrt", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Tan", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(FloatType, FuId.MathMethod, "Tanh", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sin", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sinh", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sqrt", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Tan", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Tanh", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatIntType, FuId.MathTruncate, "Truncate", FuVar.New(DoubleType, "a"));
 		Add(mathClass);
 

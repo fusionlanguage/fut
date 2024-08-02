@@ -466,6 +466,14 @@ public class GenJava : GenTyped
 			base.WriteCoercedLiteral(type, expr);
 	}
 
+	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
+	{
+		if (type.Id == FuId.FloatType && expr is FuCallExpr call && call.Method.Symbol.Type.Id == FuId.FloatingType)
+			WriteStaticCast(type, expr);
+		else
+			base.WriteCoercedInternal(type, expr, parent);
+	}
+
 	protected override void WriteRel!(FuBinaryExpr expr, FuPriority parent, string op)
 	{
 		if (expr.Left.Type is FuEnum enu && IsJavaEnum(enu)) {
@@ -568,7 +576,7 @@ public class GenJava : GenTyped
 			Write(".print");
 			if (newLine)
 				Write("ln");
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 		}
 	}
 
@@ -632,7 +640,7 @@ public class GenJava : GenTyped
 				WriteChar('.');
 			}
 			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		case FuId.EnumFromInt:
 			args[0].Accept(this, parent);
@@ -680,7 +688,7 @@ public class GenJava : GenTyped
 			Write("System.arraycopy(");
 			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteArgs(method, args);
+			WriteCoercedArgs(method, args);
 			WriteChar(')');
 			break;
 		case FuId.ArrayFillAll:
@@ -877,7 +885,7 @@ public class GenJava : GenTyped
 		case FuId.UTF8GetString:
 			Include("java.nio.charset.StandardCharsets");
 			Write("new String(");
-			WriteArgs(method, args);
+			WriteCoercedArgs(method, args);
 			Write(", StandardCharsets.UTF_8)");
 			break;
 		case FuId.EnvironmentGetEnvironmentVariable:

@@ -666,6 +666,19 @@ public abstract class GenBase : FuVisitor
 		WriteCall(method, arg0, arg1);
 	}
 
+	protected void WriteInParentheses!(List<FuExpr#> args)
+	{
+		WriteChar('(');
+		bool first = true;
+		foreach (FuExpr arg in args) {
+			if (!first)
+				Write(", ");
+			arg.Accept(this, FuPriority.Argument);
+			first = false;
+		}
+		WriteChar(')');
+	}
+
 	protected virtual void WriteSelectValues!(FuType type, FuSelectExpr expr)
 	{
 		WriteCoerced(type, expr.OnTrue, FuPriority.Select);
@@ -720,7 +733,7 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
-	protected void WriteArgs!(FuMethod method, List<FuExpr#> args)
+	protected void WriteCoercedArgs!(FuMethod method, List<FuExpr#> args)
 	{
 		FuVar param = method.FirstParameter();
 		bool first = true;
@@ -733,10 +746,10 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
-	protected void WriteArgsInParentheses!(FuMethod method, List<FuExpr#> args)
+	protected void WriteCoercedArgsInParentheses!(FuMethod method, List<FuExpr#> args)
 	{
 		WriteChar('(');
-		WriteArgs(method, args);
+		WriteCoercedArgs(method, args);
 		WriteChar(')');
 	}
 

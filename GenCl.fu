@@ -251,7 +251,7 @@ public class GenCl : GenC
 		case FuId.MathMinInt:
 		case FuId.MathRound:
 			WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathAbs:
 			if (args[0].Type is FuFloatingType)

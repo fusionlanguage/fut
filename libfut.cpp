@@ -2911,40 +2911,43 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuFloatingType> floatIntType = std::make_shared<FuFloatingType>();
 	floatIntType->id = FuId::floatIntType;
 	floatIntType->name = "float";
+	std::shared_ptr<FuFloatingType> floatingType = std::make_shared<FuFloatingType>();
+	floatingType->id = FuId::floatingType;
+	floatingType->name = "float";
 	std::shared_ptr<FuClass> mathClass = FuClass::new_(FuCallType::static_, FuId::none, "Math");
 	mathClass->add(FuMethodGroup::new_(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->intType, FuId::mathAbs, "Abs", false, FuVar::new_(this->longType, "a")), FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->floatType, FuId::mathAbs, "Abs", false, FuVar::new_(this->doubleType, "a"))));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Acos", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Asin", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Atan", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Atan2", FuVar::new_(this->doubleType, "y"), FuVar::new_(this->doubleType, "x"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Cbrt", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Acos", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Asin", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Atan", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Atan2", FuVar::new_(this->doubleType, "y"), FuVar::new_(this->doubleType, "x"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Cbrt", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatIntType, FuId::mathCeiling, "Ceiling", FuVar::new_(this->doubleType, "a"));
 	mathClass->add(FuMethodGroup::new_(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->intType, FuId::mathClamp, "Clamp", false, FuVar::new_(this->longType, "value"), FuVar::new_(this->longType, "min"), FuVar::new_(this->longType, "max")), FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->floatType, FuId::mathClamp, "Clamp", false, FuVar::new_(this->doubleType, "value"), FuVar::new_(this->doubleType, "min"), FuVar::new_(this->doubleType, "max"))));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Cos", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Cosh", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Cos", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Cosh", FuVar::new_(this->doubleType, "a"));
 	mathClass->add(newConstDouble("E", 2.718281828459045));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Exp", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Exp", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatIntType, FuId::mathMethod, "Floor", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathFusedMultiplyAdd, "FusedMultiplyAdd", FuVar::new_(this->doubleType, "x"), FuVar::new_(this->doubleType, "y"), FuVar::new_(this->doubleType, "z"));
+	mathClass->addStaticMethod(floatingType, FuId::mathFusedMultiplyAdd, "FusedMultiplyAdd", FuVar::new_(this->doubleType, "x"), FuVar::new_(this->doubleType, "y"), FuVar::new_(this->doubleType, "z"));
 	mathClass->addStaticMethod(this->boolType, FuId::mathIsFinite, "IsFinite", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(this->boolType, FuId::mathIsInfinity, "IsInfinity", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(this->boolType, FuId::mathIsNaN, "IsNaN", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Log", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathLog2, "Log2", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Log10", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Log", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathLog2, "Log2", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Log10", FuVar::new_(this->doubleType, "a"));
 	mathClass->add(FuMethodGroup::new_(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->intType, FuId::mathMaxInt, "Max", false, FuVar::new_(this->longType, "a"), FuVar::new_(this->longType, "b")), FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->floatType, FuId::mathMaxDouble, "Max", false, FuVar::new_(this->doubleType, "a"), FuVar::new_(this->doubleType, "b"))));
 	mathClass->add(FuMethodGroup::new_(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->intType, FuId::mathMinInt, "Min", false, FuVar::new_(this->longType, "a"), FuVar::new_(this->longType, "b")), FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->floatType, FuId::mathMinDouble, "Min", false, FuVar::new_(this->doubleType, "a"), FuVar::new_(this->doubleType, "b"))));
 	mathClass->add(FuStaticProperty::new_(this->floatType, FuId::mathNaN, "NaN"));
 	mathClass->add(FuStaticProperty::new_(this->floatType, FuId::mathNegativeInfinity, "NegativeInfinity"));
 	mathClass->add(newConstDouble("PI", 3.141592653589793));
 	mathClass->add(FuStaticProperty::new_(this->floatType, FuId::mathPositiveInfinity, "PositiveInfinity"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Pow", FuVar::new_(this->doubleType, "x"), FuVar::new_(this->doubleType, "y"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Pow", FuVar::new_(this->doubleType, "x"), FuVar::new_(this->doubleType, "y"));
 	mathClass->addStaticMethod(floatIntType, FuId::mathRound, "Round", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Sin", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Sinh", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Sqrt", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Tan", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(this->floatType, FuId::mathMethod, "Tanh", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Sin", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Sinh", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Sqrt", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Tan", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Tanh", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatIntType, FuId::mathTruncate, "Truncate", FuVar::new_(this->doubleType, "a"));
 	add(mathClass);
 	std::shared_ptr<FuClass> lockClass = FuClass::new_(FuCallType::sealed, FuId::lockClass, "Lock");
@@ -5921,9 +5924,13 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	if (std::ssize(this->currentPureArguments) == 0) {
 		expr->method = symbol;
 		std::shared_ptr<FuType> type = method->type;
-		const FuClassType * generic;
-		if (symbol->left != nullptr && (generic = dynamic_cast<const FuClassType *>(symbol->left->type.get())))
-			type = evalType(generic, type);
+		if (type->id == FuId::floatingType)
+			type = std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? this->host->program->system->doubleType : this->host->program->system->floatType;
+		else {
+			const FuClassType * generic;
+			if (symbol->left != nullptr && (generic = dynamic_cast<const FuClassType *>(symbol->left->type.get())))
+				type = evalType(generic, type);
+		}
 		expr->type = type;
 	}
 	return expr;
@@ -7497,6 +7504,19 @@ void GenBase::writeMethodCall(const FuExpr * obj, std::string_view method, const
 	writeCall(method, arg0, arg1);
 }
 
+void GenBase::writeInParentheses(const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	writeChar('(');
+	bool first = true;
+	for (const std::shared_ptr<FuExpr> &arg : *args) {
+		if (!first)
+			write(", ");
+		arg->accept(this, FuPriority::argument);
+		first = false;
+	}
+	writeChar(')');
+}
+
 void GenBase::writeSelectValues(const FuType * type, const FuSelectExpr * expr)
 {
 	writeCoerced(type, expr->onTrue.get(), FuPriority::select);
@@ -7551,7 +7571,7 @@ void GenBase::writeCoercedLiterals(const FuType * type, const std::vector<std::s
 	}
 }
 
-void GenBase::writeArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
+void GenBase::writeCoercedArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	const FuVar * param = method->firstParameter();
 	bool first = true;
@@ -7564,10 +7584,10 @@ void GenBase::writeArgs(const FuMethod * method, const std::vector<std::shared_p
 	}
 }
 
-void GenBase::writeArgsInParentheses(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
+void GenBase::writeCoercedArgsInParentheses(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	writeChar('(');
-	writeArgs(method, args);
+	writeCoercedArgs(method, args);
 	writeChar(')');
 }
 
@@ -11333,6 +11353,15 @@ void GenC::startArrayIndexing(const FuExpr * obj, const FuType * elementType)
 	write(", ");
 }
 
+void GenC::writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	includeMath();
+	writeLowercase(function);
+	if (!std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }))
+		writeChar('f');
+	writeInParentheses(args);
+}
+
 void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -11826,12 +11855,8 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeCall("g_match_info_fetch", obj, (*args)[0].get());
 		break;
 	case FuId::mathMethod:
-	case FuId::mathIsFinite:
-	case FuId::mathIsNaN:
 	case FuId::mathLog2:
-		includeMath();
-		writeLowercase(method->name);
-		writeArgsInParentheses(method, args);
+		writeMathFloating(method->name, args);
 		break;
 	case FuId::mathAbs:
 		switch ((*args)[0]->type->id) {
@@ -11853,32 +11878,34 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		}
 		break;
 	case FuId::mathCeiling:
-		includeMath();
-		writeCall("ceil", (*args)[0].get());
+		writeMathFloating("ceil", args);
 		break;
 	case FuId::mathFusedMultiplyAdd:
+		writeMathFloating("fma", args);
+		break;
+	case FuId::mathIsFinite:
 		includeMath();
-		writeCall("fma", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+		writeCall("isfinite", (*args)[0].get());
 		break;
 	case FuId::mathIsInfinity:
 		includeMath();
 		writeCall("isinf", (*args)[0].get());
 		break;
-	case FuId::mathMaxDouble:
+	case FuId::mathIsNaN:
 		includeMath();
-		writeCall("fmax", (*args)[0].get(), (*args)[1].get());
+		writeCall("isnan", (*args)[0].get());
+		break;
+	case FuId::mathMaxDouble:
+		writeMathFloating("fmax", args);
 		break;
 	case FuId::mathMinDouble:
-		includeMath();
-		writeCall("fmin", (*args)[0].get(), (*args)[1].get());
+		writeMathFloating("fmin", args);
 		break;
 	case FuId::mathRound:
-		includeMath();
-		writeCall("round", (*args)[0].get());
+		writeMathFloating("round", args);
 		break;
 	case FuId::mathTruncate:
-		includeMath();
-		writeCall("trunc", (*args)[0].get());
+		writeMathFloating("trunc", args);
 		break;
 	default:
 		notSupported(obj, method->name);
@@ -13468,7 +13495,7 @@ void GenCl::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 	case FuId::mathMinInt:
 	case FuId::mathRound:
 		writeLowercase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathAbs:
 		if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()))
@@ -14045,7 +14072,7 @@ void GenCpp::writeStringMethod(const FuExpr * obj, std::string_view name, const 
 		writeChar(')');
 	}
 	else
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 }
 
 void GenCpp::writeAllAnyContains(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
@@ -14216,7 +14243,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 			}
 		}
 		writeName(method);
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	case FuId::enumFromInt:
 		writeStaticCast(method->type.get(), (*args)[0].get());
@@ -14668,7 +14695,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		includeMath();
 		write("std::");
 		writeLowercase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathCeiling:
 		includeMath();
@@ -16003,7 +16030,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		write("Array.Copy(");
 		obj->accept(this, FuPriority::argument);
 		write(", ");
-		writeArgs(method, args);
+		writeCoercedArgs(method, args);
 		writeChar(')');
 		break;
 	case FuId::arrayFillAll:
@@ -16059,7 +16086,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		break;
 	case FuId::listSortPart:
 		writePostfix(obj, ".Sort(");
-		writeArgs(method, args);
+		writeCoercedArgs(method, args);
 		write(", null)");
 		break;
 	case FuId::dictionaryAdd:
@@ -16115,7 +16142,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		obj->accept(this, FuPriority::primary);
 		writeChar('.');
 		write(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::uTF8GetByteCount:
 		include("System.Text");
@@ -16135,12 +16162,12 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 	case FuId::uTF8GetString:
 		include("System.Text");
 		write("Encoding.UTF8.GetString");
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::regexCompile:
 		include("System.Text.RegularExpressions");
 		write("new Regex");
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::regexEscape:
 	case FuId::regexIsMatchStr:
@@ -16149,14 +16176,14 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		obj->accept(this, FuPriority::primary);
 		writeChar('.');
 		write(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::matchFindStr:
 		include("System.Text.RegularExpressions");
 		writeChar('(');
 		obj->accept(this, FuPriority::assign);
 		write(" = Regex.Match");
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		write(").Success");
 		break;
 	case FuId::matchFindRegex:
@@ -16209,21 +16236,29 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writePostfix(obj, ".EnumerateArray().ToList()");
 		break;
 	case FuId::mathMethod:
-	case FuId::mathAbs:
 	case FuId::mathCeiling:
-	case FuId::mathClamp:
 	case FuId::mathFusedMultiplyAdd:
 	case FuId::mathLog2:
+	case FuId::mathRound:
+	case FuId::mathTruncate:
+		include("System");
+		write("Math");
+		if (!std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }))
+			writeChar('F');
+		writeChar('.');
+		write(method->name);
+		writeInParentheses(args);
+		break;
+	case FuId::mathAbs:
+	case FuId::mathClamp:
 	case FuId::mathMaxInt:
 	case FuId::mathMaxDouble:
 	case FuId::mathMinInt:
 	case FuId::mathMinDouble:
-	case FuId::mathRound:
-	case FuId::mathTruncate:
 		include("System");
 		write("Math.");
 		write(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathIsFinite:
 	case FuId::mathIsInfinity:
@@ -16237,7 +16272,7 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 			writeChar('.');
 		}
 		writeName(method);
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	}
 }
@@ -17131,8 +17166,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::stringContains:
 		include("std.algorithm");
-		writePostfix(obj, ".canFind");
-		writeArgsInParentheses(method, args);
+		writeMethodCall(obj, "canFind", (*args)[0].get());
 		break;
 	case FuId::stringEndsWith:
 		include("std.string");
@@ -17261,13 +17295,12 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::listRemoveRange:
 		this->hasListRemoveAt = true;
 		writePostfix(obj, ".removeAt");
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::listIndexOf:
 		include("std.algorithm");
 		writeClassReference(obj);
-		write("[].countUntil");
-		writeArgsInParentheses(method, args);
+		writeCall("[].countUntil", (*args)[0].get());
 		break;
 	case FuId::queueDequeue:
 		this->hasQueueDequeue = true;
@@ -17313,8 +17346,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeInsertedArg(obj->type->asClassType()->getElementType().get(), args, 0);
 		break;
 	case FuId::sortedSetRemove:
-		writePostfix(obj, ".removeKey");
-		writeArgsInParentheses(method, args);
+		writeMethodCall(obj, "removeKey", (*args)[0].get());
 		break;
 	case FuId::dictionaryAdd:
 		if (obj->type->asClassType()->class_->id == FuId::sortedDictionaryClass) {
@@ -17366,8 +17398,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::environmentGetEnvironmentVariable:
 		include("std.process");
-		write("environment.get");
-		writeArgsInParentheses(method, args);
+		writeCall("environment.get", (*args)[0].get());
 		break;
 	case FuId::convertToBase64String:
 		include("std.base64");
@@ -17493,7 +17524,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::mathRound:
 		include("std.math");
 		writeCamelCase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathCeiling:
 		include("std.math");
@@ -17506,7 +17537,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::mathMinDouble:
 		include("std.algorithm");
 		writeLowercase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathFusedMultiplyAdd:
 		include("std.math");
@@ -17526,7 +17557,7 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 			}
 		}
 		writeName(method);
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	}
 }
@@ -18326,6 +18357,15 @@ void GenJava::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 		GenTyped::writeCoercedLiteral(type, expr);
 }
 
+void GenJava::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
+{
+	const FuCallExpr * call;
+	if (type->id == FuId::floatType && (call = dynamic_cast<const FuCallExpr *>(expr)) && call->method->symbol->type->id == FuId::floatingType)
+		writeStaticCast(type, expr);
+	else
+		GenTyped::writeCoercedInternal(type, expr, parent);
+}
+
 void GenJava::writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op)
 {
 	const FuEnum * enu;
@@ -18430,7 +18470,7 @@ void GenJava::writeWrite(const FuMethod * method, const std::vector<std::shared_
 		write(".print");
 		if (newLine)
 			write("ln");
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 	}
 }
 
@@ -18494,7 +18534,7 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 			writeChar('.');
 		}
 		writeName(method);
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	case FuId::enumFromInt:
 		(*args)[0]->accept(this, parent);
@@ -18533,7 +18573,7 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 		write("System.arraycopy(");
 		obj->accept(this, FuPriority::argument);
 		write(", ");
-		writeArgs(method, args);
+		writeCoercedArgs(method, args);
 		writeChar(')');
 		break;
 	case FuId::arrayFillAll:
@@ -18730,7 +18770,7 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 	case FuId::uTF8GetString:
 		include("java.nio.charset.StandardCharsets");
 		write("new String(");
-		writeArgs(method, args);
+		writeCoercedArgs(method, args);
 		write(", StandardCharsets.UTF_8)");
 		break;
 	case FuId::environmentGetEnvironmentVariable:
@@ -19802,7 +19842,7 @@ void GenJsNoModule::writeMathMaxMin(const FuMethod * method, std::string_view na
 		write("((x, y) => x ");
 		writeChar(op);
 		write(" y ? x : y)");
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 	}
 	else
 		writeCall(name, (*args)[0].get(), (*args)[1].get());
@@ -19843,7 +19883,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 			writeChar('.');
 			writeName(method);
 		}
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	case FuId::enumFromInt:
 		(*args)[0]->accept(this, parent);
@@ -20186,7 +20226,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	case FuId::mathClamp:
 		if (method->type->id == FuId::intType && hasLong(args)) {
 			write("((x, min, max) => x < min ? min : x > max ? max : x)");
-			writeArgsInParentheses(method, args);
+			writeCoercedArgsInParentheses(method, args);
 		}
 		else {
 			write("Math.min(Math.max(");
@@ -20207,7 +20247,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	case FuId::mathIsFinite:
 	case FuId::mathIsNaN:
 		writeCamelCase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathIsInfinity:
 		if (parent > FuPriority::equality)
@@ -21730,7 +21770,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 			writeMemberOp(obj, nullptr);
 		}
 		writeName(method);
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	case FuId::classToString:
 		obj->accept(this, FuPriority::primary);
@@ -21828,7 +21868,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 			}
 			else {
 				write(".fill");
-				writeArgsInParentheses(method, args);
+				writeCoercedArgsInParentheses(method, args);
 			}
 			break;
 		}
@@ -21848,7 +21888,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 				obj->accept(this, FuPriority::primary);
 				writeMemberOp(obj, nullptr);
 				write("fill");
-				writeArgsInParentheses(method, args);
+				writeCoercedArgsInParentheses(method, args);
 			}
 			break;
 		}
@@ -22052,7 +22092,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 	case FuId::mathLog2:
 		include("Foundation");
 		writeCamelCase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathAbs:
 	case FuId::mathMaxInt:
@@ -22060,7 +22100,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 	case FuId::mathMinInt:
 	case FuId::mathMinDouble:
 		writeCamelCase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathCeiling:
 		include("Foundation");
@@ -23846,7 +23886,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 	switch (method->id) {
 	case FuId::enumFromInt:
 		writeName(method->type.get());
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::enumHasFlag:
 	case FuId::stringContains:
@@ -24154,7 +24194,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		include("math");
 		write("math.");
 		writeLowercase(method->name);
-		writeArgsInParentheses(method, args);
+		writeInParentheses(args);
 		break;
 	case FuId::mathAbs:
 		writeCall("abs", (*args)[0].get());
@@ -24200,7 +24240,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 			write("(self");
 			if (std::ssize(*args) > 0) {
 				write(", ");
-				writeArgs(method, args);
+				writeCoercedArgs(method, args);
 			}
 			writeChar(')');
 			break;
@@ -24210,7 +24250,7 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 			writeChar('.');
 			writeName(method);
 		}
-		writeArgsInParentheses(method, args);
+		writeCoercedArgsInParentheses(method, args);
 		break;
 	}
 }

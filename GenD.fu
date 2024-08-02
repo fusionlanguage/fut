@@ -808,8 +808,7 @@ public class GenD : GenCCppD
 			break;
 		case FuId.StringContains:
 			Include("std.algorithm");
-			WritePostfix(obj, ".canFind");
-			WriteArgsInParentheses(method, args);
+			WriteMethodCall(obj, "canFind", args[0]);
 			break;
 		case FuId.StringEndsWith:
 			Include("std.string");
@@ -938,13 +937,12 @@ public class GenD : GenCCppD
 		case FuId.ListRemoveRange:
 			this.HasListRemoveAt = true;
 			WritePostfix(obj, ".removeAt");
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.ListIndexOf:
 			Include("std.algorithm");
 			WriteClassReference(obj);
-			Write("[].countUntil");
-			WriteArgsInParentheses(method, args);
+			WriteCall("[].countUntil", args[0]);
 			break;
 		case FuId.QueueDequeue:
 			this.HasQueueDequeue = true;
@@ -990,8 +988,7 @@ public class GenD : GenCCppD
 			WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args, 0);
 			break;
 		case FuId.SortedSetRemove:
-			WritePostfix(obj, ".removeKey");
-			WriteArgsInParentheses(method, args);
+			WriteMethodCall(obj, "removeKey", args[0]);
 			break;
 		case FuId.DictionaryAdd:
 			if (obj.Type.AsClassType().Class.Id == FuId.SortedDictionaryClass) {
@@ -1043,8 +1040,7 @@ public class GenD : GenCCppD
 			break;
 		case FuId.EnvironmentGetEnvironmentVariable:
 			Include("std.process");
-			Write("environment.get");
-			WriteArgsInParentheses(method, args);
+			WriteCall("environment.get", args[0]);
 			break;
 		case FuId.ConvertToBase64String:
 			Include("std.base64");
@@ -1170,7 +1166,7 @@ public class GenD : GenCCppD
 		case FuId.MathRound:
 			Include("std.math");
 			WriteCamelCase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathCeiling:
 			Include("std.math");
@@ -1183,7 +1179,7 @@ public class GenD : GenCCppD
 		case FuId.MathMinDouble:
 			Include("std.algorithm");
 			WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathFusedMultiplyAdd:
 			Include("std.math");
@@ -1203,7 +1199,7 @@ public class GenD : GenCCppD
 				}
 			}
 			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		}
 	}

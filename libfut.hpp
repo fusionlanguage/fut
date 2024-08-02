@@ -204,6 +204,7 @@ enum class FuId
 	floatType,
 	doubleType,
 	floatIntType,
+	floatingType,
 	boolType,
 	stringClass,
 	stringPtrType,
@@ -1532,6 +1533,7 @@ public:
 	std::shared_ptr<FuIntegerType> intType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuIntegerType> longType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuRangeType> byteType = FuRangeType::new_(0, 255);
+	std::shared_ptr<FuFloatingType> floatType = std::make_shared<FuFloatingType>();
 	std::shared_ptr<FuFloatingType> doubleType = std::make_shared<FuFloatingType>();
 	std::shared_ptr<FuRangeType> charType = FuRangeType::new_(-128, 65535);
 	std::shared_ptr<FuEnum> boolType = std::make_shared<FuEnum>();
@@ -1553,7 +1555,6 @@ public:
 private:
 	std::shared_ptr<FuType> typeParam0 = std::make_shared<FuType>();
 	std::shared_ptr<FuRangeType> uIntType = FuRangeType::new_(0, 2147483647);
-	std::shared_ptr<FuFloatingType> floatType = std::make_shared<FuFloatingType>();
 	std::shared_ptr<FuClass> stringClass = FuClass::new_(FuCallType::normal, FuId::stringClass, "string");
 	FuClass * addCollection(FuId id, std::string_view name, int typeParameterCount, FuId clearId, FuId countId);
 	void addSet(FuId id, std::string_view name, FuId addId, FuId clearId, FuId containsId, FuId countId, FuId removeId);
@@ -1874,6 +1875,7 @@ protected:
 	void writeCall(std::string_view function, const FuExpr * arg0, const FuExpr * arg1 = nullptr, const FuExpr * arg2 = nullptr);
 	virtual void writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol);
 	void writeMethodCall(const FuExpr * obj, std::string_view method, const FuExpr * arg0, const FuExpr * arg1 = nullptr);
+	void writeInParentheses(const std::vector<std::shared_ptr<FuExpr>> * args);
 	virtual void writeSelectValues(const FuType * type, const FuSelectExpr * expr);
 	virtual void writeCoercedSelect(const FuType * type, const FuSelectExpr * expr, FuPriority parent);
 	virtual void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent);
@@ -1882,8 +1884,8 @@ protected:
 	virtual void writeStronglyCoerced(const FuType * type, const FuExpr * expr);
 	virtual void writeCoercedLiteral(const FuType * type, const FuExpr * expr);
 	void writeCoercedLiterals(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * exprs);
-	void writeArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeArgsInParentheses(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeCoercedArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeCoercedArgsInParentheses(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	virtual void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) = 0;
 	virtual void writeNewArrayStorage(const FuArrayStorageType * array);
 	virtual void writeNew(const FuReadWriteClassType * klass, FuPriority parent) = 0;
@@ -2304,6 +2306,7 @@ private:
 	void writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
+	void writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent);
 	void writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwitch);
 	void trimVarsToDestruct(int i);
@@ -2600,6 +2603,7 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
+	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op) override;
 	void writeAnd(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;

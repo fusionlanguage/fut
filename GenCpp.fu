@@ -578,7 +578,7 @@ public class GenCpp : GenCCpp
 			WriteChar(')');
 		}
 		else
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 	}
 
 	void WriteAllAnyContains!(string function, FuExpr obj, List<FuExpr#> args)
@@ -752,7 +752,7 @@ public class GenCpp : GenCCpp
 				}
 			}
 			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		case FuId.EnumFromInt:
 			WriteStaticCast(method.Type, args[0]);
@@ -1200,7 +1200,7 @@ public class GenCpp : GenCCpp
 			IncludeMath();
 			Write("std::");
 			WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathCeiling:
 			IncludeMath();

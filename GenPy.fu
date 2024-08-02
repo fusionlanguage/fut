@@ -811,7 +811,7 @@ public class GenPy : GenPySwift
 		switch (method.Id) {
 		case FuId.EnumFromInt:
 			WriteName(method.Type);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.EnumHasFlag:
 		case FuId.StringContains:
@@ -1116,7 +1116,7 @@ public class GenPy : GenPySwift
 			Include("math");
 			Write("math.");
 			WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathAbs:
 			WriteCall("abs", args[0]);
@@ -1162,7 +1162,7 @@ public class GenPy : GenPySwift
 				Write("(self");
 				if (args.Count > 0) {
 					Write(", ");
-					WriteArgs(method, args);
+					WriteCoercedArgs(method, args);
 				}
 				WriteChar(')');
 				break;
@@ -1172,7 +1172,7 @@ public class GenPy : GenPySwift
 				WriteChar('.');
 				WriteName(method);
 			}
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		}
 	}

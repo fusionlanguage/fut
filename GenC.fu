@@ -1941,6 +1941,15 @@ public class GenC : GenCCpp
 		Write(", ");
 	}
 
+	void WriteMathFloating!(string function, List<FuExpr#> args)
+	{
+		IncludeMath();
+		WriteLowercase(function);
+		if (!args.Any(arg => arg.Type.Id == FuId.DoubleType))
+			WriteChar('f');
+		WriteInParentheses(args);
+	}
+
 	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
@@ -2418,12 +2427,8 @@ public class GenC : GenCCpp
 			WriteCall("g_match_info_fetch", obj, args[0]);
 			break;
 		case FuId.MathMethod:
-		case FuId.MathIsFinite:
-		case FuId.MathIsNaN:
 		case FuId.MathLog2:
-			IncludeMath();
-			WriteLowercase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteMathFloating(method.Name, args);
 			break;
 		case FuId.MathAbs:
 			switch (args[0].Type.Id) {
@@ -2445,32 +2450,34 @@ public class GenC : GenCCpp
 			}
 			break;
 		case FuId.MathCeiling:
-			IncludeMath();
-			WriteCall("ceil", args[0]);
+			WriteMathFloating("ceil", args);
 			break;
 		case FuId.MathFusedMultiplyAdd:
+			WriteMathFloating("fma", args);
+			break;
+		case FuId.MathIsFinite:
 			IncludeMath();
-			WriteCall("fma", args[0], args[1], args[2]);
+			WriteCall("isfinite", args[0]);
 			break;
 		case FuId.MathIsInfinity:
 			IncludeMath();
 			WriteCall("isinf", args[0]);
 			break;
-		case FuId.MathMaxDouble:
+		case FuId.MathIsNaN:
 			IncludeMath();
-			WriteCall("fmax", args[0], args[1]);
+			WriteCall("isnan", args[0]);
+			break;
+		case FuId.MathMaxDouble:
+			WriteMathFloating("fmax", args);
 			break;
 		case FuId.MathMinDouble:
-			IncludeMath();
-			WriteCall("fmin", args[0], args[1]);
+			WriteMathFloating("fmin", args);
 			break;
 		case FuId.MathRound:
-			IncludeMath();
-			WriteCall("round", args[0]);
+			WriteMathFloating("round", args);
 			break;
 		case FuId.MathTruncate:
-			IncludeMath();
-			WriteCall("trunc", args[0]);
+			WriteMathFloating("trunc", args);
 			break;
 		default:
 			NotSupported(obj, method.Name);

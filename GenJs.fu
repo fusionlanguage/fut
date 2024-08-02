@@ -520,7 +520,7 @@ public class GenJsNoModule : GenBase
 			Write("((x, y) => x ");
 			WriteChar(op);
 			Write(" y ? x : y)");
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 		}
 		else
 			WriteCall(name, args[0], args[1]);
@@ -561,7 +561,7 @@ public class GenJsNoModule : GenBase
 				WriteChar('.');
 				WriteName(method);
 			}
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		case FuId.EnumFromInt:
 			args[0].Accept(this, parent);
@@ -902,7 +902,7 @@ public class GenJsNoModule : GenBase
 		case FuId.MathClamp:
 			if (method.Type.Id == FuId.IntType && HasLong(args)) {
 				Write("((x, min, max) => x < min ? min : x > max ? max : x)");
-				WriteArgsInParentheses(method, args);
+				WriteCoercedArgsInParentheses(method, args);
 			}
 			else {
 				Write("Math.min(Math.max(");
@@ -923,7 +923,7 @@ public class GenJsNoModule : GenBase
 		case FuId.MathIsFinite:
 		case FuId.MathIsNaN:
 			WriteCamelCase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathIsInfinity:
 			if (parent > FuPriority.Equality)

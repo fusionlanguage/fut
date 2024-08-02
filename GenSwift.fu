@@ -472,7 +472,7 @@ public class GenSwift : GenPySwift
 				WriteMemberOp(obj, null);
 			}
 			WriteName(method);
-			WriteArgsInParentheses(method, args);
+			WriteCoercedArgsInParentheses(method, args);
 			break;
 		case FuId.ClassToString:
 			obj.Accept(this, FuPriority.Primary);
@@ -568,7 +568,7 @@ public class GenSwift : GenPySwift
 			}
 			else {
 				Write(".fill");
-				WriteArgsInParentheses(method, args);
+				WriteCoercedArgsInParentheses(method, args);
 			}
 			break;
 		case FuId.ArrayFillPart:
@@ -585,7 +585,7 @@ public class GenSwift : GenPySwift
 				obj.Accept(this, FuPriority.Primary);
 				WriteMemberOp(obj, null);
 				Write("fill");
-				WriteArgsInParentheses(method, args);
+				WriteCoercedArgsInParentheses(method, args);
 			}
 			break;
 		case FuId.ArraySortAll:
@@ -786,7 +786,7 @@ public class GenSwift : GenPySwift
 		case FuId.MathLog2:
 			Include("Foundation");
 			WriteCamelCase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathAbs:
 		case FuId.MathMaxInt:
@@ -794,7 +794,7 @@ public class GenSwift : GenPySwift
 		case FuId.MathMinInt:
 		case FuId.MathMinDouble:
 			WriteCamelCase(method.Name);
-			WriteArgsInParentheses(method, args);
+			WriteInParentheses(args);
 			break;
 		case FuId.MathCeiling:
 			Include("Foundation");
