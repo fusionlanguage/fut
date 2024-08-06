@@ -11907,10 +11907,22 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeCall("isnan", (*args)[0].get());
 		break;
 	case FuId::mathMax:
-		writeMathFloating("fmax", args);
-		break;
 	case FuId::mathMin:
-		writeMathFloating("fmin", args);
+		if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()) || dynamic_cast<const FuFloatingType *>((*args)[1]->type.get())) {
+			writeChar('f');
+			writeMathFloating(method->name, args);
+		}
+		else {
+			if ((*args)[0]->type->id == FuId::longType || (*args)[1]->type->id == FuId::longType) {
+				this->longFunctions.insert(method->id);
+				write("FuLong_");
+			}
+			else {
+				this->intFunctions.insert(method->id);
+				write("FuInt_");
+			}
+			writeCall(method->name, (*args)[0].get(), (*args)[1].get());
+		}
 		break;
 	case FuId::mathRound:
 		writeMathFloating("round", args);
@@ -12872,6 +12884,35 @@ void GenC::writeMethod(const FuMethod * method)
 	this->currentMethod = nullptr;
 }
 
+void GenC::writeIntMaxMin(std::string_view klassName, std::string_view method, std::string_view type, int op)
+{
+	writeNewLine();
+	write("static ");
+	write(type);
+	write(" Fu");
+	write(klassName);
+	writeChar('_');
+	write(method);
+	writeChar('(');
+	write(type);
+	write(" x, ");
+	write(type);
+	writeLine(" y)");
+	openBlock();
+	write("return x ");
+	writeChar(op);
+	writeLine(" y ? x : y;");
+	closeBlock();
+}
+
+void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods)
+{
+	if (methods->contains(FuId::mathMin))
+		writeIntMaxMin(klassName, "Min", type, '<');
+	if (methods->contains(FuId::mathMax))
+		writeIntMaxMin(klassName, "Max", type, '>');
+}
+
 void GenC::writeTryParseLibrary(std::string_view signature, std::string_view call)
 {
 	writeNewLine();
@@ -12890,6 +12931,8 @@ void GenC::writeTryParseLibrary(std::string_view signature, std::string_view cal
 
 void GenC::writeLibrary()
 {
+	writeIntLibrary("Int", "int", &this->intFunctions);
+	writeIntLibrary("Long", "int64_t", &this->longFunctions);
 	if (this->intTryParse)
 		writeTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
 	if (this->longTryParse)
@@ -13241,6 +13284,8 @@ void GenC::writeProgram(const FuProgram * program)
 	writeLine("#endif");
 	closeFile();
 	this->inHeaderFile = false;
+	this->intFunctions.clear();
+	this->longFunctions.clear();
 	this->intTryParse = false;
 	this->longTryParse = false;
 	this->doubleTryParse = false;

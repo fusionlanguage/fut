@@ -2214,6 +2214,8 @@ public:
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;
 private:
+	std::set<FuId> intFunctions;
+	std::set<FuId> longFunctions;
 	bool intTryParse;
 	bool longTryParse;
 	bool doubleTryParse;
@@ -2323,6 +2325,8 @@ private:
 	void writeDestructFields(const FuSymbol * symbol);
 	void writeNewDelete(const FuClass * klass, bool define);
 	static bool canThrow(const FuType * type);
+	void writeIntMaxMin(std::string_view klassName, std::string_view method, std::string_view type, int op);
+	void writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods);
 	void writeTryParseLibrary(std::string_view signature, std::string_view call);
 	void writeLibrary();
 };

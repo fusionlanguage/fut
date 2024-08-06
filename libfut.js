@@ -10117,6 +10117,8 @@ export class GenCCpp extends GenCCppD
 
 export class GenC extends GenCCpp
 {
+	#intFunctions = new Set();
+	#longFunctions = new Set();
 	#intTryParse;
 	#longTryParse;
 	#doubleTryParse;
@@ -12592,10 +12594,22 @@ export class GenC extends GenCCpp
 			this.writeCall("isnan", args[0]);
 			break;
 		case FuId.MATH_MAX:
-			this.#writeMathFloating("fmax", args);
-			break;
 		case FuId.MATH_MIN:
-			this.#writeMathFloating("fmin", args);
+			if (args[0].type instanceof FuFloatingType || args[1].type instanceof FuFloatingType) {
+				this.writeChar(102);
+				this.#writeMathFloating(method.name, args);
+			}
+			else {
+				if (args[0].type.id == FuId.LONG_TYPE || args[1].type.id == FuId.LONG_TYPE) {
+					this.#longFunctions.add(method.id);
+					this.write("FuLong_");
+				}
+				else {
+					this.#intFunctions.add(method.id);
+					this.write("FuInt_");
+				}
+				this.writeCall(method.name, args[0], args[1]);
+			}
 			break;
 		case FuId.MATH_ROUND:
 			this.#writeMathFloating("round", args);
@@ -13569,6 +13583,35 @@ export class GenC extends GenCCpp
 		this.currentMethod = null;
 	}
 
+	#writeIntMaxMin(klassName, method, type, op)
+	{
+		this.writeNewLine();
+		this.write("static ");
+		this.write(type);
+		this.write(" Fu");
+		this.write(klassName);
+		this.writeChar(95);
+		this.write(method);
+		this.writeChar(40);
+		this.write(type);
+		this.write(" x, ");
+		this.write(type);
+		this.writeLine(" y)");
+		this.openBlock();
+		this.write("return x ");
+		this.writeChar(op);
+		this.writeLine(" y ? x : y;");
+		this.closeBlock();
+	}
+
+	#writeIntLibrary(klassName, type, methods)
+	{
+		if (methods.has(FuId.MATH_MIN))
+			this.#writeIntMaxMin(klassName, "Min", type, 60);
+		if (methods.has(FuId.MATH_MAX))
+			this.#writeIntMaxMin(klassName, "Max", type, 62);
+	}
+
 	#writeTryParseLibrary(signature, call)
 	{
 		this.writeNewLine();
@@ -13587,6 +13630,8 @@ export class GenC extends GenCCpp
 
 	#writeLibrary()
 	{
+		this.#writeIntLibrary("Int", "int", this.#intFunctions);
+		this.#writeIntLibrary("Long", "int64_t", this.#longFunctions);
 		if (this.#intTryParse)
 			this.#writeTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
 		if (this.#longTryParse)
@@ -13938,6 +13983,8 @@ export class GenC extends GenCCpp
 		this.writeLine("#endif");
 		this.closeFile();
 		this.inHeaderFile = false;
+		this.#intFunctions.clear();
+		this.#longFunctions.clear();
 		this.#intTryParse = false;
 		this.#longTryParse = false;
 		this.#doubleTryParse = false;

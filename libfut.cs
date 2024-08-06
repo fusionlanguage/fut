@@ -9691,6 +9691,10 @@ namespace Fusion
 	public class GenC : GenCCpp
 	{
 
+		readonly SortedSet<FuId> IntFunctions = new SortedSet<FuId>();
+
+		readonly SortedSet<FuId> LongFunctions = new SortedSet<FuId>();
+
 		bool IntTryParse;
 
 		bool LongTryParse;
@@ -12137,10 +12141,22 @@ namespace Fusion
 				WriteCall("isnan", args[0]);
 				break;
 			case FuId.MathMax:
-				WriteMathFloating("fmax", args);
-				break;
 			case FuId.MathMin:
-				WriteMathFloating("fmin", args);
+				if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType) {
+					WriteChar('f');
+					WriteMathFloating(method.Name, args);
+				}
+				else {
+					if (args[0].Type.Id == FuId.LongType || args[1].Type.Id == FuId.LongType) {
+						this.LongFunctions.Add(method.Id);
+						Write("FuLong_");
+					}
+					else {
+						this.IntFunctions.Add(method.Id);
+						Write("FuInt_");
+					}
+					WriteCall(method.Name, args[0], args[1]);
+				}
 				break;
 			case FuId.MathRound:
 				WriteMathFloating("round", args);
@@ -13094,6 +13110,35 @@ namespace Fusion
 			this.CurrentMethod = null;
 		}
 
+		void WriteIntMaxMin(string klassName, string method, string type, int op)
+		{
+			WriteNewLine();
+			Write("static ");
+			Write(type);
+			Write(" Fu");
+			Write(klassName);
+			WriteChar('_');
+			Write(method);
+			WriteChar('(');
+			Write(type);
+			Write(" x, ");
+			Write(type);
+			WriteLine(" y)");
+			OpenBlock();
+			Write("return x ");
+			WriteChar(op);
+			WriteLine(" y ? x : y;");
+			CloseBlock();
+		}
+
+		void WriteIntLibrary(string klassName, string type, SortedSet<FuId> methods)
+		{
+			if (methods.Contains(FuId.MathMin))
+				WriteIntMaxMin(klassName, "Min", type, '<');
+			if (methods.Contains(FuId.MathMax))
+				WriteIntMaxMin(klassName, "Max", type, '>');
+		}
+
 		void WriteTryParseLibrary(string signature, string call)
 		{
 			WriteNewLine();
@@ -13112,6 +13157,8 @@ namespace Fusion
 
 		void WriteLibrary()
 		{
+			WriteIntLibrary("Int", "int", this.IntFunctions);
+			WriteIntLibrary("Long", "int64_t", this.LongFunctions);
 			if (this.IntTryParse)
 				WriteTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
 			if (this.LongTryParse)
@@ -13463,6 +13510,8 @@ namespace Fusion
 			WriteLine("#endif");
 			CloseFile();
 			this.InHeaderFile = false;
+			this.IntFunctions.Clear();
+			this.LongFunctions.Clear();
 			this.IntTryParse = false;
 			this.LongTryParse = false;
 			this.DoubleTryParse = false;
