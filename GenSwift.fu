@@ -789,10 +789,8 @@ public class GenSwift : GenPySwift
 			WriteInParentheses(args);
 			break;
 		case FuId.MathAbs:
-		case FuId.MathMaxInt:
-		case FuId.MathMaxDouble:
-		case FuId.MathMinInt:
-		case FuId.MathMinDouble:
+		case FuId.MathMax:
+		case FuId.MathMin:
 			WriteCamelCase(method.Name);
 			WriteInParentheses(args);
 			break;

@@ -205,6 +205,7 @@ enum class FuId
 	doubleType,
 	floatIntType,
 	floatingType,
+	numericType,
 	boolType,
 	stringClass,
 	stringPtrType,
@@ -351,10 +352,8 @@ enum class FuId
 	mathIsInfinity,
 	mathIsNaN,
 	mathLog2,
-	mathMaxInt,
-	mathMaxDouble,
-	mathMinInt,
-	mathMinDouble,
+	mathMax,
+	mathMin,
 	mathRound,
 	mathTruncate
 };
@@ -1202,9 +1201,8 @@ public:
 class FuNumericType : public FuType
 {
 public:
-	virtual ~FuNumericType() = default;
-protected:
 	FuNumericType() = default;
+	virtual ~FuNumericType() = default;
 };
 
 class FuIntegerType : public FuNumericType

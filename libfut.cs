@@ -1319,6 +1319,7 @@ namespace Fusion
 		DoubleType,
 		FloatIntType,
 		FloatingType,
+		NumericType,
 		BoolType,
 		StringClass,
 		StringPtrType,
@@ -1465,10 +1466,8 @@ namespace Fusion
 		MathIsInfinity,
 		MathIsNaN,
 		MathLog2,
-		MathMaxInt,
-		MathMaxDouble,
-		MathMinInt,
-		MathMinDouble,
+		MathMax,
+		MathMin,
 		MathRound,
 		MathTruncate
 	}
@@ -2652,7 +2651,7 @@ namespace Fusion
 		}
 	}
 
-	abstract class FuNumericType : FuType
+	class FuNumericType : FuType
 	{
 	}
 
@@ -3360,17 +3359,18 @@ namespace Fusion
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.DoubleType, FuId.JsonElementGetDouble, "GetDouble", false));
 			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementGetBoolean, "GetBoolean", false));
 			Add(jsonElementClass);
-			FuFloatingType floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
+			FuNumericType numericType = new FuNumericType { Id = FuId.NumericType, Name = "numeric" };
 			FuFloatingType floatingType = new FuFloatingType { Id = FuId.FloatingType, Name = "float" };
+			FuFloatingType floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
 			FuClass mathClass = FuClass.New(FuCallType.Static, FuId.None, "Math");
-			mathClass.Add(FuMethodGroup.New(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.IntType, FuId.MathAbs, "Abs", false, FuVar.New(this.LongType, "a")), FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.FloatType, FuId.MathAbs, "Abs", false, FuVar.New(this.DoubleType, "a"))));
+			mathClass.AddStaticMethod(numericType, FuId.MathAbs, "Abs", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Acos", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Asin", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Atan", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Atan2", FuVar.New(this.DoubleType, "y"), FuVar.New(this.DoubleType, "x"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Cbrt", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatIntType, FuId.MathCeiling, "Ceiling", FuVar.New(this.DoubleType, "a"));
-			mathClass.Add(FuMethodGroup.New(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.IntType, FuId.MathClamp, "Clamp", false, FuVar.New(this.LongType, "value"), FuVar.New(this.LongType, "min"), FuVar.New(this.LongType, "max")), FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.FloatType, FuId.MathClamp, "Clamp", false, FuVar.New(this.DoubleType, "value"), FuVar.New(this.DoubleType, "min"), FuVar.New(this.DoubleType, "max"))));
+			mathClass.AddStaticMethod(numericType, FuId.MathClamp, "Clamp", FuVar.New(this.DoubleType, "value"), FuVar.New(this.DoubleType, "min"), FuVar.New(this.DoubleType, "max"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Cos", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Cosh", FuVar.New(this.DoubleType, "a"));
 			mathClass.Add(NewConstDouble("E", 2.718281828459045));
@@ -3383,8 +3383,8 @@ namespace Fusion
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Log", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathLog2, "Log2", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Log10", FuVar.New(this.DoubleType, "a"));
-			mathClass.Add(FuMethodGroup.New(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.IntType, FuId.MathMaxInt, "Max", false, FuVar.New(this.LongType, "a"), FuVar.New(this.LongType, "b")), FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.FloatType, FuId.MathMaxDouble, "Max", false, FuVar.New(this.DoubleType, "a"), FuVar.New(this.DoubleType, "b"))));
-			mathClass.Add(FuMethodGroup.New(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.IntType, FuId.MathMinInt, "Min", false, FuVar.New(this.LongType, "a"), FuVar.New(this.LongType, "b")), FuMethod.New(null, FuVisibility.Public, FuCallType.Static, this.FloatType, FuId.MathMinDouble, "Min", false, FuVar.New(this.DoubleType, "a"), FuVar.New(this.DoubleType, "b"))));
+			mathClass.AddStaticMethod(numericType, FuId.MathMax, "Max", FuVar.New(this.DoubleType, "a"), FuVar.New(this.DoubleType, "b"));
+			mathClass.AddStaticMethod(numericType, FuId.MathMin, "Min", FuVar.New(this.DoubleType, "a"), FuVar.New(this.DoubleType, "b"));
 			mathClass.Add(FuStaticProperty.New(this.FloatType, FuId.MathNaN, "NaN"));
 			mathClass.Add(FuStaticProperty.New(this.FloatType, FuId.MathNegativeInfinity, "NegativeInfinity"));
 			mathClass.Add(NewConstDouble("PI", 3.141592653589793));
@@ -6034,6 +6034,9 @@ namespace Fusion
 				FuType type = method.Type;
 				if (type.Id == FuId.FloatingType)
 					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : this.Host.Program.System.FloatType;
+				else if (type.Id == FuId.NumericType) {
+					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : arguments.Exists(arg => arg.Type.Id == FuId.FloatType) ? this.Host.Program.System.FloatType : arguments.Exists(arg => arg.Type.Id == FuId.LongType) ? this.Host.Program.System.LongType : this.Host.Program.System.IntType;
+				}
 				else if (symbol.Left != null && symbol.Left.Type is FuClassType generic)
 					type = EvalType(generic, type);
 				expr.Type = type;
@@ -12133,10 +12136,10 @@ namespace Fusion
 				IncludeMath();
 				WriteCall("isnan", args[0]);
 				break;
-			case FuId.MathMaxDouble:
+			case FuId.MathMax:
 				WriteMathFloating("fmax", args);
 				break;
-			case FuId.MathMinDouble:
+			case FuId.MathMin:
 				WriteMathFloating("fmin", args);
 				break;
 			case FuId.MathRound:
@@ -13737,8 +13740,6 @@ namespace Fusion
 			case FuId.MathIsFinite:
 			case FuId.MathIsNaN:
 			case FuId.MathLog2:
-			case FuId.MathMaxInt:
-			case FuId.MathMinInt:
 			case FuId.MathRound:
 				WriteLowercase(method.Name);
 				WriteInParentheses(args);
@@ -13757,11 +13758,15 @@ namespace Fusion
 			case FuId.MathIsInfinity:
 				WriteCall("isinf", args[0]);
 				break;
-			case FuId.MathMaxDouble:
-				WriteCall("fmax", args[0], args[1]);
+			case FuId.MathMax:
+				if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType)
+					WriteChar('f');
+				WriteCall("max", args[0], args[1]);
 				break;
-			case FuId.MathMinDouble:
-				WriteCall("fmin", args[0], args[1]);
+			case FuId.MathMin:
+				if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType)
+					WriteChar('f');
+				WriteCall("min", args[0], args[1]);
 				break;
 			case FuId.MathTruncate:
 				WriteCall("trunc", args[0]);
@@ -15057,13 +15062,11 @@ namespace Fusion
 				IncludeMath();
 				WriteCall("std::isinf", args[0]);
 				break;
-			case FuId.MathMaxInt:
-			case FuId.MathMaxDouble:
+			case FuId.MathMax:
 				Include("algorithm");
 				WriteCall("(std::max)", args[0], args[1]);
 				break;
-			case FuId.MathMinInt:
-			case FuId.MathMinDouble:
+			case FuId.MathMin:
 				Include("algorithm");
 				WriteCall("(std::min)", args[0], args[1]);
 				break;
@@ -16630,10 +16633,8 @@ namespace Fusion
 				break;
 			case FuId.MathAbs:
 			case FuId.MathClamp:
-			case FuId.MathMaxInt:
-			case FuId.MathMaxDouble:
-			case FuId.MathMinInt:
-			case FuId.MathMinDouble:
+			case FuId.MathMax:
+			case FuId.MathMin:
 				Include("System");
 				Write("Math.");
 				Write(method.Name);
@@ -18090,10 +18091,8 @@ namespace Fusion
 				WriteCall("ceil", args[0]);
 				break;
 			case FuId.MathClamp:
-			case FuId.MathMaxInt:
-			case FuId.MathMaxDouble:
-			case FuId.MathMinInt:
-			case FuId.MathMinDouble:
+			case FuId.MathMax:
+			case FuId.MathMin:
 				Include("std.algorithm");
 				WriteLowercase(method.Name);
 				WriteInParentheses(args);
@@ -19140,10 +19139,8 @@ namespace Fusion
 			case FuId.StringWriterToString:
 			case FuId.MathMethod:
 			case FuId.MathAbs:
-			case FuId.MathMaxInt:
-			case FuId.MathMaxDouble:
-			case FuId.MathMinInt:
-			case FuId.MathMinDouble:
+			case FuId.MathMax:
+			case FuId.MathMin:
 				if (obj != null) {
 					if (IsReferenceTo(obj, FuId.BasePtr))
 						Write("super");
@@ -20469,7 +20466,7 @@ namespace Fusion
 				Write("((x, y) => x ");
 				WriteChar(op);
 				Write(" y ? x : y)");
-				WriteCoercedArgsInParentheses(method, args);
+				WriteInParentheses(args);
 			}
 			else
 				WriteCall(name, args[0], args[1]);
@@ -20497,8 +20494,6 @@ namespace Fusion
 			case FuId.StringWriterToString:
 			case FuId.MathMethod:
 			case FuId.MathLog2:
-			case FuId.MathMaxDouble:
-			case FuId.MathMinDouble:
 			case FuId.MathRound:
 				if (obj == null)
 					WriteLocalName(method, FuPriority.Primary);
@@ -20848,9 +20843,9 @@ namespace Fusion
 				WriteCall("Math.ceil", args[0]);
 				break;
 			case FuId.MathClamp:
-				if (method.Type.Id == FuId.IntType && HasLong(args)) {
+				if (HasLong(args)) {
 					Write("((x, min, max) => x < min ? min : x > max ? max : x)");
-					WriteCoercedArgsInParentheses(method, args);
+					WriteInParentheses(args);
 				}
 				else {
 					Write("Math.min(Math.max(");
@@ -20881,10 +20876,10 @@ namespace Fusion
 				if (parent > FuPriority.Equality)
 					WriteChar(')');
 				break;
-			case FuId.MathMaxInt:
+			case FuId.MathMax:
 				WriteMathMaxMin(method, "Math.max", '>', args);
 				break;
-			case FuId.MathMinInt:
+			case FuId.MathMin:
 				WriteMathMaxMin(method, "Math.min", '<', args);
 				break;
 			case FuId.MathTruncate:
@@ -22851,10 +22846,8 @@ namespace Fusion
 				WriteInParentheses(args);
 				break;
 			case FuId.MathAbs:
-			case FuId.MathMaxInt:
-			case FuId.MathMaxDouble:
-			case FuId.MathMinInt:
-			case FuId.MathMinDouble:
+			case FuId.MathMax:
+			case FuId.MathMin:
 				WriteCamelCase(method.Name);
 				WriteInParentheses(args);
 				break;
@@ -25065,12 +25058,10 @@ namespace Fusion
 				Include("math");
 				WriteCall("math.isinf", args[0]);
 				break;
-			case FuId.MathMaxInt:
-			case FuId.MathMaxDouble:
+			case FuId.MathMax:
 				WriteCall("max", args[0], args[1]);
 				break;
-			case FuId.MathMinInt:
-			case FuId.MathMinDouble:
+			case FuId.MathMin:
 				WriteCall("min", args[0], args[1]);
 				break;
 			case FuId.MathRound:

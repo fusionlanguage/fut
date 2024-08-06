@@ -247,8 +247,6 @@ public class GenCl : GenC
 		case FuId.MathIsFinite:
 		case FuId.MathIsNaN:
 		case FuId.MathLog2:
-		case FuId.MathMaxInt:
-		case FuId.MathMinInt:
 		case FuId.MathRound:
 			WriteLowercase(method.Name);
 			WriteInParentheses(args);
@@ -267,11 +265,15 @@ public class GenCl : GenC
 		case FuId.MathIsInfinity:
 			WriteCall("isinf", args[0]);
 			break;
-		case FuId.MathMaxDouble:
-			WriteCall("fmax", args[0], args[1]);
+		case FuId.MathMax:
+			if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType)
+				WriteChar('f');
+			WriteCall("max", args[0], args[1]);
 			break;
-		case FuId.MathMinDouble:
-			WriteCall("fmin", args[0], args[1]);
+		case FuId.MathMin:
+			if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType)
+				WriteChar('f');
+			WriteCall("min", args[0], args[1]);
 			break;
 		case FuId.MathTruncate:
 			WriteCall("trunc", args[0]);

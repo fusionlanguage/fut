@@ -1303,158 +1303,157 @@ export const FuId = {
 	DOUBLE_TYPE : 14,
 	FLOAT_INT_TYPE : 15,
 	FLOATING_TYPE : 16,
-	BOOL_TYPE : 17,
-	STRING_CLASS : 18,
-	STRING_PTR_TYPE : 19,
-	STRING_STORAGE_TYPE : 20,
-	MAIN_ARGS_TYPE : 21,
-	ARRAY_PTR_CLASS : 22,
-	ARRAY_STORAGE_CLASS : 23,
-	EXCEPTION_CLASS : 24,
-	LIST_CLASS : 25,
-	QUEUE_CLASS : 26,
-	STACK_CLASS : 27,
-	HASH_SET_CLASS : 28,
-	SORTED_SET_CLASS : 29,
-	DICTIONARY_CLASS : 30,
-	SORTED_DICTIONARY_CLASS : 31,
-	ORDERED_DICTIONARY_CLASS : 32,
-	TEXT_WRITER_CLASS : 33,
-	STRING_WRITER_CLASS : 34,
-	REGEX_OPTIONS_ENUM : 35,
-	REGEX_CLASS : 36,
-	MATCH_CLASS : 37,
-	JSON_ELEMENT_CLASS : 38,
-	LOCK_CLASS : 39,
-	STRING_LENGTH : 40,
-	ARRAY_LENGTH : 41,
-	CONSOLE_ERROR : 42,
-	MAIN : 43,
-	CLASS_TO_STRING : 44,
-	MATCH_START : 45,
-	MATCH_END : 46,
-	MATCH_LENGTH : 47,
-	MATCH_VALUE : 48,
-	MATH_NA_N : 49,
-	MATH_NEGATIVE_INFINITY : 50,
-	MATH_POSITIVE_INFINITY : 51,
-	ENUM_FROM_INT : 52,
-	ENUM_HAS_FLAG : 53,
-	INT_TRY_PARSE : 54,
-	LONG_TRY_PARSE : 55,
-	DOUBLE_TRY_PARSE : 56,
-	STRING_CONTAINS : 57,
-	STRING_ENDS_WITH : 58,
-	STRING_INDEX_OF : 59,
-	STRING_LAST_INDEX_OF : 60,
-	STRING_REPLACE : 61,
-	STRING_STARTS_WITH : 62,
-	STRING_SUBSTRING : 63,
-	STRING_TO_LOWER : 64,
-	STRING_TO_UPPER : 65,
-	ARRAY_BINARY_SEARCH_ALL : 66,
-	ARRAY_BINARY_SEARCH_PART : 67,
-	ARRAY_CONTAINS : 68,
-	ARRAY_COPY_TO : 69,
-	ARRAY_FILL_ALL : 70,
-	ARRAY_FILL_PART : 71,
-	ARRAY_SORT_ALL : 72,
-	ARRAY_SORT_PART : 73,
-	LIST_ADD : 74,
-	LIST_ADD_RANGE : 75,
-	LIST_ALL : 76,
-	LIST_ANY : 77,
-	LIST_CLEAR : 78,
-	LIST_CONTAINS : 79,
-	LIST_COPY_TO : 80,
-	LIST_COUNT : 81,
-	LIST_INDEX_OF : 82,
-	LIST_INSERT : 83,
-	LIST_LAST : 84,
-	LIST_REMOVE_AT : 85,
-	LIST_REMOVE_RANGE : 86,
-	LIST_SORT_ALL : 87,
-	LIST_SORT_PART : 88,
-	QUEUE_CLEAR : 89,
-	QUEUE_COUNT : 90,
-	QUEUE_DEQUEUE : 91,
-	QUEUE_ENQUEUE : 92,
-	QUEUE_PEEK : 93,
-	STACK_CLEAR : 94,
-	STACK_COUNT : 95,
-	STACK_PEEK : 96,
-	STACK_PUSH : 97,
-	STACK_POP : 98,
-	HASH_SET_ADD : 99,
-	HASH_SET_CLEAR : 100,
-	HASH_SET_CONTAINS : 101,
-	HASH_SET_COUNT : 102,
-	HASH_SET_REMOVE : 103,
-	SORTED_SET_ADD : 104,
-	SORTED_SET_CLEAR : 105,
-	SORTED_SET_CONTAINS : 106,
-	SORTED_SET_COUNT : 107,
-	SORTED_SET_REMOVE : 108,
-	DICTIONARY_ADD : 109,
-	DICTIONARY_CLEAR : 110,
-	DICTIONARY_CONTAINS_KEY : 111,
-	DICTIONARY_COUNT : 112,
-	DICTIONARY_REMOVE : 113,
-	SORTED_DICTIONARY_CLEAR : 114,
-	SORTED_DICTIONARY_CONTAINS_KEY : 115,
-	SORTED_DICTIONARY_COUNT : 116,
-	SORTED_DICTIONARY_REMOVE : 117,
-	ORDERED_DICTIONARY_CLEAR : 118,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 119,
-	ORDERED_DICTIONARY_COUNT : 120,
-	ORDERED_DICTIONARY_REMOVE : 121,
-	TEXT_WRITER_WRITE : 122,
-	TEXT_WRITER_WRITE_CHAR : 123,
-	TEXT_WRITER_WRITE_CODE_POINT : 124,
-	TEXT_WRITER_WRITE_LINE : 125,
-	CONSOLE_WRITE : 126,
-	CONSOLE_WRITE_LINE : 127,
-	STRING_WRITER_CLEAR : 128,
-	STRING_WRITER_TO_STRING : 129,
-	CONVERT_TO_BASE64_STRING : 130,
-	U_T_F8_GET_BYTE_COUNT : 131,
-	U_T_F8_GET_BYTES : 132,
-	U_T_F8_GET_STRING : 133,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 134,
-	REGEX_COMPILE : 135,
-	REGEX_ESCAPE : 136,
-	REGEX_IS_MATCH_STR : 137,
-	REGEX_IS_MATCH_REGEX : 138,
-	MATCH_FIND_STR : 139,
-	MATCH_FIND_REGEX : 140,
-	MATCH_GET_CAPTURE : 141,
-	JSON_ELEMENT_PARSE : 142,
-	JSON_ELEMENT_IS_OBJECT : 143,
-	JSON_ELEMENT_IS_ARRAY : 144,
-	JSON_ELEMENT_IS_STRING : 145,
-	JSON_ELEMENT_IS_NUMBER : 146,
-	JSON_ELEMENT_IS_BOOLEAN : 147,
-	JSON_ELEMENT_IS_NULL : 148,
-	JSON_ELEMENT_GET_OBJECT : 149,
-	JSON_ELEMENT_GET_ARRAY : 150,
-	JSON_ELEMENT_GET_STRING : 151,
-	JSON_ELEMENT_GET_DOUBLE : 152,
-	JSON_ELEMENT_GET_BOOLEAN : 153,
-	MATH_METHOD : 154,
-	MATH_ABS : 155,
-	MATH_CEILING : 156,
-	MATH_CLAMP : 157,
-	MATH_FUSED_MULTIPLY_ADD : 158,
-	MATH_IS_FINITE : 159,
-	MATH_IS_INFINITY : 160,
-	MATH_IS_NA_N : 161,
-	MATH_LOG2 : 162,
-	MATH_MAX_INT : 163,
-	MATH_MAX_DOUBLE : 164,
-	MATH_MIN_INT : 165,
-	MATH_MIN_DOUBLE : 166,
-	MATH_ROUND : 167,
-	MATH_TRUNCATE : 168
+	NUMERIC_TYPE : 17,
+	BOOL_TYPE : 18,
+	STRING_CLASS : 19,
+	STRING_PTR_TYPE : 20,
+	STRING_STORAGE_TYPE : 21,
+	MAIN_ARGS_TYPE : 22,
+	ARRAY_PTR_CLASS : 23,
+	ARRAY_STORAGE_CLASS : 24,
+	EXCEPTION_CLASS : 25,
+	LIST_CLASS : 26,
+	QUEUE_CLASS : 27,
+	STACK_CLASS : 28,
+	HASH_SET_CLASS : 29,
+	SORTED_SET_CLASS : 30,
+	DICTIONARY_CLASS : 31,
+	SORTED_DICTIONARY_CLASS : 32,
+	ORDERED_DICTIONARY_CLASS : 33,
+	TEXT_WRITER_CLASS : 34,
+	STRING_WRITER_CLASS : 35,
+	REGEX_OPTIONS_ENUM : 36,
+	REGEX_CLASS : 37,
+	MATCH_CLASS : 38,
+	JSON_ELEMENT_CLASS : 39,
+	LOCK_CLASS : 40,
+	STRING_LENGTH : 41,
+	ARRAY_LENGTH : 42,
+	CONSOLE_ERROR : 43,
+	MAIN : 44,
+	CLASS_TO_STRING : 45,
+	MATCH_START : 46,
+	MATCH_END : 47,
+	MATCH_LENGTH : 48,
+	MATCH_VALUE : 49,
+	MATH_NA_N : 50,
+	MATH_NEGATIVE_INFINITY : 51,
+	MATH_POSITIVE_INFINITY : 52,
+	ENUM_FROM_INT : 53,
+	ENUM_HAS_FLAG : 54,
+	INT_TRY_PARSE : 55,
+	LONG_TRY_PARSE : 56,
+	DOUBLE_TRY_PARSE : 57,
+	STRING_CONTAINS : 58,
+	STRING_ENDS_WITH : 59,
+	STRING_INDEX_OF : 60,
+	STRING_LAST_INDEX_OF : 61,
+	STRING_REPLACE : 62,
+	STRING_STARTS_WITH : 63,
+	STRING_SUBSTRING : 64,
+	STRING_TO_LOWER : 65,
+	STRING_TO_UPPER : 66,
+	ARRAY_BINARY_SEARCH_ALL : 67,
+	ARRAY_BINARY_SEARCH_PART : 68,
+	ARRAY_CONTAINS : 69,
+	ARRAY_COPY_TO : 70,
+	ARRAY_FILL_ALL : 71,
+	ARRAY_FILL_PART : 72,
+	ARRAY_SORT_ALL : 73,
+	ARRAY_SORT_PART : 74,
+	LIST_ADD : 75,
+	LIST_ADD_RANGE : 76,
+	LIST_ALL : 77,
+	LIST_ANY : 78,
+	LIST_CLEAR : 79,
+	LIST_CONTAINS : 80,
+	LIST_COPY_TO : 81,
+	LIST_COUNT : 82,
+	LIST_INDEX_OF : 83,
+	LIST_INSERT : 84,
+	LIST_LAST : 85,
+	LIST_REMOVE_AT : 86,
+	LIST_REMOVE_RANGE : 87,
+	LIST_SORT_ALL : 88,
+	LIST_SORT_PART : 89,
+	QUEUE_CLEAR : 90,
+	QUEUE_COUNT : 91,
+	QUEUE_DEQUEUE : 92,
+	QUEUE_ENQUEUE : 93,
+	QUEUE_PEEK : 94,
+	STACK_CLEAR : 95,
+	STACK_COUNT : 96,
+	STACK_PEEK : 97,
+	STACK_PUSH : 98,
+	STACK_POP : 99,
+	HASH_SET_ADD : 100,
+	HASH_SET_CLEAR : 101,
+	HASH_SET_CONTAINS : 102,
+	HASH_SET_COUNT : 103,
+	HASH_SET_REMOVE : 104,
+	SORTED_SET_ADD : 105,
+	SORTED_SET_CLEAR : 106,
+	SORTED_SET_CONTAINS : 107,
+	SORTED_SET_COUNT : 108,
+	SORTED_SET_REMOVE : 109,
+	DICTIONARY_ADD : 110,
+	DICTIONARY_CLEAR : 111,
+	DICTIONARY_CONTAINS_KEY : 112,
+	DICTIONARY_COUNT : 113,
+	DICTIONARY_REMOVE : 114,
+	SORTED_DICTIONARY_CLEAR : 115,
+	SORTED_DICTIONARY_CONTAINS_KEY : 116,
+	SORTED_DICTIONARY_COUNT : 117,
+	SORTED_DICTIONARY_REMOVE : 118,
+	ORDERED_DICTIONARY_CLEAR : 119,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 120,
+	ORDERED_DICTIONARY_COUNT : 121,
+	ORDERED_DICTIONARY_REMOVE : 122,
+	TEXT_WRITER_WRITE : 123,
+	TEXT_WRITER_WRITE_CHAR : 124,
+	TEXT_WRITER_WRITE_CODE_POINT : 125,
+	TEXT_WRITER_WRITE_LINE : 126,
+	CONSOLE_WRITE : 127,
+	CONSOLE_WRITE_LINE : 128,
+	STRING_WRITER_CLEAR : 129,
+	STRING_WRITER_TO_STRING : 130,
+	CONVERT_TO_BASE64_STRING : 131,
+	U_T_F8_GET_BYTE_COUNT : 132,
+	U_T_F8_GET_BYTES : 133,
+	U_T_F8_GET_STRING : 134,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 135,
+	REGEX_COMPILE : 136,
+	REGEX_ESCAPE : 137,
+	REGEX_IS_MATCH_STR : 138,
+	REGEX_IS_MATCH_REGEX : 139,
+	MATCH_FIND_STR : 140,
+	MATCH_FIND_REGEX : 141,
+	MATCH_GET_CAPTURE : 142,
+	JSON_ELEMENT_PARSE : 143,
+	JSON_ELEMENT_IS_OBJECT : 144,
+	JSON_ELEMENT_IS_ARRAY : 145,
+	JSON_ELEMENT_IS_STRING : 146,
+	JSON_ELEMENT_IS_NUMBER : 147,
+	JSON_ELEMENT_IS_BOOLEAN : 148,
+	JSON_ELEMENT_IS_NULL : 149,
+	JSON_ELEMENT_GET_OBJECT : 150,
+	JSON_ELEMENT_GET_ARRAY : 151,
+	JSON_ELEMENT_GET_STRING : 152,
+	JSON_ELEMENT_GET_DOUBLE : 153,
+	JSON_ELEMENT_GET_BOOLEAN : 154,
+	MATH_METHOD : 155,
+	MATH_ABS : 156,
+	MATH_CEILING : 157,
+	MATH_CLAMP : 158,
+	MATH_FUSED_MULTIPLY_ADD : 159,
+	MATH_IS_FINITE : 160,
+	MATH_IS_INFINITY : 161,
+	MATH_IS_NA_N : 162,
+	MATH_LOG2 : 163,
+	MATH_MAX : 164,
+	MATH_MIN : 165,
+	MATH_ROUND : 166,
+	MATH_TRUNCATE : 167
 }
 
 export class FuDocInline
@@ -3597,17 +3596,18 @@ export class FuSystem extends FuScope
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.doubleType, FuId.JSON_ELEMENT_GET_DOUBLE, "GetDouble", false));
 		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_GET_BOOLEAN, "GetBoolean", false));
 		this.add(jsonElementClass);
-		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
+		let numericType = Object.assign(new FuNumericType(), { id: FuId.NUMERIC_TYPE, name: "numeric" });
 		let floatingType = Object.assign(new FuFloatingType(), { id: FuId.FLOATING_TYPE, name: "float" });
+		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
 		let mathClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Math");
-		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_ABS, "Abs", false, FuVar.new(this.longType, "a")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.floatType, FuId.MATH_ABS, "Abs", false, FuVar.new(this.doubleType, "a"))));
+		mathClass.addStaticMethod(numericType, FuId.MATH_ABS, "Abs", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Acos", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Asin", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Atan", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Atan2", FuVar.new(this.doubleType, "y"), FuVar.new(this.doubleType, "x"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Cbrt", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatIntType, FuId.MATH_CEILING, "Ceiling", FuVar.new(this.doubleType, "a"));
-		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_CLAMP, "Clamp", false, FuVar.new(this.longType, "value"), FuVar.new(this.longType, "min"), FuVar.new(this.longType, "max")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.floatType, FuId.MATH_CLAMP, "Clamp", false, FuVar.new(this.doubleType, "value"), FuVar.new(this.doubleType, "min"), FuVar.new(this.doubleType, "max"))));
+		mathClass.addStaticMethod(numericType, FuId.MATH_CLAMP, "Clamp", FuVar.new(this.doubleType, "value"), FuVar.new(this.doubleType, "min"), FuVar.new(this.doubleType, "max"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Cos", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Cosh", FuVar.new(this.doubleType, "a"));
 		mathClass.add(this.#newConstDouble("E", 2.718281828459045));
@@ -3620,8 +3620,8 @@ export class FuSystem extends FuScope
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Log", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_LOG2, "Log2", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Log10", FuVar.new(this.doubleType, "a"));
-		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_MAX_INT, "Max", false, FuVar.new(this.longType, "a"), FuVar.new(this.longType, "b")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.floatType, FuId.MATH_MAX_DOUBLE, "Max", false, FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"))));
-		mathClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.intType, FuId.MATH_MIN_INT, "Min", false, FuVar.new(this.longType, "a"), FuVar.new(this.longType, "b")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, this.floatType, FuId.MATH_MIN_DOUBLE, "Min", false, FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"))));
+		mathClass.addStaticMethod(numericType, FuId.MATH_MAX, "Max", FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"));
+		mathClass.addStaticMethod(numericType, FuId.MATH_MIN, "Min", FuVar.new(this.doubleType, "a"), FuVar.new(this.doubleType, "b"));
 		mathClass.add(FuStaticProperty.new(this.floatType, FuId.MATH_NA_N, "NaN"));
 		mathClass.add(FuStaticProperty.new(this.floatType, FuId.MATH_NEGATIVE_INFINITY, "NegativeInfinity"));
 		mathClass.add(this.#newConstDouble("PI", 3.141592653589793));
@@ -6356,6 +6356,9 @@ export class FuSema
 			let type = method.type;
 			if (type.id == FuId.FLOATING_TYPE)
 				type = arguments_.some(arg => arg.type.id == FuId.DOUBLE_TYPE) ? this.#host.program.system.doubleType : this.#host.program.system.floatType;
+			else if (type.id == FuId.NUMERIC_TYPE) {
+				type = arguments_.some(arg => arg.type.id == FuId.DOUBLE_TYPE) ? this.#host.program.system.doubleType : arguments_.some(arg => arg.type.id == FuId.FLOAT_TYPE) ? this.#host.program.system.floatType : arguments_.some(arg => arg.type.id == FuId.LONG_TYPE) ? this.#host.program.system.longType : this.#host.program.system.intType;
+			}
 			else {
 				let generic;
 				if (symbol.left != null && (generic = symbol.left.type) instanceof FuClassType)
@@ -12588,10 +12591,10 @@ export class GenC extends GenCCpp
 			this.includeMath();
 			this.writeCall("isnan", args[0]);
 			break;
-		case FuId.MATH_MAX_DOUBLE:
+		case FuId.MATH_MAX:
 			this.#writeMathFloating("fmax", args);
 			break;
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MIN:
 			this.#writeMathFloating("fmin", args);
 			break;
 		case FuId.MATH_ROUND:
@@ -14217,8 +14220,6 @@ export class GenCl extends GenC
 		case FuId.MATH_IS_FINITE:
 		case FuId.MATH_IS_NA_N:
 		case FuId.MATH_LOG2:
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MIN_INT:
 		case FuId.MATH_ROUND:
 			this.writeLowercase(method.name);
 			this.writeInParentheses(args);
@@ -14237,11 +14238,15 @@ export class GenCl extends GenC
 		case FuId.MATH_IS_INFINITY:
 			this.writeCall("isinf", args[0]);
 			break;
-		case FuId.MATH_MAX_DOUBLE:
-			this.writeCall("fmax", args[0], args[1]);
+		case FuId.MATH_MAX:
+			if (args[0].type instanceof FuFloatingType || args[1].type instanceof FuFloatingType)
+				this.writeChar(102);
+			this.writeCall("max", args[0], args[1]);
 			break;
-		case FuId.MATH_MIN_DOUBLE:
-			this.writeCall("fmin", args[0], args[1]);
+		case FuId.MATH_MIN:
+			if (args[0].type instanceof FuFloatingType || args[1].type instanceof FuFloatingType)
+				this.writeChar(102);
+			this.writeCall("min", args[0], args[1]);
 			break;
 		case FuId.MATH_TRUNCATE:
 			this.writeCall("trunc", args[0]);
@@ -15541,13 +15546,11 @@ export class GenCpp extends GenCCpp
 			this.includeMath();
 			this.writeCall("std::isinf", args[0]);
 			break;
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MAX_DOUBLE:
+		case FuId.MATH_MAX:
 			this.include("algorithm");
 			this.writeCall("(std::max)", args[0], args[1]);
 			break;
-		case FuId.MATH_MIN_INT:
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MIN:
 			this.include("algorithm");
 			this.writeCall("(std::min)", args[0], args[1]);
 			break;
@@ -17146,10 +17149,8 @@ export class GenCs extends GenTyped
 			break;
 		case FuId.MATH_ABS:
 		case FuId.MATH_CLAMP:
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MAX_DOUBLE:
-		case FuId.MATH_MIN_INT:
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MAX:
+		case FuId.MATH_MIN:
 			this.include("System");
 			this.write("Math.");
 			this.write(method.name);
@@ -18632,10 +18633,8 @@ export class GenD extends GenCCppD
 			this.writeCall("ceil", args[0]);
 			break;
 		case FuId.MATH_CLAMP:
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MAX_DOUBLE:
-		case FuId.MATH_MIN_INT:
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MAX:
+		case FuId.MATH_MIN:
 			this.include("std.algorithm");
 			this.writeLowercase(method.name);
 			this.writeInParentheses(args);
@@ -19712,10 +19711,8 @@ export class GenJava extends GenTyped
 		case FuId.STRING_WRITER_TO_STRING:
 		case FuId.MATH_METHOD:
 		case FuId.MATH_ABS:
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MAX_DOUBLE:
-		case FuId.MATH_MIN_INT:
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MAX:
+		case FuId.MATH_MIN:
 			if (obj != null) {
 				if (GenJava.isReferenceTo(obj, FuId.BASE_PTR))
 					this.write("super");
@@ -21083,7 +21080,7 @@ export class GenJsNoModule extends GenBase
 			this.write("((x, y) => x ");
 			this.writeChar(op);
 			this.write(" y ? x : y)");
-			this.writeCoercedArgsInParentheses(method, args);
+			this.writeInParentheses(args);
 		}
 		else
 			this.writeCall(name, args[0], args[1]);
@@ -21111,8 +21108,6 @@ export class GenJsNoModule extends GenBase
 		case FuId.STRING_WRITER_TO_STRING:
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:
-		case FuId.MATH_MAX_DOUBLE:
-		case FuId.MATH_MIN_DOUBLE:
 		case FuId.MATH_ROUND:
 			if (obj == null)
 				this.writeLocalName(method, FuPriority.PRIMARY);
@@ -21463,9 +21458,9 @@ export class GenJsNoModule extends GenBase
 			this.writeCall("Math.ceil", args[0]);
 			break;
 		case FuId.MATH_CLAMP:
-			if (method.type.id == FuId.INT_TYPE && GenJsNoModule.#hasLong(args)) {
+			if (GenJsNoModule.#hasLong(args)) {
 				this.write("((x, min, max) => x < min ? min : x > max ? max : x)");
-				this.writeCoercedArgsInParentheses(method, args);
+				this.writeInParentheses(args);
 			}
 			else {
 				this.write("Math.min(Math.max(");
@@ -21496,10 +21491,10 @@ export class GenJsNoModule extends GenBase
 			if (parent > FuPriority.EQUALITY)
 				this.writeChar(41);
 			break;
-		case FuId.MATH_MAX_INT:
+		case FuId.MATH_MAX:
 			this.#writeMathMaxMin(method, "Math.max", 62, args);
 			break;
-		case FuId.MATH_MIN_INT:
+		case FuId.MATH_MIN:
 			this.#writeMathMaxMin(method, "Math.min", 60, args);
 			break;
 		case FuId.MATH_TRUNCATE:
@@ -23474,10 +23469,8 @@ export class GenSwift extends GenPySwift
 			this.writeInParentheses(args);
 			break;
 		case FuId.MATH_ABS:
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MAX_DOUBLE:
-		case FuId.MATH_MIN_INT:
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MAX:
+		case FuId.MATH_MIN:
 			this.writeCamelCase(method.name);
 			this.writeInParentheses(args);
 			break;
@@ -25712,12 +25705,10 @@ export class GenPy extends GenPySwift
 			this.include("math");
 			this.writeCall("math.isinf", args[0]);
 			break;
-		case FuId.MATH_MAX_INT:
-		case FuId.MATH_MAX_DOUBLE:
+		case FuId.MATH_MAX:
 			this.writeCall("max", args[0], args[1]);
 			break;
-		case FuId.MATH_MIN_INT:
-		case FuId.MATH_MIN_DOUBLE:
+		case FuId.MATH_MIN:
 			this.writeCall("min", args[0], args[1]);
 			break;
 		case FuId.MATH_ROUND:

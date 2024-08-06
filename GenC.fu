@@ -2467,10 +2467,10 @@ public class GenC : GenCCpp
 			IncludeMath();
 			WriteCall("isnan", args[0]);
 			break;
-		case FuId.MathMaxDouble:
+		case FuId.MathMax:
 			WriteMathFloating("fmax", args);
 			break;
-		case FuId.MathMinDouble:
+		case FuId.MathMin:
 			WriteMathFloating("fmin", args);
 			break;
 		case FuId.MathRound:

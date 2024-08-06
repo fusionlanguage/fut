@@ -1173,10 +1173,8 @@ public class GenD : GenCCppD
 			WriteCall("ceil", args[0]);
 			break;
 		case FuId.MathClamp:
-		case FuId.MathMaxInt:
-		case FuId.MathMaxDouble:
-		case FuId.MathMinInt:
-		case FuId.MathMinDouble:
+		case FuId.MathMax:
+		case FuId.MathMin:
 			Include("std.algorithm");
 			WriteLowercase(method.Name);
 			WriteInParentheses(args);

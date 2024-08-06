@@ -1397,6 +1397,12 @@ public class FuSema
 			FuType# type = method.Type;
 			if (type.Id == FuId.FloatingType)
 				type = arguments.Any(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : this.Host.Program.System.FloatType;
+			else if (type.Id == FuId.NumericType) {
+				type = arguments.Any(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType
+					: arguments.Any(arg => arg.Type.Id == FuId.FloatType) ? this.Host.Program.System.FloatType
+					: arguments.Any(arg => arg.Type.Id == FuId.LongType) ? this.Host.Program.System.LongType
+					: this.Host.Program.System.IntType;
+			}
 			else if (symbol.Left != null && symbol.Left.Type is FuClassType generic)
 				type = EvalType(generic, type);
 			expr.Type = type;

@@ -520,7 +520,7 @@ public class GenJsNoModule : GenBase
 			Write("((x, y) => x ");
 			WriteChar(op);
 			Write(" y ? x : y)");
-			WriteCoercedArgsInParentheses(method, args);
+			WriteInParentheses(args);
 		}
 		else
 			WriteCall(name, args[0], args[1]);
@@ -548,8 +548,6 @@ public class GenJsNoModule : GenBase
 		case FuId.StringWriterToString:
 		case FuId.MathMethod:
 		case FuId.MathLog2:
-		case FuId.MathMaxDouble:
-		case FuId.MathMinDouble:
 		case FuId.MathRound:
 			if (obj == null)
 				WriteLocalName(method, FuPriority.Primary);
@@ -900,9 +898,9 @@ public class GenJsNoModule : GenBase
 			WriteCall("Math.ceil", args[0]);
 			break;
 		case FuId.MathClamp:
-			if (method.Type.Id == FuId.IntType && HasLong(args)) {
+			if (HasLong(args)) {
 				Write("((x, min, max) => x < min ? min : x > max ? max : x)");
-				WriteCoercedArgsInParentheses(method, args);
+				WriteInParentheses(args);
 			}
 			else {
 				Write("Math.min(Math.max(");
@@ -933,10 +931,10 @@ public class GenJsNoModule : GenBase
 			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
-		case FuId.MathMaxInt:
+		case FuId.MathMax:
 			WriteMathMaxMin(method, "Math.max", '>', args);
 			break;
-		case FuId.MathMinInt:
+		case FuId.MathMin:
 			WriteMathMaxMin(method, "Math.min", '<', args);
 			break;
 		case FuId.MathTruncate:

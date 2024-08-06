@@ -628,10 +628,8 @@ public class GenJava : GenTyped
 		case FuId.StringWriterToString:
 		case FuId.MathMethod:
 		case FuId.MathAbs:
-		case FuId.MathMaxInt:
-		case FuId.MathMaxDouble:
-		case FuId.MathMinInt:
-		case FuId.MathMinDouble:
+		case FuId.MathMax:
+		case FuId.MathMin:
 			if (obj != null) {
 				if (IsReferenceTo(obj, FuId.BasePtr))
 					Write("super");
