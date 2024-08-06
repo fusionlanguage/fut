@@ -4,6 +4,9 @@ public static class Test
 	{
 		double y = 0; //FAIL: cl if no double support
 		double x = 1;
-		return Math.Atan2(y, x) == 0;
+		float f = 0;
+		float g = 1;
+		f = Math.Atan2(f, g);
+		return Math.Atan2(y, x) == 0 && f == 0;
 	}
 }

@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 4; //FAIL: cl if no double support
-		return Math.Sqrt(a) == 2;
+		float f = 9;
+		f = Math.Sqrt(f);
+		return Math.Sqrt(a) == 2 && f == 3;
 	}
 }

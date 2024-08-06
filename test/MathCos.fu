@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 0; //FAIL: cl if no double support
-		return Math.Cos(a) == 1;
+		float f = 0;
+		f = Math.Cos(f);
+		return Math.Cos(a) == 1 && f == 1;
 	}
 }

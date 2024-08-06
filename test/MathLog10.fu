@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 100; //FAIL: cl if no double support
-		return Math.Log10(a) == 2;
+		float f = 100;
+		f = Math.Log10(f);
+		return Math.Log10(a) == 2 && f == 2;
 	}
 }

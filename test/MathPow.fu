@@ -4,6 +4,9 @@ public static class Test
 	{
 		double x = 2; //FAIL: cl if no double support
 		double y = 3;
-		return Math.Pow(x, y) == 8;
+		float f = 2;
+		float g = 3;
+		f = Math.Pow(f, g);
+		return Math.Pow(x, y) == 8 && f == 8;
 	}
 }

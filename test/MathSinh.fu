@@ -3,6 +3,8 @@ public static class Test
 	public static bool Run()
 	{
 		double a = 0; //FAIL: cl if no double support
-		return Math.Sinh(a) == 0;
+		float f = 0;
+		f = Math.Sinh(f);
+		return Math.Sinh(a) == 0 && f == 0;
 	}
 }
