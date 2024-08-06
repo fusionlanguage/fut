@@ -11627,6 +11627,23 @@ namespace Fusion
 			WriteInParentheses(args);
 		}
 
+		bool WriteMathClampMaxMin(FuMethod method, List<FuExpr> args)
+		{
+			if (args.Exists(arg => arg.Type is FuFloatingType))
+				return true;
+			if (args.Exists(arg => arg.Type.Id == FuId.LongType)) {
+				this.LongFunctions.Add(method.Id);
+				Write("FuLong_");
+			}
+			else {
+				this.IntFunctions.Add(method.Id);
+				Write("FuInt_");
+			}
+			Write(method.Name);
+			WriteInParentheses(args);
+			return false;
+		}
+
 		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
@@ -12125,6 +12142,13 @@ namespace Fusion
 			case FuId.MathCeiling:
 				WriteMathFloating("ceil", args);
 				break;
+			case FuId.MathClamp:
+				if (WriteMathClampMaxMin(method, args)) {
+					IncludeMath();
+					Write(args.Exists(arg => arg.Type.Id == FuId.DoubleType) ? "fmin(fmax(" : "fminf(fmaxf(");
+					WriteClampAsMinMax(args);
+				}
+				break;
 			case FuId.MathFusedMultiplyAdd:
 				WriteMathFloating("fma", args);
 				break;
@@ -12142,20 +12166,9 @@ namespace Fusion
 				break;
 			case FuId.MathMax:
 			case FuId.MathMin:
-				if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType) {
+				if (WriteMathClampMaxMin(method, args)) {
 					WriteChar('f');
 					WriteMathFloating(method.Name, args);
-				}
-				else {
-					if (args[0].Type.Id == FuId.LongType || args[1].Type.Id == FuId.LongType) {
-						this.LongFunctions.Add(method.Id);
-						Write("FuLong_");
-					}
-					else {
-						this.IntFunctions.Add(method.Id);
-						Write("FuInt_");
-					}
-					WriteCall(method.Name, args[0], args[1]);
 				}
 				break;
 			case FuId.MathRound:
@@ -13137,6 +13150,23 @@ namespace Fusion
 				WriteIntMaxMin(klassName, "Min", type, '<');
 			if (methods.Contains(FuId.MathMax))
 				WriteIntMaxMin(klassName, "Max", type, '>');
+			if (methods.Contains(FuId.MathClamp)) {
+				WriteNewLine();
+				Write("static ");
+				Write(type);
+				Write(" Fu");
+				Write(klassName);
+				Write("_Clamp(");
+				Write(type);
+				Write(" x, ");
+				Write(type);
+				Write(" minValue, ");
+				Write(type);
+				WriteLine(" maxValue)");
+				OpenBlock();
+				WriteLine("return x < minValue ? minValue : x > maxValue ? maxValue : x;");
+				CloseBlock();
+			}
 		}
 
 		void WriteTryParseLibrary(string signature, string call)

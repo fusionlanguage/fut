@@ -11373,6 +11373,23 @@ void GenC::writeMathFloating(std::string_view function, const std::vector<std::s
 	writeInParentheses(args);
 }
 
+bool GenC::writeMathClampMaxMin(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	if (std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuFloatingType *>(arg->type.get()); }))
+		return true;
+	if (std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::longType; })) {
+		this->longFunctions.insert(method->id);
+		write("FuLong_");
+	}
+	else {
+		this->intFunctions.insert(method->id);
+		write("FuInt_");
+	}
+	write(method->name);
+	writeInParentheses(args);
+	return false;
+}
+
 void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -11891,6 +11908,13 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::mathCeiling:
 		writeMathFloating("ceil", args);
 		break;
+	case FuId::mathClamp:
+		if (writeMathClampMaxMin(method, args)) {
+			includeMath();
+			write(std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? "fmin(fmax(" : "fminf(fmaxf(");
+			writeClampAsMinMax(args);
+		}
+		break;
 	case FuId::mathFusedMultiplyAdd:
 		writeMathFloating("fma", args);
 		break;
@@ -11908,20 +11932,9 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::mathMax:
 	case FuId::mathMin:
-		if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()) || dynamic_cast<const FuFloatingType *>((*args)[1]->type.get())) {
+		if (writeMathClampMaxMin(method, args)) {
 			writeChar('f');
 			writeMathFloating(method->name, args);
-		}
-		else {
-			if ((*args)[0]->type->id == FuId::longType || (*args)[1]->type->id == FuId::longType) {
-				this->longFunctions.insert(method->id);
-				write("FuLong_");
-			}
-			else {
-				this->intFunctions.insert(method->id);
-				write("FuInt_");
-			}
-			writeCall(method->name, (*args)[0].get(), (*args)[1].get());
 		}
 		break;
 	case FuId::mathRound:
@@ -12911,6 +12924,23 @@ void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, co
 		writeIntMaxMin(klassName, "Min", type, '<');
 	if (methods->contains(FuId::mathMax))
 		writeIntMaxMin(klassName, "Max", type, '>');
+	if (methods->contains(FuId::mathClamp)) {
+		writeNewLine();
+		write("static ");
+		write(type);
+		write(" Fu");
+		write(klassName);
+		write("_Clamp(");
+		write(type);
+		write(" x, ");
+		write(type);
+		write(" minValue, ");
+		write(type);
+		writeLine(" maxValue)");
+		openBlock();
+		writeLine("return x < minValue ? minValue : x > maxValue ? maxValue : x;");
+		closeBlock();
+	}
 }
 
 void GenC::writeTryParseLibrary(std::string_view signature, std::string_view call)

@@ -12078,6 +12078,23 @@ export class GenC extends GenCCpp
 		this.writeInParentheses(args);
 	}
 
+	#writeMathClampMaxMin(method, args)
+	{
+		if (args.some(arg => arg.type instanceof FuFloatingType))
+			return true;
+		if (args.some(arg => arg.type.id == FuId.LONG_TYPE)) {
+			this.#longFunctions.add(method.id);
+			this.write("FuLong_");
+		}
+		else {
+			this.#intFunctions.add(method.id);
+			this.write("FuInt_");
+		}
+		this.write(method.name);
+		this.writeInParentheses(args);
+		return false;
+	}
+
 	writeCallExpr(obj, method, args, parent)
 	{
 		switch (method.id) {
@@ -12578,6 +12595,13 @@ export class GenC extends GenCCpp
 		case FuId.MATH_CEILING:
 			this.#writeMathFloating("ceil", args);
 			break;
+		case FuId.MATH_CLAMP:
+			if (this.#writeMathClampMaxMin(method, args)) {
+				this.includeMath();
+				this.write(args.some(arg => arg.type.id == FuId.DOUBLE_TYPE) ? "fmin(fmax(" : "fminf(fmaxf(");
+				this.writeClampAsMinMax(args);
+			}
+			break;
 		case FuId.MATH_FUSED_MULTIPLY_ADD:
 			this.#writeMathFloating("fma", args);
 			break;
@@ -12595,20 +12619,9 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.MATH_MAX:
 		case FuId.MATH_MIN:
-			if (args[0].type instanceof FuFloatingType || args[1].type instanceof FuFloatingType) {
+			if (this.#writeMathClampMaxMin(method, args)) {
 				this.writeChar(102);
 				this.#writeMathFloating(method.name, args);
-			}
-			else {
-				if (args[0].type.id == FuId.LONG_TYPE || args[1].type.id == FuId.LONG_TYPE) {
-					this.#longFunctions.add(method.id);
-					this.write("FuLong_");
-				}
-				else {
-					this.#intFunctions.add(method.id);
-					this.write("FuInt_");
-				}
-				this.writeCall(method.name, args[0], args[1]);
 			}
 			break;
 		case FuId.MATH_ROUND:
@@ -13610,6 +13623,23 @@ export class GenC extends GenCCpp
 			this.#writeIntMaxMin(klassName, "Min", type, 60);
 		if (methods.has(FuId.MATH_MAX))
 			this.#writeIntMaxMin(klassName, "Max", type, 62);
+		if (methods.has(FuId.MATH_CLAMP)) {
+			this.writeNewLine();
+			this.write("static ");
+			this.write(type);
+			this.write(" Fu");
+			this.write(klassName);
+			this.write("_Clamp(");
+			this.write(type);
+			this.write(" x, ");
+			this.write(type);
+			this.write(" minValue, ");
+			this.write(type);
+			this.writeLine(" maxValue)");
+			this.openBlock();
+			this.writeLine("return x < minValue ? minValue : x > maxValue ? maxValue : x;");
+			this.closeBlock();
+		}
 	}
 
 	#writeTryParseLibrary(signature, call)

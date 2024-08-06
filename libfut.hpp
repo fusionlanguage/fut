@@ -2308,6 +2308,7 @@ private:
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
 	void writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
+	bool writeMathClampMaxMin(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent);
 	void writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwitch);
 	void trimVarsToDestruct(int i);
