@@ -1919,6 +1919,7 @@ protected:
 	virtual void writeAnd(const FuBinaryExpr * expr, FuPriority parent);
 	virtual void writeAssignRight(const FuBinaryExpr * expr);
 	virtual void writeAssign(const FuBinaryExpr * expr, FuPriority parent);
+	virtual void writeOpAssignRight(const FuBinaryExpr * expr);
 	void writeIndexing(const FuExpr * collection, const FuExpr * index);
 	virtual void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent);
 	virtual std::string_view getIsOperator() const;
@@ -2686,8 +2687,9 @@ protected:
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary) override;
 	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
-	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
+	void writeOpAssignRight(const FuBinaryExpr * expr) override;
+	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	std::string_view getIsOperator() const override;
 	virtual void writeBoolAndOr(const FuBinaryExpr * expr);
 	void startTemporaryVar(const FuType * type) override;

@@ -8467,6 +8467,11 @@ export class GenBase extends FuVisitor
 			this.writeChar(41);
 	}
 
+	writeOpAssignRight(expr)
+	{
+		expr.right.accept(this, FuPriority.ARGUMENT);
+	}
+
 	writeIndexing(collection, index)
 	{
 		collection.accept(this, FuPriority.PRIMARY);
@@ -8561,7 +8566,7 @@ export class GenBase extends FuVisitor
 			this.writeChar(32);
 			this.write(expr.getOpString());
 			this.writeChar(32);
-			expr.right.accept(this, FuPriority.ARGUMENT);
+			this.writeOpAssignRight(expr);
 			if (parent > FuPriority.ASSIGN)
 				this.writeChar(41);
 			break;
@@ -21506,15 +21511,6 @@ export class GenJsNoModule extends GenBase
 		}
 	}
 
-	writeIndexingExpr(expr, parent)
-	{
-		let dict;
-		if ((dict = expr.left.type) instanceof FuClassType && dict.class.id == FuId.ORDERED_DICTIONARY_CLASS)
-			this.writeMethodCall(expr.left, "get", expr.right);
-		else
-			super.writeIndexingExpr(expr, parent);
-	}
-
 	writeAssign(expr, parent)
 	{
 		let indexing;
@@ -21523,6 +21519,20 @@ export class GenJsNoModule extends GenBase
 			this.writeMethodCall(indexing.left, "set", indexing.right, expr.right);
 		else
 			super.writeAssign(expr, parent);
+	}
+
+	writeOpAssignRight(expr)
+	{
+		this.writeCoerced(expr.left.type, expr.right, FuPriority.ARGUMENT);
+	}
+
+	writeIndexingExpr(expr, parent)
+	{
+		let dict;
+		if ((dict = expr.left.type) instanceof FuClassType && dict.class.id == FuId.ORDERED_DICTIONARY_CLASS)
+			this.writeMethodCall(expr.left, "get", expr.right);
+		else
+			super.writeIndexingExpr(expr, parent);
 	}
 
 	getIsOperator()

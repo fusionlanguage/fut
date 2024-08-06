@@ -4,9 +4,9 @@ public static class Test
 	{
 		int i = Math.Abs(-1000);
 		long l = -1000000000;
-		l *= i; //FAIL: js ts TODO
+		l *= i;
 		float f = -10.5;
-		f = Math.Abs(f); //FAIL: swift TODO
+		f = Math.Abs(f);
 		double d = Math.Abs(-1e200); //FAIL: cl if no double support
 		return i == 1000
 			&& Math.Abs(l) == -l

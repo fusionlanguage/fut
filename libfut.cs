@@ -8083,6 +8083,11 @@ namespace Fusion
 				WriteChar(')');
 		}
 
+		protected virtual void WriteOpAssignRight(FuBinaryExpr expr)
+		{
+			expr.Right.Accept(this, FuPriority.Argument);
+		}
+
 		protected void WriteIndexing(FuExpr collection, FuExpr index)
 		{
 			collection.Accept(this, FuPriority.Primary);
@@ -8174,7 +8179,7 @@ namespace Fusion
 				WriteChar(' ');
 				Write(expr.GetOpString());
 				WriteChar(' ');
-				expr.Right.Accept(this, FuPriority.Argument);
+				WriteOpAssignRight(expr);
 				if (parent > FuPriority.Assign)
 					WriteChar(')');
 				break;
@@ -20891,20 +20896,25 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteIndexingExpr(FuBinaryExpr expr, FuPriority parent)
-		{
-			if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass)
-				WriteMethodCall(expr.Left, "get", expr.Right);
-			else
-				base.WriteIndexingExpr(expr, parent);
-		}
-
 		protected override void WriteAssign(FuBinaryExpr expr, FuPriority parent)
 		{
 			if (expr.Left is FuBinaryExpr indexing && indexing.Op == FuToken.LeftBracket && indexing.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass)
 				WriteMethodCall(indexing.Left, "set", indexing.Right, expr.Right);
 			else
 				base.WriteAssign(expr, parent);
+		}
+
+		protected override void WriteOpAssignRight(FuBinaryExpr expr)
+		{
+			WriteCoerced(expr.Left.Type, expr.Right, FuPriority.Argument);
+		}
+
+		protected override void WriteIndexingExpr(FuBinaryExpr expr, FuPriority parent)
+		{
+			if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass)
+				WriteMethodCall(expr.Left, "get", expr.Right);
+			else
+				base.WriteIndexingExpr(expr, parent);
 		}
 
 		protected override string GetIsOperator() => " instanceof ";

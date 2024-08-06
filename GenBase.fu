@@ -1107,6 +1107,11 @@ public abstract class GenBase : FuVisitor
 			WriteChar(')');
 	}
 
+	protected virtual void WriteOpAssignRight!(FuBinaryExpr expr)
+	{
+		expr.Right.Accept(this, FuPriority.Argument);
+	}
+
 	protected void WriteIndexing!(FuExpr collection, FuExpr index)
 	{
 		collection.Accept(this, FuPriority.Primary);
@@ -1198,7 +1203,7 @@ public abstract class GenBase : FuVisitor
 			WriteChar(' ');
 			Write(expr.GetOpString());
 			WriteChar(' ');
-			expr.Right.Accept(this, FuPriority.Argument);
+			WriteOpAssignRight(expr);
 			if (parent > FuPriority.Assign)
 				WriteChar(')');
 			break;

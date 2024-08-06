@@ -7949,6 +7949,11 @@ void GenBase::writeAssign(const FuBinaryExpr * expr, FuPriority parent)
 		writeChar(')');
 }
 
+void GenBase::writeOpAssignRight(const FuBinaryExpr * expr)
+{
+	expr->right->accept(this, FuPriority::argument);
+}
+
 void GenBase::writeIndexing(const FuExpr * collection, const FuExpr * index)
 {
 	collection->accept(this, FuPriority::primary);
@@ -8043,7 +8048,7 @@ void GenBase::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 		writeChar(' ');
 		write(expr->getOpString());
 		writeChar(' ');
-		expr->right->accept(this, FuPriority::argument);
+		writeOpAssignRight(expr);
 		if (parent > FuPriority::assign)
 			writeChar(')');
 		break;
@@ -20272,15 +20277,6 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 	}
 }
 
-void GenJsNoModule::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
-{
-	const FuClassType * dict;
-	if ((dict = dynamic_cast<const FuClassType *>(expr->left->type.get())) && dict->class_->id == FuId::orderedDictionaryClass)
-		writeMethodCall(expr->left.get(), "get", expr->right.get());
-	else
-		GenBase::writeIndexingExpr(expr, parent);
-}
-
 void GenJsNoModule::writeAssign(const FuBinaryExpr * expr, FuPriority parent)
 {
 	const FuBinaryExpr * indexing;
@@ -20289,6 +20285,20 @@ void GenJsNoModule::writeAssign(const FuBinaryExpr * expr, FuPriority parent)
 		writeMethodCall(indexing->left.get(), "set", indexing->right.get(), expr->right.get());
 	else
 		GenBase::writeAssign(expr, parent);
+}
+
+void GenJsNoModule::writeOpAssignRight(const FuBinaryExpr * expr)
+{
+	writeCoerced(expr->left->type.get(), expr->right.get(), FuPriority::argument);
+}
+
+void GenJsNoModule::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
+{
+	const FuClassType * dict;
+	if ((dict = dynamic_cast<const FuClassType *>(expr->left->type.get())) && dict->class_->id == FuId::orderedDictionaryClass)
+		writeMethodCall(expr->left.get(), "get", expr->right.get());
+	else
+		GenBase::writeIndexingExpr(expr, parent);
 }
 
 std::string_view GenJsNoModule::getIsOperator() const

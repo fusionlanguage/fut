@@ -948,14 +948,6 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
-	protected override void WriteIndexingExpr!(FuBinaryExpr expr, FuPriority parent)
-	{
-		if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass)
-			WriteMethodCall(expr.Left, "get", expr.Right);
-		else
-			base.WriteIndexingExpr(expr, parent);
-	}
-
 	protected override void WriteAssign!(FuBinaryExpr expr, FuPriority parent)
 	{
 		if (expr.Left is FuBinaryExpr indexing
@@ -965,6 +957,19 @@ public class GenJsNoModule : GenBase
 			WriteMethodCall(indexing.Left, "set", indexing.Right, expr.Right);
 		else
 			base.WriteAssign(expr, parent);
+	}
+
+	protected override void WriteOpAssignRight!(FuBinaryExpr expr)
+	{
+		WriteCoerced(expr.Left.Type, expr.Right, FuPriority.Argument);
+	}
+
+	protected override void WriteIndexingExpr!(FuBinaryExpr expr, FuPriority parent)
+	{
+		if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass)
+			WriteMethodCall(expr.Left, "get", expr.Right);
+		else
+			base.WriteIndexingExpr(expr, parent);
 	}
 
 	protected override string GetIsOperator() => " instanceof ";
