@@ -5927,15 +5927,15 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 	if (std::ssize(this->currentPureArguments) == 0) {
 		expr->method = symbol;
 		std::shared_ptr<FuType> type = method->type;
-		if (type->id == FuId::floatingType)
+		const FuClassType * generic;
+		if (symbol->left != nullptr && (generic = dynamic_cast<const FuClassType *>(symbol->left->type.get())))
+			type = evalType(generic, type);
+		else if (std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type == nullptr; })) {
+		}
+		else if (type->id == FuId::floatingType)
 			type = std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? this->host->program->system->doubleType : this->host->program->system->floatType;
 		else if (type->id == FuId::numericType) {
 			type = std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? this->host->program->system->doubleType : std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::floatType; }) ? std::static_pointer_cast<FuType>(this->host->program->system->floatType) : std::static_pointer_cast<FuType>(std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::longType; }) ? this->host->program->system->longType : this->host->program->system->intType);
-		}
-		else {
-			const FuClassType * generic;
-			if (symbol->left != nullptr && (generic = dynamic_cast<const FuClassType *>(symbol->left->type.get())))
-				type = evalType(generic, type);
 		}
 		expr->type = type;
 	}

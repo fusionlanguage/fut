@@ -1,0 +1,8 @@
+public static class Test
+{
+	public static double Foo(bar x) //ERROR: Type 'bar' not found
+	{
+		return Math.Sin(x / 4);
+	}
+}
+

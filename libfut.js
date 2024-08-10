@@ -6354,15 +6354,15 @@ export class FuSema
 		if (Object.keys(this.#currentPureArguments).length == 0) {
 			expr.method = symbol;
 			let type = method.type;
-			if (type.id == FuId.FLOATING_TYPE)
+			let generic;
+			if (symbol.left != null && (generic = symbol.left.type) instanceof FuClassType)
+				type = this.#evalType(generic, type);
+			else if (arguments_.some(arg => arg.type == null)) {
+			}
+			else if (type.id == FuId.FLOATING_TYPE)
 				type = arguments_.some(arg => arg.type.id == FuId.DOUBLE_TYPE) ? this.#host.program.system.doubleType : this.#host.program.system.floatType;
 			else if (type.id == FuId.NUMERIC_TYPE) {
 				type = arguments_.some(arg => arg.type.id == FuId.DOUBLE_TYPE) ? this.#host.program.system.doubleType : arguments_.some(arg => arg.type.id == FuId.FLOAT_TYPE) ? this.#host.program.system.floatType : arguments_.some(arg => arg.type.id == FuId.LONG_TYPE) ? this.#host.program.system.longType : this.#host.program.system.intType;
-			}
-			else {
-				let generic;
-				if (symbol.left != null && (generic = symbol.left.type) instanceof FuClassType)
-					type = this.#evalType(generic, type);
 			}
 			expr.type = type;
 		}

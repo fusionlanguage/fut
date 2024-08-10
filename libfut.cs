@@ -6032,13 +6032,15 @@ namespace Fusion
 			if (this.CurrentPureArguments.Count == 0) {
 				expr.Method = symbol;
 				FuType type = method.Type;
-				if (type.Id == FuId.FloatingType)
+				if (symbol.Left != null && symbol.Left.Type is FuClassType generic)
+					type = EvalType(generic, type);
+				else if (arguments.Exists(arg => arg.Type == null)) {
+				}
+				else if (type.Id == FuId.FloatingType)
 					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : this.Host.Program.System.FloatType;
 				else if (type.Id == FuId.NumericType) {
 					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : arguments.Exists(arg => arg.Type.Id == FuId.FloatType) ? this.Host.Program.System.FloatType : arguments.Exists(arg => arg.Type.Id == FuId.LongType) ? this.Host.Program.System.LongType : this.Host.Program.System.IntType;
 				}
-				else if (symbol.Left != null && symbol.Left.Type is FuClassType generic)
-					type = EvalType(generic, type);
 				expr.Type = type;
 			}
 			return expr;
