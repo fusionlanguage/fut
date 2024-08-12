@@ -39,6 +39,6 @@
     <PackageReference Include="Microsoft.VSSDK.VsixSignTool" Version="17.10.34916.79" />
   </ItemGroup>
   <Target Name="VsixSign" AfterTargets="CreateVsixContainer" Condition="'$(Configuration)' == 'Release'">
-    <Exec Command="$(NuGetPackageRoot)microsoft.vssdk.vsixsigntool\17.10.34916.79\tools\vssdk\vsixsigntool.exe sign /f ..\..\..\pfusik.p7b /csp &quot;Microsoft Base Smart Card Crypto Provider&quot; /k 8331F793FAFBD3874481164B07748100DB290BD $(TargetVsixContainer)" />
+    <Exec Command="$(NuGetPackageRoot)microsoft.vssdk.vsixsigntool\17.10.34916.79\tools\vssdk\vsixsigntool.exe sign /f ..\..\..\pfusik-2024.p7b /csp &quot;Microsoft Base Smart Card Crypto Provider&quot; /k 5807C5CCB8A61E78BBE7AC797A738AA8658E47B $(TargetVsixContainer)" />
   </Target>
 </Project>
