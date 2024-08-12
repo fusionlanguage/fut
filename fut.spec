@@ -1,5 +1,5 @@
 Name: fut
-Version: 3.2.5
+Version: 3.2.6
 Release: 1
 Summary: Fusion Transpiler
 License: GPLv3+
