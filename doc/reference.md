@@ -151,40 +151,61 @@ and static methods:
 
 * `Math.Abs(int a)`
 * `Math.Abs(long a)`
+* `Math.Abs(float a)`
 * `Math.Abs(double a)`
+* `Math.Acos(float a)`
 * `Math.Acos(double a)`
+* `Math.Asin(float a)`
 * `Math.Asin(double a)`
+* `Math.Atan(float a)`
 * `Math.Atan(double a)`
+* `Math.Atan2(float y, float x)`
 * `Math.Atan2(double y, double x)`
+* `Math.Cbrt(float a)`
 * `Math.Cbrt(double a)`
 * `Math.Ceiling(double a)`
 * `Math.Clamp(int value, int min, int max)`
 * `Math.Clamp(long value, long min, long max)`
+* `Math.Clamp(float value, float min, float max)`
 * `Math.Clamp(double value, double min, double max)`
+* `Math.Cos(float a)`
 * `Math.Cos(double a)`
+* `Math.Cosh(float a)`
 * `Math.Cosh(double a)`
+* `Math.Exp(float a)`
 * `Math.Exp(double a)`
 * `Math.Floor(double a)`
+* `Math.FusedMultiplyAdd(float x, float y, float z)`
 * `Math.FusedMultiplyAdd(double x, double y, double z)`
 * `Math.IsFinite(double a)`
 * `Math.IsInfinity(double a)`
 * `Math.IsNaN(double a)`
+* `Math.Log(float a)`
 * `Math.Log(double a)`
+* `Math.Log10(float a)`
 * `Math.Log10(double a)`
+* `Math.Log2(float a)`
 * `Math.Log2(double a)`
 * `Math.Max(int a, int b)`
 * `Math.Max(long a, long b)`
+* `Math.Max(float a, float b)`
 * `Math.Max(double a, double b)`
 * `Math.Min(int a, int b)`
 * `Math.Min(long a, long b)`
+* `Math.Min(float a, float b)`
 * `Math.Min(double a, double b)`
+* `Math.Pow(float x, float y)`
 * `Math.Pow(double x, double y)`
 * `Math.Round(double a)`
+* `Math.Sin(float a)`
 * `Math.Sin(double a)`
+* `Math.Sinh(float a)`
 * `Math.Sinh(double a)`
+* `Math.Sqrt(float a)`
 * `Math.Sqrt(double a)`
+* `Math.Tan(float a)`
 * `Math.Tan(double a)`
-* `Math.Tanh(double a)`
+* `Math.Tanh(float a)`
 * `Math.Truncate(double a)`
 
 Conversion from floating-point type to integer must be explicit,
