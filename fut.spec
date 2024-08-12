@@ -24,6 +24,9 @@ make DESTDIR=%{buildroot} prefix=%{_prefix} install
 %{_bindir}/fut
 
 %changelog
+* Mon Aug 12 2024 Piotr Fusik <piotr@fusion-lang.org>
+- 3.2.6-1
+
 * Thu Jun 27 2024 Piotr Fusik <piotr@fusion-lang.org>
 - 3.2.5-1
 
