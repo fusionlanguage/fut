@@ -61,3 +61,10 @@ jobs:
       - make -j5 test-error FUT_HOST=cs
       - rm test/bin/*/error.txt
       - make -j5 test-error FUT_HOST=node
+  - name: vscode
+    install:
+      - nvm install --lts
+    script:
+      - make FUT_HOST=node
+      - make -C editors/vscode src/fucheck.js FUT_HOST=node
+      - cd editors/vscode && npm i && npx @vscode/vsce package
