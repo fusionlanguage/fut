@@ -1,7 +1,8 @@
 name: tests
 on:
   push:
-    paths-ignore: **.md
+    paths-ignore:
+      - **.md
 jobs:
   c-cl-error:
     runs-on: ubuntu-22.04
