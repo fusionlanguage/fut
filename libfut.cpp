@@ -10738,6 +10738,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 	const FuType * type = symbol->type.get();
 	int nesting = 0;
 	while (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type)) {
+		includeStdDef();
 		write("for (ptrdiff_t _i");
 		visitLiteralLong(nesting);
 		write(" = ");
@@ -10851,7 +10852,7 @@ void GenC::writeInitCode(const FuNamedValue * def)
 	const FuType * type = def->type.get();
 	int nesting = 0;
 	while (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type)) {
-		openLoop("ptrdiff_t", nesting++, array->length);
+		openLoop("size_t", nesting++, array->length);
 		type = array->getElementType().get();
 	}
 	const FuStorageType * lok;
@@ -11061,6 +11062,7 @@ void GenC::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pare
 
 void GenC::writeStringLength(const FuExpr * expr)
 {
+	includeStdDef();
 	include("string.h");
 	writeCall("(ptrdiff_t) strlen", expr);
 }
@@ -11085,7 +11087,7 @@ void GenC::writeSizeofCompare(const FuType * elementType)
 
 void GenC::writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
-	write("for (ptrdiff_t _i = 0; _i < ");
+	write("for (size_t _i = 0; _i < ");
 	if (std::ssize(*args) == 1)
 		writeArrayStorageLength(obj);
 	else
@@ -11462,10 +11464,12 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::stringIndexOf:
 		this->stringIndexOf = true;
+		includeStdDef();
 		writeStringMethod("IndexOf", obj, args);
 		break;
 	case FuId::stringLastIndexOf:
 		this->stringLastIndexOf = true;
+		includeStdDef();
 		writeStringMethod("LastIndexOf", obj, args);
 		break;
 	case FuId::stringReplace:

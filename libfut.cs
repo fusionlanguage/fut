@@ -11001,6 +11001,7 @@ namespace Fusion
 			FuType type = symbol.Type;
 			int nesting = 0;
 			while (type is FuArrayStorageType array) {
+				IncludeStdDef();
 				Write("for (ptrdiff_t _i");
 				VisitLiteralLong(nesting);
 				Write(" = ");
@@ -11114,7 +11115,7 @@ namespace Fusion
 			FuType type = def.Type;
 			int nesting = 0;
 			while (type is FuArrayStorageType array) {
-				OpenLoop("ptrdiff_t", nesting++, array.Length);
+				OpenLoop("size_t", nesting++, array.Length);
 				type = array.GetElementType();
 			}
 			if (type is FuStorageType lok && lok.Class.Id == FuId.LockClass) {
@@ -11318,6 +11319,7 @@ namespace Fusion
 
 		protected override void WriteStringLength(FuExpr expr)
 		{
+			IncludeStdDef();
 			Include("string.h");
 			WriteCall("(ptrdiff_t) strlen", expr);
 		}
@@ -11342,7 +11344,7 @@ namespace Fusion
 
 		protected void WriteArrayFill(FuExpr obj, List<FuExpr> args)
 		{
-			Write("for (ptrdiff_t _i = 0; _i < ");
+			Write("for (size_t _i = 0; _i < ");
 			if (args.Count == 1)
 				WriteArrayStorageLength(obj);
 			else
@@ -11719,10 +11721,12 @@ namespace Fusion
 				break;
 			case FuId.StringIndexOf:
 				this.StringIndexOf = true;
+				IncludeStdDef();
 				WriteStringMethod("IndexOf", obj, args);
 				break;
 			case FuId.StringLastIndexOf:
 				this.StringLastIndexOf = true;
+				IncludeStdDef();
 				WriteStringMethod("LastIndexOf", obj, args);
 				break;
 			case FuId.StringReplace:

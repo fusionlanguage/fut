@@ -11428,6 +11428,7 @@ export class GenC extends GenCCpp
 		let nesting = 0;
 		let array;
 		while ((array = type) instanceof FuArrayStorageType) {
+			this.includeStdDef();
 			this.write("for (ptrdiff_t _i");
 			this.visitLiteralLong(BigInt(nesting));
 			this.write(" = ");
@@ -11544,7 +11545,7 @@ export class GenC extends GenCCpp
 		let nesting = 0;
 		let array;
 		while ((array = type) instanceof FuArrayStorageType) {
-			this.openLoop("ptrdiff_t", nesting++, array.length);
+			this.openLoop("size_t", nesting++, array.length);
 			type = array.getElementType();
 		}
 		let lok;
@@ -11756,6 +11757,7 @@ export class GenC extends GenCCpp
 
 	writeStringLength(expr)
 	{
+		this.includeStdDef();
 		this.include("string.h");
 		this.writeCall("(ptrdiff_t) strlen", expr);
 	}
@@ -11780,7 +11782,7 @@ export class GenC extends GenCCpp
 
 	writeArrayFill(obj, args)
 	{
-		this.write("for (ptrdiff_t _i = 0; _i < ");
+		this.write("for (size_t _i = 0; _i < ");
 		if (args.length == 1)
 			this.writeArrayStorageLength(obj);
 		else
@@ -12165,10 +12167,12 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.STRING_INDEX_OF:
 			this.#stringIndexOf = true;
+			this.includeStdDef();
 			this.#writeStringMethod("IndexOf", obj, args);
 			break;
 		case FuId.STRING_LAST_INDEX_OF:
 			this.#stringLastIndexOf = true;
+			this.includeStdDef();
 			this.#writeStringMethod("LastIndexOf", obj, args);
 			break;
 		case FuId.STRING_REPLACE:
