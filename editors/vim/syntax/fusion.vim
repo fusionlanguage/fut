@@ -18,7 +18,7 @@ syn region	fusionPreCondit	start="^#\%(if\|elif\|else\|endif\)\>" end="$" contai
 syn keyword	fusionAccessModifier	internal protected public
 syn keyword	fusionModifier	abstract const override sealed static throws virtual
 syn keyword	fusionContainer	class enum
-syn keyword	fusionType	bool byte double float int long short string uint ushort void
+syn keyword	fusionType	bool byte double float int long nint short string uint ushort void
 
 syn keyword	fusionConditional	else if switch
 syn keyword	fusionRepeat	do for foreach while

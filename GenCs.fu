@@ -224,6 +224,9 @@ public class GenCs : GenTyped
 			case FuId.IntType:
 				Write("int");
 				break;
+			case FuId.NIntType:
+				Write("nint");
+				break;
 			case FuId.LongType:
 				Write("long");
 				break;

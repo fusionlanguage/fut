@@ -200,6 +200,7 @@ enum class FuId
 	shortRange,
 	uShortRange,
 	intType,
+	nIntType,
 	longType,
 	floatType,
 	doubleType,
@@ -1553,6 +1554,7 @@ public:
 private:
 	std::shared_ptr<FuType> typeParam0 = std::make_shared<FuType>();
 	std::shared_ptr<FuRangeType> uIntType = FuRangeType::new_(0, 2147483647);
+	std::shared_ptr<FuIntegerType> nIntType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuClass> stringClass = FuClass::new_(FuCallType::normal, FuId::stringClass, "string");
 	FuClass * addCollection(FuId id, std::string_view name, int typeParameterCount, FuId clearId, FuId countId);
 	void addSet(FuId id, std::string_view name, FuId addId, FuId clearId, FuId containsId, FuId countId, FuId removeId);
@@ -1721,7 +1723,7 @@ private:
 	std::shared_ptr<FuExpr> visitSymbolReference(std::shared_ptr<FuSymbolReference> expr);
 	static std::shared_ptr<FuRangeType> union_(std::shared_ptr<FuRangeType> left, std::shared_ptr<FuRangeType> right);
 	std::shared_ptr<FuType> getIntegerType(const FuExpr * left, const FuExpr * right) const;
-	std::shared_ptr<FuIntegerType> getShiftType(const FuExpr * left, const FuExpr * right) const;
+	std::shared_ptr<FuType> getShiftType(const FuExpr * left, const FuExpr * right) const;
 	std::shared_ptr<FuType> getNumericType(const FuExpr * left, const FuExpr * right) const;
 	static int saturatedNeg(int a);
 	static int saturatedAdd(int a, int b);
@@ -2281,6 +2283,7 @@ private:
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);
 	void writeAddressOf(const FuExpr * expr);
 	void writeGConstPointerCast(const FuExpr * expr);
+	void writeGPointerToInt(const FuType * type);
 	void writeUnstorage(const FuExpr * obj);
 	void writeQueueGet(std::string_view function, const FuExpr * obj, FuPriority parent);
 	void startDictionaryInsert(const FuExpr * dict, const FuExpr * key);

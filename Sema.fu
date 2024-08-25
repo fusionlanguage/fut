@@ -345,16 +345,12 @@ public class FuSema
 		return type;
 	}
 
-	FuIntegerType# GetShiftType(FuExpr left, FuExpr right)
+	FuType# GetShiftType(FuExpr left, FuExpr right)
 	{
 		FuIntegerType# intType = this.Host.Program.System.IntType;
-		Coerce(right, intType);
-		if (left.Type.Id == FuId.LongType) {
-			assert left.Type is FuIntegerType# longType;
-			return longType;
-		}
 		Coerce(left, intType);
-		return intType;
+		Coerce(right, intType);
+		return left.Type is FuRangeType ? intType : left.Type;
 	}
 
 	FuType# GetNumericType(FuExpr left, FuExpr right)

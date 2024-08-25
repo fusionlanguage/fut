@@ -63,6 +63,9 @@ public abstract class GenCCpp : GenCCppD
 		case FuId.IntType:
 			Write("int");
 			break;
+		case FuId.NIntType:
+			Write("ptrdiff_t");
+			break;
 		case FuId.LongType:
 			IncludeStdInt();
 			Write("int64_t");

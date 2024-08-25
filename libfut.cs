@@ -1314,6 +1314,7 @@ namespace Fusion
 		ShortRange,
 		UShortRange,
 		IntType,
+		NIntType,
 		LongType,
 		FloatType,
 		DoubleType,
@@ -3218,6 +3219,7 @@ namespace Fusion
 			Add(this.IntType);
 			this.UIntType.Name = "uint";
 			Add(this.UIntType);
+			Add(this.NIntType);
 			AddMinMaxValue(this.LongType, -9223372036854775808, 9223372036854775807);
 			this.LongType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.LongTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "radix", NewLiteralLong(0))));
 			Add(this.LongType);
@@ -3229,37 +3231,36 @@ namespace Fusion
 			FuRangeType ushortType = FuRangeType.New(0, 65535);
 			ushortType.Name = "ushort";
 			Add(ushortType);
-			FuRangeType minus1Type = FuRangeType.New(-1, 2147483647);
 			Add(this.FloatType);
 			this.DoubleType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.DoubleTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
 			Add(this.DoubleType);
 			Add(this.BoolType);
 			this.StringClass.AddMethod(this.BoolType, FuId.StringContains, "Contains", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringEndsWith, "EndsWith", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.AddMethod(minus1Type, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.AddMethod(minus1Type, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.Add(FuProperty.New(this.UIntType, FuId.StringLength, "Length"));
+			this.StringClass.AddMethod(this.NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"));
+			this.StringClass.AddMethod(this.NIntType, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(this.StringPtrType, "value"));
+			this.StringClass.Add(FuProperty.New(this.NIntType, FuId.StringLength, "Length"));
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringReplace, "Replace", false, FuVar.New(this.StringPtrType, "oldValue"), FuVar.New(this.StringPtrType, "newValue"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringStartsWith, "StartsWith", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.AddMethod(this.StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(this.IntType, "offset"), FuVar.New(this.IntType, "length", NewLiteralLong(-1)));
+			this.StringClass.AddMethod(this.StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length", NewLiteralLong(-1)));
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringToLower, "ToLower", false);
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringToUpper, "ToUpper", false);
 			this.StringPtrType.Class = this.StringClass;
 			Add(this.StringPtrType);
 			this.StringNullablePtrType.Class = this.StringClass;
 			this.StringStorageType.Class = this.StringClass;
-			FuMethod arrayBinarySearchPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, this.IntType, FuId.ArrayBinarySearchPart, "BinarySearch", false, FuVar.New(this.TypeParam0, "value"), FuVar.New(this.IntType, "startIndex"), FuVar.New(this.IntType, "count"));
+			FuMethod arrayBinarySearchPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, this.NIntType, FuId.ArrayBinarySearchPart, "BinarySearch", false, FuVar.New(this.TypeParam0, "value"), FuVar.New(this.NIntType, "startIndex"), FuVar.New(this.NIntType, "count"));
 			this.ArrayPtrClass.Add(arrayBinarySearchPart);
-			this.ArrayPtrClass.AddMethod(this.VoidType, FuId.ArrayCopyTo, "CopyTo", false, FuVar.New(this.IntType, "sourceIndex"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), FuVar.New(this.IntType, "destinationIndex"), FuVar.New(this.IntType, "count"));
-			FuMethod arrayFillPart = FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.ArrayFillPart, "Fill", true, FuVar.New(this.TypeParam0, "value"), FuVar.New(this.IntType, "startIndex"), FuVar.New(this.IntType, "count"));
+			this.ArrayPtrClass.AddMethod(this.VoidType, FuId.ArrayCopyTo, "CopyTo", false, FuVar.New(this.NIntType, "sourceIndex"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), FuVar.New(this.NIntType, "destinationIndex"), FuVar.New(this.NIntType, "count"));
+			FuMethod arrayFillPart = FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.ArrayFillPart, "Fill", true, FuVar.New(this.TypeParam0, "value"), FuVar.New(this.NIntType, "startIndex"), FuVar.New(this.NIntType, "count"));
 			this.ArrayPtrClass.Add(arrayFillPart);
-			FuMethod arraySortPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ArraySortPart, "Sort", true, FuVar.New(this.IntType, "startIndex"), FuVar.New(this.IntType, "count"));
+			FuMethod arraySortPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ArraySortPart, "Sort", true, FuVar.New(this.NIntType, "startIndex"), FuVar.New(this.NIntType, "count"));
 			this.ArrayPtrClass.Add(arraySortPart);
 			this.ArrayStorageClass.Parent = this.ArrayPtrClass;
-			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, this.IntType, FuId.ArrayBinarySearchAll, "BinarySearch", false, FuVar.New(this.TypeParam0, "value")), arrayBinarySearchPart));
+			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, this.NIntType, FuId.ArrayBinarySearchAll, "BinarySearch", false, FuVar.New(this.TypeParam0, "value")), arrayBinarySearchPart));
 			this.ArrayStorageClass.AddMethod(this.BoolType, FuId.ArrayContains, "Contains", false, FuVar.New(this.TypeParam0, "value"));
 			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.ArrayFillAll, "Fill", true, FuVar.New(this.TypeParam0, "value")), arrayFillPart));
-			this.ArrayStorageClass.Add(FuProperty.New(this.UIntType, FuId.ArrayLength, "Length"));
+			this.ArrayStorageClass.Add(FuProperty.New(this.NIntType, FuId.ArrayLength, "Length"));
 			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ArraySortAll, "Sort", true), arraySortPart));
 			FuClass exceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
 			exceptionClass.IsPublic = true;
@@ -3272,13 +3273,13 @@ namespace Fusion
 			listClass.AddMethod(this.BoolType, FuId.ListAll, "All", false, FuVar.New(typeParam0Predicate, "predicate"));
 			listClass.AddMethod(this.BoolType, FuId.ListAny, "Any", false, FuVar.New(typeParam0Predicate, "predicate"));
 			listClass.AddMethod(this.BoolType, FuId.ListContains, "Contains", false, FuVar.New(this.TypeParam0, "value"));
-			listClass.AddMethod(this.VoidType, FuId.ListCopyTo, "CopyTo", false, FuVar.New(this.IntType, "sourceIndex"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), FuVar.New(this.IntType, "destinationIndex"), FuVar.New(this.IntType, "count"));
-			listClass.AddMethod(this.IntType, FuId.ListIndexOf, "IndexOf", false, FuVar.New(this.TypeParam0, "value"));
-			listClass.AddMethod(this.VoidType, FuId.ListInsert, "Insert", true, FuVar.New(this.UIntType, "index"), FuVar.New(typeParam0NotFinal, "value"));
+			listClass.AddMethod(this.VoidType, FuId.ListCopyTo, "CopyTo", false, FuVar.New(this.NIntType, "sourceIndex"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.TypeParam0 }, "destinationArray"), FuVar.New(this.NIntType, "destinationIndex"), FuVar.New(this.NIntType, "count"));
+			listClass.AddMethod(this.NIntType, FuId.ListIndexOf, "IndexOf", false, FuVar.New(this.TypeParam0, "value"));
+			listClass.AddMethod(this.VoidType, FuId.ListInsert, "Insert", true, FuVar.New(this.NIntType, "index"), FuVar.New(typeParam0NotFinal, "value"));
 			listClass.AddMethod(this.TypeParam0, FuId.ListLast, "Last", false);
-			listClass.AddMethod(this.VoidType, FuId.ListRemoveAt, "RemoveAt", true, FuVar.New(this.IntType, "index"));
-			listClass.AddMethod(this.VoidType, FuId.ListRemoveRange, "RemoveRange", true, FuVar.New(this.IntType, "index"), FuVar.New(this.IntType, "count"));
-			listClass.Add(FuMethodGroup.New(FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ListSortAll, "Sort", true), FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ListSortPart, "Sort", true, FuVar.New(this.IntType, "startIndex"), FuVar.New(this.IntType, "count"))));
+			listClass.AddMethod(this.VoidType, FuId.ListRemoveAt, "RemoveAt", true, FuVar.New(this.NIntType, "index"));
+			listClass.AddMethod(this.VoidType, FuId.ListRemoveRange, "RemoveRange", true, FuVar.New(this.NIntType, "index"), FuVar.New(this.NIntType, "count"));
+			listClass.Add(FuMethodGroup.New(FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ListSortAll, "Sort", true), FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ListSortPart, "Sort", true, FuVar.New(this.NIntType, "startIndex"), FuVar.New(this.NIntType, "count"))));
 			FuClass queueClass = AddCollection(FuId.QueueClass, "Queue", 1, FuId.QueueClear, FuId.QueueCount);
 			queueClass.AddMethod(this.TypeParam0, FuId.QueueDequeue, "Dequeue", true);
 			queueClass.AddMethod(this.VoidType, FuId.QueueEnqueue, "Enqueue", true, FuVar.New(this.TypeParam0, "value"));
@@ -3309,12 +3310,12 @@ namespace Fusion
 			Add(stringWriterClass);
 			stringWriterClass.Parent = textWriterClass;
 			FuClass convertClass = FuClass.New(FuCallType.Static, FuId.None, "Convert");
-			convertClass.AddStaticMethod(this.StringStorageType, FuId.ConvertToBase64String, "ToBase64String", FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.IntType, "offset"), FuVar.New(this.IntType, "length"));
+			convertClass.AddStaticMethod(this.StringStorageType, FuId.ConvertToBase64String, "ToBase64String", FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length"));
 			Add(convertClass);
 			FuClass utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
-			utf8EncodingClass.AddMethod(this.IntType, FuId.UTF8GetByteCount, "GetByteCount", false, FuVar.New(this.StringPtrType, "str"));
-			utf8EncodingClass.AddMethod(this.VoidType, FuId.UTF8GetBytes, "GetBytes", false, FuVar.New(this.StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.IntType, "byteIndex"));
-			utf8EncodingClass.AddMethod(this.StringStorageType, FuId.UTF8GetString, "GetString", false, FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.IntType, "offset"), FuVar.New(this.IntType, "length"));
+			utf8EncodingClass.AddMethod(this.NIntType, FuId.UTF8GetByteCount, "GetByteCount", false, FuVar.New(this.StringPtrType, "str"));
+			utf8EncodingClass.AddMethod(this.VoidType, FuId.UTF8GetBytes, "GetBytes", false, FuVar.New(this.StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "byteIndex"));
+			utf8EncodingClass.AddMethod(this.StringStorageType, FuId.UTF8GetString, "GetString", false, FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length"));
 			FuClass encodingClass = FuClass.New(FuCallType.Static, FuId.None, "Encoding");
 			encodingClass.Add(FuStaticProperty.New(utf8EncodingClass, FuId.None, "UTF8"));
 			Add(encodingClass);
@@ -3338,10 +3339,10 @@ namespace Fusion
 			Add(regexClass);
 			FuClass matchClass = FuClass.New(FuCallType.Sealed, FuId.MatchClass, "Match");
 			matchClass.Add(FuMethodGroup.New(FuMethod.New(matchClass, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.MatchFindStr, "Find", true, FuVar.New(this.StringPtrType, "input"), FuVar.New(this.StringPtrType, "pattern"), FuVar.New(this.RegexOptionsEnum, "options", regexOptionsNone)), FuMethod.New(matchClass, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.MatchFindRegex, "Find", true, FuVar.New(this.StringPtrType, "input"), FuVar.New(new FuClassType { Class = regexClass }, "pattern"))));
-			matchClass.Add(FuProperty.New(this.IntType, FuId.MatchStart, "Start"));
-			matchClass.Add(FuProperty.New(this.IntType, FuId.MatchEnd, "End"));
+			matchClass.Add(FuProperty.New(this.NIntType, FuId.MatchStart, "Start"));
+			matchClass.Add(FuProperty.New(this.NIntType, FuId.MatchEnd, "End"));
 			matchClass.AddMethod(this.StringStorageType, FuId.MatchGetCapture, "GetCapture", false, FuVar.New(this.UIntType, "group"));
-			matchClass.Add(FuProperty.New(this.UIntType, FuId.MatchLength, "Length"));
+			matchClass.Add(FuProperty.New(this.NIntType, FuId.MatchLength, "Length"));
 			matchClass.Add(FuProperty.New(this.StringStorageType, FuId.MatchValue, "Value"));
 			Add(matchClass);
 			FuClass jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");
@@ -3413,6 +3414,8 @@ namespace Fusion
 
 		FuRangeType UIntType = FuRangeType.New(0, 2147483647);
 
+		FuIntegerType NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
+
 		internal FuIntegerType LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
 
 		internal FuRangeType ByteType = FuRangeType.New(0, 255);
@@ -3453,7 +3456,7 @@ namespace Fusion
 
 		internal FuType PromoteIntegerTypes(FuType left, FuType right)
 		{
-			return left == this.LongType || right == this.LongType ? this.LongType : this.IntType;
+			return left == this.LongType || right == this.LongType ? this.LongType : left == this.NIntType || right == this.NIntType ? this.NIntType : this.IntType;
 		}
 
 		internal FuType PromoteFloatingTypes(FuType left, FuType right)
@@ -3484,7 +3487,7 @@ namespace Fusion
 		{
 			FuClass result = FuClass.New(FuCallType.Normal, id, name, typeParameterCount);
 			result.AddMethod(this.VoidType, clearId, "Clear", true);
-			result.Add(FuProperty.New(this.UIntType, countId, "Count"));
+			result.Add(FuProperty.New(this.NIntType, countId, "Count"));
 			Add(result);
 			return result;
 		}
@@ -5035,16 +5038,12 @@ namespace Fusion
 			return type;
 		}
 
-		FuIntegerType GetShiftType(FuExpr left, FuExpr right)
+		FuType GetShiftType(FuExpr left, FuExpr right)
 		{
 			FuIntegerType intType = this.Host.Program.System.IntType;
-			Coerce(right, intType);
-			if (left.Type.Id == FuId.LongType) {
-				FuIntegerType longType = (FuIntegerType) left.Type;
-				return longType;
-			}
 			Coerce(left, intType);
-			return intType;
+			Coerce(right, intType);
+			return left.Type is FuRangeType ? intType : left.Type;
 		}
 
 		FuType GetNumericType(FuExpr left, FuExpr right)
@@ -9205,6 +9204,7 @@ namespace Fusion
 				case FuId.ShortRange:
 				case FuId.UShortRange:
 				case FuId.IntType:
+				case FuId.NIntType:
 				case FuId.LongType:
 					return true;
 				default:
@@ -9216,6 +9216,7 @@ namespace Fusion
 				case FuId.ShortRange:
 				case FuId.UShortRange:
 				case FuId.IntType:
+				case FuId.NIntType:
 				case FuId.LongType:
 					return true;
 				default:
@@ -9225,6 +9226,7 @@ namespace Fusion
 				switch (right) {
 				case FuId.UShortRange:
 				case FuId.IntType:
+				case FuId.NIntType:
 				case FuId.LongType:
 					return true;
 				default:
@@ -9234,6 +9236,7 @@ namespace Fusion
 				switch (right) {
 				case FuId.ShortRange:
 				case FuId.IntType:
+				case FuId.NIntType:
 				case FuId.LongType:
 					return true;
 				default:
@@ -9473,6 +9476,9 @@ namespace Fusion
 				break;
 			case FuId.IntType:
 				Write("int");
+				break;
+			case FuId.NIntType:
+				Write("ptrdiff_t");
 				break;
 			case FuId.LongType:
 				IncludeStdInt();
@@ -9810,7 +9816,9 @@ namespace Fusion
 				Debug.Assert(part.Precision < 0);
 				Write(".*");
 			}
-			if (part.Argument.Type.Id == FuId.LongType)
+			if (part.Argument.Type.Id == FuId.NIntType)
+				WriteChar('t');
+			else if (part.Argument.Type.Id == FuId.LongType)
 				WritePrintfLongPrefix();
 		}
 
@@ -10837,6 +10845,11 @@ namespace Fusion
 			}
 		}
 
+		void WriteGPointerToInt(FuType type)
+		{
+			Write(type.Id == FuId.NIntType ? "GPOINTER_TO_SIZE(" : "GPOINTER_TO_INT(");
+		}
+
 		void WriteUnstorage(FuExpr obj)
 		{
 			if (obj.Type is FuStorageType)
@@ -10852,7 +10865,7 @@ namespace Fusion
 			if (parent == FuPriority.Statement)
 				parenthesis = false;
 			else if (elementType is FuIntegerType && elementType.Id != FuId.LongType) {
-				Write("GPOINTER_TO_INT(");
+				WriteGPointerToInt(elementType);
 				parenthesis = true;
 			}
 			else {
@@ -10980,7 +10993,7 @@ namespace Fusion
 			FuType type = symbol.Type;
 			int nesting = 0;
 			while (type is FuArrayStorageType array) {
-				Write("for (int _i");
+				Write("for (ptrdiff_t _i");
 				VisitLiteralLong(nesting);
 				Write(" = ");
 				VisitLiteralLong(array.Length - 1);
@@ -11093,7 +11106,7 @@ namespace Fusion
 			FuType type = def.Type;
 			int nesting = 0;
 			while (type is FuArrayStorageType array) {
-				OpenLoop("int", nesting++, array.Length);
+				OpenLoop("ptrdiff_t", nesting++, array.Length);
 				type = array.GetElementType();
 			}
 			if (type is FuStorageType lok && lok.Class.Id == FuId.LockClass) {
@@ -11298,7 +11311,7 @@ namespace Fusion
 		protected override void WriteStringLength(FuExpr expr)
 		{
 			Include("string.h");
-			WriteCall("(int) strlen", expr);
+			WriteCall("(ptrdiff_t) strlen", expr);
 		}
 
 		void WriteStringMethod(string name, FuExpr obj, List<FuExpr> args)
@@ -11321,7 +11334,7 @@ namespace Fusion
 
 		protected void WriteArrayFill(FuExpr obj, List<FuExpr> args)
 		{
-			Write("for (int _i = 0; _i < ");
+			Write("for (ptrdiff_t _i = 0; _i < ");
 			if (args.Count == 1)
 				WriteArrayStorageLength(obj);
 			else
@@ -12195,7 +12208,7 @@ namespace Fusion
 		{
 			FuType valueType = expr.Left.Type.AsClassType().GetValueType();
 			if (valueType is FuIntegerType && valueType.Id != FuId.LongType) {
-				Write("GPOINTER_TO_INT(");
+				WriteGPointerToInt(valueType);
 				WriteDictionaryLookup(expr.Left, function, expr.Right);
 				WriteChar(')');
 			}
@@ -12415,7 +12428,7 @@ namespace Fusion
 			WriteTypeAndName(iter);
 			Write(" = ");
 			if (iter.Type is FuIntegerType && iter.Type.Id != FuId.LongType) {
-				Write("GPOINTER_TO_INT(");
+				WriteGPointerToInt(iter.Type);
 				Write(value);
 				WriteChar(')');
 			}
@@ -13207,7 +13220,7 @@ namespace Fusion
 			}
 			if (this.StringSubstring) {
 				WriteNewLine();
-				WriteLine("static char *FuString_Substring(const char *str, int len)");
+				WriteLine("static char *FuString_Substring(const char *str, size_t len)");
 				OpenBlock();
 				WriteLine("char *p = malloc(len + 1);");
 				WriteLine("memcpy(p, str, len);");
@@ -13234,23 +13247,23 @@ namespace Fusion
 			}
 			if (this.StringIndexOf) {
 				WriteNewLine();
-				WriteLine("static int FuString_IndexOf(const char *str, const char *needle)");
+				WriteLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
 				OpenBlock();
 				WriteLine("const char *p = strstr(str, needle);");
-				WriteLine("return p == NULL ? -1 : (int) (p - str);");
+				WriteLine("return p == NULL ? -1 : p - str;");
 				CloseBlock();
 			}
 			if (this.StringLastIndexOf) {
 				WriteNewLine();
-				WriteLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
+				WriteLine("static ptrdiff_t FuString_LastIndexOf(const char *str, const char *needle)");
 				OpenBlock();
 				WriteLine("if (needle[0] == '\\0')");
-				WriteLine("\treturn (int) strlen(str);");
-				WriteLine("int result = -1;");
+				WriteLine("\treturn (ptrdiff_t) strlen(str);");
+				WriteLine("ptrdiff_t result = -1;");
 				WriteLine("const char *p = strstr(str, needle);");
 				Write("while (p != NULL) ");
 				OpenBlock();
-				WriteLine("result = (int) (p - str);");
+				WriteLine("result = p - str;");
 				WriteLine("p = strstr(p + 1, needle);");
 				CloseBlock();
 				WriteLine("return result;");
@@ -13874,9 +13887,9 @@ namespace Fusion
 		{
 			if (this.StringLength) {
 				WriteNewLine();
-				WriteLine("static int strlen(constant char *str)");
+				WriteLine("static ptrdiff_t strlen(constant char *str)");
 				OpenBlock();
-				WriteLine("int len = 0;");
+				WriteLine("ptrdiff_t len = 0;");
 				WriteLine("while (str[len] != '\\0')");
 				WriteLine("\tlen++;");
 				WriteLine("return len;");
@@ -13908,7 +13921,7 @@ namespace Fusion
 				WriteNewLine();
 				WriteLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 				OpenBlock();
-				WriteLine("for (int i = 0; str[i] != '\\0'; i++) {");
+				WriteLine("for (size_t i = 0; str[i] != '\\0'; i++) {");
 				WriteLine("\tif (mem[i] != str[i])");
 				WriteLine("\t\treturn false;");
 				WriteCharLine('}');
@@ -14707,12 +14720,12 @@ namespace Fusion
 				WriteStringMethod(obj, "ends_with", method, args);
 				break;
 			case FuId.StringIndexOf:
-				Write("static_cast<int>(");
+				Write("static_cast<ptrdiff_t>(");
 				WriteStringMethod(obj, "find", method, args);
 				WriteChar(')');
 				break;
 			case FuId.StringLastIndexOf:
-				Write("static_cast<int>(");
+				Write("static_cast<ptrdiff_t>(");
 				WriteStringMethod(obj, "rfind", method, args);
 				WriteChar(')');
 				break;
@@ -16212,6 +16225,9 @@ namespace Fusion
 				case FuId.IntType:
 					Write("int");
 					break;
+				case FuId.NIntType:
+					Write("nint");
+					break;
 				case FuId.LongType:
 					Write("long");
 					break;
@@ -17405,6 +17421,9 @@ namespace Fusion
 					break;
 				case FuId.IntType:
 					Write("int");
+					break;
+				case FuId.NIntType:
+					Write("ptrdiff_t");
 					break;
 				case FuId.LongType:
 					Write("long");
@@ -18870,6 +18889,7 @@ namespace Fusion
 					Write(needClass ? "Short" : "short");
 					break;
 				case FuId.IntType:
+				case FuId.NIntType:
 					Write(needClass ? "Integer" : "int");
 					break;
 				case FuId.LongType:
@@ -20138,6 +20158,7 @@ namespace Fusion
 				Write("Uint16");
 				break;
 			case FuId.IntType:
+			case FuId.NIntType:
 				Write("Int32");
 				break;
 			case FuId.LongType:
@@ -22406,6 +22427,7 @@ namespace Fusion
 					Write("UInt16");
 					break;
 				case FuId.IntType:
+				case FuId.NIntType:
 					Write("Int");
 					break;
 				case FuId.LongType:
@@ -24402,6 +24424,7 @@ namespace Fusion
 				return 'H';
 			case FuId.IntType:
 				return 'i';
+			case FuId.NIntType:
 			case FuId.LongType:
 				return 'q';
 			case FuId.FloatType:

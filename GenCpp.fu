@@ -780,12 +780,12 @@ public class GenCpp : GenCCpp
 			WriteStringMethod(obj, "ends_with", method, args);
 			break;
 		case FuId.StringIndexOf:
-			Write("static_cast<int>(");
+			Write("static_cast<ptrdiff_t>(");
 			WriteStringMethod(obj, "find", method, args);
 			WriteChar(')');
 			break;
 		case FuId.StringLastIndexOf:
-			Write("static_cast<int>(");
+			Write("static_cast<ptrdiff_t>(");
 			WriteStringMethod(obj, "rfind", method, args);
 			WriteChar(')');
 			break;

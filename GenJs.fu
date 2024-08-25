@@ -109,6 +109,7 @@ public class GenJsNoModule : GenBase
 			Write("Uint16");
 			break;
 		case FuId.IntType:
+		case FuId.NIntType:
 			Write("Int32");
 			break;
 		case FuId.LongType:

@@ -72,6 +72,7 @@ public enum FuId
 	ShortRange,
 	UShortRange,
 	IntType,
+	NIntType,
 	LongType,
 	FloatType,
 	DoubleType,
@@ -1552,6 +1553,7 @@ public class FuSystem : FuScope
 	FuType# TypeParam0 = new FuType { Id = FuId.TypeParam0, Name = "T" };
 	internal FuIntegerType# IntType = new FuIntegerType { Id = FuId.IntType, Name = "int" };
 	FuRangeType# UIntType = FuRangeType.New(0, int.MaxValue);
+	FuIntegerType# NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
 	internal FuIntegerType# LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
 	internal FuRangeType# ByteType = FuRangeType.New(0, 0xff);
 	internal FuFloatingType# FloatType = new FuFloatingType { Id = FuId.FloatType, Name = "float" };
@@ -1578,7 +1580,9 @@ public class FuSystem : FuScope
 
 	internal FuType# PromoteIntegerTypes(FuType left, FuType right)
 	{
-		return left == LongType || right == LongType ? LongType : IntType;
+		return left == LongType || right == LongType ? LongType
+			: left == NIntType || right == NIntType ? NIntType
+			: IntType;
 	}
 
 	internal FuType#? PromoteFloatingTypes(FuType left, FuType right)
@@ -1611,7 +1615,7 @@ public class FuSystem : FuScope
 	{
 		FuClass# result = FuClass.New(FuCallType.Normal, id, name, typeParameterCount);
 		result.AddMethod(VoidType, clearId, "Clear", true);
-		result.Add(FuProperty.New(UIntType, countId, "Count"));
+		result.Add(FuProperty.New(NIntType, countId, "Count"));
 		Add(result);
 		return result;
 	}
@@ -1666,6 +1670,7 @@ public class FuSystem : FuScope
 		Add(IntType);
 		UIntType.Name = "uint";
 		Add(UIntType);
+		Add(NIntType);
 		AddMinMaxValue(LongType, long.MinValue, long.MaxValue);
 		LongType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.LongTryParse, "TryParse", true, FuVar.New(StringPtrType, "value"), FuVar.New(IntType, "radix", NewLiteralLong(0))));
 		Add(LongType);
@@ -1677,42 +1682,41 @@ public class FuSystem : FuScope
 		FuRangeType# ushortType = FuRangeType.New(0, 0xffff);
 		ushortType.Name = "ushort";
 		Add(ushortType);
-		FuRangeType# minus1Type = FuRangeType.New(-1, int.MaxValue);
 		Add(FloatType);
 		DoubleType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.DoubleTryParse, "TryParse", true, FuVar.New(StringPtrType, "value")));
 		Add(DoubleType);
 		Add(BoolType);
 		StringClass.AddMethod(BoolType, FuId.StringContains, "Contains", false, FuVar.New(StringPtrType, "value"));
 		StringClass.AddMethod(BoolType, FuId.StringEndsWith, "EndsWith", false, FuVar.New(StringPtrType, "value"));
-		StringClass.AddMethod(minus1Type, FuId.StringIndexOf, "IndexOf", false, FuVar.New(StringPtrType, "value"));
-		StringClass.AddMethod(minus1Type, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(StringPtrType, "value"));
-		StringClass.Add(FuProperty.New(UIntType, FuId.StringLength, "Length"));
+		StringClass.AddMethod(NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(StringPtrType, "value"));
+		StringClass.AddMethod(NIntType, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(StringPtrType, "value"));
+		StringClass.Add(FuProperty.New(NIntType, FuId.StringLength, "Length"));
 		StringClass.AddMethod(StringStorageType, FuId.StringReplace, "Replace", false, FuVar.New(StringPtrType, "oldValue"), FuVar.New(StringPtrType, "newValue"));
 		StringClass.AddMethod(BoolType, FuId.StringStartsWith, "StartsWith", false, FuVar.New(StringPtrType, "value"));
-		StringClass.AddMethod(StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(IntType, "offset"), FuVar.New(IntType, "length", NewLiteralLong(-1))); // TODO: UIntType
+		StringClass.AddMethod(StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(NIntType, "offset"), FuVar.New(NIntType, "length", NewLiteralLong(-1)));
 		StringClass.AddMethod(StringStorageType, FuId.StringToLower, "ToLower", false);
 		StringClass.AddMethod(StringStorageType, FuId.StringToUpper, "ToUpper", false);
 		StringPtrType.Class = StringClass;
 		Add(StringPtrType);
 		StringNullablePtrType.Class = StringClass;
 		StringStorageType.Class = StringClass;
-		FuMethod# arrayBinarySearchPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, IntType, FuId.ArrayBinarySearchPart, "BinarySearch", false,
-			FuVar.New(TypeParam0, "value"), FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"));
+		FuMethod# arrayBinarySearchPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, NIntType, FuId.ArrayBinarySearchPart, "BinarySearch", false,
+			FuVar.New(TypeParam0, "value"), FuVar.New(NIntType, "startIndex"), FuVar.New(NIntType, "count"));
 		ArrayPtrClass.Add(arrayBinarySearchPart);
-		ArrayPtrClass.AddMethod(VoidType, FuId.ArrayCopyTo, "CopyTo", false, FuVar.New(IntType, "sourceIndex"),
-			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(IntType, "destinationIndex"), FuVar.New(IntType, "count"));
+		ArrayPtrClass.AddMethod(VoidType, FuId.ArrayCopyTo, "CopyTo", false, FuVar.New(NIntType, "sourceIndex"),
+			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(NIntType, "destinationIndex"), FuVar.New(NIntType, "count"));
 		FuMethod# arrayFillPart = FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, VoidType, FuId.ArrayFillPart, "Fill", true,
-			FuVar.New(TypeParam0, "value"), FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"));
+			FuVar.New(TypeParam0, "value"), FuVar.New(NIntType, "startIndex"), FuVar.New(NIntType, "count"));
 		ArrayPtrClass.Add(arrayFillPart);
-		FuMethod# arraySortPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ArraySortPart, "Sort", true, FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"));
+		FuMethod# arraySortPart = FuMethod.New(null, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ArraySortPart, "Sort", true, FuVar.New(NIntType, "startIndex"), FuVar.New(NIntType, "count"));
 		ArrayPtrClass.Add(arraySortPart);
 		ArrayStorageClass.Parent = ArrayPtrClass;
-		ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, IntType, FuId.ArrayBinarySearchAll, "BinarySearch", false, FuVar.New(TypeParam0, "value")),
+		ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, NIntType, FuId.ArrayBinarySearchAll, "BinarySearch", false, FuVar.New(TypeParam0, "value")),
 			arrayBinarySearchPart));
 		ArrayStorageClass.AddMethod(BoolType, FuId.ArrayContains, "Contains", false, FuVar.New(TypeParam0, "value"));
 		ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(ArrayStorageClass, FuVisibility.Public, FuCallType.Normal, VoidType, FuId.ArrayFillAll, "Fill", true, FuVar.New(TypeParam0, "value")),
 			arrayFillPart));
-		ArrayStorageClass.Add(FuProperty.New(UIntType, FuId.ArrayLength, "Length"));
+		ArrayStorageClass.Add(FuProperty.New(NIntType, FuId.ArrayLength, "Length"));
 		ArrayStorageClass.Add(FuMethodGroup.New(
 			FuMethod.New(ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ArraySortAll, "Sort", true),
 			arraySortPart));
@@ -1728,16 +1732,16 @@ public class FuSystem : FuScope
 		listClass.AddMethod(BoolType, FuId.ListAll, "All", false, FuVar.New(typeParam0Predicate, "predicate"));
 		listClass.AddMethod(BoolType, FuId.ListAny, "Any", false, FuVar.New(typeParam0Predicate, "predicate"));
 		listClass.AddMethod(BoolType, FuId.ListContains, "Contains", false, FuVar.New(TypeParam0, "value"));
-		listClass.AddMethod(VoidType, FuId.ListCopyTo, "CopyTo", false, FuVar.New(IntType, "sourceIndex"),
-			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(IntType, "destinationIndex"), FuVar.New(IntType, "count"));
-		listClass.AddMethod(IntType, FuId.ListIndexOf, "IndexOf", false, FuVar.New(TypeParam0, "value"));
-		listClass.AddMethod(VoidType, FuId.ListInsert, "Insert", true, FuVar.New(UIntType, "index"), FuVar.New(typeParam0NotFinal, "value"));
+		listClass.AddMethod(VoidType, FuId.ListCopyTo, "CopyTo", false, FuVar.New(NIntType, "sourceIndex"),
+			FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = TypeParam0 }, "destinationArray"), FuVar.New(NIntType, "destinationIndex"), FuVar.New(NIntType, "count"));
+		listClass.AddMethod(NIntType, FuId.ListIndexOf, "IndexOf", false, FuVar.New(TypeParam0, "value"));
+		listClass.AddMethod(VoidType, FuId.ListInsert, "Insert", true, FuVar.New(NIntType, "index"), FuVar.New(typeParam0NotFinal, "value"));
 		listClass.AddMethod(TypeParam0, FuId.ListLast, "Last", false);
-		listClass.AddMethod(VoidType, FuId.ListRemoveAt, "RemoveAt", true, FuVar.New(IntType, "index"));
-		listClass.AddMethod(VoidType, FuId.ListRemoveRange, "RemoveRange", true, FuVar.New(IntType, "index"), FuVar.New(IntType, "count"));
+		listClass.AddMethod(VoidType, FuId.ListRemoveAt, "RemoveAt", true, FuVar.New(NIntType, "index"));
+		listClass.AddMethod(VoidType, FuId.ListRemoveRange, "RemoveRange", true, FuVar.New(NIntType, "index"), FuVar.New(NIntType, "count"));
 		listClass.Add(FuMethodGroup.New(
 			FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ListSortAll, "Sort", true),
-			FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ListSortPart, "Sort", true, FuVar.New(IntType, "startIndex"), FuVar.New(IntType, "count"))));
+			FuMethod.New(listClass, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ListSortPart, "Sort", true, FuVar.New(NIntType, "startIndex"), FuVar.New(NIntType, "count"))));
 		FuClass! queueClass = AddCollection(FuId.QueueClass, "Queue", 1, FuId.QueueClear, FuId.QueueCount);
 		queueClass.AddMethod(TypeParam0, FuId.QueueDequeue, "Dequeue", true);
 		queueClass.AddMethod(VoidType, FuId.QueueEnqueue, "Enqueue", true, FuVar.New(TypeParam0, "value"));
@@ -1770,14 +1774,14 @@ public class FuSystem : FuScope
 		stringWriterClass.Parent = textWriterClass;
 		FuClass# convertClass = FuClass.New(FuCallType.Static, FuId.None, "Convert");
 		convertClass.AddStaticMethod(StringStorageType, FuId.ConvertToBase64String, "ToBase64String",
-			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(IntType, "offset"), FuVar.New(IntType, "length"));
+			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "offset"), FuVar.New(NIntType, "length"));
 		Add(convertClass);
 		FuClass# utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
-		utf8EncodingClass.AddMethod(IntType, FuId.UTF8GetByteCount, "GetByteCount", false, FuVar.New(StringPtrType, "str"));
+		utf8EncodingClass.AddMethod(NIntType, FuId.UTF8GetByteCount, "GetByteCount", false, FuVar.New(StringPtrType, "str"));
 		utf8EncodingClass.AddMethod(VoidType, FuId.UTF8GetBytes, "GetBytes", false,
-			FuVar.New(StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(IntType, "byteIndex"));
+			FuVar.New(StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "byteIndex"));
 		utf8EncodingClass.AddMethod(StringStorageType, FuId.UTF8GetString, "GetString", false,
-			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(IntType, "offset"), FuVar.New(IntType, "length")); // TODO: UIntType
+			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "offset"), FuVar.New(NIntType, "length"));
 		FuClass# encodingClass = FuClass.New(FuCallType.Static, FuId.None, "Encoding");
 		encodingClass.Add(FuStaticProperty.New(utf8EncodingClass, FuId.None, "UTF8"));
 		Add(encodingClass);
@@ -1805,10 +1809,10 @@ public class FuSystem : FuScope
 		matchClass.Add(FuMethodGroup.New(
 			FuMethod.New(matchClass, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.MatchFindStr, "Find", true, FuVar.New(StringPtrType, "input"), FuVar.New(StringPtrType, "pattern"), FuVar.New(RegexOptionsEnum, "options", regexOptionsNone)),
 			FuMethod.New(matchClass, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.MatchFindRegex, "Find", true, FuVar.New(StringPtrType, "input"), FuVar.New(new FuClassType { Class = regexClass }, "pattern"))));
-		matchClass.Add(FuProperty.New(IntType, FuId.MatchStart, "Start"));
-		matchClass.Add(FuProperty.New(IntType, FuId.MatchEnd, "End"));
+		matchClass.Add(FuProperty.New(NIntType, FuId.MatchStart, "Start"));
+		matchClass.Add(FuProperty.New(NIntType, FuId.MatchEnd, "End"));
 		matchClass.AddMethod(StringStorageType, FuId.MatchGetCapture, "GetCapture", false, FuVar.New(UIntType, "group"));
-		matchClass.Add(FuProperty.New(UIntType, FuId.MatchLength, "Length"));
+		matchClass.Add(FuProperty.New(NIntType, FuId.MatchLength, "Length"));
 		matchClass.Add(FuProperty.New(StringStorageType, FuId.MatchValue, "Value"));
 		Add(matchClass);
 		FuClass# jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");

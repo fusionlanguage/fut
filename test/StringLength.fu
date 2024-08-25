@@ -1,5 +1,7 @@
 ﻿public class Test
 {
+	public static nint GetLength(string s) => s.Length;
+
 	public static bool Run()
 	{
 		string() s = "foobar"; //FAIL: cl

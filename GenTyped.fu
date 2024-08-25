@@ -1,6 +1,6 @@
 // GenTyped.fu - C/C++/C#/D/Java code generator
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2024  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -88,6 +88,7 @@ public abstract class GenTyped : GenBase
 			case FuId.ShortRange:
 			case FuId.UShortRange:
 			case FuId.IntType:
+			case FuId.NIntType:
 			case FuId.LongType:
 				return true;
 			default:
@@ -99,6 +100,7 @@ public abstract class GenTyped : GenBase
 			case FuId.ShortRange:
 			case FuId.UShortRange:
 			case FuId.IntType:
+			case FuId.NIntType:
 			case FuId.LongType:
 				return true;
 			default:
@@ -108,6 +110,7 @@ public abstract class GenTyped : GenBase
 			switch (right) {
 			case FuId.UShortRange:
 			case FuId.IntType:
+			case FuId.NIntType:
 			case FuId.LongType:
 				return true;
 			default:
@@ -117,6 +120,7 @@ public abstract class GenTyped : GenBase
 			switch (right) {
 			case FuId.ShortRange:
 			case FuId.IntType:
+			case FuId.NIntType:
 			case FuId.LongType:
 				return true;
 			default:

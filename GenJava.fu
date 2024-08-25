@@ -270,6 +270,7 @@ public class GenJava : GenTyped
 				Write(needClass ? "Short" : "short");
 				break;
 			case FuId.IntType:
+			case FuId.NIntType:
 				Write(needClass ? "Integer" : "int");
 				break;
 			case FuId.LongType:

@@ -2707,6 +2707,8 @@ FuSystem::FuSystem()
 	this->typeParam0->name = "T";
 	this->intType->id = FuId::intType;
 	this->intType->name = "int";
+	this->nIntType->id = FuId::nIntType;
+	this->nIntType->name = "nint";
 	this->longType->id = FuId::longType;
 	this->longType->name = "long";
 	this->floatType->id = FuId::floatType;
@@ -2731,6 +2733,7 @@ FuSystem::FuSystem()
 	add(this->intType);
 	this->uIntType->name = "uint";
 	add(this->uIntType);
+	add(this->nIntType);
 	addMinMaxValue(this->longType.get(), (-9223372036854775807 - 1), 9223372036854775807);
 	this->longType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::longTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
 	add(this->longType);
@@ -2742,40 +2745,39 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuRangeType> ushortType = FuRangeType::new_(0, 65535);
 	ushortType->name = "ushort";
 	add(ushortType);
-	std::shared_ptr<FuRangeType> minus1Type = FuRangeType::new_(-1, 2147483647);
 	add(this->floatType);
 	this->doubleType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::doubleTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
 	add(this->doubleType);
 	add(this->boolType);
 	this->stringClass->addMethod(this->boolType, FuId::stringContains, "Contains", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->boolType, FuId::stringEndsWith, "EndsWith", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->addMethod(minus1Type, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->addMethod(minus1Type, FuId::stringLastIndexOf, "LastIndexOf", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->add(FuProperty::new_(this->uIntType, FuId::stringLength, "Length"));
+	this->stringClass->addMethod(this->nIntType, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"));
+	this->stringClass->addMethod(this->nIntType, FuId::stringLastIndexOf, "LastIndexOf", false, FuVar::new_(this->stringPtrType, "value"));
+	this->stringClass->add(FuProperty::new_(this->nIntType, FuId::stringLength, "Length"));
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringReplace, "Replace", false, FuVar::new_(this->stringPtrType, "oldValue"), FuVar::new_(this->stringPtrType, "newValue"));
 	this->stringClass->addMethod(this->boolType, FuId::stringStartsWith, "StartsWith", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->addMethod(this->stringStorageType, FuId::stringSubstring, "Substring", false, FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length", newLiteralLong(-1)));
+	this->stringClass->addMethod(this->stringStorageType, FuId::stringSubstring, "Substring", false, FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length", newLiteralLong(-1)));
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringToLower, "ToLower", false);
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringToUpper, "ToUpper", false);
 	this->stringPtrType->class_ = this->stringClass.get();
 	add(this->stringPtrType);
 	this->stringNullablePtrType->class_ = this->stringClass.get();
 	this->stringStorageType->class_ = this->stringClass.get();
-	std::shared_ptr<FuMethod> arrayBinarySearchPart = FuMethod::new_(nullptr, FuVisibility::numericElementType, FuCallType::normal, this->intType, FuId::arrayBinarySearchPart, "BinarySearch", false, FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
+	std::shared_ptr<FuMethod> arrayBinarySearchPart = FuMethod::new_(nullptr, FuVisibility::numericElementType, FuCallType::normal, this->nIntType, FuId::arrayBinarySearchPart, "BinarySearch", false, FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->nIntType, "startIndex"), FuVar::new_(this->nIntType, "count"));
 	this->arrayPtrClass->add(arrayBinarySearchPart);
 	std::shared_ptr<FuReadWriteClassType> futemp0 = std::make_shared<FuReadWriteClassType>();
 	futemp0->class_ = this->arrayPtrClass.get();
 	futemp0->typeArg0 = this->typeParam0;
-	this->arrayPtrClass->addMethod(this->voidType, FuId::arrayCopyTo, "CopyTo", false, FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp0, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count"));
-	std::shared_ptr<FuMethod> arrayFillPart = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->voidType, FuId::arrayFillPart, "Fill", true, FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
+	this->arrayPtrClass->addMethod(this->voidType, FuId::arrayCopyTo, "CopyTo", false, FuVar::new_(this->nIntType, "sourceIndex"), FuVar::new_(futemp0, "destinationArray"), FuVar::new_(this->nIntType, "destinationIndex"), FuVar::new_(this->nIntType, "count"));
+	std::shared_ptr<FuMethod> arrayFillPart = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->voidType, FuId::arrayFillPart, "Fill", true, FuVar::new_(this->typeParam0, "value"), FuVar::new_(this->nIntType, "startIndex"), FuVar::new_(this->nIntType, "count"));
 	this->arrayPtrClass->add(arrayFillPart);
-	std::shared_ptr<FuMethod> arraySortPart = FuMethod::new_(nullptr, FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortPart, "Sort", true, FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"));
+	std::shared_ptr<FuMethod> arraySortPart = FuMethod::new_(nullptr, FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortPart, "Sort", true, FuVar::new_(this->nIntType, "startIndex"), FuVar::new_(this->nIntType, "count"));
 	this->arrayPtrClass->add(arraySortPart);
 	this->arrayStorageClass->parent = this->arrayPtrClass.get();
-	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::numericElementType, FuCallType::normal, this->intType, FuId::arrayBinarySearchAll, "BinarySearch", false, FuVar::new_(this->typeParam0, "value")), arrayBinarySearchPart));
+	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::numericElementType, FuCallType::normal, this->nIntType, FuId::arrayBinarySearchAll, "BinarySearch", false, FuVar::new_(this->typeParam0, "value")), arrayBinarySearchPart));
 	this->arrayStorageClass->addMethod(this->boolType, FuId::arrayContains, "Contains", false, FuVar::new_(this->typeParam0, "value"));
 	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::public_, FuCallType::normal, this->voidType, FuId::arrayFillAll, "Fill", true, FuVar::new_(this->typeParam0, "value")), arrayFillPart));
-	this->arrayStorageClass->add(FuProperty::new_(this->uIntType, FuId::arrayLength, "Length"));
+	this->arrayStorageClass->add(FuProperty::new_(this->nIntType, FuId::arrayLength, "Length"));
 	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortAll, "Sort", true), arraySortPart));
 	std::shared_ptr<FuClass> exceptionClass = FuClass::new_(FuCallType::normal, FuId::exceptionClass, "Exception");
 	exceptionClass->isPublic = true;
@@ -2798,13 +2800,13 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuReadWriteClassType> futemp2 = std::make_shared<FuReadWriteClassType>();
 	futemp2->class_ = this->arrayPtrClass.get();
 	futemp2->typeArg0 = this->typeParam0;
-	listClass->addMethod(this->voidType, FuId::listCopyTo, "CopyTo", false, FuVar::new_(this->intType, "sourceIndex"), FuVar::new_(futemp2, "destinationArray"), FuVar::new_(this->intType, "destinationIndex"), FuVar::new_(this->intType, "count"));
-	listClass->addMethod(this->intType, FuId::listIndexOf, "IndexOf", false, FuVar::new_(this->typeParam0, "value"));
-	listClass->addMethod(this->voidType, FuId::listInsert, "Insert", true, FuVar::new_(this->uIntType, "index"), FuVar::new_(typeParam0NotFinal, "value"));
+	listClass->addMethod(this->voidType, FuId::listCopyTo, "CopyTo", false, FuVar::new_(this->nIntType, "sourceIndex"), FuVar::new_(futemp2, "destinationArray"), FuVar::new_(this->nIntType, "destinationIndex"), FuVar::new_(this->nIntType, "count"));
+	listClass->addMethod(this->nIntType, FuId::listIndexOf, "IndexOf", false, FuVar::new_(this->typeParam0, "value"));
+	listClass->addMethod(this->voidType, FuId::listInsert, "Insert", true, FuVar::new_(this->nIntType, "index"), FuVar::new_(typeParam0NotFinal, "value"));
 	listClass->addMethod(this->typeParam0, FuId::listLast, "Last", false);
-	listClass->addMethod(this->voidType, FuId::listRemoveAt, "RemoveAt", true, FuVar::new_(this->intType, "index"));
-	listClass->addMethod(this->voidType, FuId::listRemoveRange, "RemoveRange", true, FuVar::new_(this->intType, "index"), FuVar::new_(this->intType, "count"));
-	listClass->add(FuMethodGroup::new_(FuMethod::new_(listClass, FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::listSortAll, "Sort", true), FuMethod::new_(listClass, FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::listSortPart, "Sort", true, FuVar::new_(this->intType, "startIndex"), FuVar::new_(this->intType, "count"))));
+	listClass->addMethod(this->voidType, FuId::listRemoveAt, "RemoveAt", true, FuVar::new_(this->nIntType, "index"));
+	listClass->addMethod(this->voidType, FuId::listRemoveRange, "RemoveRange", true, FuVar::new_(this->nIntType, "index"), FuVar::new_(this->nIntType, "count"));
+	listClass->add(FuMethodGroup::new_(FuMethod::new_(listClass, FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::listSortAll, "Sort", true), FuMethod::new_(listClass, FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::listSortPart, "Sort", true, FuVar::new_(this->nIntType, "startIndex"), FuVar::new_(this->nIntType, "count"))));
 	FuClass * queueClass = addCollection(FuId::queueClass, "Queue", 1, FuId::queueClear, FuId::queueCount);
 	queueClass->addMethod(this->typeParam0, FuId::queueDequeue, "Dequeue", true);
 	queueClass->addMethod(this->voidType, FuId::queueEnqueue, "Enqueue", true, FuVar::new_(this->typeParam0, "value"));
@@ -2840,18 +2842,18 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClassType> futemp4 = std::make_shared<FuClassType>();
 	futemp4->class_ = this->arrayPtrClass.get();
 	futemp4->typeArg0 = this->byteType;
-	convertClass->addStaticMethod(this->stringStorageType, FuId::convertToBase64String, "ToBase64String", FuVar::new_(futemp4, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length"));
+	convertClass->addStaticMethod(this->stringStorageType, FuId::convertToBase64String, "ToBase64String", FuVar::new_(futemp4, "bytes"), FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length"));
 	add(convertClass);
 	std::shared_ptr<FuClass> utf8EncodingClass = FuClass::new_(FuCallType::sealed, FuId::none, "UTF8Encoding");
-	utf8EncodingClass->addMethod(this->intType, FuId::uTF8GetByteCount, "GetByteCount", false, FuVar::new_(this->stringPtrType, "str"));
+	utf8EncodingClass->addMethod(this->nIntType, FuId::uTF8GetByteCount, "GetByteCount", false, FuVar::new_(this->stringPtrType, "str"));
 	std::shared_ptr<FuReadWriteClassType> futemp5 = std::make_shared<FuReadWriteClassType>();
 	futemp5->class_ = this->arrayPtrClass.get();
 	futemp5->typeArg0 = this->byteType;
-	utf8EncodingClass->addMethod(this->voidType, FuId::uTF8GetBytes, "GetBytes", false, FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp5, "bytes"), FuVar::new_(this->intType, "byteIndex"));
+	utf8EncodingClass->addMethod(this->voidType, FuId::uTF8GetBytes, "GetBytes", false, FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp5, "bytes"), FuVar::new_(this->nIntType, "byteIndex"));
 	std::shared_ptr<FuClassType> futemp6 = std::make_shared<FuClassType>();
 	futemp6->class_ = this->arrayPtrClass.get();
 	futemp6->typeArg0 = this->byteType;
-	utf8EncodingClass->addMethod(this->stringStorageType, FuId::uTF8GetString, "GetString", false, FuVar::new_(futemp6, "bytes"), FuVar::new_(this->intType, "offset"), FuVar::new_(this->intType, "length"));
+	utf8EncodingClass->addMethod(this->stringStorageType, FuId::uTF8GetString, "GetString", false, FuVar::new_(futemp6, "bytes"), FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length"));
 	std::shared_ptr<FuClass> encodingClass = FuClass::new_(FuCallType::static_, FuId::none, "Encoding");
 	encodingClass->add(FuStaticProperty::new_(utf8EncodingClass, FuId::none, "UTF8"));
 	add(encodingClass);
@@ -2879,10 +2881,10 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClassType> futemp8 = std::make_shared<FuClassType>();
 	futemp8->class_ = regexClass.get();
 	matchClass->add(FuMethodGroup::new_(FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindStr, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindRegex, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp8, "pattern"))));
-	matchClass->add(FuProperty::new_(this->intType, FuId::matchStart, "Start"));
-	matchClass->add(FuProperty::new_(this->intType, FuId::matchEnd, "End"));
+	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchStart, "Start"));
+	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchEnd, "End"));
 	matchClass->addMethod(this->stringStorageType, FuId::matchGetCapture, "GetCapture", false, FuVar::new_(this->uIntType, "group"));
-	matchClass->add(FuProperty::new_(this->uIntType, FuId::matchLength, "Length"));
+	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchLength, "Length"));
 	matchClass->add(FuProperty::new_(this->stringStorageType, FuId::matchValue, "Value"));
 	add(matchClass);
 	std::shared_ptr<FuClass> jsonElementClass = FuClass::new_(FuCallType::sealed, FuId::jsonElementClass, "JsonElement");
@@ -2979,7 +2981,7 @@ std::shared_ptr<FuLiteralString> FuSystem::newLiteralString(std::string_view val
 
 std::shared_ptr<FuType> FuSystem::promoteIntegerTypes(const FuType * left, const FuType * right) const
 {
-	return left == this->longType.get() || right == this->longType.get() ? this->longType : this->intType;
+	return left == this->longType.get() || right == this->longType.get() ? this->longType : left == this->nIntType.get() || right == this->nIntType.get() ? this->nIntType : this->intType;
 }
 
 std::shared_ptr<FuType> FuSystem::promoteFloatingTypes(const FuType * left, const FuType * right) const
@@ -3010,7 +3012,7 @@ FuClass * FuSystem::addCollection(FuId id, std::string_view name, int typeParame
 {
 	std::shared_ptr<FuClass> result = FuClass::new_(FuCallType::normal, id, name, typeParameterCount);
 	result->addMethod(this->voidType, clearId, "Clear", true);
-	result->add(FuProperty::new_(this->uIntType, countId, "Count"));
+	result->add(FuProperty::new_(this->nIntType, countId, "Count"));
 	add(result);
 	return result.get();
 }
@@ -4796,16 +4798,12 @@ std::shared_ptr<FuType> FuSema::getIntegerType(const FuExpr * left, const FuExpr
 	return type;
 }
 
-std::shared_ptr<FuIntegerType> FuSema::getShiftType(const FuExpr * left, const FuExpr * right) const
+std::shared_ptr<FuType> FuSema::getShiftType(const FuExpr * left, const FuExpr * right) const
 {
 	std::shared_ptr<FuIntegerType> intType = this->host->program->system->intType;
-	coerce(right, intType.get());
-	if (left->type->id == FuId::longType) {
-		std::shared_ptr<FuIntegerType> longType = std::static_pointer_cast<FuIntegerType>(left->type);
-		return longType;
-	}
 	coerce(left, intType.get());
-	return intType;
+	coerce(right, intType.get());
+	return dynamic_cast<const FuRangeType *>(left->type.get()) ? intType : left->type;
 }
 
 std::shared_ptr<FuType> FuSema::getNumericType(const FuExpr * left, const FuExpr * right) const
@@ -9047,6 +9045,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		case FuId::shortRange:
 		case FuId::uShortRange:
 		case FuId::intType:
+		case FuId::nIntType:
 		case FuId::longType:
 			return true;
 		default:
@@ -9058,6 +9057,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		case FuId::shortRange:
 		case FuId::uShortRange:
 		case FuId::intType:
+		case FuId::nIntType:
 		case FuId::longType:
 			return true;
 		default:
@@ -9067,6 +9067,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		switch (right) {
 		case FuId::uShortRange:
 		case FuId::intType:
+		case FuId::nIntType:
 		case FuId::longType:
 			return true;
 		default:
@@ -9076,6 +9077,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		switch (right) {
 		case FuId::shortRange:
 		case FuId::intType:
+		case FuId::nIntType:
 		case FuId::longType:
 			return true;
 		default:
@@ -9315,6 +9317,9 @@ void GenCCpp::writeNumericType(FuId id)
 		break;
 	case FuId::intType:
 		write("int");
+		break;
+	case FuId::nIntType:
+		write("ptrdiff_t");
 		break;
 	case FuId::longType:
 		includeStdInt();
@@ -9598,7 +9603,9 @@ void GenC::writePrintfWidth(const FuInterpolatedPart * part)
 		assert(part->precision < 0);
 		write(".*");
 	}
-	if (part->argument->type->id == FuId::longType)
+	if (part->argument->type->id == FuId::nIntType)
+		writeChar('t');
+	else if (part->argument->type->id == FuId::longType)
 		writePrintfLongPrefix();
 }
 
@@ -10572,6 +10579,11 @@ void GenC::writeGConstPointerCast(const FuExpr * expr)
 	}
 }
 
+void GenC::writeGPointerToInt(const FuType * type)
+{
+	write(type->id == FuId::nIntType ? "GPOINTER_TO_SIZE(" : "GPOINTER_TO_INT(");
+}
+
 void GenC::writeUnstorage(const FuExpr * obj)
 {
 	if (dynamic_cast<const FuStorageType *>(obj->type.get()))
@@ -10587,7 +10599,7 @@ void GenC::writeQueueGet(std::string_view function, const FuExpr * obj, FuPriori
 	if (parent == FuPriority::statement)
 		parenthesis = false;
 	else if (dynamic_cast<const FuIntegerType *>(elementType) && elementType->id != FuId::longType) {
-		write("GPOINTER_TO_INT(");
+		writeGPointerToInt(elementType);
 		parenthesis = true;
 	}
 	else {
@@ -10720,7 +10732,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 	const FuType * type = symbol->type.get();
 	int nesting = 0;
 	while (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type)) {
-		write("for (int _i");
+		write("for (ptrdiff_t _i");
 		visitLiteralLong(nesting);
 		write(" = ");
 		visitLiteralLong(array->length - 1);
@@ -10833,7 +10845,7 @@ void GenC::writeInitCode(const FuNamedValue * def)
 	const FuType * type = def->type.get();
 	int nesting = 0;
 	while (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type)) {
-		openLoop("int", nesting++, array->length);
+		openLoop("ptrdiff_t", nesting++, array->length);
 		type = array->getElementType().get();
 	}
 	const FuStorageType * lok;
@@ -11044,7 +11056,7 @@ void GenC::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pare
 void GenC::writeStringLength(const FuExpr * expr)
 {
 	include("string.h");
-	writeCall("(int) strlen", expr);
+	writeCall("(ptrdiff_t) strlen", expr);
 }
 
 void GenC::writeStringMethod(std::string_view name, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
@@ -11067,7 +11079,7 @@ void GenC::writeSizeofCompare(const FuType * elementType)
 
 void GenC::writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
-	write("for (int _i = 0; _i < ");
+	write("for (ptrdiff_t _i = 0; _i < ");
 	if (std::ssize(*args) == 1)
 		writeArrayStorageLength(obj);
 	else
@@ -11959,7 +11971,7 @@ void GenC::writeDictionaryIndexing(std::string_view function, const FuBinaryExpr
 {
 	const FuType * valueType = expr->left->type->asClassType()->getValueType().get();
 	if (dynamic_cast<const FuIntegerType *>(valueType) && valueType->id != FuId::longType) {
-		write("GPOINTER_TO_INT(");
+		writeGPointerToInt(valueType);
 		writeDictionaryLookup(expr->left.get(), function, expr->right.get());
 		writeChar(')');
 	}
@@ -12182,7 +12194,7 @@ void GenC::writeDictIterVar(const FuNamedValue * iter, std::string_view value)
 	writeTypeAndName(iter);
 	write(" = ");
 	if (dynamic_cast<const FuIntegerType *>(iter->type.get()) && iter->type->id != FuId::longType) {
-		write("GPOINTER_TO_INT(");
+		writeGPointerToInt(iter->type.get());
 		write(value);
 		writeChar(')');
 	}
@@ -12979,7 +12991,7 @@ void GenC::writeLibrary()
 	}
 	if (this->stringSubstring) {
 		writeNewLine();
-		writeLine("static char *FuString_Substring(const char *str, int len)");
+		writeLine("static char *FuString_Substring(const char *str, size_t len)");
 		openBlock();
 		writeLine("char *p = malloc(len + 1);");
 		writeLine("memcpy(p, str, len);");
@@ -13006,23 +13018,23 @@ void GenC::writeLibrary()
 	}
 	if (this->stringIndexOf) {
 		writeNewLine();
-		writeLine("static int FuString_IndexOf(const char *str, const char *needle)");
+		writeLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
 		openBlock();
 		writeLine("const char *p = strstr(str, needle);");
-		writeLine("return p == NULL ? -1 : (int) (p - str);");
+		writeLine("return p == NULL ? -1 : p - str;");
 		closeBlock();
 	}
 	if (this->stringLastIndexOf) {
 		writeNewLine();
-		writeLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
+		writeLine("static ptrdiff_t FuString_LastIndexOf(const char *str, const char *needle)");
 		openBlock();
 		writeLine("if (needle[0] == '\\0')");
-		writeLine("\treturn (int) strlen(str);");
-		writeLine("int result = -1;");
+		writeLine("\treturn (ptrdiff_t) strlen(str);");
+		writeLine("ptrdiff_t result = -1;");
 		writeLine("const char *p = strstr(str, needle);");
 		write("while (p != NULL) ");
 		openBlock();
-		writeLine("result = (int) (p - str);");
+		writeLine("result = p - str;");
 		writeLine("p = strstr(p + 1, needle);");
 		closeBlock();
 		writeLine("return result;");
@@ -13630,9 +13642,9 @@ void GenCl::writeLibrary()
 {
 	if (this->stringLength) {
 		writeNewLine();
-		writeLine("static int strlen(constant char *str)");
+		writeLine("static ptrdiff_t strlen(constant char *str)");
 		openBlock();
-		writeLine("int len = 0;");
+		writeLine("ptrdiff_t len = 0;");
 		writeLine("while (str[len] != '\\0')");
 		writeLine("\tlen++;");
 		writeLine("return len;");
@@ -13664,7 +13676,7 @@ void GenCl::writeLibrary()
 		writeNewLine();
 		writeLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 		openBlock();
-		writeLine("for (int i = 0; str[i] != '\\0'; i++) {");
+		writeLine("for (size_t i = 0; str[i] != '\\0'; i++) {");
 		writeLine("\tif (mem[i] != str[i])");
 		writeLine("\t\treturn false;");
 		writeCharLine('}');
@@ -14359,12 +14371,12 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeStringMethod(obj, "ends_with", method, args);
 		break;
 	case FuId::stringIndexOf:
-		write("static_cast<int>(");
+		write("static_cast<ptrdiff_t>(");
 		writeStringMethod(obj, "find", method, args);
 		writeChar(')');
 		break;
 	case FuId::stringLastIndexOf:
-		write("static_cast<int>(");
+		write("static_cast<ptrdiff_t>(");
 		writeStringMethod(obj, "rfind", method, args);
 		writeChar(')');
 		break;
@@ -15815,6 +15827,9 @@ void GenCs::writeType(const FuType * type, bool promote)
 		case FuId::intType:
 			write("int");
 			break;
+		case FuId::nIntType:
+			write("nint");
+			break;
 		case FuId::longType:
 			write("long");
 			break;
@@ -16850,6 +16865,9 @@ void GenD::writeType(const FuType * type, bool promote)
 			break;
 		case FuId::intType:
 			write("int");
+			break;
+		case FuId::nIntType:
+			write("ptrdiff_t");
 			break;
 		case FuId::longType:
 			write("long");
@@ -18243,6 +18261,7 @@ void GenJava::writeJavaType(const FuType * type, bool promote, bool needClass)
 			write(needClass ? "Short" : "short");
 			break;
 		case FuId::intType:
+		case FuId::nIntType:
 			write(needClass ? "Integer" : "int");
 			break;
 		case FuId::longType:
@@ -19505,6 +19524,7 @@ void GenJsNoModule::writeArrayElementType(const FuType * type)
 		write("Uint16");
 		break;
 	case FuId::intType:
+	case FuId::nIntType:
 		write("Int32");
 		break;
 	case FuId::longType:
@@ -21641,6 +21661,7 @@ void GenSwift::writeType(const FuType * type)
 			write("UInt16");
 			break;
 		case FuId::intType:
+		case FuId::nIntType:
 			write("Int");
 			break;
 		case FuId::longType:
@@ -23550,6 +23571,7 @@ int GenPy::getArrayCode(const FuType * type)
 		return 'H';
 	case FuId::intType:
 		return 'i';
+	case FuId::nIntType:
 	case FuId::longType:
 		return 'q';
 	case FuId::floatType:

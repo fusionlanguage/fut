@@ -1298,162 +1298,163 @@ export const FuId = {
 	SHORT_RANGE : 9,
 	U_SHORT_RANGE : 10,
 	INT_TYPE : 11,
-	LONG_TYPE : 12,
-	FLOAT_TYPE : 13,
-	DOUBLE_TYPE : 14,
-	FLOAT_INT_TYPE : 15,
-	FLOATING_TYPE : 16,
-	NUMERIC_TYPE : 17,
-	BOOL_TYPE : 18,
-	STRING_CLASS : 19,
-	STRING_PTR_TYPE : 20,
-	STRING_STORAGE_TYPE : 21,
-	MAIN_ARGS_TYPE : 22,
-	ARRAY_PTR_CLASS : 23,
-	ARRAY_STORAGE_CLASS : 24,
-	EXCEPTION_CLASS : 25,
-	LIST_CLASS : 26,
-	QUEUE_CLASS : 27,
-	STACK_CLASS : 28,
-	HASH_SET_CLASS : 29,
-	SORTED_SET_CLASS : 30,
-	DICTIONARY_CLASS : 31,
-	SORTED_DICTIONARY_CLASS : 32,
-	ORDERED_DICTIONARY_CLASS : 33,
-	TEXT_WRITER_CLASS : 34,
-	STRING_WRITER_CLASS : 35,
-	REGEX_OPTIONS_ENUM : 36,
-	REGEX_CLASS : 37,
-	MATCH_CLASS : 38,
-	JSON_ELEMENT_CLASS : 39,
-	LOCK_CLASS : 40,
-	STRING_LENGTH : 41,
-	ARRAY_LENGTH : 42,
-	CONSOLE_ERROR : 43,
-	MAIN : 44,
-	CLASS_TO_STRING : 45,
-	MATCH_START : 46,
-	MATCH_END : 47,
-	MATCH_LENGTH : 48,
-	MATCH_VALUE : 49,
-	MATH_NA_N : 50,
-	MATH_NEGATIVE_INFINITY : 51,
-	MATH_POSITIVE_INFINITY : 52,
-	ENUM_FROM_INT : 53,
-	ENUM_HAS_FLAG : 54,
-	INT_TRY_PARSE : 55,
-	LONG_TRY_PARSE : 56,
-	DOUBLE_TRY_PARSE : 57,
-	STRING_CONTAINS : 58,
-	STRING_ENDS_WITH : 59,
-	STRING_INDEX_OF : 60,
-	STRING_LAST_INDEX_OF : 61,
-	STRING_REPLACE : 62,
-	STRING_STARTS_WITH : 63,
-	STRING_SUBSTRING : 64,
-	STRING_TO_LOWER : 65,
-	STRING_TO_UPPER : 66,
-	ARRAY_BINARY_SEARCH_ALL : 67,
-	ARRAY_BINARY_SEARCH_PART : 68,
-	ARRAY_CONTAINS : 69,
-	ARRAY_COPY_TO : 70,
-	ARRAY_FILL_ALL : 71,
-	ARRAY_FILL_PART : 72,
-	ARRAY_SORT_ALL : 73,
-	ARRAY_SORT_PART : 74,
-	LIST_ADD : 75,
-	LIST_ADD_RANGE : 76,
-	LIST_ALL : 77,
-	LIST_ANY : 78,
-	LIST_CLEAR : 79,
-	LIST_CONTAINS : 80,
-	LIST_COPY_TO : 81,
-	LIST_COUNT : 82,
-	LIST_INDEX_OF : 83,
-	LIST_INSERT : 84,
-	LIST_LAST : 85,
-	LIST_REMOVE_AT : 86,
-	LIST_REMOVE_RANGE : 87,
-	LIST_SORT_ALL : 88,
-	LIST_SORT_PART : 89,
-	QUEUE_CLEAR : 90,
-	QUEUE_COUNT : 91,
-	QUEUE_DEQUEUE : 92,
-	QUEUE_ENQUEUE : 93,
-	QUEUE_PEEK : 94,
-	STACK_CLEAR : 95,
-	STACK_COUNT : 96,
-	STACK_PEEK : 97,
-	STACK_PUSH : 98,
-	STACK_POP : 99,
-	HASH_SET_ADD : 100,
-	HASH_SET_CLEAR : 101,
-	HASH_SET_CONTAINS : 102,
-	HASH_SET_COUNT : 103,
-	HASH_SET_REMOVE : 104,
-	SORTED_SET_ADD : 105,
-	SORTED_SET_CLEAR : 106,
-	SORTED_SET_CONTAINS : 107,
-	SORTED_SET_COUNT : 108,
-	SORTED_SET_REMOVE : 109,
-	DICTIONARY_ADD : 110,
-	DICTIONARY_CLEAR : 111,
-	DICTIONARY_CONTAINS_KEY : 112,
-	DICTIONARY_COUNT : 113,
-	DICTIONARY_REMOVE : 114,
-	SORTED_DICTIONARY_CLEAR : 115,
-	SORTED_DICTIONARY_CONTAINS_KEY : 116,
-	SORTED_DICTIONARY_COUNT : 117,
-	SORTED_DICTIONARY_REMOVE : 118,
-	ORDERED_DICTIONARY_CLEAR : 119,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 120,
-	ORDERED_DICTIONARY_COUNT : 121,
-	ORDERED_DICTIONARY_REMOVE : 122,
-	TEXT_WRITER_WRITE : 123,
-	TEXT_WRITER_WRITE_CHAR : 124,
-	TEXT_WRITER_WRITE_CODE_POINT : 125,
-	TEXT_WRITER_WRITE_LINE : 126,
-	CONSOLE_WRITE : 127,
-	CONSOLE_WRITE_LINE : 128,
-	STRING_WRITER_CLEAR : 129,
-	STRING_WRITER_TO_STRING : 130,
-	CONVERT_TO_BASE64_STRING : 131,
-	U_T_F8_GET_BYTE_COUNT : 132,
-	U_T_F8_GET_BYTES : 133,
-	U_T_F8_GET_STRING : 134,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 135,
-	REGEX_COMPILE : 136,
-	REGEX_ESCAPE : 137,
-	REGEX_IS_MATCH_STR : 138,
-	REGEX_IS_MATCH_REGEX : 139,
-	MATCH_FIND_STR : 140,
-	MATCH_FIND_REGEX : 141,
-	MATCH_GET_CAPTURE : 142,
-	JSON_ELEMENT_PARSE : 143,
-	JSON_ELEMENT_IS_OBJECT : 144,
-	JSON_ELEMENT_IS_ARRAY : 145,
-	JSON_ELEMENT_IS_STRING : 146,
-	JSON_ELEMENT_IS_NUMBER : 147,
-	JSON_ELEMENT_IS_BOOLEAN : 148,
-	JSON_ELEMENT_IS_NULL : 149,
-	JSON_ELEMENT_GET_OBJECT : 150,
-	JSON_ELEMENT_GET_ARRAY : 151,
-	JSON_ELEMENT_GET_STRING : 152,
-	JSON_ELEMENT_GET_DOUBLE : 153,
-	JSON_ELEMENT_GET_BOOLEAN : 154,
-	MATH_METHOD : 155,
-	MATH_ABS : 156,
-	MATH_CEILING : 157,
-	MATH_CLAMP : 158,
-	MATH_FUSED_MULTIPLY_ADD : 159,
-	MATH_IS_FINITE : 160,
-	MATH_IS_INFINITY : 161,
-	MATH_IS_NA_N : 162,
-	MATH_LOG2 : 163,
-	MATH_MAX : 164,
-	MATH_MIN : 165,
-	MATH_ROUND : 166,
-	MATH_TRUNCATE : 167
+	N_INT_TYPE : 12,
+	LONG_TYPE : 13,
+	FLOAT_TYPE : 14,
+	DOUBLE_TYPE : 15,
+	FLOAT_INT_TYPE : 16,
+	FLOATING_TYPE : 17,
+	NUMERIC_TYPE : 18,
+	BOOL_TYPE : 19,
+	STRING_CLASS : 20,
+	STRING_PTR_TYPE : 21,
+	STRING_STORAGE_TYPE : 22,
+	MAIN_ARGS_TYPE : 23,
+	ARRAY_PTR_CLASS : 24,
+	ARRAY_STORAGE_CLASS : 25,
+	EXCEPTION_CLASS : 26,
+	LIST_CLASS : 27,
+	QUEUE_CLASS : 28,
+	STACK_CLASS : 29,
+	HASH_SET_CLASS : 30,
+	SORTED_SET_CLASS : 31,
+	DICTIONARY_CLASS : 32,
+	SORTED_DICTIONARY_CLASS : 33,
+	ORDERED_DICTIONARY_CLASS : 34,
+	TEXT_WRITER_CLASS : 35,
+	STRING_WRITER_CLASS : 36,
+	REGEX_OPTIONS_ENUM : 37,
+	REGEX_CLASS : 38,
+	MATCH_CLASS : 39,
+	JSON_ELEMENT_CLASS : 40,
+	LOCK_CLASS : 41,
+	STRING_LENGTH : 42,
+	ARRAY_LENGTH : 43,
+	CONSOLE_ERROR : 44,
+	MAIN : 45,
+	CLASS_TO_STRING : 46,
+	MATCH_START : 47,
+	MATCH_END : 48,
+	MATCH_LENGTH : 49,
+	MATCH_VALUE : 50,
+	MATH_NA_N : 51,
+	MATH_NEGATIVE_INFINITY : 52,
+	MATH_POSITIVE_INFINITY : 53,
+	ENUM_FROM_INT : 54,
+	ENUM_HAS_FLAG : 55,
+	INT_TRY_PARSE : 56,
+	LONG_TRY_PARSE : 57,
+	DOUBLE_TRY_PARSE : 58,
+	STRING_CONTAINS : 59,
+	STRING_ENDS_WITH : 60,
+	STRING_INDEX_OF : 61,
+	STRING_LAST_INDEX_OF : 62,
+	STRING_REPLACE : 63,
+	STRING_STARTS_WITH : 64,
+	STRING_SUBSTRING : 65,
+	STRING_TO_LOWER : 66,
+	STRING_TO_UPPER : 67,
+	ARRAY_BINARY_SEARCH_ALL : 68,
+	ARRAY_BINARY_SEARCH_PART : 69,
+	ARRAY_CONTAINS : 70,
+	ARRAY_COPY_TO : 71,
+	ARRAY_FILL_ALL : 72,
+	ARRAY_FILL_PART : 73,
+	ARRAY_SORT_ALL : 74,
+	ARRAY_SORT_PART : 75,
+	LIST_ADD : 76,
+	LIST_ADD_RANGE : 77,
+	LIST_ALL : 78,
+	LIST_ANY : 79,
+	LIST_CLEAR : 80,
+	LIST_CONTAINS : 81,
+	LIST_COPY_TO : 82,
+	LIST_COUNT : 83,
+	LIST_INDEX_OF : 84,
+	LIST_INSERT : 85,
+	LIST_LAST : 86,
+	LIST_REMOVE_AT : 87,
+	LIST_REMOVE_RANGE : 88,
+	LIST_SORT_ALL : 89,
+	LIST_SORT_PART : 90,
+	QUEUE_CLEAR : 91,
+	QUEUE_COUNT : 92,
+	QUEUE_DEQUEUE : 93,
+	QUEUE_ENQUEUE : 94,
+	QUEUE_PEEK : 95,
+	STACK_CLEAR : 96,
+	STACK_COUNT : 97,
+	STACK_PEEK : 98,
+	STACK_PUSH : 99,
+	STACK_POP : 100,
+	HASH_SET_ADD : 101,
+	HASH_SET_CLEAR : 102,
+	HASH_SET_CONTAINS : 103,
+	HASH_SET_COUNT : 104,
+	HASH_SET_REMOVE : 105,
+	SORTED_SET_ADD : 106,
+	SORTED_SET_CLEAR : 107,
+	SORTED_SET_CONTAINS : 108,
+	SORTED_SET_COUNT : 109,
+	SORTED_SET_REMOVE : 110,
+	DICTIONARY_ADD : 111,
+	DICTIONARY_CLEAR : 112,
+	DICTIONARY_CONTAINS_KEY : 113,
+	DICTIONARY_COUNT : 114,
+	DICTIONARY_REMOVE : 115,
+	SORTED_DICTIONARY_CLEAR : 116,
+	SORTED_DICTIONARY_CONTAINS_KEY : 117,
+	SORTED_DICTIONARY_COUNT : 118,
+	SORTED_DICTIONARY_REMOVE : 119,
+	ORDERED_DICTIONARY_CLEAR : 120,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 121,
+	ORDERED_DICTIONARY_COUNT : 122,
+	ORDERED_DICTIONARY_REMOVE : 123,
+	TEXT_WRITER_WRITE : 124,
+	TEXT_WRITER_WRITE_CHAR : 125,
+	TEXT_WRITER_WRITE_CODE_POINT : 126,
+	TEXT_WRITER_WRITE_LINE : 127,
+	CONSOLE_WRITE : 128,
+	CONSOLE_WRITE_LINE : 129,
+	STRING_WRITER_CLEAR : 130,
+	STRING_WRITER_TO_STRING : 131,
+	CONVERT_TO_BASE64_STRING : 132,
+	U_T_F8_GET_BYTE_COUNT : 133,
+	U_T_F8_GET_BYTES : 134,
+	U_T_F8_GET_STRING : 135,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 136,
+	REGEX_COMPILE : 137,
+	REGEX_ESCAPE : 138,
+	REGEX_IS_MATCH_STR : 139,
+	REGEX_IS_MATCH_REGEX : 140,
+	MATCH_FIND_STR : 141,
+	MATCH_FIND_REGEX : 142,
+	MATCH_GET_CAPTURE : 143,
+	JSON_ELEMENT_PARSE : 144,
+	JSON_ELEMENT_IS_OBJECT : 145,
+	JSON_ELEMENT_IS_ARRAY : 146,
+	JSON_ELEMENT_IS_STRING : 147,
+	JSON_ELEMENT_IS_NUMBER : 148,
+	JSON_ELEMENT_IS_BOOLEAN : 149,
+	JSON_ELEMENT_IS_NULL : 150,
+	JSON_ELEMENT_GET_OBJECT : 151,
+	JSON_ELEMENT_GET_ARRAY : 152,
+	JSON_ELEMENT_GET_STRING : 153,
+	JSON_ELEMENT_GET_DOUBLE : 154,
+	JSON_ELEMENT_GET_BOOLEAN : 155,
+	MATH_METHOD : 156,
+	MATH_ABS : 157,
+	MATH_CEILING : 158,
+	MATH_CLAMP : 159,
+	MATH_FUSED_MULTIPLY_ADD : 160,
+	MATH_IS_FINITE : 161,
+	MATH_IS_INFINITY : 162,
+	MATH_IS_NA_N : 163,
+	MATH_LOG2 : 164,
+	MATH_MAX : 165,
+	MATH_MIN : 166,
+	MATH_ROUND : 167,
+	MATH_TRUNCATE : 168
 }
 
 export class FuDocInline
@@ -3455,6 +3456,7 @@ export class FuSystem extends FuScope
 		this.add(this.intType);
 		this.#uIntType.name = "uint";
 		this.add(this.#uIntType);
+		this.add(this.#nIntType);
 		this.#addMinMaxValue(this.longType, -9223372036854775808n, 9223372036854775807n);
 		this.longType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.LONG_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
 		this.add(this.longType);
@@ -3466,37 +3468,36 @@ export class FuSystem extends FuScope
 		let ushortType = FuRangeType.new(0, 65535);
 		ushortType.name = "ushort";
 		this.add(ushortType);
-		let minus1Type = FuRangeType.new(-1, 2147483647);
 		this.add(this.floatType);
 		this.doubleType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.DOUBLE_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
 		this.add(this.doubleType);
 		this.add(this.boolType);
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_CONTAINS, "Contains", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_ENDS_WITH, "EndsWith", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.addMethod(minus1Type, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.addMethod(minus1Type, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.add(FuProperty.new(this.#uIntType, FuId.STRING_LENGTH, "Length"));
+		this.#stringClass.addMethod(this.#nIntType, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.addMethod(this.#nIntType, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.add(FuProperty.new(this.#nIntType, FuId.STRING_LENGTH, "Length"));
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_REPLACE, "Replace", false, FuVar.new(this.stringPtrType, "oldValue"), FuVar.new(this.stringPtrType, "newValue"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_STARTS_WITH, "StartsWith", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length", this.newLiteralLong(-1n)));
+		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.#nIntType, "offset"), FuVar.new(this.#nIntType, "length", this.newLiteralLong(-1n)));
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_TO_LOWER, "ToLower", false);
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_TO_UPPER, "ToUpper", false);
 		this.stringPtrType.class = this.#stringClass;
 		this.add(this.stringPtrType);
 		this.stringNullablePtrType.class = this.#stringClass;
 		this.stringStorageType.class = this.#stringClass;
-		let arrayBinarySearchPart = FuMethod.new(null, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.intType, FuId.ARRAY_BINARY_SEARCH_PART, "BinarySearch", false, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
+		let arrayBinarySearchPart = FuMethod.new(null, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.#nIntType, FuId.ARRAY_BINARY_SEARCH_PART, "BinarySearch", false, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.#nIntType, "startIndex"), FuVar.new(this.#nIntType, "count"));
 		this.arrayPtrClass.add(arrayBinarySearchPart);
-		this.arrayPtrClass.addMethod(this.voidType, FuId.ARRAY_COPY_TO, "CopyTo", false, FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count"));
-		let arrayFillPart = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.ARRAY_FILL_PART, "Fill", true, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
+		this.arrayPtrClass.addMethod(this.voidType, FuId.ARRAY_COPY_TO, "CopyTo", false, FuVar.new(this.#nIntType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.#nIntType, "destinationIndex"), FuVar.new(this.#nIntType, "count"));
+		let arrayFillPart = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.ARRAY_FILL_PART, "Fill", true, FuVar.new(this.#typeParam0, "value"), FuVar.new(this.#nIntType, "startIndex"), FuVar.new(this.#nIntType, "count"));
 		this.arrayPtrClass.add(arrayFillPart);
-		let arraySortPart = FuMethod.new(null, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_PART, "Sort", true, FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"));
+		let arraySortPart = FuMethod.new(null, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_PART, "Sort", true, FuVar.new(this.#nIntType, "startIndex"), FuVar.new(this.#nIntType, "count"));
 		this.arrayPtrClass.add(arraySortPart);
 		this.arrayStorageClass.parent = this.arrayPtrClass;
-		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.intType, FuId.ARRAY_BINARY_SEARCH_ALL, "BinarySearch", false, FuVar.new(this.#typeParam0, "value")), arrayBinarySearchPart));
+		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.#nIntType, FuId.ARRAY_BINARY_SEARCH_ALL, "BinarySearch", false, FuVar.new(this.#typeParam0, "value")), arrayBinarySearchPart));
 		this.arrayStorageClass.addMethod(this.boolType, FuId.ARRAY_CONTAINS, "Contains", false, FuVar.new(this.#typeParam0, "value"));
 		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.ARRAY_FILL_ALL, "Fill", true, FuVar.new(this.#typeParam0, "value")), arrayFillPart));
-		this.arrayStorageClass.add(FuProperty.new(this.#uIntType, FuId.ARRAY_LENGTH, "Length"));
+		this.arrayStorageClass.add(FuProperty.new(this.#nIntType, FuId.ARRAY_LENGTH, "Length"));
 		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_ALL, "Sort", true), arraySortPart));
 		let exceptionClass = FuClass.new(FuCallType.NORMAL, FuId.EXCEPTION_CLASS, "Exception");
 		exceptionClass.isPublic = true;
@@ -3509,13 +3510,13 @@ export class FuSystem extends FuScope
 		listClass.addMethod(this.boolType, FuId.LIST_ALL, "All", false, FuVar.new(typeParam0Predicate, "predicate"));
 		listClass.addMethod(this.boolType, FuId.LIST_ANY, "Any", false, FuVar.new(typeParam0Predicate, "predicate"));
 		listClass.addMethod(this.boolType, FuId.LIST_CONTAINS, "Contains", false, FuVar.new(this.#typeParam0, "value"));
-		listClass.addMethod(this.voidType, FuId.LIST_COPY_TO, "CopyTo", false, FuVar.new(this.intType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.intType, "destinationIndex"), FuVar.new(this.intType, "count"));
-		listClass.addMethod(this.intType, FuId.LIST_INDEX_OF, "IndexOf", false, FuVar.new(this.#typeParam0, "value"));
-		listClass.addMethod(this.voidType, FuId.LIST_INSERT, "Insert", true, FuVar.new(this.#uIntType, "index"), FuVar.new(typeParam0NotFinal, "value"));
+		listClass.addMethod(this.voidType, FuId.LIST_COPY_TO, "CopyTo", false, FuVar.new(this.#nIntType, "sourceIndex"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.#typeParam0 }), "destinationArray"), FuVar.new(this.#nIntType, "destinationIndex"), FuVar.new(this.#nIntType, "count"));
+		listClass.addMethod(this.#nIntType, FuId.LIST_INDEX_OF, "IndexOf", false, FuVar.new(this.#typeParam0, "value"));
+		listClass.addMethod(this.voidType, FuId.LIST_INSERT, "Insert", true, FuVar.new(this.#nIntType, "index"), FuVar.new(typeParam0NotFinal, "value"));
 		listClass.addMethod(this.#typeParam0, FuId.LIST_LAST, "Last", false);
-		listClass.addMethod(this.voidType, FuId.LIST_REMOVE_AT, "RemoveAt", true, FuVar.new(this.intType, "index"));
-		listClass.addMethod(this.voidType, FuId.LIST_REMOVE_RANGE, "RemoveRange", true, FuVar.new(this.intType, "index"), FuVar.new(this.intType, "count"));
-		listClass.add(FuMethodGroup.new(FuMethod.new(listClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_ALL, "Sort", true), FuMethod.new(listClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_PART, "Sort", true, FuVar.new(this.intType, "startIndex"), FuVar.new(this.intType, "count"))));
+		listClass.addMethod(this.voidType, FuId.LIST_REMOVE_AT, "RemoveAt", true, FuVar.new(this.#nIntType, "index"));
+		listClass.addMethod(this.voidType, FuId.LIST_REMOVE_RANGE, "RemoveRange", true, FuVar.new(this.#nIntType, "index"), FuVar.new(this.#nIntType, "count"));
+		listClass.add(FuMethodGroup.new(FuMethod.new(listClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_ALL, "Sort", true), FuMethod.new(listClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.LIST_SORT_PART, "Sort", true, FuVar.new(this.#nIntType, "startIndex"), FuVar.new(this.#nIntType, "count"))));
 		let queueClass = this.#addCollection(FuId.QUEUE_CLASS, "Queue", 1, FuId.QUEUE_CLEAR, FuId.QUEUE_COUNT);
 		queueClass.addMethod(this.#typeParam0, FuId.QUEUE_DEQUEUE, "Dequeue", true);
 		queueClass.addMethod(this.voidType, FuId.QUEUE_ENQUEUE, "Enqueue", true, FuVar.new(this.#typeParam0, "value"));
@@ -3546,12 +3547,12 @@ export class FuSystem extends FuScope
 		this.add(stringWriterClass);
 		stringWriterClass.parent = textWriterClass;
 		let convertClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Convert");
-		convertClass.addStaticMethod(this.stringStorageType, FuId.CONVERT_TO_BASE64_STRING, "ToBase64String", FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length"));
+		convertClass.addStaticMethod(this.stringStorageType, FuId.CONVERT_TO_BASE64_STRING, "ToBase64String", FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.#nIntType, "offset"), FuVar.new(this.#nIntType, "length"));
 		this.add(convertClass);
 		let utf8EncodingClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "UTF8Encoding");
-		utf8EncodingClass.addMethod(this.intType, FuId.U_T_F8_GET_BYTE_COUNT, "GetByteCount", false, FuVar.new(this.stringPtrType, "str"));
-		utf8EncodingClass.addMethod(this.voidType, FuId.U_T_F8_GET_BYTES, "GetBytes", false, FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "byteIndex"));
-		utf8EncodingClass.addMethod(this.stringStorageType, FuId.U_T_F8_GET_STRING, "GetString", false, FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.intType, "offset"), FuVar.new(this.intType, "length"));
+		utf8EncodingClass.addMethod(this.#nIntType, FuId.U_T_F8_GET_BYTE_COUNT, "GetByteCount", false, FuVar.new(this.stringPtrType, "str"));
+		utf8EncodingClass.addMethod(this.voidType, FuId.U_T_F8_GET_BYTES, "GetBytes", false, FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.#nIntType, "byteIndex"));
+		utf8EncodingClass.addMethod(this.stringStorageType, FuId.U_T_F8_GET_STRING, "GetString", false, FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.#nIntType, "offset"), FuVar.new(this.#nIntType, "length"));
 		let encodingClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Encoding");
 		encodingClass.add(FuStaticProperty.new(utf8EncodingClass, FuId.NONE, "UTF8"));
 		this.add(encodingClass);
@@ -3575,10 +3576,10 @@ export class FuSystem extends FuScope
 		this.add(regexClass);
 		let matchClass = FuClass.new(FuCallType.SEALED, FuId.MATCH_CLASS, "Match");
 		matchClass.add(FuMethodGroup.new(FuMethod.new(matchClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.MATCH_FIND_STR, "Find", true, FuVar.new(this.stringPtrType, "input"), FuVar.new(this.stringPtrType, "pattern"), FuVar.new(this.regexOptionsEnum, "options", regexOptionsNone)), FuMethod.new(matchClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.MATCH_FIND_REGEX, "Find", true, FuVar.new(this.stringPtrType, "input"), FuVar.new(Object.assign(new FuClassType(), { class: regexClass }), "pattern"))));
-		matchClass.add(FuProperty.new(this.intType, FuId.MATCH_START, "Start"));
-		matchClass.add(FuProperty.new(this.intType, FuId.MATCH_END, "End"));
+		matchClass.add(FuProperty.new(this.#nIntType, FuId.MATCH_START, "Start"));
+		matchClass.add(FuProperty.new(this.#nIntType, FuId.MATCH_END, "End"));
 		matchClass.addMethod(this.stringStorageType, FuId.MATCH_GET_CAPTURE, "GetCapture", false, FuVar.new(this.#uIntType, "group"));
-		matchClass.add(FuProperty.new(this.#uIntType, FuId.MATCH_LENGTH, "Length"));
+		matchClass.add(FuProperty.new(this.#nIntType, FuId.MATCH_LENGTH, "Length"));
 		matchClass.add(FuProperty.new(this.stringStorageType, FuId.MATCH_VALUE, "Value"));
 		this.add(matchClass);
 		let jsonElementClass = FuClass.new(FuCallType.SEALED, FuId.JSON_ELEMENT_CLASS, "JsonElement");
@@ -3644,6 +3645,7 @@ export class FuSystem extends FuScope
 	#typeParam0 = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0, name: "T" });
 	intType = Object.assign(new FuIntegerType(), { id: FuId.INT_TYPE, name: "int" });
 	#uIntType = FuRangeType.new(0, 2147483647);
+	#nIntType = Object.assign(new FuIntegerType(), { id: FuId.N_INT_TYPE, name: "nint" });
 	longType = Object.assign(new FuIntegerType(), { id: FuId.LONG_TYPE, name: "long" });
 	byteType = FuRangeType.new(0, 255);
 	floatType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_TYPE, name: "float" });
@@ -3673,7 +3675,7 @@ export class FuSystem extends FuScope
 
 	promoteIntegerTypes(left, right)
 	{
-		return left == this.longType || right == this.longType ? this.longType : this.intType;
+		return left == this.longType || right == this.longType ? this.longType : left == this.#nIntType || right == this.#nIntType ? this.#nIntType : this.intType;
 	}
 
 	promoteFloatingTypes(left, right)
@@ -3704,7 +3706,7 @@ export class FuSystem extends FuScope
 	{
 		let result = FuClass.new(FuCallType.NORMAL, id, name, typeParameterCount);
 		result.addMethod(this.voidType, clearId, "Clear", true);
-		result.add(FuProperty.new(this.#uIntType, countId, "Count"));
+		result.add(FuProperty.new(this.#nIntType, countId, "Count"));
 		this.add(result);
 		return result;
 	}
@@ -5284,13 +5286,9 @@ export class FuSema
 	#getShiftType(left, right)
 	{
 		let intType = this.#host.program.system.intType;
-		this.#coerce(right, intType);
-		if (left.type.id == FuId.LONG_TYPE) {
-			let longType = left.type;
-			return longType;
-		}
 		this.#coerce(left, intType);
-		return intType;
+		this.#coerce(right, intType);
+		return left.type instanceof FuRangeType ? intType : left.type;
 	}
 
 	#getNumericType(left, right)
@@ -9614,6 +9612,7 @@ export class GenTyped extends GenBase
 			case FuId.SHORT_RANGE:
 			case FuId.U_SHORT_RANGE:
 			case FuId.INT_TYPE:
+			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
 				return true;
 			default:
@@ -9625,6 +9624,7 @@ export class GenTyped extends GenBase
 			case FuId.SHORT_RANGE:
 			case FuId.U_SHORT_RANGE:
 			case FuId.INT_TYPE:
+			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
 				return true;
 			default:
@@ -9634,6 +9634,7 @@ export class GenTyped extends GenBase
 			switch (right) {
 			case FuId.U_SHORT_RANGE:
 			case FuId.INT_TYPE:
+			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
 				return true;
 			default:
@@ -9643,6 +9644,7 @@ export class GenTyped extends GenBase
 			switch (right) {
 			case FuId.SHORT_RANGE:
 			case FuId.INT_TYPE:
+			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
 				return true;
 			default:
@@ -9892,6 +9894,9 @@ export class GenCCpp extends GenCCppD
 			break;
 		case FuId.INT_TYPE:
 			this.write("int");
+			break;
+		case FuId.N_INT_TYPE:
+			this.write("ptrdiff_t");
 			break;
 		case FuId.LONG_TYPE:
 			this.includeStdInt();
@@ -10210,7 +10215,9 @@ export class GenC extends GenCCpp
 			console.assert(part.precision < 0);
 			this.write(".*");
 		}
-		if (part.argument.type.id == FuId.LONG_TYPE)
+		if (part.argument.type.id == FuId.N_INT_TYPE)
+			this.writeChar(116);
+		else if (part.argument.type.id == FuId.LONG_TYPE)
 			this.writePrintfLongPrefix();
 	}
 
@@ -11257,6 +11264,11 @@ export class GenC extends GenCCpp
 		}
 	}
 
+	#writeGPointerToInt(type)
+	{
+		this.write(type.id == FuId.N_INT_TYPE ? "GPOINTER_TO_SIZE(" : "GPOINTER_TO_INT(");
+	}
+
 	#writeUnstorage(obj)
 	{
 		if (obj.type instanceof FuStorageType)
@@ -11272,7 +11284,7 @@ export class GenC extends GenCCpp
 		if (parent == FuPriority.STATEMENT)
 			parenthesis = false;
 		else if (elementType instanceof FuIntegerType && elementType.id != FuId.LONG_TYPE) {
-			this.write("GPOINTER_TO_INT(");
+			this.#writeGPointerToInt(elementType);
 			parenthesis = true;
 		}
 		else {
@@ -11410,7 +11422,7 @@ export class GenC extends GenCCpp
 		let nesting = 0;
 		let array;
 		while ((array = type) instanceof FuArrayStorageType) {
-			this.write("for (int _i");
+			this.write("for (ptrdiff_t _i");
 			this.visitLiteralLong(BigInt(nesting));
 			this.write(" = ");
 			this.visitLiteralLong(BigInt(array.length - 1));
@@ -11526,7 +11538,7 @@ export class GenC extends GenCCpp
 		let nesting = 0;
 		let array;
 		while ((array = type) instanceof FuArrayStorageType) {
-			this.openLoop("int", nesting++, array.length);
+			this.openLoop("ptrdiff_t", nesting++, array.length);
 			type = array.getElementType();
 		}
 		let lok;
@@ -11739,7 +11751,7 @@ export class GenC extends GenCCpp
 	writeStringLength(expr)
 	{
 		this.include("string.h");
-		this.writeCall("(int) strlen", expr);
+		this.writeCall("(ptrdiff_t) strlen", expr);
 	}
 
 	#writeStringMethod(name, obj, args)
@@ -11762,7 +11774,7 @@ export class GenC extends GenCCpp
 
 	writeArrayFill(obj, args)
 	{
-		this.write("for (int _i = 0; _i < ");
+		this.write("for (ptrdiff_t _i = 0; _i < ");
 		if (args.length == 1)
 			this.writeArrayStorageLength(obj);
 		else
@@ -12646,7 +12658,7 @@ export class GenC extends GenCCpp
 	{
 		let valueType = expr.left.type.asClassType().getValueType();
 		if (valueType instanceof FuIntegerType && valueType.id != FuId.LONG_TYPE) {
-			this.write("GPOINTER_TO_INT(");
+			this.#writeGPointerToInt(valueType);
 			this.#writeDictionaryLookup(expr.left, function_, expr.right);
 			this.writeChar(41);
 		}
@@ -12869,7 +12881,7 @@ export class GenC extends GenCCpp
 		this.writeTypeAndName(iter);
 		this.write(" = ");
 		if (iter.type instanceof FuIntegerType && iter.type.id != FuId.LONG_TYPE) {
-			this.write("GPOINTER_TO_INT(");
+			this.#writeGPointerToInt(iter.type);
 			this.write(value);
 			this.writeChar(41);
 		}
@@ -13678,7 +13690,7 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringSubstring) {
 			this.writeNewLine();
-			this.writeLine("static char *FuString_Substring(const char *str, int len)");
+			this.writeLine("static char *FuString_Substring(const char *str, size_t len)");
 			this.openBlock();
 			this.writeLine("char *p = malloc(len + 1);");
 			this.writeLine("memcpy(p, str, len);");
@@ -13705,23 +13717,23 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringIndexOf) {
 			this.writeNewLine();
-			this.writeLine("static int FuString_IndexOf(const char *str, const char *needle)");
+			this.writeLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
 			this.openBlock();
 			this.writeLine("const char *p = strstr(str, needle);");
-			this.writeLine("return p == NULL ? -1 : (int) (p - str);");
+			this.writeLine("return p == NULL ? -1 : p - str;");
 			this.closeBlock();
 		}
 		if (this.#stringLastIndexOf) {
 			this.writeNewLine();
-			this.writeLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
+			this.writeLine("static ptrdiff_t FuString_LastIndexOf(const char *str, const char *needle)");
 			this.openBlock();
 			this.writeLine("if (needle[0] == '\\0')");
-			this.writeLine("\treturn (int) strlen(str);");
-			this.writeLine("int result = -1;");
+			this.writeLine("\treturn (ptrdiff_t) strlen(str);");
+			this.writeLine("ptrdiff_t result = -1;");
 			this.writeLine("const char *p = strstr(str, needle);");
 			this.write("while (p != NULL) ");
 			this.openBlock();
-			this.writeLine("result = (int) (p - str);");
+			this.writeLine("result = p - str;");
 			this.writeLine("p = strstr(p + 1, needle);");
 			this.closeBlock();
 			this.writeLine("return result;");
@@ -14350,9 +14362,9 @@ export class GenCl extends GenC
 	{
 		if (this.#stringLength) {
 			this.writeNewLine();
-			this.writeLine("static int strlen(constant char *str)");
+			this.writeLine("static ptrdiff_t strlen(constant char *str)");
 			this.openBlock();
-			this.writeLine("int len = 0;");
+			this.writeLine("ptrdiff_t len = 0;");
 			this.writeLine("while (str[len] != '\\0')");
 			this.writeLine("\tlen++;");
 			this.writeLine("return len;");
@@ -14384,7 +14396,7 @@ export class GenCl extends GenC
 			this.writeNewLine();
 			this.writeLine("static bool FuBytes_Equals(const uchar *mem, constant char *str)");
 			this.openBlock();
-			this.writeLine("for (int i = 0; str[i] != '\\0'; i++) {");
+			this.writeLine("for (size_t i = 0; str[i] != '\\0'; i++) {");
 			this.writeLine("\tif (mem[i] != str[i])");
 			this.writeLine("\t\treturn false;");
 			this.writeCharLine(125);
@@ -15185,12 +15197,12 @@ export class GenCpp extends GenCCpp
 			this.#writeStringMethod(obj, "ends_with", method, args);
 			break;
 		case FuId.STRING_INDEX_OF:
-			this.write("static_cast<int>(");
+			this.write("static_cast<ptrdiff_t>(");
 			this.#writeStringMethod(obj, "find", method, args);
 			this.writeChar(41);
 			break;
 		case FuId.STRING_LAST_INDEX_OF:
-			this.write("static_cast<int>(");
+			this.write("static_cast<ptrdiff_t>(");
 			this.#writeStringMethod(obj, "rfind", method, args);
 			this.writeChar(41);
 			break;
@@ -16709,6 +16721,9 @@ export class GenCs extends GenTyped
 			case FuId.INT_TYPE:
 				this.write("int");
 				break;
+			case FuId.N_INT_TYPE:
+				this.write("nint");
+				break;
 			case FuId.LONG_TYPE:
 				this.write("long");
 				break;
@@ -17934,6 +17949,9 @@ export class GenD extends GenCCppD
 				break;
 			case FuId.INT_TYPE:
 				this.write("int");
+				break;
+			case FuId.N_INT_TYPE:
+				this.write("ptrdiff_t");
 				break;
 			case FuId.LONG_TYPE:
 				this.write("long");
@@ -19424,6 +19442,7 @@ export class GenJava extends GenTyped
 				this.write(needClass ? "Short" : "short");
 				break;
 			case FuId.INT_TYPE:
+			case FuId.N_INT_TYPE:
 				this.write(needClass ? "Integer" : "int");
 				break;
 			case FuId.LONG_TYPE:
@@ -20732,6 +20751,7 @@ export class GenJsNoModule extends GenBase
 			this.write("Uint16");
 			break;
 		case FuId.INT_TYPE:
+		case FuId.N_INT_TYPE:
 			this.write("Int32");
 			break;
 		case FuId.LONG_TYPE:
@@ -23015,6 +23035,7 @@ export class GenSwift extends GenPySwift
 				this.write("UInt16");
 				break;
 			case FuId.INT_TYPE:
+			case FuId.N_INT_TYPE:
 				this.write("Int");
 				break;
 			case FuId.LONG_TYPE:
@@ -25032,6 +25053,7 @@ export class GenPy extends GenPySwift
 			return 72;
 		case FuId.INT_TYPE:
 			return 105;
+		case FuId.N_INT_TYPE:
 		case FuId.LONG_TYPE:
 			return 113;
 		case FuId.FLOAT_TYPE:

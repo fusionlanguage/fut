@@ -265,6 +265,7 @@ public class GenSwift : GenPySwift
 				Write("UInt16");
 				break;
 			case FuId.IntType:
+			case FuId.NIntType:
 				Write("Int");
 				break;
 			case FuId.LongType:

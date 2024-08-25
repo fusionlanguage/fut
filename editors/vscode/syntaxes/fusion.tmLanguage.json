@@ -894,7 +894,7 @@
 			]
 		},
 		"type-builtin": {
-			"match": "\\b(bool|byte|double|float|int|long|sbyte|short|string|uint|ulong|ushort|void)\\b",
+			"match": "\\b(bool|byte|double|float|int|long|nint|sbyte|short|string|uint|ulong|ushort|void)\\b",
 			"captures": {
 				"1": {
 					"name": "keyword.type.fu"

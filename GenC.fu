@@ -110,7 +110,9 @@ public class GenC : GenCCpp
 			assert part.Precision < 0;
 			Write(".*");
 		}
-		if (part.Argument.Type.Id == FuId.LongType)
+		if (part.Argument.Type.Id == FuId.NIntType)
+			WriteChar('t');
+		else if (part.Argument.Type.Id == FuId.LongType)
 			WritePrintfLongPrefix();
 	}
 
@@ -1146,6 +1148,11 @@ public class GenC : GenCCpp
 		}
 	}
 
+	void WriteGPointerToInt!(FuType type)
+	{
+		Write(type.Id == FuId.NIntType ? "GPOINTER_TO_SIZE(" : "GPOINTER_TO_INT(");
+	}
+
 	void WriteUnstorage!(FuExpr obj)
 	{
 		if (obj.Type is FuStorageType)
@@ -1161,7 +1168,7 @@ public class GenC : GenCCpp
 		if (parent == FuPriority.Statement)
 			parenthesis = false;
 		else if (elementType is FuIntegerType && elementType.Id != FuId.LongType) {
-			Write("GPOINTER_TO_INT(");
+			WriteGPointerToInt(elementType);
 			parenthesis = true;
 		}
 		else {
@@ -1302,7 +1309,7 @@ public class GenC : GenCCpp
 		FuType type = symbol.Type;
 		int nesting = 0;
 		while (type is FuArrayStorageType array) {
-			Write("for (int _i");
+			Write("for (ptrdiff_t _i");
 			VisitLiteralLong(nesting);
 			Write(" = ");
 			VisitLiteralLong(array.Length - 1);
@@ -1415,7 +1422,7 @@ public class GenC : GenCCpp
 		FuType type = def.Type;
 		int nesting = 0;
 		while (type is FuArrayStorageType array) {
-			OpenLoop("int", nesting++, array.Length);
+			OpenLoop("ptrdiff_t", nesting++, array.Length);
 			type = array.GetElementType();
 		}
 		if (type is FuStorageType lok && lok.Class.Id == FuId.LockClass) {
@@ -1620,7 +1627,7 @@ public class GenC : GenCCpp
 	protected override void WriteStringLength!(FuExpr expr)
 	{
 		Include("string.h");
-		WriteCall("(int) strlen", expr);
+		WriteCall("(ptrdiff_t) strlen", expr);
 	}
 
 	void WriteStringMethod!(string name, FuExpr obj, List<FuExpr#> args)
@@ -1643,7 +1650,7 @@ public class GenC : GenCCpp
 
 	protected void WriteArrayFill!(FuExpr obj, List<FuExpr#> args)
 	{
-		Write("for (int _i = 0; _i < ");
+		Write("for (ptrdiff_t _i = 0; _i < ");
 		if (args.Count == 1)
 			WriteArrayStorageLength(obj);
 		else
@@ -2522,7 +2529,7 @@ public class GenC : GenCCpp
 	{
 		FuType valueType = expr.Left.Type.AsClassType().GetValueType();
 		if (valueType is FuIntegerType && valueType.Id != FuId.LongType) {
-			Write("GPOINTER_TO_INT(");
+			WriteGPointerToInt(valueType);
 			WriteDictionaryLookup(expr.Left, function, expr.Right);
 			WriteChar(')');
 		}
@@ -2742,7 +2749,7 @@ public class GenC : GenCCpp
 		WriteTypeAndName(iter);
 		Write(" = ");
 		if (iter.Type is FuIntegerType && iter.Type.Id != FuId.LongType) {
-			Write("GPOINTER_TO_INT(");
+			WriteGPointerToInt(iter.Type);
 			Write(value);
 			WriteChar(')');
 		}
@@ -3547,7 +3554,7 @@ public class GenC : GenCCpp
 		}
 		if (this.StringSubstring) {
 			WriteNewLine();
-			WriteLine("static char *FuString_Substring(const char *str, int len)");
+			WriteLine("static char *FuString_Substring(const char *str, size_t len)");
 			OpenBlock();
 			WriteLine("char *p = malloc(len + 1);");
 			WriteLine("memcpy(p, str, len);");
@@ -3574,23 +3581,23 @@ public class GenC : GenCCpp
 		}
 		if (this.StringIndexOf) {
 			WriteNewLine();
-			WriteLine("static int FuString_IndexOf(const char *str, const char *needle)");
+			WriteLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
 			OpenBlock();
 			WriteLine("const char *p = strstr(str, needle);");
-			WriteLine("return p == NULL ? -1 : (int) (p - str);");
+			WriteLine("return p == NULL ? -1 : p - str;");
 			CloseBlock();
 		}
 		if (this.StringLastIndexOf) {
 			WriteNewLine();
-			WriteLine("static int FuString_LastIndexOf(const char *str, const char *needle)");
+			WriteLine("static ptrdiff_t FuString_LastIndexOf(const char *str, const char *needle)");
 			OpenBlock();
 			WriteLine("if (needle[0] == '\\0')");
-			WriteLine("\treturn (int) strlen(str);");
-			WriteLine("int result = -1;");
+			WriteLine("\treturn (ptrdiff_t) strlen(str);");
+			WriteLine("ptrdiff_t result = -1;");
 			WriteLine("const char *p = strstr(str, needle);");
 			Write("while (p != NULL) ");
 			OpenBlock();
-			WriteLine("result = (int) (p - str);");
+			WriteLine("result = p - str;");
 			WriteLine("p = strstr(p + 1, needle);");
 			CloseBlock();
 			WriteLine("return result;");

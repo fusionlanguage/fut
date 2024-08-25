@@ -404,6 +404,9 @@ public class GenD : GenCCppD
 			case FuId.IntType:
 				Write("int");
 				break;
+			case FuId.NIntType:
+				Write("ptrdiff_t");
+				break;
 			case FuId.LongType:
 				Write("long");
 				break;

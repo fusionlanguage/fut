@@ -395,6 +395,7 @@ public class GenPy : GenPySwift
 			return 'H';
 		case FuId.IntType:
 			return 'i';
+		case FuId.NIntType:
 		case FuId.LongType:
 			return 'q';
 		case FuId.FloatType:
