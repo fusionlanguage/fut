@@ -16243,10 +16243,8 @@ namespace Fusion
 					Write("ushort");
 					break;
 				case FuId.IntType:
-					Write("int");
-					break;
 				case FuId.NIntType:
-					Write("nint");
+					Write("int");
 					break;
 				case FuId.LongType:
 					Write("long");

@@ -16737,10 +16737,8 @@ export class GenCs extends GenTyped
 				this.write("ushort");
 				break;
 			case FuId.INT_TYPE:
-				this.write("int");
-				break;
 			case FuId.N_INT_TYPE:
-				this.write("nint");
+				this.write("int");
 				break;
 			case FuId.LONG_TYPE:
 				this.write("long");

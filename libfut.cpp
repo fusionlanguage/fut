@@ -15843,10 +15843,8 @@ void GenCs::writeType(const FuType * type, bool promote)
 			write("ushort");
 			break;
 		case FuId::intType:
-			write("int");
-			break;
 		case FuId::nIntType:
-			write("nint");
+			write("int");
 			break;
 		case FuId::longType:
 			write("long");
