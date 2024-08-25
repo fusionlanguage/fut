@@ -9319,6 +9319,7 @@ void GenCCpp::writeNumericType(FuId id)
 		write("int");
 		break;
 	case FuId::nIntType:
+		includeStdDef();
 		write("ptrdiff_t");
 		break;
 	case FuId::longType:
@@ -9569,6 +9570,11 @@ void GenC::writeThrowsDoc(const FuThrowsDeclaration * decl)
 void GenC::includeStdInt()
 {
 	include("stdint.h");
+}
+
+void GenC::includeStdDef()
+{
+	include("stddef.h");
 }
 
 void GenC::includeAssert()
@@ -13402,6 +13408,9 @@ void GenCl::writeNumericType(FuId id)
 	case FuId::intType:
 		write("int");
 		break;
+	case FuId::nIntType:
+		write("ptrdiff_t");
+		break;
 	case FuId::longType:
 		write("long");
 		break;
@@ -13722,6 +13731,11 @@ std::string_view GenCpp::getTargetName() const
 void GenCpp::includeStdInt()
 {
 	include("cstdint");
+}
+
+void GenCpp::includeStdDef()
+{
+	include("cstddef");
 }
 
 void GenCpp::includeAssert()

@@ -2098,6 +2098,7 @@ protected:
 	GenCCpp() = default;
 	void writeDocCode(std::string_view s) override;
 	virtual void includeStdInt() = 0;
+	virtual void includeStdDef() = 0;
 	virtual void includeAssert() = 0;
 	virtual void includeMath() = 0;
 	int getLiteralChars() const override;
@@ -2141,6 +2142,7 @@ protected:
 	void writeReturnDoc(const FuMethod * method) override;
 	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	void includeStdInt() override;
+	void includeStdDef() override;
 	void includeAssert() override;
 	void includeMath() override;
 	virtual void includeStdBool();
@@ -2376,6 +2378,7 @@ public:
 protected:
 	std::string_view getTargetName() const override;
 	void includeStdInt() override;
+	void includeStdDef() override;
 	void includeAssert() override;
 	void includeMath() override;
 	void writeInterpolatedStringArg(const FuExpr * expr) override;

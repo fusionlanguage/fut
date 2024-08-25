@@ -78,6 +78,11 @@ public class GenC : GenCCpp
 		Include("stdint.h");
 	}
 
+	protected override void IncludeStdDef!()
+	{
+		Include("stddef.h");
+	}
+
 	protected override void IncludeAssert!()
 	{
 		Include("assert.h");

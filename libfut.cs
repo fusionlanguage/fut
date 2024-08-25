@@ -9444,6 +9444,8 @@ namespace Fusion
 
 		protected abstract void IncludeStdInt();
 
+		protected abstract void IncludeStdDef();
+
 		protected abstract void IncludeAssert();
 
 		protected abstract void IncludeMath();
@@ -9478,6 +9480,7 @@ namespace Fusion
 				Write("int");
 				break;
 			case FuId.NIntType:
+				IncludeStdDef();
 				Write("ptrdiff_t");
 				break;
 			case FuId.LongType:
@@ -9782,6 +9785,11 @@ namespace Fusion
 		protected override void IncludeStdInt()
 		{
 			Include("stdint.h");
+		}
+
+		protected override void IncludeStdDef()
+		{
+			Include("stddef.h");
 		}
 
 		protected override void IncludeAssert()
@@ -13640,6 +13648,9 @@ namespace Fusion
 			case FuId.IntType:
 				Write("int");
 				break;
+			case FuId.NIntType:
+				Write("ptrdiff_t");
+				break;
 			case FuId.LongType:
 				Write("long");
 				break;
@@ -13980,6 +13991,11 @@ namespace Fusion
 		protected override void IncludeStdInt()
 		{
 			Include("cstdint");
+		}
+
+		protected override void IncludeStdDef()
+		{
+			Include("cstddef");
 		}
 
 		protected override void IncludeAssert()

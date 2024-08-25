@@ -30,6 +30,8 @@ public abstract class GenCCpp : GenCCppD
 
 	protected abstract void IncludeStdInt!();
 
+	protected abstract void IncludeStdDef!();
+
 	protected abstract void IncludeAssert!();
 
 	protected abstract void IncludeMath!();
@@ -64,6 +66,7 @@ public abstract class GenCCpp : GenCCppD
 			Write("int");
 			break;
 		case FuId.NIntType:
+			IncludeStdDef();
 			Write("ptrdiff_t");
 			break;
 		case FuId.LongType:

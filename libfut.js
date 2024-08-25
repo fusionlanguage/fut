@@ -9896,6 +9896,7 @@ export class GenCCpp extends GenCCppD
 			this.write("int");
 			break;
 		case FuId.N_INT_TYPE:
+			this.includeStdDef();
 			this.write("ptrdiff_t");
 			break;
 		case FuId.LONG_TYPE:
@@ -10181,6 +10182,11 @@ export class GenC extends GenCCpp
 	includeStdInt()
 	{
 		this.include("stdint.h");
+	}
+
+	includeStdDef()
+	{
+		this.include("stddef.h");
 	}
 
 	includeAssert()
@@ -14109,6 +14115,9 @@ export class GenCl extends GenC
 		case FuId.INT_TYPE:
 			this.write("int");
 			break;
+		case FuId.N_INT_TYPE:
+			this.write("ptrdiff_t");
+			break;
 		case FuId.LONG_TYPE:
 			this.write("long");
 			break;
@@ -14452,6 +14461,11 @@ export class GenCpp extends GenCCpp
 	includeStdInt()
 	{
 		this.include("cstdint");
+	}
+
+	includeStdDef()
+	{
+		this.include("cstddef");
 	}
 
 	includeAssert()
