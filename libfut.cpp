@@ -17448,10 +17448,13 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		write(", true)");
 		break;
 	case FuId::hashSetClear:
+	case FuId::sortedSetClear:
 	case FuId::dictionaryClear:
+	case FuId::sortedDictionaryClear:
 		writePostfix(obj, ".clear()");
 		break;
 	case FuId::hashSetContains:
+	case FuId::sortedSetContains:
 	case FuId::dictionaryContainsKey:
 		writeChar('(');
 		(*args)[0]->accept(this, FuPriority::rel);

@@ -14,6 +14,8 @@ public static class Test
 		ss.Add("foo");
 		string p = "bar";
 		ss.Add(p);
+		if (s.Contains(42) || !s.Contains(11) || !ss.Contains("foo") || ss.Contains("quux"))
+			return false;
 		int i = 0;
 		foreach (int x in s) { //FAIL: c - needs glib-2.68
 			const int[] expected = { 3, 11 };

@@ -18543,10 +18543,13 @@ export class GenD extends GenCCppD
 			this.write(", true)");
 			break;
 		case FuId.HASH_SET_CLEAR:
+		case FuId.SORTED_SET_CLEAR:
 		case FuId.DICTIONARY_CLEAR:
+		case FuId.SORTED_DICTIONARY_CLEAR:
 			this.writePostfix(obj, ".clear()");
 			break;
 		case FuId.HASH_SET_CONTAINS:
+		case FuId.SORTED_SET_CONTAINS:
 		case FuId.DICTIONARY_CONTAINS_KEY:
 			this.writeChar(40);
 			args[0].accept(this, FuPriority.REL);

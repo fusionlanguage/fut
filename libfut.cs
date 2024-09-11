@@ -18008,10 +18008,13 @@ namespace Fusion
 				Write(", true)");
 				break;
 			case FuId.HashSetClear:
+			case FuId.SortedSetClear:
 			case FuId.DictionaryClear:
+			case FuId.SortedDictionaryClear:
 				WritePostfix(obj, ".clear()");
 				break;
 			case FuId.HashSetContains:
+			case FuId.SortedSetContains:
 			case FuId.DictionaryContainsKey:
 				WriteChar('(');
 				args[0].Accept(this, FuPriority.Rel);
