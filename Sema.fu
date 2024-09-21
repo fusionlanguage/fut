@@ -2261,7 +2261,7 @@ public class FuSema
 				if (field.Value != null) {
 					field.Value = VisitExpr(field.Value);
 					if (!field.IsAssignableStorage())
-						Coerce(field.Value, field.Type is FuArrayStorageType array ? array.GetElementType() : field.Type);
+						CoercePermanent(field.Value, field.Type is FuArrayStorageType array ? array.GetElementType() : field.Type);
 				}
 				break;
 			case FuMethod! method:

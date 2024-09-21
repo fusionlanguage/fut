@@ -17,6 +17,8 @@ public static class Test
 
 	public static string GetValue(Match match) => match.Value; //ERROR: New string must be assigned to 'string()'
 
+	string Field = "FOO".ToLower(); //ERROR: New string must be assigned to 'string()'
+
 	public static bool Run()
 	{
 		return true;

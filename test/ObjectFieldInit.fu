@@ -2,9 +2,13 @@ public class Test
 {
 	int Foo = 42;
 
+	static int Init() => 5;
+
+	int Bar = Init();
+
 	public static bool Run()
 	{
 		Test() o;
-		return o.Foo == 42;
+		return o.Foo == 42 && o.Bar == 5;
 	}
 }

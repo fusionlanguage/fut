@@ -7262,7 +7262,7 @@ export class FuSema
 					field.value = this.#visitExpr(field.value);
 					if (!field.isAssignableStorage()) {
 						let array;
-						this.#coerce(field.value, (array = field.type) instanceof FuArrayStorageType ? array.getElementType() : field.type);
+						this.#coercePermanent(field.value, (array = field.type) instanceof FuArrayStorageType ? array.getElementType() : field.type);
 					}
 				}
 			}

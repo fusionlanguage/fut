@@ -6780,7 +6780,7 @@ void FuSema::resolveCode(FuClass * klass)
 				field->value = visitExpr(field->value);
 				if (!field->isAssignableStorage()) {
 					const FuArrayStorageType * array;
-					coerce(field->value.get(), (array = dynamic_cast<const FuArrayStorageType *>(field->type.get())) ? array->getElementType().get() : field->type.get());
+					coercePermanent(field->value.get(), (array = dynamic_cast<const FuArrayStorageType *>(field->type.get())) ? array->getElementType().get() : field->type.get());
 				}
 			}
 		}
