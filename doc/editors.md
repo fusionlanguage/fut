@@ -26,6 +26,11 @@ Install syntax highlighting in your home directory:
 
     make install-nvim
 
+## Sublime Text
+
+Select Preferences / Browse Packages.
+Drop the `editors/sublime/Fusion.tmLanguage` file into the `User` directory.
+
 ## SciTE
 
 [SciTE](https://www.scintilla.org/SciTE.html) is a fast programmer's text editor for Windows/macOS/Linux.
