@@ -4673,7 +4673,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(resolved.get())) {
 			if (const FuVar *v = dynamic_cast<const FuVar *>(symbol->symbol)) {
 				if (FuFor *loop = dynamic_cast<FuFor *>(v->parent))
-					loop->isIteratorUsed = true;
+					loop->isIndVarUsed = true;
 				else if (this->currentPureArguments.count(v) != 0)
 					return this->currentPureArguments.find(v)->second;
 			}
@@ -6336,15 +6336,15 @@ void FuSema::visitFor(FuFor * statement)
 	resolveLoopCond(statement);
 	if (statement->advance != nullptr)
 		visitStatement(statement->advance);
-	const FuVar * iter;
+	const FuVar * indVar;
 	const FuBinaryExpr * cond;
 	const FuSymbolReference * limitSymbol;
-	if ((iter = dynamic_cast<const FuVar *>(statement->init.get())) && dynamic_cast<const FuIntegerType *>(iter->type.get()) && iter->value != nullptr && (cond = dynamic_cast<const FuBinaryExpr *>(statement->cond.get())) && cond->left->isReferenceTo(iter) && (dynamic_cast<const FuLiteral *>(cond->right.get()) || ((limitSymbol = dynamic_cast<const FuSymbolReference *>(cond->right.get())) && dynamic_cast<const FuVar *>(limitSymbol->symbol))) && statement->advance != nullptr) {
+	if ((indVar = dynamic_cast<const FuVar *>(statement->init.get())) && dynamic_cast<const FuIntegerType *>(indVar->type.get()) && indVar->value != nullptr && (cond = dynamic_cast<const FuBinaryExpr *>(statement->cond.get())) && cond->left->isReferenceTo(indVar) && (dynamic_cast<const FuLiteral *>(cond->right.get()) || ((limitSymbol = dynamic_cast<const FuSymbolReference *>(cond->right.get())) && dynamic_cast<const FuVar *>(limitSymbol->symbol))) && statement->advance != nullptr) {
 		int64_t step = 0;
 		const FuUnaryExpr * unary;
 		const FuBinaryExpr * binary;
 		const FuLiteralLong * literalStep;
-		if ((unary = dynamic_cast<const FuUnaryExpr *>(statement->advance.get())) && unary->inner != nullptr && unary->inner->isReferenceTo(iter)) {
+		if ((unary = dynamic_cast<const FuUnaryExpr *>(statement->advance.get())) && unary->inner != nullptr && unary->inner->isReferenceTo(indVar)) {
 			switch (unary->op) {
 			case FuToken::increment:
 				step = 1;
@@ -6356,7 +6356,7 @@ void FuSema::visitFor(FuFor * statement)
 				break;
 			}
 		}
-		else if ((binary = dynamic_cast<const FuBinaryExpr *>(statement->advance.get())) && binary->left->isReferenceTo(iter) && (literalStep = dynamic_cast<const FuLiteralLong *>(binary->right.get()))) {
+		else if ((binary = dynamic_cast<const FuBinaryExpr *>(statement->advance.get())) && binary->left->isReferenceTo(indVar) && (literalStep = dynamic_cast<const FuLiteralLong *>(binary->right.get()))) {
 			switch (binary->op) {
 			case FuToken::addAssign:
 				step = literalStep->value;
@@ -6371,7 +6371,7 @@ void FuSema::visitFor(FuFor * statement)
 		if ((step > 0 && (cond->op == FuToken::less || cond->op == FuToken::lessOrEqual)) || (step < 0 && (cond->op == FuToken::greater || cond->op == FuToken::greaterOrEqual))) {
 			statement->isRange = true;
 			statement->rangeStep = step;
-			statement->isIteratorUsed = false;
+			statement->isIndVarUsed = false;
 		}
 	}
 	visitStatement(statement->body);
@@ -21452,15 +21452,15 @@ void GenPySwift::closeWhile(const FuLoop * loop)
 void GenPySwift::visitFor(const FuFor * statement)
 {
 	if (statement->isRange) {
-		const FuVar * iter = static_cast<const FuVar *>(statement->init.get());
+		const FuVar * indVar = static_cast<const FuVar *>(statement->init.get());
 		write("for ");
-		if (statement->isIteratorUsed)
-			writeName(iter);
+		if (statement->isIndVarUsed)
+			writeName(indVar);
 		else
 			writeChar('_');
 		write(" in ");
 		const FuBinaryExpr * cond = static_cast<const FuBinaryExpr *>(statement->cond.get());
-		writeForRange(iter, cond, statement->rangeStep);
+		writeForRange(indVar, cond, statement->rangeStep);
 		writeChild(statement->body.get());
 	}
 	else {
@@ -22730,10 +22730,10 @@ void GenSwift::openWhile(const FuLoop * loop)
 	}
 }
 
-void GenSwift::writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep)
+void GenSwift::writeForRange(const FuVar * indVar, const FuBinaryExpr * cond, int64_t rangeStep)
 {
 	if (rangeStep == 1) {
-		writeExpr(iter->value.get(), FuPriority::shift);
+		writeExpr(indVar->value.get(), FuPriority::shift);
 		switch (cond->op) {
 		case FuToken::less:
 			write("..<");
@@ -22749,7 +22749,7 @@ void GenSwift::writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int6
 	}
 	else {
 		write("stride(from: ");
-		writeExpr(iter->value.get(), FuPriority::argument);
+		writeExpr(indVar->value.get(), FuPriority::argument);
 		switch (cond->op) {
 		case FuToken::less:
 		case FuToken::greater:
@@ -24484,11 +24484,11 @@ void GenPy::writeInclusiveLimit(const FuExpr * limit, int increment, std::string
 	}
 }
 
-void GenPy::writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep)
+void GenPy::writeForRange(const FuVar * indVar, const FuBinaryExpr * cond, int64_t rangeStep)
 {
 	write("range(");
-	if (rangeStep != 1 || !iter->value->isLiteralZero()) {
-		iter->value->accept(this, FuPriority::argument);
+	if (rangeStep != 1 || !indVar->value->isLiteralZero()) {
+		indVar->value->accept(this, FuPriority::argument);
 		write(", ");
 	}
 	switch (cond->op) {

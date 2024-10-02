@@ -2405,7 +2405,7 @@ namespace Fusion
 
 		internal bool IsRange = false;
 
-		internal bool IsIteratorUsed;
+		internal bool IsIndVarUsed;
 
 		internal long RangeStep;
 
@@ -4931,7 +4931,7 @@ namespace Fusion
 				if (resolved is FuSymbolReference symbol) {
 					if (symbol.Symbol is FuVar v) {
 						if (v.Parent is FuFor loop)
-							loop.IsIteratorUsed = true;
+							loop.IsIndVarUsed = true;
 						else if (this.CurrentPureArguments.ContainsKey(v))
 							return this.CurrentPureArguments[v];
 					}
@@ -6426,10 +6426,10 @@ namespace Fusion
 			ResolveLoopCond(statement);
 			if (statement.Advance != null)
 				VisitStatement(statement.Advance);
-			if (statement.Init is FuVar iter && iter.Type is FuIntegerType && iter.Value != null && statement.Cond is FuBinaryExpr cond && cond.Left.IsReferenceTo(iter) && (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar)) && statement.Advance != null) {
+			if (statement.Init is FuVar indVar && indVar.Type is FuIntegerType && indVar.Value != null && statement.Cond is FuBinaryExpr cond && cond.Left.IsReferenceTo(indVar) && (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar)) && statement.Advance != null) {
 				long step = 0;
 				switch (statement.Advance) {
-				case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
+				case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(indVar):
 					switch (unary.Op) {
 					case FuToken.Increment:
 						step = 1;
@@ -6441,7 +6441,7 @@ namespace Fusion
 						break;
 					}
 					break;
-				case FuBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is FuLiteralLong literalStep:
+				case FuBinaryExpr binary when binary.Left.IsReferenceTo(indVar) && binary.Right is FuLiteralLong literalStep:
 					switch (binary.Op) {
 					case FuToken.AddAssign:
 						step = literalStep.Value;
@@ -6459,7 +6459,7 @@ namespace Fusion
 				if ((step > 0 && (cond.Op == FuToken.Less || cond.Op == FuToken.LessOrEqual)) || (step < 0 && (cond.Op == FuToken.Greater || cond.Op == FuToken.GreaterOrEqual))) {
 					statement.IsRange = true;
 					statement.RangeStep = step;
-					statement.IsIteratorUsed = false;
+					statement.IsIndVarUsed = false;
 				}
 			}
 			VisitStatement(statement.Body);
@@ -22115,15 +22115,15 @@ namespace Fusion
 		internal override void VisitFor(FuFor statement)
 		{
 			if (statement.IsRange) {
-				FuVar iter = (FuVar) statement.Init;
+				FuVar indVar = (FuVar) statement.Init;
 				Write("for ");
-				if (statement.IsIteratorUsed)
-					WriteName(iter);
+				if (statement.IsIndVarUsed)
+					WriteName(indVar);
 				else
 					WriteChar('_');
 				Write(" in ");
 				FuBinaryExpr cond = (FuBinaryExpr) statement.Cond;
-				WriteForRange(iter, cond, statement.RangeStep);
+				WriteForRange(indVar, cond, statement.RangeStep);
 				WriteChild(statement.Body);
 			}
 			else {
@@ -23494,10 +23494,10 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteForRange(FuVar iter, FuBinaryExpr cond, long rangeStep)
+		protected override void WriteForRange(FuVar indVar, FuBinaryExpr cond, long rangeStep)
 		{
 			if (rangeStep == 1) {
-				WriteExpr(iter.Value, FuPriority.Shift);
+				WriteExpr(indVar.Value, FuPriority.Shift);
 				switch (cond.Op) {
 				case FuToken.Less:
 					Write("..<");
@@ -23513,7 +23513,7 @@ namespace Fusion
 			}
 			else {
 				Write("stride(from: ");
-				WriteExpr(iter.Value, FuPriority.Argument);
+				WriteExpr(indVar.Value, FuPriority.Argument);
 				switch (cond.Op) {
 				case FuToken.Less:
 				case FuToken.Greater:
@@ -25323,11 +25323,11 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteForRange(FuVar iter, FuBinaryExpr cond, long rangeStep)
+		protected override void WriteForRange(FuVar indVar, FuBinaryExpr cond, long rangeStep)
 		{
 			Write("range(");
-			if (rangeStep != 1 || !iter.Value.IsLiteralZero()) {
-				iter.Value.Accept(this, FuPriority.Argument);
+			if (rangeStep != 1 || !indVar.Value.IsLiteralZero()) {
+				indVar.Value.Accept(this, FuPriority.Argument);
 				Write(", ");
 			}
 			switch (cond.Op) {

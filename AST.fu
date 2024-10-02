@@ -924,7 +924,7 @@ class FuFor : FuLoop
 	internal FuExpr#? Init;
 	internal FuExpr#? Advance;
 	internal bool IsRange = false;
-	internal bool IsIteratorUsed;
+	internal bool IsIndVarUsed;
 	internal long RangeStep;
 	public override int GetLocLength() => 3;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitFor(this); }

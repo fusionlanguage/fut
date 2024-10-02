@@ -316,15 +316,15 @@ public abstract class GenPySwift : GenBase
 	internal override void VisitFor!(FuFor statement)
 	{
 		if (statement.IsRange) {
-			assert statement.Init is FuVar iter;
+			assert statement.Init is FuVar indVar;
 			Write("for ");
-			if (statement.IsIteratorUsed)
-				WriteName(iter);
+			if (statement.IsIndVarUsed)
+				WriteName(indVar);
 			else
 				WriteChar('_');
 			Write(" in ");
 			assert statement.Cond is FuBinaryExpr cond;
-			WriteForRange(iter, cond, statement.RangeStep);
+			WriteForRange(indVar, cond, statement.RangeStep);
 			WriteChild(statement.Body);
 		}
 		else {

@@ -236,7 +236,7 @@ public class FuSema
 			if (resolved is FuSymbolReference symbol) {
 				if (symbol.Symbol is FuVar v) {
 					if (v.Parent is FuFor! loop)
-						loop.IsIteratorUsed = true;
+						loop.IsIndVarUsed = true;
 					else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
 						return this.CurrentPureArguments[v];
 				}
@@ -1799,16 +1799,16 @@ public class FuSema
 		ResolveLoopCond(statement);
 		if (statement.Advance != null)
 			VisitStatement(statement.Advance);
-		if (statement.Init is FuVar iter
-			&& iter.Type is FuIntegerType
-			&& iter.Value != null
+		if (statement.Init is FuVar indVar
+			&& indVar.Type is FuIntegerType
+			&& indVar.Value != null
 			&& statement.Cond is FuBinaryExpr cond
-			&& cond.Left.IsReferenceTo(iter)
+			&& cond.Left.IsReferenceTo(indVar)
 			&& (cond.Right is FuLiteral || (cond.Right is FuSymbolReference limitSymbol && limitSymbol.Symbol is FuVar))
 			&& statement.Advance != null) {
 			long step = 0;
 			switch (statement.Advance) {
-			case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(iter):
+			case FuUnaryExpr unary when unary.Inner != null && unary.Inner.IsReferenceTo(indVar):
 				switch (unary.Op) {
 				case FuToken.Increment:
 					step = 1;
@@ -1820,7 +1820,7 @@ public class FuSema
 					break;
 				}
 				break;
-			case FuBinaryExpr binary when binary.Left.IsReferenceTo(iter) && binary.Right is FuLiteralLong literalStep:
+			case FuBinaryExpr binary when binary.Left.IsReferenceTo(indVar) && binary.Right is FuLiteralLong literalStep:
 				switch (binary.Op) {
 				case FuToken.AddAssign:
 					step = literalStep.Value;
@@ -1839,7 +1839,7 @@ public class FuSema
 			 || (step < 0 && (cond.Op == FuToken.Greater || cond.Op == FuToken.GreaterOrEqual))) {
 				statement.IsRange = true;
 				statement.RangeStep = step;
-				statement.IsIteratorUsed = false;
+				statement.IsIndVarUsed = false;
 			}
 		}
 		VisitStatement(statement.Body);

@@ -2446,7 +2446,7 @@ class FuFor extends FuLoop
 	init;
 	advance;
 	isRange = false;
-	isIteratorUsed;
+	isIndVarUsed;
 	rangeStep;
 
 	getLocLength()
@@ -5164,7 +5164,7 @@ export class FuSema
 				if ((v = symbol.symbol) instanceof FuVar) {
 					let loop;
 					if ((loop = v.parent) instanceof FuFor)
-						loop.isIteratorUsed = true;
+						loop.isIndVarUsed = true;
 					else if (this.#currentPureArguments.hasOwnProperty(v))
 						return this.#currentPureArguments[v];
 				}
@@ -6786,15 +6786,15 @@ export class FuSema
 		this.#resolveLoopCond(statement);
 		if (statement.advance != null)
 			this.#visitStatement(statement.advance);
-		let iter;
+		let indVar;
 		let cond;
 		let limitSymbol;
-		if ((iter = statement.init) instanceof FuVar && iter.type instanceof FuIntegerType && iter.value != null && (cond = statement.cond) instanceof FuBinaryExpr && cond.left.isReferenceTo(iter) && (cond.right instanceof FuLiteral || ((limitSymbol = cond.right) instanceof FuSymbolReference && limitSymbol.symbol instanceof FuVar)) && statement.advance != null) {
+		if ((indVar = statement.init) instanceof FuVar && indVar.type instanceof FuIntegerType && indVar.value != null && (cond = statement.cond) instanceof FuBinaryExpr && cond.left.isReferenceTo(indVar) && (cond.right instanceof FuLiteral || ((limitSymbol = cond.right) instanceof FuSymbolReference && limitSymbol.symbol instanceof FuVar)) && statement.advance != null) {
 			let step = 0n;
 			let unary;
 			let binary;
 			let literalStep;
-			if ((unary = statement.advance) instanceof FuUnaryExpr && unary.inner != null && unary.inner.isReferenceTo(iter)) {
+			if ((unary = statement.advance) instanceof FuUnaryExpr && unary.inner != null && unary.inner.isReferenceTo(indVar)) {
 				switch (unary.op) {
 				case FuToken.INCREMENT:
 					step = 1n;
@@ -6806,7 +6806,7 @@ export class FuSema
 					break;
 				}
 			}
-			else if ((binary = statement.advance) instanceof FuBinaryExpr && binary.left.isReferenceTo(iter) && (literalStep = binary.right) instanceof FuLiteralLong) {
+			else if ((binary = statement.advance) instanceof FuBinaryExpr && binary.left.isReferenceTo(indVar) && (literalStep = binary.right) instanceof FuLiteralLong) {
 				switch (binary.op) {
 				case FuToken.ADD_ASSIGN:
 					step = literalStep.value;
@@ -6821,7 +6821,7 @@ export class FuSema
 			if ((step > 0 && (cond.op == FuToken.LESS || cond.op == FuToken.LESS_OR_EQUAL)) || (step < 0 && (cond.op == FuToken.GREATER || cond.op == FuToken.GREATER_OR_EQUAL))) {
 				statement.isRange = true;
 				statement.rangeStep = step;
-				statement.isIteratorUsed = false;
+				statement.isIndVarUsed = false;
 			}
 		}
 		this.#visitStatement(statement.body);
@@ -22727,15 +22727,15 @@ export class GenPySwift extends GenBase
 	visitFor(statement)
 	{
 		if (statement.isRange) {
-			let iter = statement.init;
+			let indVar = statement.init;
 			this.write("for ");
-			if (statement.isIteratorUsed)
-				this.writeName(iter);
+			if (statement.isIndVarUsed)
+				this.writeName(indVar);
 			else
 				this.writeChar(95);
 			this.write(" in ");
 			let cond = statement.cond;
-			this.writeForRange(iter, cond, statement.rangeStep);
+			this.writeForRange(indVar, cond, statement.rangeStep);
 			this.writeChild(statement.body);
 		}
 		else {
@@ -24115,10 +24115,10 @@ export class GenSwift extends GenPySwift
 		}
 	}
 
-	writeForRange(iter, cond, rangeStep)
+	writeForRange(indVar, cond, rangeStep)
 	{
 		if (rangeStep == 1) {
-			this.writeExpr(iter.value, FuPriority.SHIFT);
+			this.writeExpr(indVar.value, FuPriority.SHIFT);
 			switch (cond.op) {
 			case FuToken.LESS:
 				this.write("..<");
@@ -24134,7 +24134,7 @@ export class GenSwift extends GenPySwift
 		}
 		else {
 			this.write("stride(from: ");
-			this.writeExpr(iter.value, FuPriority.ARGUMENT);
+			this.writeExpr(indVar.value, FuPriority.ARGUMENT);
 			switch (cond.op) {
 			case FuToken.LESS:
 			case FuToken.GREATER:
@@ -25971,11 +25971,11 @@ export class GenPy extends GenPySwift
 		}
 	}
 
-	writeForRange(iter, cond, rangeStep)
+	writeForRange(indVar, cond, rangeStep)
 	{
 		this.write("range(");
-		if (rangeStep != 1 || !iter.value.isLiteralZero()) {
-			iter.value.accept(this, FuPriority.ARGUMENT);
+		if (rangeStep != 1 || !indVar.value.isLiteralZero()) {
+			indVar.value.accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
 		}
 		switch (cond.op) {

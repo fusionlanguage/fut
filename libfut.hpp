@@ -1062,7 +1062,7 @@ public:
 	std::shared_ptr<FuExpr> init;
 	std::shared_ptr<FuExpr> advance;
 	bool isRange = false;
-	bool isIteratorUsed;
+	bool isIndVarUsed;
 	int64_t rangeStep;
 };
 
@@ -2872,7 +2872,7 @@ protected:
 	void writeContinueDoWhile(const FuExpr * cond) override;
 	void writeElseIf() override;
 	void openWhile(const FuLoop * loop) override;
-	void writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep) override;
+	void writeForRange(const FuVar * indVar, const FuBinaryExpr * cond, int64_t rangeStep) override;
 	void writeResultVar() override;
 	void writeException() override;
 	void writeParameter(const FuVar * param) override;
@@ -2969,7 +2969,7 @@ protected:
 	void writeAssertCast(const FuBinaryExpr * expr) override;
 	void writeAssert(const FuAssert * statement) override;
 	std::string_view getIfNot() const override;
-	void writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep) override;
+	void writeForRange(const FuVar * indVar, const FuBinaryExpr * cond, int64_t rangeStep) override;
 	void writeElseIf() override;
 	void writeResultVar() override;
 	void writeEnum(const FuEnum * enu) override;

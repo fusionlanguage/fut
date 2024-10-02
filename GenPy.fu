@@ -1278,11 +1278,11 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	protected override void WriteForRange!(FuVar iter, FuBinaryExpr cond, long rangeStep)
+	protected override void WriteForRange!(FuVar indVar, FuBinaryExpr cond, long rangeStep)
 	{
 		Write("range(");
-		if (rangeStep != 1 || !iter.Value.IsLiteralZero()) {
-			iter.Value.Accept(this, FuPriority.Argument);
+		if (rangeStep != 1 || !indVar.Value.IsLiteralZero()) {
+			indVar.Value.Accept(this, FuPriority.Argument);
 			Write(", ");
 		}
 		switch (cond.Op) {

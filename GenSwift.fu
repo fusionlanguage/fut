@@ -1325,10 +1325,10 @@ public class GenSwift : GenPySwift
 		}
 	}
 
-	protected override void WriteForRange!(FuVar iter, FuBinaryExpr cond, long rangeStep)
+	protected override void WriteForRange!(FuVar indVar, FuBinaryExpr cond, long rangeStep)
 	{
 		if (rangeStep == 1) {
-			WriteExpr(iter.Value, FuPriority.Shift);
+			WriteExpr(indVar.Value, FuPriority.Shift);
 			switch (cond.Op) {
 			case FuToken.Less:
 				Write("..<");
@@ -1344,7 +1344,7 @@ public class GenSwift : GenPySwift
 		}
 		else {
 			Write("stride(from: ");
-			WriteExpr(iter.Value, FuPriority.Argument);
+			WriteExpr(indVar.Value, FuPriority.Argument);
 			switch (cond.Op) {
 			case FuToken.Less:
 			case FuToken.Greater:
