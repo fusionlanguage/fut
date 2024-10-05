@@ -6,6 +6,7 @@ jobs:
   c-cl-error:
     runs-on: ubuntu-24.04
     steps:
+      - run: sudo apt install glib2.0-dev
       - uses: actions/checkout@main
       - run: make -j4 test-c test-cl test-error
   cpp-java:
@@ -39,7 +40,6 @@ jobs:
   py-swift:
     runs-on: ubuntu-24.04
     steps:
-      - run: pip install mypy
       - uses: pfusik/setup-swift@gpg-www
       - uses: actions/checkout@main
       - run: make -j4 test-py test-swift
