@@ -15431,30 +15431,42 @@ namespace Fusion
 			base.VisitBinaryExpr(expr, parent);
 		}
 
-		static bool HasLambdaCapture(FuExpr expr)
+		static bool HasLambdaCapture(FuExpr expr, List<FuVar> lambdaVars)
 		{
 			switch (expr) {
 			case FuAggregateInitializer init:
-				return init.Items.Exists(item => HasLambdaCapture(item));
+				return init.Items.Exists(item => HasLambdaCapture(item, lambdaVars));
 			case FuLiteral:
 			case FuLambdaExpr:
 				return false;
 			case FuInterpolatedString interp:
-				return interp.Parts.Exists(part => HasLambdaCapture(part.Argument));
+				return interp.Parts.Exists(part => HasLambdaCapture(part.Argument, lambdaVars));
 			case FuSymbolReference symbol:
 				if (symbol.Left != null)
-					return HasLambdaCapture(symbol.Left);
-				if (symbol.Symbol is FuMember member)
+					return HasLambdaCapture(symbol.Left, lambdaVars);
+				switch (symbol.Symbol) {
+				case FuMember member:
 					return !member.IsStatic();
-				return !(symbol.Symbol.Parent is FuLambdaExpr);
+				case FuVar def:
+					return !lambdaVars.Contains(def);
+				default:
+					return false;
+				}
 			case FuUnaryExpr unary:
-				return unary.Inner != null && HasLambdaCapture(unary.Inner);
+				return unary.Inner != null && HasLambdaCapture(unary.Inner, lambdaVars);
 			case FuBinaryExpr binary:
-				return HasLambdaCapture(binary.Left) || HasLambdaCapture(binary.Right);
+				if (HasLambdaCapture(binary.Left, lambdaVars))
+					return true;
+				if (binary.Op == FuToken.Is) {
+					if (binary.Right is FuVar def)
+						lambdaVars.Add(def);
+					return false;
+				}
+				return HasLambdaCapture(binary.Right, lambdaVars);
 			case FuSelectExpr select:
-				return HasLambdaCapture(select.Cond) || HasLambdaCapture(select.OnTrue) || HasLambdaCapture(select.OnFalse);
+				return HasLambdaCapture(select.Cond, lambdaVars) || HasLambdaCapture(select.OnTrue, lambdaVars) || HasLambdaCapture(select.OnFalse, lambdaVars);
 			case FuCallExpr call:
-				return HasLambdaCapture(call.Method) || call.Arguments.Exists(arg => HasLambdaCapture(arg));
+				return HasLambdaCapture(call.Method, lambdaVars) || call.Arguments.Exists(arg => HasLambdaCapture(arg, lambdaVars));
 			default:
 				throw new NotImplementedException();
 			}
@@ -15463,7 +15475,10 @@ namespace Fusion
 		internal override void VisitLambdaExpr(FuLambdaExpr expr)
 		{
 			WriteChar('[');
-			if (HasLambdaCapture(expr.Body))
+			List<FuVar> lambdaVars = new List<FuVar>();
+			FuVar it = (FuVar) expr.First;
+			lambdaVars.Add(it);
+			if (HasLambdaCapture(expr.Body, lambdaVars))
 				WriteChar('&');
 			Write("](");
 			if (expr.First.Type is FuOwningType || expr.First.Type.Id == FuId.StringStorageType) {

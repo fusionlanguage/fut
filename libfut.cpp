@@ -15084,29 +15084,40 @@ void GenCpp::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	GenBase::visitBinaryExpr(expr, parent);
 }
 
-bool GenCpp::hasLambdaCapture(const FuExpr * expr)
+bool GenCpp::hasLambdaCapture(const FuExpr * expr, std::vector<const FuVar *> * lambdaVars)
 {
 	if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr))
-		return std::any_of(init->items.begin(), init->items.end(), [](const std::shared_ptr<FuExpr> &item) { return hasLambdaCapture(item.get()); });
+		return std::any_of(init->items.begin(), init->items.end(), [&](const std::shared_ptr<FuExpr> &item) { return hasLambdaCapture(item.get(), lambdaVars); });
 	else if (dynamic_cast<const FuLiteral *>(expr) || dynamic_cast<const FuLambdaExpr *>(expr))
 		return false;
 	else if (const FuInterpolatedString *interp = dynamic_cast<const FuInterpolatedString *>(expr))
-		return std::any_of(interp->parts.begin(), interp->parts.end(), [](const FuInterpolatedPart &part) { return hasLambdaCapture(part.argument.get()); });
+		return std::any_of(interp->parts.begin(), interp->parts.end(), [&](const FuInterpolatedPart &part) { return hasLambdaCapture(part.argument.get(), lambdaVars); });
 	else if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
 		if (symbol->left != nullptr)
-			return hasLambdaCapture(symbol->left.get());
+			return hasLambdaCapture(symbol->left.get(), lambdaVars);
 		if (const FuMember *member = dynamic_cast<const FuMember *>(symbol->symbol))
 			return !member->isStatic();
-		return !dynamic_cast<const FuLambdaExpr *>(symbol->symbol->parent);
+		else if (const FuVar *def = dynamic_cast<const FuVar *>(symbol->symbol))
+			return !(std::find(lambdaVars->begin(), lambdaVars->end(), def) != lambdaVars->end());
+		else
+			return false;
 	}
 	else if (const FuUnaryExpr *unary = dynamic_cast<const FuUnaryExpr *>(expr))
-		return unary->inner != nullptr && hasLambdaCapture(unary->inner.get());
-	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr))
-		return hasLambdaCapture(binary->left.get()) || hasLambdaCapture(binary->right.get());
+		return unary->inner != nullptr && hasLambdaCapture(unary->inner.get(), lambdaVars);
+	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr)) {
+		if (hasLambdaCapture(binary->left.get(), lambdaVars))
+			return true;
+		if (binary->op == FuToken::is) {
+			if (const FuVar *def = dynamic_cast<const FuVar *>(binary->right.get()))
+				lambdaVars->push_back(def);
+			return false;
+		}
+		return hasLambdaCapture(binary->right.get(), lambdaVars);
+	}
 	else if (const FuSelectExpr *select = dynamic_cast<const FuSelectExpr *>(expr))
-		return hasLambdaCapture(select->cond.get()) || hasLambdaCapture(select->onTrue.get()) || hasLambdaCapture(select->onFalse.get());
+		return hasLambdaCapture(select->cond.get(), lambdaVars) || hasLambdaCapture(select->onTrue.get(), lambdaVars) || hasLambdaCapture(select->onFalse.get(), lambdaVars);
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr))
-		return hasLambdaCapture(call->method.get()) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return hasLambdaCapture(arg.get()); });
+		return hasLambdaCapture(call->method.get(), lambdaVars) || std::any_of(call->arguments.begin(), call->arguments.end(), [&](const std::shared_ptr<FuExpr> &arg) { return hasLambdaCapture(arg.get(), lambdaVars); });
 	else
 		std::abort();
 }
@@ -15114,7 +15125,10 @@ bool GenCpp::hasLambdaCapture(const FuExpr * expr)
 void GenCpp::visitLambdaExpr(const FuLambdaExpr * expr)
 {
 	writeChar('[');
-	if (hasLambdaCapture(expr->body.get()))
+	std::vector<const FuVar *> lambdaVars;
+	const FuVar * it = static_cast<const FuVar *>(expr->first);
+	lambdaVars.push_back(it);
+	if (hasLambdaCapture(expr->body.get(), &lambdaVars))
 		writeChar('&');
 	write("](");
 	if (dynamic_cast<const FuOwningType *>(expr->first->type.get()) || expr->first->type->id == FuId::stringStorageType) {
