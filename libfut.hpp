@@ -2452,6 +2452,7 @@ private:
 	void writeMatchProperty(const FuSymbolReference * expr, std::string_view name);
 	void writeGtRawPtr(const FuExpr * expr);
 	void writeIsVar(const FuExpr * expr, const FuVar * def, FuPriority parent);
+	static bool hasLambdaCapture(const FuExpr * expr);
 	static bool isIsVar(const FuExpr * expr);
 	bool hasVariables(const FuStatement * statement) const;
 	void openNamespace();

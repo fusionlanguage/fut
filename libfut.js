@@ -15907,9 +15907,53 @@ export class GenCpp extends GenCCpp
 		super.visitBinaryExpr(expr, parent);
 	}
 
+	static #hasLambdaCapture(expr)
+	{
+		if (expr instanceof FuAggregateInitializer) {
+			const init = expr;
+			return init.items.some(item => GenCpp.#hasLambdaCapture(item));
+		}
+		else if (expr instanceof FuLiteral || expr instanceof FuLambdaExpr)
+			return false;
+		else if (expr instanceof FuInterpolatedString) {
+			const interp = expr;
+			return interp.parts.some(part => GenCpp.#hasLambdaCapture(part.argument));
+		}
+		else if (expr instanceof FuSymbolReference) {
+			const symbol = expr;
+			if (symbol.left != null)
+				return GenCpp.#hasLambdaCapture(symbol.left);
+			let member;
+			if ((member = symbol.symbol) instanceof FuMember)
+				return !member.isStatic();
+			return !(symbol.symbol.parent instanceof FuLambdaExpr);
+		}
+		else if (expr instanceof FuUnaryExpr) {
+			const unary = expr;
+			return unary.inner != null && GenCpp.#hasLambdaCapture(unary.inner);
+		}
+		else if (expr instanceof FuBinaryExpr) {
+			const binary = expr;
+			return GenCpp.#hasLambdaCapture(binary.left) || GenCpp.#hasLambdaCapture(binary.right);
+		}
+		else if (expr instanceof FuSelectExpr) {
+			const select = expr;
+			return GenCpp.#hasLambdaCapture(select.cond) || GenCpp.#hasLambdaCapture(select.onTrue) || GenCpp.#hasLambdaCapture(select.onFalse);
+		}
+		else if (expr instanceof FuCallExpr) {
+			const call = expr;
+			return GenCpp.#hasLambdaCapture(call.method) || call.arguments_.some(arg => GenCpp.#hasLambdaCapture(arg));
+		}
+		else
+			throw new Error();
+	}
+
 	visitLambdaExpr(expr)
 	{
-		this.write("[](");
+		this.writeChar(91);
+		if (GenCpp.#hasLambdaCapture(expr.body))
+			this.writeChar(38);
+		this.write("](");
 		if (expr.first.type instanceof FuOwningType || expr.first.type.id == FuId.STRING_STORAGE_TYPE) {
 			this.write("const ");
 			this.writeType(expr.first.type, false);

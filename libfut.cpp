@@ -15084,9 +15084,39 @@ void GenCpp::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	GenBase::visitBinaryExpr(expr, parent);
 }
 
+bool GenCpp::hasLambdaCapture(const FuExpr * expr)
+{
+	if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr))
+		return std::any_of(init->items.begin(), init->items.end(), [](const std::shared_ptr<FuExpr> &item) { return hasLambdaCapture(item.get()); });
+	else if (dynamic_cast<const FuLiteral *>(expr) || dynamic_cast<const FuLambdaExpr *>(expr))
+		return false;
+	else if (const FuInterpolatedString *interp = dynamic_cast<const FuInterpolatedString *>(expr))
+		return std::any_of(interp->parts.begin(), interp->parts.end(), [](const FuInterpolatedPart &part) { return hasLambdaCapture(part.argument.get()); });
+	else if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
+		if (symbol->left != nullptr)
+			return hasLambdaCapture(symbol->left.get());
+		if (const FuMember *member = dynamic_cast<const FuMember *>(symbol->symbol))
+			return !member->isStatic();
+		return !dynamic_cast<const FuLambdaExpr *>(symbol->symbol->parent);
+	}
+	else if (const FuUnaryExpr *unary = dynamic_cast<const FuUnaryExpr *>(expr))
+		return unary->inner != nullptr && hasLambdaCapture(unary->inner.get());
+	else if (const FuBinaryExpr *binary = dynamic_cast<const FuBinaryExpr *>(expr))
+		return hasLambdaCapture(binary->left.get()) || hasLambdaCapture(binary->right.get());
+	else if (const FuSelectExpr *select = dynamic_cast<const FuSelectExpr *>(expr))
+		return hasLambdaCapture(select->cond.get()) || hasLambdaCapture(select->onTrue.get()) || hasLambdaCapture(select->onFalse.get());
+	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr))
+		return hasLambdaCapture(call->method.get()) || std::any_of(call->arguments.begin(), call->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return hasLambdaCapture(arg.get()); });
+	else
+		std::abort();
+}
+
 void GenCpp::visitLambdaExpr(const FuLambdaExpr * expr)
 {
-	write("[](");
+	writeChar('[');
+	if (hasLambdaCapture(expr->body.get()))
+		writeChar('&');
+	write("](");
 	if (dynamic_cast<const FuOwningType *>(expr->first->type.get()) || expr->first->type->id == FuId::stringStorageType) {
 		write("const ");
 		writeType(expr->first->type.get(), false);

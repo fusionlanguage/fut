@@ -15431,9 +15431,41 @@ namespace Fusion
 			base.VisitBinaryExpr(expr, parent);
 		}
 
+		static bool HasLambdaCapture(FuExpr expr)
+		{
+			switch (expr) {
+			case FuAggregateInitializer init:
+				return init.Items.Exists(item => HasLambdaCapture(item));
+			case FuLiteral:
+			case FuLambdaExpr:
+				return false;
+			case FuInterpolatedString interp:
+				return interp.Parts.Exists(part => HasLambdaCapture(part.Argument));
+			case FuSymbolReference symbol:
+				if (symbol.Left != null)
+					return HasLambdaCapture(symbol.Left);
+				if (symbol.Symbol is FuMember member)
+					return !member.IsStatic();
+				return !(symbol.Symbol.Parent is FuLambdaExpr);
+			case FuUnaryExpr unary:
+				return unary.Inner != null && HasLambdaCapture(unary.Inner);
+			case FuBinaryExpr binary:
+				return HasLambdaCapture(binary.Left) || HasLambdaCapture(binary.Right);
+			case FuSelectExpr select:
+				return HasLambdaCapture(select.Cond) || HasLambdaCapture(select.OnTrue) || HasLambdaCapture(select.OnFalse);
+			case FuCallExpr call:
+				return HasLambdaCapture(call.Method) || call.Arguments.Exists(arg => HasLambdaCapture(arg));
+			default:
+				throw new NotImplementedException();
+			}
+		}
+
 		internal override void VisitLambdaExpr(FuLambdaExpr expr)
 		{
-			Write("[](");
+			WriteChar('[');
+			if (HasLambdaCapture(expr.Body))
+				WriteChar('&');
+			Write("](");
 			if (expr.First.Type is FuOwningType || expr.First.Type.Id == FuId.StringStorageType) {
 				Write("const ");
 				WriteType(expr.First.Type, false);
