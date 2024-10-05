@@ -4,19 +4,13 @@ on:
     paths-ignore: '**.md'
 jobs:
   c-cl-error:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - uses: actions/checkout@main
       - run: make -j4 test-c test-cl test-error
   cpp-java:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - uses: actions/setup-java@main
         with:
           distribution: temurin
@@ -24,49 +18,34 @@ jobs:
       - uses: actions/checkout@main
       - run: make -j4 test-cpp test-java
   cs:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - uses: actions/setup-dotnet@main
       - uses: actions/checkout@main
       - run: make -j4 test-cs
   d:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - uses: dlang-community/setup-dlang@v1
         with:
           compiler: dmd-latest
       - uses: actions/checkout@main
       - run: make -j4 test-d
   js-ts:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - uses: actions/checkout@main
       - run: make -j4 test-js test-ts
   py-swift:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - run: pip install mypy
       - uses: pfusik/setup-swift@gpg-www
       - uses: actions/checkout@main
       - run: make -j4 test-py test-swift
   host-diff:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
-      - uses: Totto16/setup-gcc@master
-        with:
-          version: 13
       - uses: actions/setup-java@main
         with:
           distribution: temurin
@@ -82,7 +61,7 @@ jobs:
       - run: rm test/bin/*/error.txt
       - run: make -j4 test-error FUT_HOST=node
   vscode:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
