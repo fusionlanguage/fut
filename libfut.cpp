@@ -5804,12 +5804,8 @@ bool FuSema::canCall(const FuExpr * obj, const FuMethod * method, const std::vec
 
 bool FuSema::methodHasThrows(const FuMethodBase * method, const FuClass * exception)
 {
-	for (const std::shared_ptr<FuThrowsDeclaration> &symbol : method->throws) {
-		const FuClass * klass;
-		if ((klass = dynamic_cast<const FuClass *>(symbol->symbol)) && klass->isSameOrBaseOf(exception))
-			return true;
-	}
-	return false;
+	return std::any_of(method->throws.begin(), method->throws.end(), [&](const std::shared_ptr<FuThrowsDeclaration> &symbol) { const FuClass * klass;
+	return (klass = dynamic_cast<const FuClass *>(symbol->symbol)) && klass->isSameOrBaseOf(exception); });
 }
 
 std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallExpr> expr, const std::vector<std::shared_ptr<FuExpr>> * arguments)

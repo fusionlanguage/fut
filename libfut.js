@@ -6230,12 +6230,11 @@ export class FuSema
 
 	static #methodHasThrows(method, exception)
 	{
-		for (const symbol of method.throws) {
+		return method.throws.some(symbol => {
 			let klass;
-			if ((klass = symbol.symbol) instanceof FuClass && klass.isSameOrBaseOf(exception))
-				return true;
+			return (klass = symbol.symbol) instanceof FuClass && klass.isSameOrBaseOf(exception);
 		}
-		return false;
+		);
 	}
 
 	#resolveCallWithArguments(expr, arguments_)

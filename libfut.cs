@@ -5918,14 +5918,7 @@ namespace Fusion
 			return param == null || param.Value != null;
 		}
 
-		static bool MethodHasThrows(FuMethodBase method, FuClass exception)
-		{
-			foreach (FuSymbolReference symbol in method.Throws) {
-				if (symbol.Symbol is FuClass klass && klass.IsSameOrBaseOf(exception))
-					return true;
-			}
-			return false;
-		}
+		static bool MethodHasThrows(FuMethodBase method, FuClass exception) => method.Throws.Exists(symbol => symbol.Symbol is FuClass klass && klass.IsSameOrBaseOf(exception));
 
 		FuExpr ResolveCallWithArguments(FuCallExpr expr, List<FuExpr> arguments)
 		{
