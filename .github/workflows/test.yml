@@ -40,6 +40,7 @@ jobs:
   py-swift:
     runs-on: ubuntu-24.04
     steps:
+      - run: sudo apt install mypy
       - uses: swift-actions/setup-swift@main
       - uses: actions/checkout@main
       - run: make -j4 test-py test-swift
