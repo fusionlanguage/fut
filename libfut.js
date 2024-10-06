@@ -15906,56 +15906,44 @@ export class GenCpp extends GenCCpp
 		super.visitBinaryExpr(expr, parent);
 	}
 
-	static #hasLambdaCapture(expr, lambdaVars)
+	static #hasLambdaCapture(expr, lambda)
 	{
 		if (expr instanceof FuAggregateInitializer) {
 			const init = expr;
-			return init.items.some(item => GenCpp.#hasLambdaCapture(item, lambdaVars));
+			return init.items.some(item => GenCpp.#hasLambdaCapture(item, lambda));
 		}
 		else if (expr instanceof FuLiteral || expr instanceof FuLambdaExpr)
 			return false;
 		else if (expr instanceof FuInterpolatedString) {
 			const interp = expr;
-			return interp.parts.some(part => GenCpp.#hasLambdaCapture(part.argument, lambdaVars));
+			return interp.parts.some(part => GenCpp.#hasLambdaCapture(part.argument, lambda));
 		}
 		else if (expr instanceof FuSymbolReference) {
 			const symbol = expr;
 			if (symbol.left != null)
-				return GenCpp.#hasLambdaCapture(symbol.left, lambdaVars);
-			if (symbol.symbol instanceof FuMember) {
-				const member = symbol.symbol;
+				return GenCpp.#hasLambdaCapture(symbol.left, lambda);
+			let member;
+			if ((member = symbol.symbol) instanceof FuMember)
 				return !member.isStatic();
-			}
-			else if (symbol.symbol instanceof FuVar) {
-				const def = symbol.symbol;
-				return !lambdaVars.includes(def);
-			}
-			else
-				return false;
+			return symbol.symbol instanceof FuVar && symbol.symbol.parent != lambda;
 		}
 		else if (expr instanceof FuUnaryExpr) {
 			const unary = expr;
-			return unary.inner != null && GenCpp.#hasLambdaCapture(unary.inner, lambdaVars);
+			return unary.inner != null && GenCpp.#hasLambdaCapture(unary.inner, lambda);
 		}
 		else if (expr instanceof FuBinaryExpr) {
 			const binary = expr;
-			if (GenCpp.#hasLambdaCapture(binary.left, lambdaVars))
+			if (GenCpp.#hasLambdaCapture(binary.left, lambda))
 				return true;
-			if (binary.op == FuToken.IS) {
-				let def;
-				if ((def = binary.right) instanceof FuVar)
-					lambdaVars.push(def);
-				return false;
-			}
-			return GenCpp.#hasLambdaCapture(binary.right, lambdaVars);
+			return binary.op != FuToken.IS && GenCpp.#hasLambdaCapture(binary.right, lambda);
 		}
 		else if (expr instanceof FuSelectExpr) {
 			const select = expr;
-			return GenCpp.#hasLambdaCapture(select.cond, lambdaVars) || GenCpp.#hasLambdaCapture(select.onTrue, lambdaVars) || GenCpp.#hasLambdaCapture(select.onFalse, lambdaVars);
+			return GenCpp.#hasLambdaCapture(select.cond, lambda) || GenCpp.#hasLambdaCapture(select.onTrue, lambda) || GenCpp.#hasLambdaCapture(select.onFalse, lambda);
 		}
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
-			return GenCpp.#hasLambdaCapture(call.method, lambdaVars) || call.arguments_.some(arg => GenCpp.#hasLambdaCapture(arg, lambdaVars));
+			return GenCpp.#hasLambdaCapture(call.method, lambda) || call.arguments_.some(arg => GenCpp.#hasLambdaCapture(arg, lambda));
 		}
 		else
 			throw new Error();
@@ -15964,10 +15952,7 @@ export class GenCpp extends GenCCpp
 	visitLambdaExpr(expr)
 	{
 		this.writeChar(91);
-		const lambdaVars = [];
-		let it = expr.first;
-		lambdaVars.push(it);
-		if (GenCpp.#hasLambdaCapture(expr.body, lambdaVars))
+		if (GenCpp.#hasLambdaCapture(expr.body, expr))
 			this.writeChar(38);
 		this.write("](");
 		if (expr.first.type instanceof FuOwningType || expr.first.type.id == FuId.STRING_STORAGE_TYPE) {

@@ -34,6 +34,13 @@ public class Test
 			&& !empty.Any(it => true)
 			&& !listRo.Any(it => true)
 			&& CaptureParam(42)
-			&& t.CaptureThis();
+			&& t.CaptureThis()
+			&& list.Any(it => !(it is Derived));
 	}
 }
+
+public class Derived : Test
+{
+}
+
+
