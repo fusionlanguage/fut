@@ -15430,7 +15430,6 @@ namespace Fusion
 			case FuAggregateInitializer init:
 				return init.Items.Exists(item => HasLambdaCapture(item, lambda));
 			case FuLiteral:
-			case FuLambdaExpr:
 				return false;
 			case FuInterpolatedString interp:
 				return interp.Parts.Exists(part => HasLambdaCapture(part.Argument, lambda));
@@ -15439,7 +15438,7 @@ namespace Fusion
 					return HasLambdaCapture(symbol.Left, lambda);
 				if (symbol.Symbol is FuMember member)
 					return !member.IsStatic();
-				return symbol.Symbol is FuVar && symbol.Symbol.Parent != lambda;
+				return symbol.Symbol is FuVar && !lambda.Encloses(symbol.Symbol);
 			case FuUnaryExpr unary:
 				return unary.Inner != null && HasLambdaCapture(unary.Inner, lambda);
 			case FuBinaryExpr binary:
@@ -15450,6 +15449,8 @@ namespace Fusion
 				return HasLambdaCapture(select.Cond, lambda) || HasLambdaCapture(select.OnTrue, lambda) || HasLambdaCapture(select.OnFalse, lambda);
 			case FuCallExpr call:
 				return HasLambdaCapture(call.Method, lambda) || call.Arguments.Exists(arg => HasLambdaCapture(arg, lambda));
+			case FuLambdaExpr inner:
+				return HasLambdaCapture(inner.Body, lambda);
 			default:
 				throw new NotImplementedException();
 			}

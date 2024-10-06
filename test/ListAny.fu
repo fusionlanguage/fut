@@ -30,12 +30,18 @@ public class Test
 		list.Add(t);
 		List<int>() empty;
 		List<Test>() listRo;
+		List<List<int>()>() lol;
+		lol.Add();
+		lol[0].Add(10);
+		int c = 10;
 		return list.Any(it => it.Value > 10)
 			&& !empty.Any(it => true)
 			&& !listRo.Any(it => true)
 			&& CaptureParam(42)
 			&& t.CaptureThis()
-			&& list.Any(it => !(it is Derived));
+			&& lol.Any(l => l.Any(i => i == 10))
+			&& !lol.Any(l => l.Any(i => i == 42))
+			&& lol.Any(l => l.Any(i => i == c));
 	}
 }
 

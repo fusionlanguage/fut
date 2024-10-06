@@ -15084,7 +15084,7 @@ bool GenCpp::hasLambdaCapture(const FuExpr * expr, const FuLambdaExpr * lambda)
 {
 	if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr))
 		return std::any_of(init->items.begin(), init->items.end(), [&](const std::shared_ptr<FuExpr> &item) { return hasLambdaCapture(item.get(), lambda); });
-	else if (dynamic_cast<const FuLiteral *>(expr) || dynamic_cast<const FuLambdaExpr *>(expr))
+	else if (dynamic_cast<const FuLiteral *>(expr))
 		return false;
 	else if (const FuInterpolatedString *interp = dynamic_cast<const FuInterpolatedString *>(expr))
 		return std::any_of(interp->parts.begin(), interp->parts.end(), [&](const FuInterpolatedPart &part) { return hasLambdaCapture(part.argument.get(), lambda); });
@@ -15093,7 +15093,7 @@ bool GenCpp::hasLambdaCapture(const FuExpr * expr, const FuLambdaExpr * lambda)
 			return hasLambdaCapture(symbol->left.get(), lambda);
 		if (const FuMember *member = dynamic_cast<const FuMember *>(symbol->symbol))
 			return !member->isStatic();
-		return dynamic_cast<const FuVar *>(symbol->symbol) && symbol->symbol->parent != lambda;
+		return dynamic_cast<const FuVar *>(symbol->symbol) && !lambda->encloses(symbol->symbol);
 	}
 	else if (const FuUnaryExpr *unary = dynamic_cast<const FuUnaryExpr *>(expr))
 		return unary->inner != nullptr && hasLambdaCapture(unary->inner.get(), lambda);
@@ -15106,6 +15106,8 @@ bool GenCpp::hasLambdaCapture(const FuExpr * expr, const FuLambdaExpr * lambda)
 		return hasLambdaCapture(select->cond.get(), lambda) || hasLambdaCapture(select->onTrue.get(), lambda) || hasLambdaCapture(select->onFalse.get(), lambda);
 	else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr))
 		return hasLambdaCapture(call->method.get(), lambda) || std::any_of(call->arguments.begin(), call->arguments.end(), [&](const std::shared_ptr<FuExpr> &arg) { return hasLambdaCapture(arg.get(), lambda); });
+	else if (const FuLambdaExpr *inner = dynamic_cast<const FuLambdaExpr *>(expr))
+		return hasLambdaCapture(inner->body.get(), lambda);
 	else
 		std::abort();
 }

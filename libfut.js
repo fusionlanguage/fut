@@ -15912,7 +15912,7 @@ export class GenCpp extends GenCCpp
 			const init = expr;
 			return init.items.some(item => GenCpp.#hasLambdaCapture(item, lambda));
 		}
-		else if (expr instanceof FuLiteral || expr instanceof FuLambdaExpr)
+		else if (expr instanceof FuLiteral)
 			return false;
 		else if (expr instanceof FuInterpolatedString) {
 			const interp = expr;
@@ -15925,7 +15925,7 @@ export class GenCpp extends GenCCpp
 			let member;
 			if ((member = symbol.symbol) instanceof FuMember)
 				return !member.isStatic();
-			return symbol.symbol instanceof FuVar && symbol.symbol.parent != lambda;
+			return symbol.symbol instanceof FuVar && !lambda.encloses(symbol.symbol);
 		}
 		else if (expr instanceof FuUnaryExpr) {
 			const unary = expr;
@@ -15944,6 +15944,10 @@ export class GenCpp extends GenCCpp
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			return GenCpp.#hasLambdaCapture(call.method, lambda) || call.arguments_.some(arg => GenCpp.#hasLambdaCapture(arg, lambda));
+		}
+		else if (expr instanceof FuLambdaExpr) {
+			const inner = expr;
+			return GenCpp.#hasLambdaCapture(inner.body, lambda);
 		}
 		else
 			throw new Error();
