@@ -5743,6 +5743,8 @@ namespace Fusion
 			case FuToken.Assign:
 				CheckLValue(left);
 				CoercePermanent(right, left.Type);
+				if (left.Type is FuStorageType && right is FuSymbolReference && !(left is FuSymbolReference symbol && symbol.Symbol is FuNamedValue storageDef && storageDef.IsAssignableStorage()))
+					ReportError(right, "Cannot copy object storage");
 				SetSharedAssign(left, right);
 				expr.Left = left;
 				expr.Right = right;
@@ -6097,6 +6099,8 @@ namespace Fusion
 							if (!(expr.Value is FuLiteral literal) || !literal.IsDefaultValue())
 								ReportError(expr.Value, "Only null, zero and false supported as an array initializer");
 						}
+						else if (type is FuStorageType && expr.Value is FuSymbolReference)
+							ReportError(expr.Value, "Cannot copy object storage");
 						CoercePermanent(expr.Value, type);
 					}
 				}

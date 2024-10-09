@@ -6043,6 +6043,10 @@ export class FuSema
 		case FuToken.ASSIGN:
 			this.#checkLValue(left);
 			this.#coercePermanent(right, left.type);
+			let symbol;
+			let storageDef;
+			if (left.type instanceof FuStorageType && right instanceof FuSymbolReference && !((symbol = left) instanceof FuSymbolReference && (storageDef = symbol.symbol) instanceof FuNamedValue && storageDef.isAssignableStorage()))
+				this.#reportError(right, "Cannot copy object storage");
 			this.#setSharedAssign(left, right);
 			expr.left = left;
 			expr.right = right;
@@ -6430,6 +6434,8 @@ export class FuSema
 						if (!((literal = expr.value) instanceof FuLiteral) || !literal.isDefaultValue())
 							this.#reportError(expr.value, "Only null, zero and false supported as an array initializer");
 					}
+					else if (type instanceof FuStorageType && expr.value instanceof FuSymbolReference)
+						this.#reportError(expr.value, "Cannot copy object storage");
 					this.#coercePermanent(expr.value, type);
 				}
 			}

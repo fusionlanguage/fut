@@ -5601,11 +5601,17 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 	case FuToken::assign:
 		checkLValue(left.get());
 		coercePermanent(right.get(), left->type.get());
-		setSharedAssign(left.get(), right.get());
-		expr->left = left;
-		expr->right = right;
-		expr->type = left->type;
-		return expr;
+		{
+			const FuSymbolReference * symbol;
+			const FuNamedValue * storageDef;
+			if (dynamic_cast<const FuStorageType *>(left->type.get()) && dynamic_cast<const FuSymbolReference *>(right.get()) && !((symbol = dynamic_cast<const FuSymbolReference *>(left.get())) && (storageDef = dynamic_cast<const FuNamedValue *>(symbol->symbol)) && storageDef->isAssignableStorage()))
+				reportError(right.get(), "Cannot copy object storage");
+			setSharedAssign(left.get(), right.get());
+			expr->left = left;
+			expr->right = right;
+			expr->type = left->type;
+			return expr;
+		}
 	case FuToken::addAssign:
 		checkLValue(left.get());
 		if (left->type->id == FuId::stringStorageType)
@@ -5998,6 +6004,8 @@ void FuSema::visitVar(std::shared_ptr<FuVar> expr)
 					if (!(literal = dynamic_cast<const FuLiteral *>(expr->value.get())) || !literal->isDefaultValue())
 						reportError(expr->value.get(), "Only null, zero and false supported as an array initializer");
 				}
+				else if (dynamic_cast<const FuStorageType *>(type) && dynamic_cast<const FuSymbolReference *>(expr->value.get()))
+					reportError(expr->value.get(), "Cannot copy object storage");
 				coercePermanent(expr->value.get(), type);
 			}
 		}

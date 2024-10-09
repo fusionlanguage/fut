@@ -1,0 +1,11 @@
+public class Test
+{
+	public static bool Run()
+	{
+		Test() o;
+		Test() c = o; //ERROR: Cannot copy object storage
+		Test() t;
+		t = o; //ERROR: Cannot copy object storage
+		return true;
+	}
+}
