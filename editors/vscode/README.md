@@ -9,5 +9,6 @@ A Visual Studio Code extension for the [Fusion programming language](https://fus
 * Hovers
 * Snippets
 
-Fusion is a language designed to be translated automatically to
-C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C.
+Fusion lets you implement reusable components (libraries) for
+C, C++, C#, D, Java, JavaScript, Python, Swift, TypeScript and OpenCL C,
+all from single codebase.
