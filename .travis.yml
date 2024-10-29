@@ -1,6 +1,6 @@
 language: cpp
 dist: jammy
-env: SWIFT_VERSION=6.0.1
+env: SWIFT_VERSION=6.0.2
 vm:
   size: large
 jobs:
