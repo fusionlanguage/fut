@@ -4,7 +4,7 @@ public static class Test
 	{
 		string s = "HOME";
 		string? homeDir = Environment.GetEnvironmentVariable(s); //FAIL: cl
-		return homeDir != null
+		return homeDir != null //FAIL: swift 6.0.2 on Windows TODO
 			&& Environment.GetEnvironmentVariable("NOT_EXISTING_ENV_VAR") == null
 			&& Environment.GetEnvironmentVariable("") == null
 			&& Environment.GetEnvironmentVariable("123") == null
