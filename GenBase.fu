@@ -517,7 +517,7 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
-	protected virtual FuId GetTypeId(FuType type, bool promote) => promote && type is FuRangeType  ? FuId.IntType : type.Id;
+	protected virtual FuId GetTypeId(FuType type, bool promote) => promote && type is FuRangeType ? FuId.IntType : type.Id;
 
 	protected abstract void WriteTypeAndName!(FuNamedValue value);
 
