@@ -197,6 +197,14 @@ public class GenSwift : GenPySwift
 
 	static bool IsArrayRef(FuArrayStorageType array) => array.PtrTaken || array.GetElementType() is FuStorageType;
 
+	void WriteArrayRef!(FuType elementType)
+	{
+		this.ArrayRef = true;
+		Write("ArrayRef<");
+		WriteType(elementType);
+		WriteChar('>');
+	}
+
 	void WriteClassName!(FuClassType klass)
 	{
 		switch (klass.Class.Id) {
@@ -204,10 +212,7 @@ public class GenSwift : GenPySwift
 			Write("String");
 			break;
 		case FuId.ArrayPtrClass:
-			this.ArrayRef = true;
-			Write("ArrayRef<");
-			WriteType(klass.GetElementType());
-			WriteChar('>');
+			WriteArrayRef(klass.GetElementType());
 			break;
 		case FuId.ArrayStorageClass: // Main(string[] args)
 		case FuId.ListClass:
@@ -285,12 +290,8 @@ public class GenSwift : GenPySwift
 			Write(type.Id == FuId.BoolType ? "Bool" : type.Name);
 			break;
 		case FuArrayStorageType arrayStg:
-			if (IsArrayRef(arrayStg)) {
-				this.ArrayRef = true;
-				Write("ArrayRef<");
-				WriteType(arrayStg.GetElementType());
-				WriteChar('>');
-			}
+			if (IsArrayRef(arrayStg))
+				WriteArrayRef(arrayStg.GetElementType());
 			else {
 				WriteChar('[');
 				WriteType(arrayStg.GetElementType());
@@ -879,10 +880,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 	{
-		this.ArrayRef = true;
-		Write("ArrayRef<");
-		WriteType(elementType);
-		Write(">(");
+		WriteArrayRef(elementType);
+		WriteChar('(');
 		switch (elementType) {
 		case FuArrayStorageType:
 			Write("factory: { ");

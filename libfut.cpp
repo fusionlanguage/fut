@@ -21652,6 +21652,14 @@ bool GenSwift::isArrayRef(const FuArrayStorageType * array)
 	return array->ptrTaken || dynamic_cast<const FuStorageType *>(array->getElementType().get());
 }
 
+void GenSwift::writeArrayRef(const FuType * elementType)
+{
+	this->arrayRef = true;
+	write("ArrayRef<");
+	writeType(elementType);
+	writeChar('>');
+}
+
 void GenSwift::writeClassName(const FuClassType * klass)
 {
 	switch (klass->class_->id) {
@@ -21659,10 +21667,7 @@ void GenSwift::writeClassName(const FuClassType * klass)
 		write("String");
 		break;
 	case FuId::arrayPtrClass:
-		this->arrayRef = true;
-		write("ArrayRef<");
-		writeType(klass->getElementType().get());
-		writeChar('>');
+		writeArrayRef(klass->getElementType().get());
 		break;
 	case FuId::arrayStorageClass:
 	case FuId::listClass:
@@ -21738,12 +21743,8 @@ void GenSwift::writeType(const FuType * type)
 	else if (dynamic_cast<const FuEnum *>(type))
 		write(type->id == FuId::boolType ? "Bool" : type->name);
 	else if (const FuArrayStorageType *arrayStg = dynamic_cast<const FuArrayStorageType *>(type)) {
-		if (isArrayRef(arrayStg)) {
-			this->arrayRef = true;
-			write("ArrayRef<");
-			writeType(arrayStg->getElementType().get());
-			writeChar('>');
-		}
+		if (isArrayRef(arrayStg))
+			writeArrayRef(arrayStg->getElementType().get());
 		else {
 			writeChar('[');
 			writeType(arrayStg->getElementType().get());
@@ -22340,10 +22341,8 @@ void GenSwift::writeDefaultValue(const FuType * type)
 
 void GenSwift::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
-	this->arrayRef = true;
-	write("ArrayRef<");
-	writeType(elementType);
-	write(">(");
+	writeArrayRef(elementType);
+	writeChar('(');
 	if (dynamic_cast<const FuArrayStorageType *>(elementType)) {
 		write("factory: { ");
 		writeNewStorage(elementType);

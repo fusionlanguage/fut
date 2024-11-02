@@ -22412,6 +22412,14 @@ namespace Fusion
 
 		static bool IsArrayRef(FuArrayStorageType array) => array.PtrTaken || array.GetElementType() is FuStorageType;
 
+		void WriteArrayRef(FuType elementType)
+		{
+			this.ArrayRef = true;
+			Write("ArrayRef<");
+			WriteType(elementType);
+			WriteChar('>');
+		}
+
 		void WriteClassName(FuClassType klass)
 		{
 			switch (klass.Class.Id) {
@@ -22419,10 +22427,7 @@ namespace Fusion
 				Write("String");
 				break;
 			case FuId.ArrayPtrClass:
-				this.ArrayRef = true;
-				Write("ArrayRef<");
-				WriteType(klass.GetElementType());
-				WriteChar('>');
+				WriteArrayRef(klass.GetElementType());
 				break;
 			case FuId.ArrayStorageClass:
 			case FuId.ListClass:
@@ -22500,12 +22505,8 @@ namespace Fusion
 				Write(type.Id == FuId.BoolType ? "Bool" : type.Name);
 				break;
 			case FuArrayStorageType arrayStg:
-				if (IsArrayRef(arrayStg)) {
-					this.ArrayRef = true;
-					Write("ArrayRef<");
-					WriteType(arrayStg.GetElementType());
-					WriteChar('>');
-				}
+				if (IsArrayRef(arrayStg))
+					WriteArrayRef(arrayStg.GetElementType());
 				else {
 					WriteChar('[');
 					WriteType(arrayStg.GetElementType());
@@ -23091,10 +23092,8 @@ namespace Fusion
 
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
-			this.ArrayRef = true;
-			Write("ArrayRef<");
-			WriteType(elementType);
-			Write(">(");
+			WriteArrayRef(elementType);
+			WriteChar('(');
 			switch (elementType) {
 			case FuArrayStorageType:
 				Write("factory: { ");

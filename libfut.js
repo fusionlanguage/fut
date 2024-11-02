@@ -23042,6 +23042,14 @@ export class GenSwift extends GenPySwift
 		return array.ptrTaken || array.getElementType() instanceof FuStorageType;
 	}
 
+	#writeArrayRef(elementType)
+	{
+		this.#arrayRef = true;
+		this.write("ArrayRef<");
+		this.#writeType(elementType);
+		this.writeChar(62);
+	}
+
 	#writeClassName(klass)
 	{
 		switch (klass.class.id) {
@@ -23049,10 +23057,7 @@ export class GenSwift extends GenPySwift
 			this.write("String");
 			break;
 		case FuId.ARRAY_PTR_CLASS:
-			this.#arrayRef = true;
-			this.write("ArrayRef<");
-			this.#writeType(klass.getElementType());
-			this.writeChar(62);
+			this.#writeArrayRef(klass.getElementType());
 			break;
 		case FuId.ARRAY_STORAGE_CLASS:
 		case FuId.LIST_CLASS:
@@ -23129,12 +23134,8 @@ export class GenSwift extends GenPySwift
 			this.write(type.id == FuId.BOOL_TYPE ? "Bool" : type.name);
 		else if (type instanceof FuArrayStorageType) {
 			const arrayStg = type;
-			if (GenSwift.#isArrayRef(arrayStg)) {
-				this.#arrayRef = true;
-				this.write("ArrayRef<");
-				this.#writeType(arrayStg.getElementType());
-				this.writeChar(62);
-			}
+			if (GenSwift.#isArrayRef(arrayStg))
+				this.#writeArrayRef(arrayStg.getElementType());
 			else {
 				this.writeChar(91);
 				this.#writeType(arrayStg.getElementType());
@@ -23727,10 +23728,8 @@ export class GenSwift extends GenPySwift
 
 	writeNewArray(elementType, lengthExpr, parent)
 	{
-		this.#arrayRef = true;
-		this.write("ArrayRef<");
-		this.#writeType(elementType);
-		this.write(">(");
+		this.#writeArrayRef(elementType);
+		this.writeChar(40);
 		if (elementType instanceof FuArrayStorageType) {
 			this.write("factory: { ");
 			this.writeNewStorage(elementType);

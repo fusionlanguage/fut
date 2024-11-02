@@ -2911,6 +2911,7 @@ private:
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void openIndexing(const FuExpr * collection);
 	static bool isArrayRef(const FuArrayStorageType * array);
+	void writeArrayRef(const FuType * elementType);
 	void writeClassName(const FuClassType * klass);
 	void writeType(const FuType * type);
 	void writeUnwrapped(const FuExpr * expr, FuPriority parent, bool substringOk);
