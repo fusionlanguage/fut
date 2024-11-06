@@ -213,21 +213,70 @@ public class GenCpp : GenCCpp
 		Write(suffix);
 	}
 
-	void WriteCollectionType!(string name, FuType elementType)
+	void WriteCollectionType!(FuClassType klass)
 	{
-		Include(name);
+		FuType elementType = klass.TypeArg0;
+		string cppType;
+		switch (klass.Class.Id) {
+		case FuId.ArrayStorageClass:
+			cppType = "array";
+			break;
+		case FuId.ListClass:
+			cppType = "vector";
+			break;
+		case FuId.QueueClass:
+			cppType = "queue";
+			break;
+		case FuId.StackClass:
+			cppType = "stack";
+			break;
+		case FuId.PriorityQueueClass:
+			Include("queue");
+			Write("std::priority_queue<");
+			WriteType(elementType, false);
+			Write(", std::vector<");
+			WriteType(elementType, false);
+			Write(">, std::greater<");
+			WriteType(elementType, false);
+			Write(">>");
+			return;
+		case FuId.HashSetClass:
+			cppType = "unordered_set";
+			break;
+		case FuId.SortedSetClass:
+			cppType = "set";
+			break;
+		case FuId.DictionaryClass:
+			cppType = "unordered_map";
+			break;
+		case FuId.SortedDictionaryClass:
+			cppType = "map";
+			break;
+		default:
+			NotSupported(klass, klass.Class.Name);
+			return;
+		}
+		Include(cppType);
 		Write("std::");
-		Write(name);
+		Write(cppType);
 		WriteChar('<');
 		WriteType(elementType, false);
+		if (klass is FuArrayStorageType arrayStorage) {
+			Write(", ");
+			VisitLiteralLong(arrayStorage.Length);
+		}
+		else if (klass.Class.TypeParameterCount == 2) {
+			Write(", ");
+			WriteType(klass.GetValueType(), false);
+		}
 		WriteChar('>');
 	}
 
 	void WriteClassType!(FuClassType klass)
 	{
+		if (!(klass is FuReadWriteClassType))
+			Write("const ");
 		if (klass.Class.TypeParameterCount == 0) {
-			if (!(klass is FuReadWriteClassType))
-				Write("const ");
 			switch (klass.Class.Id) {
 			case FuId.TextWriterClass:
 				Include("iostream");
@@ -254,55 +303,8 @@ public class GenCpp : GenCCpp
 				break;
 			}
 		}
-		else {
-			string cppType;
-			switch (klass.Class.Id) {
-			case FuId.ArrayStorageClass:
-				cppType = "array";
-				break;
-			case FuId.ListClass:
-				cppType = "vector";
-				break;
-			case FuId.QueueClass:
-				cppType = "queue";
-				break;
-			case FuId.StackClass:
-				cppType = "stack";
-				break;
-			case FuId.HashSetClass:
-				cppType = "unordered_set";
-				break;
-			case FuId.SortedSetClass:
-				cppType = "set";
-				break;
-			case FuId.DictionaryClass:
-				cppType = "unordered_map";
-				break;
-			case FuId.SortedDictionaryClass:
-				cppType = "map";
-				break;
-			default:
-				NotSupported(klass, klass.Class.Name);
-				cppType = "NOT_SUPPORTED";
-				break;
-			}
-			Include(cppType);
-			if (!(klass is FuReadWriteClassType))
-				Write("const ");
-			Write("std::");
-			Write(cppType);
-			WriteChar('<');
-			WriteType(klass.TypeArg0, false);
-			if (klass is FuArrayStorageType arrayStorage) {
-				Write(", ");
-				VisitLiteralLong(arrayStorage.Length);
-			}
-			else if (klass.Class.TypeParameterCount == 2) {
-				Write(", ");
-				WriteType(klass.GetValueType(), false);
-			}
-			WriteChar('>');
-		}
+		else
+			WriteCollectionType(klass);
 	}
 
 	protected override void WriteType!(FuType type, bool promote)
@@ -542,6 +544,37 @@ public class GenCpp : GenCCpp
 		}
 		else
 			obj.Accept(this, priority);
+	}
+
+	void WritePop!(FuExpr obj, FuPriority parent, int p, string front)
+	{
+		if (parent == FuPriority.Statement) {
+			StartMethodCall(obj);
+			Write("pop()");
+		}
+		else {
+			// :-)
+			FuClassType klass = obj.Type.AsClassType();
+			Write("[](");
+			WriteCollectionType(klass);
+			Write(" &");
+			WriteChar(p);
+			Write(") { ");
+			WriteType(klass.GetElementType(), false);
+			WriteChar(' ');
+			Write(front);
+			Write(" = ");
+			WriteChar(p);
+			WriteChar('.');
+			Write(front);
+			Write("(); ");
+			WriteChar(p);
+			Write(".pop(); return ");
+			Write(front);
+			Write("; }(");
+			WriteCollectionObject(obj, FuPriority.Argument);
+			WriteChar(')');
+		}
 	}
 
 	void WriteBeginEnd!(FuExpr obj)
@@ -903,16 +936,16 @@ public class GenCpp : GenCCpp
 			break;
 		case FuId.ListIndexOf:
 			{
-				FuType elementType = obj.Type.AsClassType().GetElementType();
+				FuClassType klass = obj.Type.AsClassType();
 				Write("[](const ");
-				WriteCollectionType("vector", elementType);
+				WriteCollectionType(klass);
 				Write(" &v, ");
-				WriteType(elementType, false);
+				WriteType(klass.GetElementType(), false);
 				Include("algorithm");
 				Write(" value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(");
 				WriteCollectionObject(obj, FuPriority.Argument);
 				Write(", ");
-				WriteCoerced(elementType, args[0], FuPriority.Argument);
+				WriteCoerced(klass.GetElementType(), args[0], FuPriority.Argument);
 				WriteChar(')');
 			}
 			break;
@@ -948,27 +981,15 @@ public class GenCpp : GenCCpp
 			break;
 		case FuId.QueueClear:
 		case FuId.StackClear:
+		case FuId.PriorityQueueClear:
 			WriteCollectionObject(obj, FuPriority.Assign);
 			Write(" = {}");
 			break;
 		case FuId.QueueDequeue:
-			if (parent == FuPriority.Statement) {
-				StartMethodCall(obj);
-				Write("pop()");
-			}
-			else {
-				// :-)
-				FuType elementType = obj.Type.AsClassType().GetElementType();
-				Write("[](");
-				WriteCollectionType("queue", elementType);
-				Write(" &q) { ");
-				WriteType(elementType, false);
-				Write(" front = q.front(); q.pop(); return front; }(");
-				WriteCollectionObject(obj, FuPriority.Argument);
-				WriteChar(')');
-			}
+			WritePop(obj, parent, 'q', "front");
 			break;
 		case FuId.QueueEnqueue:
+		case FuId.PriorityQueueEnqueue:
 			WriteMethodCall(obj, "push", args[0]);
 			break;
 		case FuId.QueuePeek:
@@ -976,28 +997,18 @@ public class GenCpp : GenCCpp
 			Write("front()");
 			break;
 		case FuId.StackPeek:
+		case FuId.PriorityQueuePeek:
 			StartMethodCall(obj);
 			Write("top()");
 			break;
 		case FuId.StackPop:
-			if (parent == FuPriority.Statement) {
-				StartMethodCall(obj);
-				Write("pop()");
-			}
-			else {
-				// :-)
-				FuType elementType = obj.Type.AsClassType().GetElementType();
-				Write("[](");
-				WriteCollectionType("stack", elementType);
-				Write(" &s) { ");
-				WriteType(elementType, false);
-				Write(" top = s.top(); s.pop(); return top; }(");
-				WriteCollectionObject(obj, FuPriority.Argument);
-				WriteChar(')');
-			}
+			WritePop(obj, parent, 's', "top");
 			break;
 		case FuId.StackPush:
 			WriteCollectionMethod(obj, "push", args);
+			break;
+		case FuId.PriorityQueueDequeue:
+			WritePop(obj, parent, 'q', "top");
 			break;
 		case FuId.HashSetAdd:
 		case FuId.SortedSetAdd:
@@ -1363,6 +1374,7 @@ public class GenCpp : GenCCpp
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:
+		case FuId.PriorityQueueCount:
 		case FuId.HashSetCount:
 		case FuId.SortedSetCount:
 		case FuId.DictionaryCount:

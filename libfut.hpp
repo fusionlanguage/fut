@@ -218,6 +218,7 @@ enum class FuId
 	listClass,
 	queueClass,
 	stackClass,
+	priorityQueueClass,
 	hashSetClass,
 	sortedSetClass,
 	dictionaryClass,
@@ -289,6 +290,11 @@ enum class FuId
 	stackPeek,
 	stackPush,
 	stackPop,
+	priorityQueueClear,
+	priorityQueueCount,
+	priorityQueueDequeue,
+	priorityQueueEnqueue,
+	priorityQueuePeek,
 	hashSetAdd,
 	hashSetClear,
 	hashSetContains,
@@ -2431,7 +2437,7 @@ private:
 	void startMethodCall(const FuExpr * obj);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeSharedUnique(std::string_view prefix, bool unique, std::string_view suffix);
-	void writeCollectionType(std::string_view name, const FuType * elementType);
+	void writeCollectionType(const FuClassType * klass);
 	void writeClassType(const FuClassType * klass);
 	void writeNewUniqueArray(bool unique, const FuType * elementType, const FuExpr * lengthExpr);
 	void writeNewUnique(bool unique, const FuReadWriteClassType * klass);
@@ -2440,6 +2446,7 @@ private:
 	static bool isClassPtr(const FuType * type);
 	static bool isCppPtr(const FuExpr * expr);
 	void writeCollectionObject(const FuExpr * obj, FuPriority priority);
+	void writePop(const FuExpr * obj, FuPriority parent, int p, std::string_view front);
 	void writeBeginEnd(const FuExpr * obj);
 	void writePtrRange(const FuExpr * obj, const FuExpr * index, const FuExpr * count);
 	void writeNotRawStringLiteral(const FuExpr * obj, FuPriority priority);

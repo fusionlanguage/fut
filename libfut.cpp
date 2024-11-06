@@ -2815,6 +2815,10 @@ FuSystem::FuSystem()
 	stackClass->addMethod(this->typeParam0, FuId::stackPeek, "Peek", false);
 	stackClass->addMethod(this->voidType, FuId::stackPush, "Push", true, FuVar::new_(this->typeParam0, "value"));
 	stackClass->addMethod(this->typeParam0, FuId::stackPop, "Pop", true);
+	FuClass * priorityQueueClass = addCollection(FuId::priorityQueueClass, "PriorityQueue", 1, FuId::priorityQueueClear, FuId::priorityQueueCount);
+	priorityQueueClass->addMethod(this->typeParam0, FuId::priorityQueueDequeue, "Dequeue", true);
+	priorityQueueClass->addMethod(this->voidType, FuId::priorityQueueEnqueue, "Enqueue", true, FuVar::new_(this->typeParam0, "value"));
+	priorityQueueClass->addMethod(this->typeParam0, FuId::priorityQueuePeek, "Peek", false);
 	addSet(FuId::hashSetClass, "HashSet", FuId::hashSetAdd, FuId::hashSetClear, FuId::hashSetContains, FuId::hashSetCount, FuId::hashSetRemove);
 	addSet(FuId::sortedSetClass, "SortedSet", FuId::sortedSetAdd, FuId::sortedSetClear, FuId::sortedSetContains, FuId::sortedSetCount, FuId::sortedSetRemove);
 	const FuClass * dictionaryClass = addDictionary(FuId::dictionaryClass, "Dictionary", FuId::dictionaryClear, FuId::dictionaryContainsKey, FuId::dictionaryCount, FuId::dictionaryRemove);
@@ -13825,21 +13829,70 @@ void GenCpp::writeSharedUnique(std::string_view prefix, bool unique, std::string
 	write(suffix);
 }
 
-void GenCpp::writeCollectionType(std::string_view name, const FuType * elementType)
+void GenCpp::writeCollectionType(const FuClassType * klass)
 {
-	include(name);
+	const FuType * elementType = klass->typeArg0.get();
+	std::string_view cppType;
+	switch (klass->class_->id) {
+	case FuId::arrayStorageClass:
+		cppType = "array";
+		break;
+	case FuId::listClass:
+		cppType = "vector";
+		break;
+	case FuId::queueClass:
+		cppType = "queue";
+		break;
+	case FuId::stackClass:
+		cppType = "stack";
+		break;
+	case FuId::priorityQueueClass:
+		include("queue");
+		write("std::priority_queue<");
+		writeType(elementType, false);
+		write(", std::vector<");
+		writeType(elementType, false);
+		write(">, std::greater<");
+		writeType(elementType, false);
+		write(">>");
+		return;
+	case FuId::hashSetClass:
+		cppType = "unordered_set";
+		break;
+	case FuId::sortedSetClass:
+		cppType = "set";
+		break;
+	case FuId::dictionaryClass:
+		cppType = "unordered_map";
+		break;
+	case FuId::sortedDictionaryClass:
+		cppType = "map";
+		break;
+	default:
+		notSupported(klass, klass->class_->name);
+		return;
+	}
+	include(cppType);
 	write("std::");
-	write(name);
+	write(cppType);
 	writeChar('<');
 	writeType(elementType, false);
+	if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)) {
+		write(", ");
+		visitLiteralLong(arrayStorage->length);
+	}
+	else if (klass->class_->typeParameterCount == 2) {
+		write(", ");
+		writeType(klass->getValueType().get(), false);
+	}
 	writeChar('>');
 }
 
 void GenCpp::writeClassType(const FuClassType * klass)
 {
+	if (!dynamic_cast<const FuReadWriteClassType *>(klass))
+		write("const ");
 	if (klass->class_->typeParameterCount == 0) {
-		if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-			write("const ");
 		switch (klass->class_->id) {
 		case FuId::textWriterClass:
 			include("iostream");
@@ -13866,55 +13919,8 @@ void GenCpp::writeClassType(const FuClassType * klass)
 			break;
 		}
 	}
-	else {
-		std::string_view cppType;
-		switch (klass->class_->id) {
-		case FuId::arrayStorageClass:
-			cppType = "array";
-			break;
-		case FuId::listClass:
-			cppType = "vector";
-			break;
-		case FuId::queueClass:
-			cppType = "queue";
-			break;
-		case FuId::stackClass:
-			cppType = "stack";
-			break;
-		case FuId::hashSetClass:
-			cppType = "unordered_set";
-			break;
-		case FuId::sortedSetClass:
-			cppType = "set";
-			break;
-		case FuId::dictionaryClass:
-			cppType = "unordered_map";
-			break;
-		case FuId::sortedDictionaryClass:
-			cppType = "map";
-			break;
-		default:
-			notSupported(klass, klass->class_->name);
-			cppType = "NOT_SUPPORTED";
-			break;
-		}
-		include(cppType);
-		if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-			write("const ");
-		write("std::");
-		write(cppType);
-		writeChar('<');
-		writeType(klass->typeArg0.get(), false);
-		if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)) {
-			write(", ");
-			visitLiteralLong(arrayStorage->length);
-		}
-		else if (klass->class_->typeParameterCount == 2) {
-			write(", ");
-			writeType(klass->getValueType().get(), false);
-		}
-		writeChar('>');
-	}
+	else
+		writeCollectionType(klass);
 }
 
 void GenCpp::writeType(const FuType * type, bool promote)
@@ -14153,6 +14159,36 @@ void GenCpp::writeCollectionObject(const FuExpr * obj, FuPriority priority)
 	}
 	else
 		obj->accept(this, priority);
+}
+
+void GenCpp::writePop(const FuExpr * obj, FuPriority parent, int p, std::string_view front)
+{
+	if (parent == FuPriority::statement) {
+		startMethodCall(obj);
+		write("pop()");
+	}
+	else {
+		const FuClassType * klass = obj->type->asClassType();
+		write("[](");
+		writeCollectionType(klass);
+		write(" &");
+		writeChar(p);
+		write(") { ");
+		writeType(klass->getElementType().get(), false);
+		writeChar(' ');
+		write(front);
+		write(" = ");
+		writeChar(p);
+		writeChar('.');
+		write(front);
+		write("(); ");
+		writeChar(p);
+		write(".pop(); return ");
+		write(front);
+		write("; }(");
+		writeCollectionObject(obj, FuPriority::argument);
+		writeChar(')');
+	}
 }
 
 void GenCpp::writeBeginEnd(const FuExpr * obj)
@@ -14511,16 +14547,16 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::listIndexOf:
 		{
-			const FuType * elementType = obj->type->asClassType()->getElementType().get();
+			const FuClassType * klass = obj->type->asClassType();
 			write("[](const ");
-			writeCollectionType("vector", elementType);
+			writeCollectionType(klass);
 			write(" &v, ");
-			writeType(elementType, false);
+			writeType(klass->getElementType().get(), false);
 			include("algorithm");
 			write(" value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(");
 			writeCollectionObject(obj, FuPriority::argument);
 			write(", ");
-			writeCoerced(elementType, (*args)[0].get(), FuPriority::argument);
+			writeCoerced(klass->getElementType().get(), (*args)[0].get(), FuPriority::argument);
 			writeChar(')');
 		}
 		break;
@@ -14556,26 +14592,15 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		break;
 	case FuId::queueClear:
 	case FuId::stackClear:
+	case FuId::priorityQueueClear:
 		writeCollectionObject(obj, FuPriority::assign);
 		write(" = {}");
 		break;
 	case FuId::queueDequeue:
-		if (parent == FuPriority::statement) {
-			startMethodCall(obj);
-			write("pop()");
-		}
-		else {
-			const FuType * elementType = obj->type->asClassType()->getElementType().get();
-			write("[](");
-			writeCollectionType("queue", elementType);
-			write(" &q) { ");
-			writeType(elementType, false);
-			write(" front = q.front(); q.pop(); return front; }(");
-			writeCollectionObject(obj, FuPriority::argument);
-			writeChar(')');
-		}
+		writePop(obj, parent, 'q', "front");
 		break;
 	case FuId::queueEnqueue:
+	case FuId::priorityQueueEnqueue:
 		writeMethodCall(obj, "push", (*args)[0].get());
 		break;
 	case FuId::queuePeek:
@@ -14583,27 +14608,18 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		write("front()");
 		break;
 	case FuId::stackPeek:
+	case FuId::priorityQueuePeek:
 		startMethodCall(obj);
 		write("top()");
 		break;
 	case FuId::stackPop:
-		if (parent == FuPriority::statement) {
-			startMethodCall(obj);
-			write("pop()");
-		}
-		else {
-			const FuType * elementType = obj->type->asClassType()->getElementType().get();
-			write("[](");
-			writeCollectionType("stack", elementType);
-			write(" &s) { ");
-			writeType(elementType, false);
-			write(" top = s.top(); s.pop(); return top; }(");
-			writeCollectionObject(obj, FuPriority::argument);
-			writeChar(')');
-		}
+		writePop(obj, parent, 's', "top");
 		break;
 	case FuId::stackPush:
 		writeCollectionMethod(obj, "push", args);
+		break;
+	case FuId::priorityQueueDequeue:
+		writePop(obj, parent, 'q', "top");
 		break;
 	case FuId::hashSetAdd:
 	case FuId::sortedSetAdd:
@@ -14966,6 +14982,7 @@ void GenCpp::visitSymbolReference(const FuSymbolReference * expr, FuPriority par
 	case FuId::listCount:
 	case FuId::queueCount:
 	case FuId::stackCount:
+	case FuId::priorityQueueCount:
 	case FuId::hashSetCount:
 	case FuId::sortedSetCount:
 	case FuId::dictionaryCount:
@@ -15910,6 +15927,14 @@ void GenCs::writeType(const FuType * type, bool promote)
 			write(klass->class_->name);
 			writeElementType(klass->getElementType().get());
 			break;
+		case FuId::priorityQueueClass:
+			include("System.Collections.Generic");
+			write("PriorityQueue<");
+			writeType(klass->getElementType().get(), false);
+			write(", ");
+			writeType(klass->getElementType().get(), false);
+			writeChar('>');
+			break;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
 			include("System.Collections.Generic");
@@ -16244,6 +16269,9 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writePostfix(obj, ".Sort(");
 		writeCoercedArgs(method, args);
 		write(", null)");
+		break;
+	case FuId::priorityQueueEnqueue:
+		writeMethodCall(obj, "Enqueue", (*args)[0].get(), (*args)[0].get());
 		break;
 	case FuId::dictionaryAdd:
 		writePostfix(obj, ".Add(");
@@ -18356,6 +18384,9 @@ void GenJava::writeJavaType(const FuType * type, bool promote, bool needClass)
 		case FuId::stackClass:
 			writeCollectionType("Stack", klass->getElementType().get());
 			break;
+		case FuId::priorityQueueClass:
+			writeCollectionType("PriorityQueue", klass->getElementType().get());
+			break;
 		case FuId::hashSetClass:
 			writeCollectionType("HashSet", klass->getElementType().get());
 			break;
@@ -18577,6 +18608,7 @@ void GenJava::visitSymbolReference(const FuSymbolReference * expr, FuPriority pa
 	case FuId::listCount:
 	case FuId::queueCount:
 	case FuId::stackCount:
+	case FuId::priorityQueueCount:
 	case FuId::hashSetCount:
 	case FuId::sortedSetCount:
 	case FuId::dictionaryCount:
@@ -18661,6 +18693,7 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 	case FuId::stackPeek:
 	case FuId::stackPush:
 	case FuId::stackPop:
+	case FuId::priorityQueueClear:
 	case FuId::hashSetAdd:
 	case FuId::hashSetClear:
 	case FuId::hashSetContains:
@@ -18798,12 +18831,15 @@ void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const s
 		write(").sort(null)");
 		break;
 	case FuId::queueDequeue:
+	case FuId::priorityQueueDequeue:
 		writePostfix(obj, ".remove()");
 		break;
 	case FuId::queueEnqueue:
+	case FuId::priorityQueueEnqueue:
 		writeMethodCall(obj, "add", (*args)[0].get());
 		break;
 	case FuId::queuePeek:
+	case FuId::priorityQueuePeek:
 		writePostfix(obj, ".element()");
 		break;
 	case FuId::dictionaryAdd:

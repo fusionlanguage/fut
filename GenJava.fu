@@ -311,6 +311,9 @@ public class GenJava : GenTyped
 			case FuId.StackClass:
 				WriteCollectionType("Stack", klass.GetElementType());
 				break;
+			case FuId.PriorityQueueClass:
+				WriteCollectionType("PriorityQueue", klass.GetElementType());
+				break;
 			case FuId.HashSetClass:
 				WriteCollectionType("HashSet", klass.GetElementType());
 				break;
@@ -526,6 +529,7 @@ public class GenJava : GenTyped
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:
+		case FuId.PriorityQueueCount:
 		case FuId.HashSetCount:
 		case FuId.SortedSetCount:
 		case FuId.DictionaryCount:
@@ -609,6 +613,7 @@ public class GenJava : GenTyped
 		case FuId.StackPeek:
 		case FuId.StackPush:
 		case FuId.StackPop:
+		case FuId.PriorityQueueClear:
 		case FuId.HashSetAdd:
 		case FuId.HashSetClear:
 		case FuId.HashSetContains:
@@ -755,12 +760,15 @@ public class GenJava : GenTyped
 			Write(").sort(null)");
 			break;
 		case FuId.QueueDequeue:
+		case FuId.PriorityQueueDequeue:
 			WritePostfix(obj, ".remove()");
 			break;
 		case FuId.QueueEnqueue:
+		case FuId.PriorityQueueEnqueue:
 			WriteMethodCall(obj, "add", args[0]);
 			break;
 		case FuId.QueuePeek:
+		case FuId.PriorityQueuePeek:
 			WritePostfix(obj, ".element()");
 			break;
 		case FuId.DictionaryAdd:

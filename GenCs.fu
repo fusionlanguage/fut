@@ -250,6 +250,14 @@ public class GenCs : GenTyped
 				Write(klass.Class.Name);
 				WriteElementType(klass.GetElementType());
 				break;
+			case FuId.PriorityQueueClass:
+				Include("System.Collections.Generic");
+				Write("PriorityQueue<");
+				WriteType(klass.GetElementType(), false);
+				Write(", ");
+				WriteType(klass.GetElementType(), false);
+				WriteChar('>');
+				break;
 			case FuId.DictionaryClass:
 			case FuId.SortedDictionaryClass:
 				Include("System.Collections.Generic");
@@ -570,6 +578,9 @@ public class GenCs : GenTyped
 			WritePostfix(obj, ".Sort(");
 			WriteCoercedArgs(method, args);
 			Write(", null)");
+			break;
+		case FuId.PriorityQueueEnqueue:
+			WriteMethodCall(obj, "Enqueue", args[0], args[0]); // FIXME: side effect
 			break;
 		case FuId.DictionaryAdd:
 			WritePostfix(obj, ".Add(");

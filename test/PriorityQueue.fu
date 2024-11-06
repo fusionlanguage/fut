@@ -1,0 +1,15 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		PriorityQueue<int>() q; //FAIL: d js py swift ts TODO; c, cl
+		q.Enqueue(42);
+		q.Clear();
+		q.Enqueue(15);
+		q.Enqueue(5);
+		q.Enqueue(1);
+		q.Enqueue(10);
+		q.Dequeue();
+		return q.Count == 3 && q.Dequeue() == 5 && q.Peek() == 10;
+	}
+}

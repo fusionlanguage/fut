@@ -1332,6 +1332,7 @@ namespace Fusion
 		ListClass,
 		QueueClass,
 		StackClass,
+		PriorityQueueClass,
 		HashSetClass,
 		SortedSetClass,
 		DictionaryClass,
@@ -1403,6 +1404,11 @@ namespace Fusion
 		StackPeek,
 		StackPush,
 		StackPop,
+		PriorityQueueClear,
+		PriorityQueueCount,
+		PriorityQueueDequeue,
+		PriorityQueueEnqueue,
+		PriorityQueuePeek,
 		HashSetAdd,
 		HashSetClear,
 		HashSetContains,
@@ -3288,6 +3294,10 @@ namespace Fusion
 			stackClass.AddMethod(this.TypeParam0, FuId.StackPeek, "Peek", false);
 			stackClass.AddMethod(this.VoidType, FuId.StackPush, "Push", true, FuVar.New(this.TypeParam0, "value"));
 			stackClass.AddMethod(this.TypeParam0, FuId.StackPop, "Pop", true);
+			FuClass priorityQueueClass = AddCollection(FuId.PriorityQueueClass, "PriorityQueue", 1, FuId.PriorityQueueClear, FuId.PriorityQueueCount);
+			priorityQueueClass.AddMethod(this.TypeParam0, FuId.PriorityQueueDequeue, "Dequeue", true);
+			priorityQueueClass.AddMethod(this.VoidType, FuId.PriorityQueueEnqueue, "Enqueue", true, FuVar.New(this.TypeParam0, "value"));
+			priorityQueueClass.AddMethod(this.TypeParam0, FuId.PriorityQueuePeek, "Peek", false);
 			AddSet(FuId.HashSetClass, "HashSet", FuId.HashSetAdd, FuId.HashSetClear, FuId.HashSetContains, FuId.HashSetCount, FuId.HashSetRemove);
 			AddSet(FuId.SortedSetClass, "SortedSet", FuId.SortedSetAdd, FuId.SortedSetClear, FuId.SortedSetContains, FuId.SortedSetCount, FuId.SortedSetRemove);
 			FuClass dictionaryClass = AddDictionary(FuId.DictionaryClass, "Dictionary", FuId.DictionaryClear, FuId.DictionaryContainsKey, FuId.DictionaryCount, FuId.DictionaryRemove);
@@ -14173,21 +14183,70 @@ namespace Fusion
 			Write(suffix);
 		}
 
-		void WriteCollectionType(string name, FuType elementType)
+		void WriteCollectionType(FuClassType klass)
 		{
-			Include(name);
+			FuType elementType = klass.TypeArg0;
+			string cppType;
+			switch (klass.Class.Id) {
+			case FuId.ArrayStorageClass:
+				cppType = "array";
+				break;
+			case FuId.ListClass:
+				cppType = "vector";
+				break;
+			case FuId.QueueClass:
+				cppType = "queue";
+				break;
+			case FuId.StackClass:
+				cppType = "stack";
+				break;
+			case FuId.PriorityQueueClass:
+				Include("queue");
+				Write("std::priority_queue<");
+				WriteType(elementType, false);
+				Write(", std::vector<");
+				WriteType(elementType, false);
+				Write(">, std::greater<");
+				WriteType(elementType, false);
+				Write(">>");
+				return;
+			case FuId.HashSetClass:
+				cppType = "unordered_set";
+				break;
+			case FuId.SortedSetClass:
+				cppType = "set";
+				break;
+			case FuId.DictionaryClass:
+				cppType = "unordered_map";
+				break;
+			case FuId.SortedDictionaryClass:
+				cppType = "map";
+				break;
+			default:
+				NotSupported(klass, klass.Class.Name);
+				return;
+			}
+			Include(cppType);
 			Write("std::");
-			Write(name);
+			Write(cppType);
 			WriteChar('<');
 			WriteType(elementType, false);
+			if (klass is FuArrayStorageType arrayStorage) {
+				Write(", ");
+				VisitLiteralLong(arrayStorage.Length);
+			}
+			else if (klass.Class.TypeParameterCount == 2) {
+				Write(", ");
+				WriteType(klass.GetValueType(), false);
+			}
 			WriteChar('>');
 		}
 
 		void WriteClassType(FuClassType klass)
 		{
+			if (!(klass is FuReadWriteClassType))
+				Write("const ");
 			if (klass.Class.TypeParameterCount == 0) {
-				if (!(klass is FuReadWriteClassType))
-					Write("const ");
 				switch (klass.Class.Id) {
 				case FuId.TextWriterClass:
 					Include("iostream");
@@ -14214,55 +14273,8 @@ namespace Fusion
 					break;
 				}
 			}
-			else {
-				string cppType;
-				switch (klass.Class.Id) {
-				case FuId.ArrayStorageClass:
-					cppType = "array";
-					break;
-				case FuId.ListClass:
-					cppType = "vector";
-					break;
-				case FuId.QueueClass:
-					cppType = "queue";
-					break;
-				case FuId.StackClass:
-					cppType = "stack";
-					break;
-				case FuId.HashSetClass:
-					cppType = "unordered_set";
-					break;
-				case FuId.SortedSetClass:
-					cppType = "set";
-					break;
-				case FuId.DictionaryClass:
-					cppType = "unordered_map";
-					break;
-				case FuId.SortedDictionaryClass:
-					cppType = "map";
-					break;
-				default:
-					NotSupported(klass, klass.Class.Name);
-					cppType = "NOT_SUPPORTED";
-					break;
-				}
-				Include(cppType);
-				if (!(klass is FuReadWriteClassType))
-					Write("const ");
-				Write("std::");
-				Write(cppType);
-				WriteChar('<');
-				WriteType(klass.TypeArg0, false);
-				if (klass is FuArrayStorageType arrayStorage) {
-					Write(", ");
-					VisitLiteralLong(arrayStorage.Length);
-				}
-				else if (klass.Class.TypeParameterCount == 2) {
-					Write(", ");
-					WriteType(klass.GetValueType(), false);
-				}
-				WriteChar('>');
-			}
+			else
+				WriteCollectionType(klass);
 		}
 
 		protected override void WriteType(FuType type, bool promote)
@@ -14498,6 +14510,36 @@ namespace Fusion
 			}
 			else
 				obj.Accept(this, priority);
+		}
+
+		void WritePop(FuExpr obj, FuPriority parent, int p, string front)
+		{
+			if (parent == FuPriority.Statement) {
+				StartMethodCall(obj);
+				Write("pop()");
+			}
+			else {
+				FuClassType klass = obj.Type.AsClassType();
+				Write("[](");
+				WriteCollectionType(klass);
+				Write(" &");
+				WriteChar(p);
+				Write(") { ");
+				WriteType(klass.GetElementType(), false);
+				WriteChar(' ');
+				Write(front);
+				Write(" = ");
+				WriteChar(p);
+				WriteChar('.');
+				Write(front);
+				Write("(); ");
+				WriteChar(p);
+				Write(".pop(); return ");
+				Write(front);
+				Write("; }(");
+				WriteCollectionObject(obj, FuPriority.Argument);
+				WriteChar(')');
+			}
 		}
 
 		void WriteBeginEnd(FuExpr obj)
@@ -14855,16 +14897,16 @@ namespace Fusion
 				break;
 			case FuId.ListIndexOf:
 				{
-					FuType elementType = obj.Type.AsClassType().GetElementType();
+					FuClassType klass = obj.Type.AsClassType();
 					Write("[](const ");
-					WriteCollectionType("vector", elementType);
+					WriteCollectionType(klass);
 					Write(" &v, ");
-					WriteType(elementType, false);
+					WriteType(klass.GetElementType(), false);
 					Include("algorithm");
 					Write(" value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(");
 					WriteCollectionObject(obj, FuPriority.Argument);
 					Write(", ");
-					WriteCoerced(elementType, args[0], FuPriority.Argument);
+					WriteCoerced(klass.GetElementType(), args[0], FuPriority.Argument);
 					WriteChar(')');
 				}
 				break;
@@ -14900,26 +14942,15 @@ namespace Fusion
 				break;
 			case FuId.QueueClear:
 			case FuId.StackClear:
+			case FuId.PriorityQueueClear:
 				WriteCollectionObject(obj, FuPriority.Assign);
 				Write(" = {}");
 				break;
 			case FuId.QueueDequeue:
-				if (parent == FuPriority.Statement) {
-					StartMethodCall(obj);
-					Write("pop()");
-				}
-				else {
-					FuType elementType = obj.Type.AsClassType().GetElementType();
-					Write("[](");
-					WriteCollectionType("queue", elementType);
-					Write(" &q) { ");
-					WriteType(elementType, false);
-					Write(" front = q.front(); q.pop(); return front; }(");
-					WriteCollectionObject(obj, FuPriority.Argument);
-					WriteChar(')');
-				}
+				WritePop(obj, parent, 'q', "front");
 				break;
 			case FuId.QueueEnqueue:
+			case FuId.PriorityQueueEnqueue:
 				WriteMethodCall(obj, "push", args[0]);
 				break;
 			case FuId.QueuePeek:
@@ -14927,27 +14958,18 @@ namespace Fusion
 				Write("front()");
 				break;
 			case FuId.StackPeek:
+			case FuId.PriorityQueuePeek:
 				StartMethodCall(obj);
 				Write("top()");
 				break;
 			case FuId.StackPop:
-				if (parent == FuPriority.Statement) {
-					StartMethodCall(obj);
-					Write("pop()");
-				}
-				else {
-					FuType elementType = obj.Type.AsClassType().GetElementType();
-					Write("[](");
-					WriteCollectionType("stack", elementType);
-					Write(" &s) { ");
-					WriteType(elementType, false);
-					Write(" top = s.top(); s.pop(); return top; }(");
-					WriteCollectionObject(obj, FuPriority.Argument);
-					WriteChar(')');
-				}
+				WritePop(obj, parent, 's', "top");
 				break;
 			case FuId.StackPush:
 				WriteCollectionMethod(obj, "push", args);
+				break;
+			case FuId.PriorityQueueDequeue:
+				WritePop(obj, parent, 'q', "top");
 				break;
 			case FuId.HashSetAdd:
 			case FuId.SortedSetAdd:
@@ -15310,6 +15332,7 @@ namespace Fusion
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
+			case FuId.PriorityQueueCount:
 			case FuId.HashSetCount:
 			case FuId.SortedSetCount:
 			case FuId.DictionaryCount:
@@ -16303,6 +16326,14 @@ namespace Fusion
 					Write(klass.Class.Name);
 					WriteElementType(klass.GetElementType());
 					break;
+				case FuId.PriorityQueueClass:
+					Include("System.Collections.Generic");
+					Write("PriorityQueue<");
+					WriteType(klass.GetElementType(), false);
+					Write(", ");
+					WriteType(klass.GetElementType(), false);
+					WriteChar('>');
+					break;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
 					Include("System.Collections.Generic");
@@ -16620,6 +16651,9 @@ namespace Fusion
 				WritePostfix(obj, ".Sort(");
 				WriteCoercedArgs(method, args);
 				Write(", null)");
+				break;
+			case FuId.PriorityQueueEnqueue:
+				WriteMethodCall(obj, "Enqueue", args[0], args[0]);
 				break;
 			case FuId.DictionaryAdd:
 				WritePostfix(obj, ".Add(");
@@ -18980,6 +19014,9 @@ namespace Fusion
 				case FuId.StackClass:
 					WriteCollectionType("Stack", klass.GetElementType());
 					break;
+				case FuId.PriorityQueueClass:
+					WriteCollectionType("PriorityQueue", klass.GetElementType());
+					break;
 				case FuId.HashSetClass:
 					WriteCollectionType("HashSet", klass.GetElementType());
 					break;
@@ -19190,6 +19227,7 @@ namespace Fusion
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
+			case FuId.PriorityQueueCount:
 			case FuId.HashSetCount:
 			case FuId.SortedSetCount:
 			case FuId.DictionaryCount:
@@ -19273,6 +19311,7 @@ namespace Fusion
 			case FuId.StackPeek:
 			case FuId.StackPush:
 			case FuId.StackPop:
+			case FuId.PriorityQueueClear:
 			case FuId.HashSetAdd:
 			case FuId.HashSetClear:
 			case FuId.HashSetContains:
@@ -19410,12 +19449,15 @@ namespace Fusion
 				Write(").sort(null)");
 				break;
 			case FuId.QueueDequeue:
+			case FuId.PriorityQueueDequeue:
 				WritePostfix(obj, ".remove()");
 				break;
 			case FuId.QueueEnqueue:
+			case FuId.PriorityQueueEnqueue:
 				WriteMethodCall(obj, "add", args[0]);
 				break;
 			case FuId.QueuePeek:
+			case FuId.PriorityQueuePeek:
 				WritePostfix(obj, ".element()");
 				break;
 			case FuId.DictionaryAdd:
