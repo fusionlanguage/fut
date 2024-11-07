@@ -25091,6 +25091,9 @@ export class GenPy extends GenPySwift
 				this.include("collections");
 				this.#writeCollectionTypeAnnotation("collections.deque", klass);
 				break;
+			case FuId.PRIORITY_QUEUE_CLASS:
+				this.#writeCollectionTypeAnnotation("list", klass);
+				break;
 			case FuId.HASH_SET_CLASS:
 			case FuId.SORTED_SET_CLASS:
 				this.#writeCollectionTypeAnnotation("set", klass);
@@ -25260,6 +25263,7 @@ export class GenPy extends GenPySwift
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:
 		case FuId.STACK_COUNT:
+		case FuId.PRIORITY_QUEUE_COUNT:
 		case FuId.HASH_SET_COUNT:
 		case FuId.SORTED_SET_COUNT:
 		case FuId.DICTIONARY_COUNT:
@@ -25487,6 +25491,9 @@ export class GenPy extends GenPySwift
 		case FuId.QUEUE_CLASS:
 			this.include("collections");
 			this.write("collections.deque()");
+			break;
+		case FuId.PRIORITY_QUEUE_CLASS:
+			this.write("[]");
 			break;
 		case FuId.HASH_SET_CLASS:
 		case FuId.SORTED_SET_CLASS:
@@ -25742,7 +25749,19 @@ export class GenPy extends GenPySwift
 			this.writeListAppend(obj, args);
 			break;
 		case FuId.QUEUE_PEEK:
+		case FuId.PRIORITY_QUEUE_PEEK:
 			this.writePostfix(obj, "[0]");
+			break;
+		case FuId.PRIORITY_QUEUE_CLEAR:
+			this.writePostfix(obj, ".clear()");
+			break;
+		case FuId.PRIORITY_QUEUE_ENQUEUE:
+			this.include("heapq");
+			this.writeCall("heapq.heappush", obj, args[0]);
+			break;
+		case FuId.PRIORITY_QUEUE_DEQUEUE:
+			this.include("heapq");
+			this.writeCall("heapq.heappop", obj);
 			break;
 		case FuId.DICTIONARY_ADD:
 			this.writeDictionaryAdd(obj, args);

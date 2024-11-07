@@ -24441,6 +24441,9 @@ namespace Fusion
 					Include("collections");
 					WriteCollectionTypeAnnotation("collections.deque", klass);
 					break;
+				case FuId.PriorityQueueClass:
+					WriteCollectionTypeAnnotation("list", klass);
+					break;
 				case FuId.HashSetClass:
 				case FuId.SortedSetClass:
 					WriteCollectionTypeAnnotation("set", klass);
@@ -24606,6 +24609,7 @@ namespace Fusion
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
+			case FuId.PriorityQueueCount:
 			case FuId.HashSetCount:
 			case FuId.SortedSetCount:
 			case FuId.DictionaryCount:
@@ -24825,6 +24829,9 @@ namespace Fusion
 			case FuId.QueueClass:
 				Include("collections");
 				Write("collections.deque()");
+				break;
+			case FuId.PriorityQueueClass:
+				Write("[]");
 				break;
 			case FuId.HashSetClass:
 			case FuId.SortedSetClass:
@@ -25079,7 +25086,19 @@ namespace Fusion
 				WriteListAppend(obj, args);
 				break;
 			case FuId.QueuePeek:
+			case FuId.PriorityQueuePeek:
 				WritePostfix(obj, "[0]");
+				break;
+			case FuId.PriorityQueueClear:
+				WritePostfix(obj, ".clear()");
+				break;
+			case FuId.PriorityQueueEnqueue:
+				Include("heapq");
+				WriteCall("heapq.heappush", obj, args[0]);
+				break;
+			case FuId.PriorityQueueDequeue:
+				Include("heapq");
+				WriteCall("heapq.heappop", obj);
 				break;
 			case FuId.DictionaryAdd:
 				WriteDictionaryAdd(obj, args);

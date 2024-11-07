@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		PriorityQueue<int>() q; //FAIL: d js py swift ts TODO; c, cl
+		PriorityQueue<int>() q; //FAIL: d js swift ts TODO; c, cl
 		q.Enqueue(42);
 		q.Clear();
 		q.Enqueue(15);

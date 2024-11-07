@@ -23587,6 +23587,9 @@ void GenPy::writeTypeAnnotation(const FuType * type, bool nullable)
 			include("collections");
 			writeCollectionTypeAnnotation("collections.deque", klass);
 			break;
+		case FuId::priorityQueueClass:
+			writeCollectionTypeAnnotation("list", klass);
+			break;
 		case FuId::hashSetClass:
 		case FuId::sortedSetClass:
 			writeCollectionTypeAnnotation("set", klass);
@@ -23755,6 +23758,7 @@ void GenPy::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	case FuId::listCount:
 	case FuId::queueCount:
 	case FuId::stackCount:
+	case FuId::priorityQueueCount:
 	case FuId::hashSetCount:
 	case FuId::sortedSetCount:
 	case FuId::dictionaryCount:
@@ -23977,6 +23981,9 @@ void GenPy::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 	case FuId::queueClass:
 		include("collections");
 		write("collections.deque()");
+		break;
+	case FuId::priorityQueueClass:
+		write("[]");
 		break;
 	case FuId::hashSetClass:
 	case FuId::sortedSetClass:
@@ -24234,7 +24241,19 @@ void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writeListAppend(obj, args);
 		break;
 	case FuId::queuePeek:
+	case FuId::priorityQueuePeek:
 		writePostfix(obj, "[0]");
+		break;
+	case FuId::priorityQueueClear:
+		writePostfix(obj, ".clear()");
+		break;
+	case FuId::priorityQueueEnqueue:
+		include("heapq");
+		writeCall("heapq.heappush", obj, (*args)[0].get());
+		break;
+	case FuId::priorityQueueDequeue:
+		include("heapq");
+		writeCall("heapq.heappop", obj);
 		break;
 	case FuId::dictionaryAdd:
 		writeDictionaryAdd(obj, args);
