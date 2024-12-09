@@ -13794,15 +13794,14 @@ export class GenC extends GenCCpp
 			this.writeNewLine();
 			this.writeLine("static char *FuString_Format(const char *format, ...)");
 			this.openBlock();
-			this.writeLine("va_list args1;");
-			this.writeLine("va_start(args1, format);");
-			this.writeLine("va_list args2;");
-			this.writeLine("va_copy(args2, args1);");
-			this.writeLine("size_t len = vsnprintf(NULL, 0, format, args1) + 1;");
-			this.writeLine("va_end(args1);");
+			this.writeLine("va_list args;");
+			this.writeLine("va_start(args, format);");
+			this.writeLine("size_t len = vsnprintf(NULL, 0, format, args) + 1;");
+			this.writeLine("va_end(args);");
+			this.writeLine("va_start(args, format);");
 			this.writeLine("char *str = malloc(len);");
-			this.writeLine("vsnprintf(str, len, format, args2);");
-			this.writeLine("va_end(args2);");
+			this.writeLine("vsnprintf(str, len, format, args);");
+			this.writeLine("va_end(args);");
 			this.writeLine("return str;");
 			this.closeBlock();
 		}

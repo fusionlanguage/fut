@@ -3642,15 +3642,14 @@ public class GenC : GenCCpp
 			WriteNewLine();
 			WriteLine("static char *FuString_Format(const char *format, ...)");
 			OpenBlock();
-			WriteLine("va_list args1;");
-			WriteLine("va_start(args1, format);");
-			WriteLine("va_list args2;");
-			WriteLine("va_copy(args2, args1);");
-			WriteLine("size_t len = vsnprintf(NULL, 0, format, args1) + 1;");
-			WriteLine("va_end(args1);");
+			WriteLine("va_list args;");
+			WriteLine("va_start(args, format);");
+			WriteLine("size_t len = vsnprintf(NULL, 0, format, args) + 1;");
+			WriteLine("va_end(args);");
+			WriteLine("va_start(args, format);");
 			WriteLine("char *str = malloc(len);");
-			WriteLine("vsnprintf(str, len, format, args2);");
-			WriteLine("va_end(args2);");
+			WriteLine("vsnprintf(str, len, format, args);");
+			WriteLine("va_end(args);");
 			WriteLine("return str;");
 			CloseBlock();
 		}

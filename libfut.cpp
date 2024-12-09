@@ -13088,15 +13088,14 @@ void GenC::writeLibrary()
 		writeNewLine();
 		writeLine("static char *FuString_Format(const char *format, ...)");
 		openBlock();
-		writeLine("va_list args1;");
-		writeLine("va_start(args1, format);");
-		writeLine("va_list args2;");
-		writeLine("va_copy(args2, args1);");
-		writeLine("size_t len = vsnprintf(NULL, 0, format, args1) + 1;");
-		writeLine("va_end(args1);");
+		writeLine("va_list args;");
+		writeLine("va_start(args, format);");
+		writeLine("size_t len = vsnprintf(NULL, 0, format, args) + 1;");
+		writeLine("va_end(args);");
+		writeLine("va_start(args, format);");
 		writeLine("char *str = malloc(len);");
-		writeLine("vsnprintf(str, len, format, args2);");
-		writeLine("va_end(args2);");
+		writeLine("vsnprintf(str, len, format, args);");
+		writeLine("va_end(args);");
 		writeLine("return str;");
 		closeBlock();
 	}
