@@ -246,6 +246,7 @@ enum class FuId
 	enumFromInt,
 	enumHasFlag,
 	intTryParse,
+	nIntTryParse,
 	longTryParse,
 	doubleTryParse,
 	stringContains,
@@ -2314,7 +2315,7 @@ private:
 	void writeConsoleWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	static const FuClass * getVtblStructClass(const FuClass * klass);
 	static const FuClass * getVtblPtrClass(const FuClass * klass);
-	void writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeTryParse(std::string_view prefix, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
 	void writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);

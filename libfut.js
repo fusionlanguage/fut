@@ -1344,123 +1344,124 @@ export const FuId = {
 	ENUM_FROM_INT : 55,
 	ENUM_HAS_FLAG : 56,
 	INT_TRY_PARSE : 57,
-	LONG_TRY_PARSE : 58,
-	DOUBLE_TRY_PARSE : 59,
-	STRING_CONTAINS : 60,
-	STRING_ENDS_WITH : 61,
-	STRING_INDEX_OF : 62,
-	STRING_LAST_INDEX_OF : 63,
-	STRING_REPLACE : 64,
-	STRING_STARTS_WITH : 65,
-	STRING_SUBSTRING : 66,
-	STRING_TO_LOWER : 67,
-	STRING_TO_UPPER : 68,
-	ARRAY_BINARY_SEARCH_ALL : 69,
-	ARRAY_BINARY_SEARCH_PART : 70,
-	ARRAY_CONTAINS : 71,
-	ARRAY_COPY_TO : 72,
-	ARRAY_FILL_ALL : 73,
-	ARRAY_FILL_PART : 74,
-	ARRAY_SORT_ALL : 75,
-	ARRAY_SORT_PART : 76,
-	LIST_ADD : 77,
-	LIST_ADD_RANGE : 78,
-	LIST_ALL : 79,
-	LIST_ANY : 80,
-	LIST_CLEAR : 81,
-	LIST_CONTAINS : 82,
-	LIST_COPY_TO : 83,
-	LIST_COUNT : 84,
-	LIST_INDEX_OF : 85,
-	LIST_INSERT : 86,
-	LIST_LAST : 87,
-	LIST_REMOVE_AT : 88,
-	LIST_REMOVE_RANGE : 89,
-	LIST_SORT_ALL : 90,
-	LIST_SORT_PART : 91,
-	QUEUE_CLEAR : 92,
-	QUEUE_COUNT : 93,
-	QUEUE_DEQUEUE : 94,
-	QUEUE_ENQUEUE : 95,
-	QUEUE_PEEK : 96,
-	STACK_CLEAR : 97,
-	STACK_COUNT : 98,
-	STACK_PEEK : 99,
-	STACK_PUSH : 100,
-	STACK_POP : 101,
-	PRIORITY_QUEUE_CLEAR : 102,
-	PRIORITY_QUEUE_COUNT : 103,
-	PRIORITY_QUEUE_DEQUEUE : 104,
-	PRIORITY_QUEUE_ENQUEUE : 105,
-	PRIORITY_QUEUE_PEEK : 106,
-	HASH_SET_ADD : 107,
-	HASH_SET_CLEAR : 108,
-	HASH_SET_CONTAINS : 109,
-	HASH_SET_COUNT : 110,
-	HASH_SET_REMOVE : 111,
-	SORTED_SET_ADD : 112,
-	SORTED_SET_CLEAR : 113,
-	SORTED_SET_CONTAINS : 114,
-	SORTED_SET_COUNT : 115,
-	SORTED_SET_REMOVE : 116,
-	DICTIONARY_ADD : 117,
-	DICTIONARY_CLEAR : 118,
-	DICTIONARY_CONTAINS_KEY : 119,
-	DICTIONARY_COUNT : 120,
-	DICTIONARY_REMOVE : 121,
-	SORTED_DICTIONARY_CLEAR : 122,
-	SORTED_DICTIONARY_CONTAINS_KEY : 123,
-	SORTED_DICTIONARY_COUNT : 124,
-	SORTED_DICTIONARY_REMOVE : 125,
-	ORDERED_DICTIONARY_CLEAR : 126,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 127,
-	ORDERED_DICTIONARY_COUNT : 128,
-	ORDERED_DICTIONARY_REMOVE : 129,
-	TEXT_WRITER_WRITE : 130,
-	TEXT_WRITER_WRITE_CHAR : 131,
-	TEXT_WRITER_WRITE_CODE_POINT : 132,
-	TEXT_WRITER_WRITE_LINE : 133,
-	CONSOLE_WRITE : 134,
-	CONSOLE_WRITE_LINE : 135,
-	STRING_WRITER_CLEAR : 136,
-	STRING_WRITER_TO_STRING : 137,
-	CONVERT_TO_BASE64_STRING : 138,
-	U_T_F8_GET_BYTE_COUNT : 139,
-	U_T_F8_GET_BYTES : 140,
-	U_T_F8_GET_STRING : 141,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 142,
-	REGEX_COMPILE : 143,
-	REGEX_ESCAPE : 144,
-	REGEX_IS_MATCH_STR : 145,
-	REGEX_IS_MATCH_REGEX : 146,
-	MATCH_FIND_STR : 147,
-	MATCH_FIND_REGEX : 148,
-	MATCH_GET_CAPTURE : 149,
-	JSON_ELEMENT_PARSE : 150,
-	JSON_ELEMENT_IS_OBJECT : 151,
-	JSON_ELEMENT_IS_ARRAY : 152,
-	JSON_ELEMENT_IS_STRING : 153,
-	JSON_ELEMENT_IS_NUMBER : 154,
-	JSON_ELEMENT_IS_BOOLEAN : 155,
-	JSON_ELEMENT_IS_NULL : 156,
-	JSON_ELEMENT_GET_OBJECT : 157,
-	JSON_ELEMENT_GET_ARRAY : 158,
-	JSON_ELEMENT_GET_STRING : 159,
-	JSON_ELEMENT_GET_DOUBLE : 160,
-	JSON_ELEMENT_GET_BOOLEAN : 161,
-	MATH_METHOD : 162,
-	MATH_ABS : 163,
-	MATH_CEILING : 164,
-	MATH_CLAMP : 165,
-	MATH_FUSED_MULTIPLY_ADD : 166,
-	MATH_IS_FINITE : 167,
-	MATH_IS_INFINITY : 168,
-	MATH_IS_NA_N : 169,
-	MATH_LOG2 : 170,
-	MATH_MAX : 171,
-	MATH_MIN : 172,
-	MATH_ROUND : 173,
-	MATH_TRUNCATE : 174
+	N_INT_TRY_PARSE : 58,
+	LONG_TRY_PARSE : 59,
+	DOUBLE_TRY_PARSE : 60,
+	STRING_CONTAINS : 61,
+	STRING_ENDS_WITH : 62,
+	STRING_INDEX_OF : 63,
+	STRING_LAST_INDEX_OF : 64,
+	STRING_REPLACE : 65,
+	STRING_STARTS_WITH : 66,
+	STRING_SUBSTRING : 67,
+	STRING_TO_LOWER : 68,
+	STRING_TO_UPPER : 69,
+	ARRAY_BINARY_SEARCH_ALL : 70,
+	ARRAY_BINARY_SEARCH_PART : 71,
+	ARRAY_CONTAINS : 72,
+	ARRAY_COPY_TO : 73,
+	ARRAY_FILL_ALL : 74,
+	ARRAY_FILL_PART : 75,
+	ARRAY_SORT_ALL : 76,
+	ARRAY_SORT_PART : 77,
+	LIST_ADD : 78,
+	LIST_ADD_RANGE : 79,
+	LIST_ALL : 80,
+	LIST_ANY : 81,
+	LIST_CLEAR : 82,
+	LIST_CONTAINS : 83,
+	LIST_COPY_TO : 84,
+	LIST_COUNT : 85,
+	LIST_INDEX_OF : 86,
+	LIST_INSERT : 87,
+	LIST_LAST : 88,
+	LIST_REMOVE_AT : 89,
+	LIST_REMOVE_RANGE : 90,
+	LIST_SORT_ALL : 91,
+	LIST_SORT_PART : 92,
+	QUEUE_CLEAR : 93,
+	QUEUE_COUNT : 94,
+	QUEUE_DEQUEUE : 95,
+	QUEUE_ENQUEUE : 96,
+	QUEUE_PEEK : 97,
+	STACK_CLEAR : 98,
+	STACK_COUNT : 99,
+	STACK_PEEK : 100,
+	STACK_PUSH : 101,
+	STACK_POP : 102,
+	PRIORITY_QUEUE_CLEAR : 103,
+	PRIORITY_QUEUE_COUNT : 104,
+	PRIORITY_QUEUE_DEQUEUE : 105,
+	PRIORITY_QUEUE_ENQUEUE : 106,
+	PRIORITY_QUEUE_PEEK : 107,
+	HASH_SET_ADD : 108,
+	HASH_SET_CLEAR : 109,
+	HASH_SET_CONTAINS : 110,
+	HASH_SET_COUNT : 111,
+	HASH_SET_REMOVE : 112,
+	SORTED_SET_ADD : 113,
+	SORTED_SET_CLEAR : 114,
+	SORTED_SET_CONTAINS : 115,
+	SORTED_SET_COUNT : 116,
+	SORTED_SET_REMOVE : 117,
+	DICTIONARY_ADD : 118,
+	DICTIONARY_CLEAR : 119,
+	DICTIONARY_CONTAINS_KEY : 120,
+	DICTIONARY_COUNT : 121,
+	DICTIONARY_REMOVE : 122,
+	SORTED_DICTIONARY_CLEAR : 123,
+	SORTED_DICTIONARY_CONTAINS_KEY : 124,
+	SORTED_DICTIONARY_COUNT : 125,
+	SORTED_DICTIONARY_REMOVE : 126,
+	ORDERED_DICTIONARY_CLEAR : 127,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 128,
+	ORDERED_DICTIONARY_COUNT : 129,
+	ORDERED_DICTIONARY_REMOVE : 130,
+	TEXT_WRITER_WRITE : 131,
+	TEXT_WRITER_WRITE_CHAR : 132,
+	TEXT_WRITER_WRITE_CODE_POINT : 133,
+	TEXT_WRITER_WRITE_LINE : 134,
+	CONSOLE_WRITE : 135,
+	CONSOLE_WRITE_LINE : 136,
+	STRING_WRITER_CLEAR : 137,
+	STRING_WRITER_TO_STRING : 138,
+	CONVERT_TO_BASE64_STRING : 139,
+	U_T_F8_GET_BYTE_COUNT : 140,
+	U_T_F8_GET_BYTES : 141,
+	U_T_F8_GET_STRING : 142,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 143,
+	REGEX_COMPILE : 144,
+	REGEX_ESCAPE : 145,
+	REGEX_IS_MATCH_STR : 146,
+	REGEX_IS_MATCH_REGEX : 147,
+	MATCH_FIND_STR : 148,
+	MATCH_FIND_REGEX : 149,
+	MATCH_GET_CAPTURE : 150,
+	JSON_ELEMENT_PARSE : 151,
+	JSON_ELEMENT_IS_OBJECT : 152,
+	JSON_ELEMENT_IS_ARRAY : 153,
+	JSON_ELEMENT_IS_STRING : 154,
+	JSON_ELEMENT_IS_NUMBER : 155,
+	JSON_ELEMENT_IS_BOOLEAN : 156,
+	JSON_ELEMENT_IS_NULL : 157,
+	JSON_ELEMENT_GET_OBJECT : 158,
+	JSON_ELEMENT_GET_ARRAY : 159,
+	JSON_ELEMENT_GET_STRING : 160,
+	JSON_ELEMENT_GET_DOUBLE : 161,
+	JSON_ELEMENT_GET_BOOLEAN : 162,
+	MATH_METHOD : 163,
+	MATH_ABS : 164,
+	MATH_CEILING : 165,
+	MATH_CLAMP : 166,
+	MATH_FUSED_MULTIPLY_ADD : 167,
+	MATH_IS_FINITE : 168,
+	MATH_IS_INFINITY : 169,
+	MATH_IS_NA_N : 170,
+	MATH_LOG2 : 171,
+	MATH_MAX : 172,
+	MATH_MIN : 173,
+	MATH_ROUND : 174,
+	MATH_TRUNCATE : 175
 }
 
 export class FuDocInline
@@ -3462,6 +3463,7 @@ export class FuSystem extends FuScope
 		this.add(this.intType);
 		this.#uIntType.name = "uint";
 		this.add(this.#uIntType);
+		this.#nIntType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.N_INT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
 		this.add(this.#nIntType);
 		this.#addMinMaxValue(this.longType, -9223372036854775808n, 9223372036854775807n);
 		this.longType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.LONG_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
@@ -6283,6 +6285,7 @@ export class FuSema
 				else if (!(symbol.left.type instanceof FuReadWriteClassType)) {
 					switch (method.id) {
 					case FuId.INT_TRY_PARSE:
+					case FuId.N_INT_TRY_PARSE:
 					case FuId.LONG_TRY_PARSE:
 					case FuId.DOUBLE_TRY_PARSE:
 						let varRef;
@@ -12048,10 +12051,11 @@ export class GenC extends GenCCpp
 		this.#writeArgsAndRightParenthesis(method, args);
 	}
 
-	#writeTryParse(obj, args)
+	#writeTryParse(prefix, obj, args)
 	{
 		this.includeStdBool();
 		this.include("errno.h");
+		this.write(prefix);
 		this.write("_TryParse(&");
 		obj.accept(this, FuPriority.PRIMARY);
 		this.write(", ");
@@ -12150,18 +12154,20 @@ export class GenC extends GenCCpp
 		case FuId.INT_TRY_PARSE:
 			this.include("limits.h");
 			this.#intFunctions.add(FuId.INT_TRY_PARSE);
-			this.write("FuInt");
-			this.#writeTryParse(obj, args);
+			this.#writeTryParse("FuInt", obj, args);
+			break;
+		case FuId.N_INT_TRY_PARSE:
+			this.include("limits.h");
+			this.#nIntFunctions.add(FuId.INT_TRY_PARSE);
+			this.#writeTryParse("FuNInt", obj, args);
 			break;
 		case FuId.LONG_TRY_PARSE:
 			this.#longFunctions.add(FuId.INT_TRY_PARSE);
-			this.write("FuLong");
-			this.#writeTryParse(obj, args);
+			this.#writeTryParse("FuLong", obj, args);
 			break;
 		case FuId.DOUBLE_TRY_PARSE:
 			this.#doubleTryParse = true;
-			this.write("FuDouble");
-			this.#writeTryParse(obj, args);
+			this.#writeTryParse("FuDouble", obj, args);
 			break;
 		case FuId.STRING_CONTAINS:
 			this.include("string.h");
@@ -13705,6 +13711,16 @@ export class GenC extends GenCCpp
 				this.writeLine("\treturn false;");
 				this.writeLine("*result = (int) l;");
 				this.writeLine("return true;");
+			}
+			else if (klassName == "NInt") {
+				this.writeLine("*result =");
+				this.writeLine("#if PTRDIFF_MAX == LONG_MAX");
+				this.writeLine("\tstrtol");
+				this.writeLine("#else");
+				this.writeLine("\tstrtoll");
+				this.writeLine("#endif");
+				this.writeLine("\t(str, &end, base);");
+				this.writeLine("return *end == '\\0' && errno == 0;");
 			}
 			else {
 				this.writeLine("*result = strtoll(str, &end, base);");
@@ -15261,6 +15277,7 @@ export class GenCpp extends GenCCpp
 			this.writeEnumHasFlag(obj, args, parent);
 			break;
 		case FuId.INT_TRY_PARSE:
+		case FuId.N_INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
 			this.include("charconv");
@@ -17091,9 +17108,10 @@ export class GenCs extends GenTyped
 			this.writeStaticCast(method.type, args[0]);
 			break;
 		case FuId.INT_TRY_PARSE:
+		case FuId.N_INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
-			this.write(obj.type.name);
+			this.writeType(obj.type, false);
 			this.write(".TryParse(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			if (args.length == 2) {
@@ -18470,13 +18488,14 @@ export class GenD extends GenCCppD
 			this.writeEnumHasFlag(obj, args, parent);
 			break;
 		case FuId.INT_TRY_PARSE:
+		case FuId.N_INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
 			this.include("std.conv");
 			this.write("() { try { ");
 			this.writePostfix(obj, " = ");
 			this.writePostfix(args[0], ".to!");
-			this.write(obj.type.name);
+			this.writeType(obj.type, false);
 			if (args.length == 2) {
 				this.writeChar(40);
 				args[1].accept(this, FuPriority.ARGUMENT);
@@ -20425,7 +20444,7 @@ export class GenJava extends GenTyped
 
 	static #isTryParse(id)
 	{
-		return id == FuId.INT_TRY_PARSE || id == FuId.LONG_TRY_PARSE || id == FuId.DOUBLE_TRY_PARSE;
+		return id == FuId.INT_TRY_PARSE || id == FuId.N_INT_TRY_PARSE || id == FuId.LONG_TRY_PARSE || id == FuId.DOUBLE_TRY_PARSE;
 	}
 
 	visitIf(statement)
@@ -20439,6 +20458,7 @@ export class GenJava extends GenTyped
 			this.write(" = ");
 			switch (call.method.symbol.id) {
 			case FuId.INT_TRY_PARSE:
+			case FuId.N_INT_TRY_PARSE:
 				this.write("Integer.parseInt");
 				break;
 			case FuId.LONG_TRY_PARSE:
@@ -21359,6 +21379,7 @@ export class GenJsNoModule extends GenBase
 			this.writeEnumHasFlag(obj, args, parent);
 			break;
 		case FuId.INT_TRY_PARSE:
+		case FuId.N_INT_TRY_PARSE:
 			this.write("!isNaN(");
 			obj.accept(this, FuPriority.ASSIGN);
 			this.write(" = parseInt(");

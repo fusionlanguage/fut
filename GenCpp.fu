@@ -799,6 +799,7 @@ public class GenCpp : GenCCpp
 			WriteEnumHasFlag(obj, args, parent);
 			break;
 		case FuId.IntTryParse:
+		case FuId.NIntTryParse:
 		case FuId.LongTryParse:
 		case FuId.DoubleTryParse:
 			Include("charconv");

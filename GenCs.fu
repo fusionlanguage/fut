@@ -470,9 +470,10 @@ public class GenCs : GenTyped
 			WriteStaticCast(method.Type, args[0]);
 			break;
 		case FuId.IntTryParse:
+		case FuId.NIntTryParse:
 		case FuId.LongTryParse:
 		case FuId.DoubleTryParse:
-			Write(obj.Type.Name);
+			WriteType(obj.Type, false);
 			Write(".TryParse(");
 			args[0].Accept(this, FuPriority.Argument);
 			if (args.Count == 2) {

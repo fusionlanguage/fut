@@ -2733,6 +2733,7 @@ FuSystem::FuSystem()
 	add(this->intType);
 	this->uIntType->name = "uint";
 	add(this->uIntType);
+	this->nIntType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::nIntTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
 	add(this->nIntType);
 	addMinMaxValue(this->longType.get(), (-9223372036854775807 - 1), 9223372036854775807);
 	this->longType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::longTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
@@ -5847,6 +5848,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			else if (!dynamic_cast<const FuReadWriteClassType *>(symbol->left->type.get())) {
 				switch (method->id) {
 				case FuId::intTryParse:
+				case FuId::nIntTryParse:
 				case FuId::longTryParse:
 				case FuId::doubleTryParse:
 					{
@@ -11337,10 +11339,11 @@ void GenC::writeCCall(const FuExpr * obj, const FuMethod * method, const std::ve
 	writeArgsAndRightParenthesis(method, args);
 }
 
-void GenC::writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
+void GenC::writeTryParse(std::string_view prefix, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	includeStdBool();
 	include("errno.h");
+	write(prefix);
 	write("_TryParse(&");
 	obj->accept(this, FuPriority::primary);
 	write(", ");
@@ -11439,18 +11442,20 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 	case FuId::intTryParse:
 		include("limits.h");
 		this->intFunctions.insert(FuId::intTryParse);
-		write("FuInt");
-		writeTryParse(obj, args);
+		writeTryParse("FuInt", obj, args);
+		break;
+	case FuId::nIntTryParse:
+		include("limits.h");
+		this->nIntFunctions.insert(FuId::intTryParse);
+		writeTryParse("FuNInt", obj, args);
 		break;
 	case FuId::longTryParse:
 		this->longFunctions.insert(FuId::intTryParse);
-		write("FuLong");
-		writeTryParse(obj, args);
+		writeTryParse("FuLong", obj, args);
 		break;
 	case FuId::doubleTryParse:
 		this->doubleTryParse = true;
-		write("FuDouble");
-		writeTryParse(obj, args);
+		writeTryParse("FuDouble", obj, args);
 		break;
 	case FuId::stringContains:
 		include("string.h");
@@ -13001,6 +13006,16 @@ void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, co
 			writeLine("*result = (int) l;");
 			writeLine("return true;");
 		}
+		else if (klassName == "NInt") {
+			writeLine("*result =");
+			writeLine("#if PTRDIFF_MAX == LONG_MAX");
+			writeLine("\tstrtol");
+			writeLine("#else");
+			writeLine("\tstrtoll");
+			writeLine("#endif");
+			writeLine("\t(str, &end, base);");
+			writeLine("return *end == '\\0' && errno == 0;");
+		}
 		else {
 			writeLine("*result = strtoll(str, &end, base);");
 			writeLine("return *end == '\\0' && errno == 0;");
@@ -14429,6 +14444,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeEnumHasFlag(obj, args, parent);
 		break;
 	case FuId::intTryParse:
+	case FuId::nIntTryParse:
 	case FuId::longTryParse:
 	case FuId::doubleTryParse:
 		include("charconv");
@@ -16175,9 +16191,10 @@ void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writeStaticCast(method->type.get(), (*args)[0].get());
 		break;
 	case FuId::intTryParse:
+	case FuId::nIntTryParse:
 	case FuId::longTryParse:
 	case FuId::doubleTryParse:
-		write(obj->type->name);
+		writeType(obj->type.get(), false);
 		write(".TryParse(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		if (std::ssize(*args) == 2) {
@@ -17354,13 +17371,14 @@ void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeEnumHasFlag(obj, args, parent);
 		break;
 	case FuId::intTryParse:
+	case FuId::nIntTryParse:
 	case FuId::longTryParse:
 	case FuId::doubleTryParse:
 		include("std.conv");
 		write("() { try { ");
 		writePostfix(obj, " = ");
 		writePostfix((*args)[0].get(), ".to!");
-		write(obj->type->name);
+		writeType(obj->type.get(), false);
 		if (std::ssize(*args) == 2) {
 			writeChar('(');
 			(*args)[1]->accept(this, FuPriority::argument);
@@ -19215,7 +19233,7 @@ void GenJava::visitForeach(const FuForeach * statement)
 
 bool GenJava::isTryParse(FuId id)
 {
-	return id == FuId::intTryParse || id == FuId::longTryParse || id == FuId::doubleTryParse;
+	return id == FuId::intTryParse || id == FuId::nIntTryParse || id == FuId::longTryParse || id == FuId::doubleTryParse;
 }
 
 void GenJava::visitIf(const FuIf * statement)
@@ -19229,6 +19247,7 @@ void GenJava::visitIf(const FuIf * statement)
 		write(" = ");
 		switch (call->method->symbol->id) {
 		case FuId::intTryParse:
+		case FuId::nIntTryParse:
 			write("Integer.parseInt");
 			break;
 		case FuId::longTryParse:
@@ -20103,6 +20122,7 @@ void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, c
 		writeEnumHasFlag(obj, args, parent);
 		break;
 	case FuId::intTryParse:
+	case FuId::nIntTryParse:
 		write("!isNaN(");
 		obj->accept(this, FuPriority::assign);
 		write(" = parseInt(");

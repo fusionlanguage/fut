@@ -1901,10 +1901,11 @@ public class GenC : GenCCpp
 		WriteArgsAndRightParenthesis(method, args);
 	}
 
-	void WriteTryParse!(FuExpr obj, List<FuExpr#> args)
+	void WriteTryParse!(string prefix, FuExpr obj, List<FuExpr#> args)
 	{
 		IncludeStdBool();
 		Include("errno.h");
+		Write(prefix);
 		Write("_TryParse(&");
 		obj.Accept(this, FuPriority.Primary);
 		Write(", ");
@@ -2003,18 +2004,20 @@ public class GenC : GenCCpp
 		case FuId.IntTryParse:
 			Include("limits.h");
 			this.IntFunctions.Add(FuId.IntTryParse);
-			Write("FuInt");
-			WriteTryParse(obj, args);
+			WriteTryParse("FuInt", obj, args);
+			break;
+		case FuId.NIntTryParse:
+			Include("limits.h");
+			this.NIntFunctions.Add(FuId.IntTryParse);
+			WriteTryParse("FuNInt", obj, args);
 			break;
 		case FuId.LongTryParse:
 			this.LongFunctions.Add(FuId.IntTryParse);
-			Write("FuLong");
-			WriteTryParse(obj, args);
+			WriteTryParse("FuLong", obj, args);
 			break;
 		case FuId.DoubleTryParse:
 			this.DoubleTryParse = true;
-			Write("FuDouble");
-			WriteTryParse(obj, args);
+			WriteTryParse("FuDouble", obj, args);
 			break;
 		case FuId.StringContains:
 			Include("string.h");
@@ -3553,6 +3556,16 @@ public class GenC : GenCCpp
 				WriteLine("\treturn false;");
 				WriteLine("*result = (int) l;");
 				WriteLine("return true;");
+			}
+			else if (klassName =="NInt") {
+				WriteLine("*result =");
+				WriteLine("#if PTRDIFF_MAX == LONG_MAX");
+				WriteLine("\tstrtol");
+				WriteLine("#else");
+				WriteLine("\tstrtoll");
+				WriteLine("#endif");
+				WriteLine("\t(str, &end, base);");
+				WriteLine("return *end == '\\0' && errno == 0;");
 			}
 			else {
 				WriteLine("*result = strtoll(str, &end, base);");

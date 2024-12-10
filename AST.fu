@@ -118,6 +118,7 @@ public enum FuId
 	EnumFromInt,
 	EnumHasFlag,
 	IntTryParse,
+	NIntTryParse,
 	LongTryParse,
 	DoubleTryParse,
 	StringContains,
@@ -1676,6 +1677,7 @@ public class FuSystem : FuScope
 		Add(IntType);
 		UIntType.Name = "uint";
 		Add(UIntType);
+		NIntType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.NIntTryParse, "TryParse", true, FuVar.New(StringPtrType, "value"), FuVar.New(IntType, "radix", NewLiteralLong(0))));
 		Add(NIntType);
 		AddMinMaxValue(LongType, long.MinValue, long.MaxValue);
 		LongType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.LongTryParse, "TryParse", true, FuVar.New(StringPtrType, "value"), FuVar.New(IntType, "radix", NewLiteralLong(0))));

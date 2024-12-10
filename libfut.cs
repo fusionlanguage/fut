@@ -1360,6 +1360,7 @@ namespace Fusion
 		EnumFromInt,
 		EnumHasFlag,
 		IntTryParse,
+		NIntTryParse,
 		LongTryParse,
 		DoubleTryParse,
 		StringContains,
@@ -3225,6 +3226,7 @@ namespace Fusion
 			Add(this.IntType);
 			this.UIntType.Name = "uint";
 			Add(this.UIntType);
+			this.NIntType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.NIntTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "radix", NewLiteralLong(0))));
 			Add(this.NIntType);
 			AddMinMaxValue(this.LongType, -9223372036854775808, 9223372036854775807);
 			this.LongType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.LongTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "radix", NewLiteralLong(0))));
@@ -5961,6 +5963,7 @@ namespace Fusion
 				else if (!(symbol.Left.Type is FuReadWriteClassType)) {
 					switch (method.Id) {
 					case FuId.IntTryParse:
+					case FuId.NIntTryParse:
 					case FuId.LongTryParse:
 					case FuId.DoubleTryParse:
 						if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar def)
@@ -11593,10 +11596,11 @@ namespace Fusion
 			WriteArgsAndRightParenthesis(method, args);
 		}
 
-		void WriteTryParse(FuExpr obj, List<FuExpr> args)
+		void WriteTryParse(string prefix, FuExpr obj, List<FuExpr> args)
 		{
 			IncludeStdBool();
 			Include("errno.h");
+			Write(prefix);
 			Write("_TryParse(&");
 			obj.Accept(this, FuPriority.Primary);
 			Write(", ");
@@ -11695,18 +11699,20 @@ namespace Fusion
 			case FuId.IntTryParse:
 				Include("limits.h");
 				this.IntFunctions.Add(FuId.IntTryParse);
-				Write("FuInt");
-				WriteTryParse(obj, args);
+				WriteTryParse("FuInt", obj, args);
+				break;
+			case FuId.NIntTryParse:
+				Include("limits.h");
+				this.NIntFunctions.Add(FuId.IntTryParse);
+				WriteTryParse("FuNInt", obj, args);
 				break;
 			case FuId.LongTryParse:
 				this.LongFunctions.Add(FuId.IntTryParse);
-				Write("FuLong");
-				WriteTryParse(obj, args);
+				WriteTryParse("FuLong", obj, args);
 				break;
 			case FuId.DoubleTryParse:
 				this.DoubleTryParse = true;
-				Write("FuDouble");
-				WriteTryParse(obj, args);
+				WriteTryParse("FuDouble", obj, args);
 				break;
 			case FuId.StringContains:
 				Include("string.h");
@@ -13228,6 +13234,16 @@ namespace Fusion
 					WriteLine("\treturn false;");
 					WriteLine("*result = (int) l;");
 					WriteLine("return true;");
+				}
+				else if (klassName == "NInt") {
+					WriteLine("*result =");
+					WriteLine("#if PTRDIFF_MAX == LONG_MAX");
+					WriteLine("\tstrtol");
+					WriteLine("#else");
+					WriteLine("\tstrtoll");
+					WriteLine("#endif");
+					WriteLine("\t(str, &end, base);");
+					WriteLine("return *end == '\\0' && errno == 0;");
 				}
 				else {
 					WriteLine("*result = strtoll(str, &end, base);");
@@ -14777,6 +14793,7 @@ namespace Fusion
 				WriteEnumHasFlag(obj, args, parent);
 				break;
 			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
 			case FuId.DoubleTryParse:
 				Include("charconv");
@@ -16561,9 +16578,10 @@ namespace Fusion
 				WriteStaticCast(method.Type, args[0]);
 				break;
 			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
 			case FuId.DoubleTryParse:
-				Write(obj.Type.Name);
+				WriteType(obj.Type, false);
 				Write(".TryParse(");
 				args[0].Accept(this, FuPriority.Argument);
 				if (args.Count == 2) {
@@ -17911,13 +17929,14 @@ namespace Fusion
 				WriteEnumHasFlag(obj, args, parent);
 				break;
 			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
 			case FuId.DoubleTryParse:
 				Include("std.conv");
 				Write("() { try { ");
 				WritePostfix(obj, " = ");
 				WritePostfix(args[0], ".to!");
-				Write(obj.Type.Name);
+				WriteType(obj.Type, false);
 				if (args.Count == 2) {
 					WriteChar('(');
 					args[1].Accept(this, FuPriority.Argument);
@@ -19817,7 +19836,7 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
+		static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.NIntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
 
 		internal override void VisitIf(FuIf statement)
 		{
@@ -19828,6 +19847,7 @@ namespace Fusion
 				Write(" = ");
 				switch (call.Method.Symbol.Id) {
 				case FuId.IntTryParse:
+				case FuId.NIntTryParse:
 					Write("Integer.parseInt");
 					break;
 				case FuId.LongTryParse:
@@ -20728,6 +20748,7 @@ namespace Fusion
 				WriteEnumHasFlag(obj, args, parent);
 				break;
 			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
 				Write("!isNaN(");
 				obj.Accept(this, FuPriority.Assign);
 				Write(" = parseInt(");

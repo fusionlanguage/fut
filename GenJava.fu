@@ -1116,7 +1116,7 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
+	static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.NIntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
 
 	internal override void VisitIf!(FuIf statement)
 	{
@@ -1129,6 +1129,7 @@ public class GenJava : GenTyped
 			Write(" = ");
 			switch (call.Method.Symbol.Id) {
 			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
 				Write("Integer.parseInt");
 				break;
 			case FuId.LongTryParse:

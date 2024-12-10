@@ -569,6 +569,7 @@ public class GenJsNoModule : GenBase
 			WriteEnumHasFlag(obj, args, parent);
 			break;
 		case FuId.IntTryParse:
+		case FuId.NIntTryParse:
 			Write("!isNaN(");
 			obj.Accept(this, FuPriority.Assign);
 			Write(" = parseInt(");

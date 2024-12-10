@@ -795,13 +795,14 @@ public class GenD : GenCCppD
 			WriteEnumHasFlag(obj, args, parent);
 			break;
 		case FuId.IntTryParse:
+		case FuId.NIntTryParse:
 		case FuId.LongTryParse:
 		case FuId.DoubleTryParse:
 			Include("std.conv");
 			Write("() { try { ");
 			WritePostfix(obj, " = ");
 			WritePostfix(args[0], ".to!");
-			Write(obj.Type.Name);
+			WriteType(obj.Type, false);
 			if (args.Count == 2) {
 				WriteChar('(');
 				args[1].Accept(this, FuPriority.Argument);
