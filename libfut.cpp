@@ -11409,6 +11409,10 @@ bool GenC::writeMathClampMaxMin(const FuMethod * method, const std::vector<std::
 		this->longFunctions.insert(method->id);
 		write("FuLong_");
 	}
+	else if (std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::nIntType; })) {
+		this->nIntFunctions.insert(method->id);
+		write("FuNInt_");
+	}
 	else {
 		this->intFunctions.insert(method->id);
 		write("FuInt_");
@@ -12995,6 +12999,7 @@ void GenC::writeTryParseLibrary(std::string_view signature, std::string_view cal
 void GenC::writeLibrary()
 {
 	writeIntLibrary("Int", "int", &this->intFunctions);
+	writeIntLibrary("NInt", "ptrdiff_t", &this->nIntFunctions);
 	writeIntLibrary("Long", "int64_t", &this->longFunctions);
 	if (this->intTryParse)
 		writeTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
@@ -13347,6 +13352,7 @@ void GenC::writeProgram(const FuProgram * program)
 	closeFile();
 	this->inHeaderFile = false;
 	this->intFunctions.clear();
+	this->nIntFunctions.clear();
 	this->longFunctions.clear();
 	this->intTryParse = false;
 	this->longTryParse = false;

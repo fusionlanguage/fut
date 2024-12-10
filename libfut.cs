@@ -9711,6 +9711,8 @@ namespace Fusion
 
 		readonly SortedSet<FuId> IntFunctions = new SortedSet<FuId>();
 
+		readonly SortedSet<FuId> NIntFunctions = new SortedSet<FuId>();
+
 		readonly SortedSet<FuId> LongFunctions = new SortedSet<FuId>();
 
 		bool IntTryParse;
@@ -11667,6 +11669,10 @@ namespace Fusion
 				this.LongFunctions.Add(method.Id);
 				Write("FuLong_");
 			}
+			else if (args.Exists(arg => arg.Type.Id == FuId.NIntType)) {
+				this.NIntFunctions.Add(method.Id);
+				Write("FuNInt_");
+			}
 			else {
 				this.IntFunctions.Add(method.Id);
 				Write("FuInt_");
@@ -13225,6 +13231,7 @@ namespace Fusion
 		void WriteLibrary()
 		{
 			WriteIntLibrary("Int", "int", this.IntFunctions);
+			WriteIntLibrary("NInt", "ptrdiff_t", this.NIntFunctions);
 			WriteIntLibrary("Long", "int64_t", this.LongFunctions);
 			if (this.IntTryParse)
 				WriteTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
@@ -13577,6 +13584,7 @@ namespace Fusion
 			CloseFile();
 			this.InHeaderFile = false;
 			this.IntFunctions.Clear();
+			this.NIntFunctions.Clear();
 			this.LongFunctions.Clear();
 			this.IntTryParse = false;
 			this.LongTryParse = false;

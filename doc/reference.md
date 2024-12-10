@@ -166,6 +166,7 @@ and static methods:
 * `Math.Cbrt(double a)`
 * `Math.Ceiling(double a)`
 * `Math.Clamp(int value, int min, int max)`
+* `Math.Clamp(nint value, nint min, nint max)`
 * `Math.Clamp(long value, long min, long max)`
 * `Math.Clamp(float value, float min, float max)`
 * `Math.Clamp(double value, double min, double max)`
@@ -188,10 +189,12 @@ and static methods:
 * `Math.Log2(float a)`
 * `Math.Log2(double a)`
 * `Math.Max(int a, int b)`
+* `Math.Max(nint a, nint b)`
 * `Math.Max(long a, long b)`
 * `Math.Max(float a, float b)`
 * `Math.Max(double a, double b)`
 * `Math.Min(int a, int b)`
+* `Math.Min(nint a, nint b)`
 * `Math.Min(long a, long b)`
 * `Math.Min(float a, float b)`
 * `Math.Min(double a, double b)`

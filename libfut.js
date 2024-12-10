@@ -10139,6 +10139,7 @@ export class GenCCpp extends GenCCppD
 export class GenC extends GenCCpp
 {
 	#intFunctions = new Set();
+	#nIntFunctions = new Set();
 	#longFunctions = new Set();
 	#intTryParse;
 	#longTryParse;
@@ -12121,6 +12122,10 @@ export class GenC extends GenCCpp
 			this.#longFunctions.add(method.id);
 			this.write("FuLong_");
 		}
+		else if (args.some(arg => arg.type.id == FuId.N_INT_TYPE)) {
+			this.#nIntFunctions.add(method.id);
+			this.write("FuNInt_");
+		}
 		else {
 			this.#intFunctions.add(method.id);
 			this.write("FuInt_");
@@ -13701,6 +13706,7 @@ export class GenC extends GenCCpp
 	#writeLibrary()
 	{
 		this.#writeIntLibrary("Int", "int", this.#intFunctions);
+		this.#writeIntLibrary("NInt", "ptrdiff_t", this.#nIntFunctions);
 		this.#writeIntLibrary("Long", "int64_t", this.#longFunctions);
 		if (this.#intTryParse)
 			this.#writeTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
@@ -14053,6 +14059,7 @@ export class GenC extends GenCCpp
 		this.closeFile();
 		this.inHeaderFile = false;
 		this.#intFunctions.clear();
+		this.#nIntFunctions.clear();
 		this.#longFunctions.clear();
 		this.#intTryParse = false;
 		this.#longTryParse = false;

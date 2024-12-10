@@ -2,8 +2,10 @@ public static class Test
 {
 	public static bool Run()
 	{
+		nint n = 1024;
 		long l = 1 << 40;
 		return Math.Clamp(5, 0, 255) == 5 && Math.Clamp(-5, 0, 255) == 0 && Math.Clamp(1000, 0, 255) == 255
+			&& Math.Clamp(n, n - 2, n + 1) == n
 			&& Math.Clamp(3 * l, l, 2 * l) == 2 * l
 			&& Math.Clamp(0.25, 0.0, 1.0) == 0.25 //FAIL: swift TODO https://github.com/swiftlang/swift/issues/76416
 			&& Math.Clamp(-5.0, 0.0, 1.0) == 0.0 && Math.Clamp(1000.0, 0.0, 1.0) == 1.0;

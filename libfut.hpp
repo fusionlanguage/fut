@@ -2225,6 +2225,7 @@ public:
 	void visitThrow(const FuThrow * statement) override;
 private:
 	std::set<FuId> intFunctions;
+	std::set<FuId> nIntFunctions;
 	std::set<FuId> longFunctions;
 	bool intTryParse;
 	bool longTryParse;
