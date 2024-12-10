@@ -2336,8 +2336,9 @@ private:
 	void writeDestructFields(const FuSymbol * symbol);
 	void writeNewDelete(const FuClass * klass, bool define);
 	static bool canThrow(const FuType * type);
+	void startLibraryMethod(std::string_view type, std::string_view klassName, std::string_view method, std::string_view paramType);
 	void writeIntMaxMin(std::string_view klassName, std::string_view method, std::string_view type, int op);
-	void writeTryParseLibrary(std::string_view signature, std::string_view call);
+	void startTryParseLibrary(std::string_view klassName, std::string_view type, std::string_view baseParam);
 	void writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods);
 	void writeLibrary();
 };

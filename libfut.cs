@@ -11693,6 +11693,7 @@ namespace Fusion
 				WriteEnumHasFlag(obj, args, parent);
 				break;
 			case FuId.IntTryParse:
+				Include("limits.h");
 				this.IntFunctions.Add(FuId.IntTryParse);
 				Write("FuInt");
 				WriteTryParse(obj, args);
@@ -13163,7 +13164,7 @@ namespace Fusion
 			this.CurrentMethod = null;
 		}
 
-		void WriteIntMaxMin(string klassName, string method, string type, int op)
+		void StartLibraryMethod(string type, string klassName, string method, string paramType)
 		{
 			WriteNewLine();
 			Write("static ");
@@ -13173,7 +13174,12 @@ namespace Fusion
 			WriteChar('_');
 			Write(method);
 			WriteChar('(');
-			Write(type);
+			Write(paramType);
+		}
+
+		void WriteIntMaxMin(string klassName, string method, string type, int op)
+		{
+			StartLibraryMethod(type, klassName, method, type);
 			Write(" x, ");
 			Write(type);
 			WriteLine(" y)");
@@ -13184,21 +13190,17 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		void WriteTryParseLibrary(string signature, string call)
+		void StartTryParseLibrary(string klassName, string type, string baseParam)
 		{
-			WriteNewLine();
-			Write("static bool Fu");
-			WriteLine(signature);
+			StartLibraryMethod("bool", klassName, "TryParse", type);
+			Write(" *result, const char *str");
+			Write(baseParam);
+			WriteCharLine(')');
 			OpenBlock();
 			WriteLine("if (*str == '\\0')");
 			WriteLine("\treturn false;");
 			WriteLine("char *end;");
 			WriteLine("errno = 0;");
-			Write("*result = strto");
-			Write(call);
-			WriteLine(");");
-			WriteLine("return *end == '\\0' && errno == 0;");
-			CloseBlock();
 		}
 
 		void WriteIntLibrary(string klassName, string type, SortedSet<FuId> methods)
@@ -13208,13 +13210,7 @@ namespace Fusion
 			if (methods.Contains(FuId.MathMax))
 				WriteIntMaxMin(klassName, "Max", type, '>');
 			if (methods.Contains(FuId.MathClamp)) {
-				WriteNewLine();
-				Write("static ");
-				Write(type);
-				Write(" Fu");
-				Write(klassName);
-				Write("_Clamp(");
-				Write(type);
+				StartLibraryMethod(type, klassName, "Clamp", type);
 				Write(" x, ");
 				Write(type);
 				Write(" minValue, ");
@@ -13225,10 +13221,19 @@ namespace Fusion
 				CloseBlock();
 			}
 			if (methods.Contains(FuId.IntTryParse)) {
-				if (klassName == "Long")
-					WriteTryParseLibrary("Long_TryParse(int64_t *result, const char *str, int base)", "ll(str, &end, base");
-				else
-					WriteTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
+				StartTryParseLibrary(klassName, type, ", int base");
+				if (klassName == "Int") {
+					WriteLine("long l = strtol(str, &end, base);");
+					WriteLine("if (l < INT_MIN || l > INT_MAX || *end != '\\0' || errno != 0)");
+					WriteLine("\treturn false;");
+					WriteLine("*result = (int) l;");
+					WriteLine("return true;");
+				}
+				else {
+					WriteLine("*result = strtoll(str, &end, base);");
+					WriteLine("return *end == '\\0' && errno == 0;");
+				}
+				CloseBlock();
 			}
 		}
 
@@ -13237,8 +13242,12 @@ namespace Fusion
 			WriteIntLibrary("Int", "int", this.IntFunctions);
 			WriteIntLibrary("NInt", "ptrdiff_t", this.NIntFunctions);
 			WriteIntLibrary("Long", "int64_t", this.LongFunctions);
-			if (this.DoubleTryParse)
-				WriteTryParseLibrary("Double_TryParse(double *result, const char *str)", "d(str, &end");
+			if (this.DoubleTryParse) {
+				StartTryParseLibrary("Double", "double", "");
+				WriteLine("*result = strtod(str, &end);");
+				WriteLine("return *end == '\\0' && errno == 0;");
+				CloseBlock();
+			}
 			if (this.StringAssign) {
 				WriteNewLine();
 				WriteLine("static void FuString_Assign(char **str, char *value)");
