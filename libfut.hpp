@@ -2227,8 +2227,6 @@ private:
 	std::set<FuId> intFunctions;
 	std::set<FuId> nIntFunctions;
 	std::set<FuId> longFunctions;
-	bool intTryParse;
-	bool longTryParse;
 	bool doubleTryParse;
 	bool stringAssign;
 	bool stringSubstring;
@@ -2339,8 +2337,8 @@ private:
 	void writeNewDelete(const FuClass * klass, bool define);
 	static bool canThrow(const FuType * type);
 	void writeIntMaxMin(std::string_view klassName, std::string_view method, std::string_view type, int op);
-	void writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods);
 	void writeTryParseLibrary(std::string_view signature, std::string_view call);
+	void writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods);
 	void writeLibrary();
 };
 

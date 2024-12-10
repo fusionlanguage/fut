@@ -11437,12 +11437,12 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeEnumHasFlag(obj, args, parent);
 		break;
 	case FuId::intTryParse:
-		this->intTryParse = true;
+		this->intFunctions.insert(FuId::intTryParse);
 		write("FuInt");
 		writeTryParse(obj, args);
 		break;
 	case FuId::longTryParse:
-		this->longTryParse = true;
+		this->longFunctions.insert(FuId::intTryParse);
 		write("FuLong");
 		writeTryParse(obj, args);
 		break;
@@ -12956,6 +12956,23 @@ void GenC::writeIntMaxMin(std::string_view klassName, std::string_view method, s
 	closeBlock();
 }
 
+void GenC::writeTryParseLibrary(std::string_view signature, std::string_view call)
+{
+	writeNewLine();
+	write("static bool Fu");
+	writeLine(signature);
+	openBlock();
+	writeLine("if (*str == '\\0')");
+	writeLine("\treturn false;");
+	writeLine("char *end;");
+	writeLine("errno = 0;");
+	write("*result = strto");
+	write(call);
+	writeLine(");");
+	writeLine("return *end == '\\0' && errno == 0;");
+	closeBlock();
+}
+
 void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods)
 {
 	if (methods->contains(FuId::mathMin))
@@ -12979,23 +12996,12 @@ void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, co
 		writeLine("return x < minValue ? minValue : x > maxValue ? maxValue : x;");
 		closeBlock();
 	}
-}
-
-void GenC::writeTryParseLibrary(std::string_view signature, std::string_view call)
-{
-	writeNewLine();
-	write("static bool Fu");
-	writeLine(signature);
-	openBlock();
-	writeLine("if (*str == '\\0')");
-	writeLine("\treturn false;");
-	writeLine("char *end;");
-	writeLine("errno = 0;");
-	write("*result = strto");
-	write(call);
-	writeLine(");");
-	writeLine("return *end == '\\0' && errno == 0;");
-	closeBlock();
+	if (methods->contains(FuId::intTryParse)) {
+		if (klassName == "Long")
+			writeTryParseLibrary("Long_TryParse(int64_t *result, const char *str, int base)", "ll(str, &end, base");
+		else
+			writeTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
+	}
 }
 
 void GenC::writeLibrary()
@@ -13003,10 +13009,6 @@ void GenC::writeLibrary()
 	writeIntLibrary("Int", "int", &this->intFunctions);
 	writeIntLibrary("NInt", "ptrdiff_t", &this->nIntFunctions);
 	writeIntLibrary("Long", "int64_t", &this->longFunctions);
-	if (this->intTryParse)
-		writeTryParseLibrary("Int_TryParse(int *result, const char *str, int base)", "l(str, &end, base");
-	if (this->longTryParse)
-		writeTryParseLibrary("Long_TryParse(int64_t *result, const char *str, int base)", "ll(str, &end, base");
 	if (this->doubleTryParse)
 		writeTryParseLibrary("Double_TryParse(double *result, const char *str)", "d(str, &end");
 	if (this->stringAssign) {
@@ -13356,8 +13358,6 @@ void GenC::writeProgram(const FuProgram * program)
 	this->intFunctions.clear();
 	this->nIntFunctions.clear();
 	this->longFunctions.clear();
-	this->intTryParse = false;
-	this->longTryParse = false;
 	this->doubleTryParse = false;
 	this->stringAssign = false;
 	this->stringSubstring = false;
