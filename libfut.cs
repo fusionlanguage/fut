@@ -12156,6 +12156,9 @@ namespace Fusion
 				break;
 			case FuId.MathAbs:
 				switch (args[0].Type.Id) {
+				case FuId.NIntType:
+					WriteCall("(ptrdiff_t) llabs", args[0]);
+					break;
 				case FuId.LongType:
 					WriteCall("llabs", args[0]);
 					break;

@@ -11918,6 +11918,9 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		break;
 	case FuId::mathAbs:
 		switch ((*args)[0]->type->id) {
+		case FuId::nIntType:
+			writeCall("(ptrdiff_t) llabs", (*args)[0].get());
+			break;
 		case FuId::longType:
 			writeCall("llabs", (*args)[0].get());
 			break;

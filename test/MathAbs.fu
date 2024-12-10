@@ -3,6 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int i = Math.Abs(-1000);
+		nint n = 1024;
 		long l = -1000000000;
 		int j = Math.Abs(l);
 		l *= i;
@@ -10,6 +11,7 @@ public static class Test
 		f = Math.Abs(f);
 		double d = Math.Abs(-1e200); //FAIL: cl if no double support
 		return i == 1000
+			&& Math.Abs(n) == 1024
 			&& j == 1000000000
 			&& Math.Abs(l) == -l
 			&& f == 10.5

@@ -12612,6 +12612,9 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.MATH_ABS:
 			switch (args[0].type.id) {
+			case FuId.N_INT_TYPE:
+				this.writeCall("(ptrdiff_t) llabs", args[0]);
+				break;
 			case FuId.LONG_TYPE:
 				this.writeCall("llabs", args[0]);
 				break;

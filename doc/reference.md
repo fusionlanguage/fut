@@ -150,6 +150,7 @@ There's a built-in `Math` class with the following constants:
 and static methods:
 
 * `Math.Abs(int a)`
+* `Math.Abs(nint a)`
 * `Math.Abs(long a)`
 * `Math.Abs(float a)`
 * `Math.Abs(double a)`
