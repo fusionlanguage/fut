@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int i;
-		return !i.TryParse("foo") && i.TryParse("42") && i == 42 //FAIL: java py swift cl
+		return !i.TryParse("foo") && !i.TryParse("2147483648") && i.TryParse("42") && i == 42 //FAIL: java js py swift ts cl
 			&& i.TryParse("c0d3", 16) && i == 0xc0d3;
 	}
 }

@@ -12053,6 +12053,7 @@ export class GenC extends GenCCpp
 	#writeTryParse(obj, args)
 	{
 		this.includeStdBool();
+		this.include("errno.h");
 		this.write("_TryParse(&");
 		obj.accept(this, FuPriority.PRIMARY);
 		this.write(", ");
@@ -13696,10 +13697,11 @@ export class GenC extends GenCCpp
 		this.writeLine("if (*str == '\\0')");
 		this.writeLine("\treturn false;");
 		this.writeLine("char *end;");
+		this.writeLine("errno = 0;");
 		this.write("*result = strto");
 		this.write(call);
 		this.writeLine(");");
-		this.writeLine("return *end == '\\0';");
+		this.writeLine("return *end == '\\0' && errno == 0;");
 		this.closeBlock();
 	}
 

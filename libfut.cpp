@@ -11340,6 +11340,7 @@ void GenC::writeCCall(const FuExpr * obj, const FuMethod * method, const std::ve
 void GenC::writeTryParse(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	includeStdBool();
+	include("errno.h");
 	write("_TryParse(&");
 	obj->accept(this, FuPriority::primary);
 	write(", ");
@@ -12989,10 +12990,11 @@ void GenC::writeTryParseLibrary(std::string_view signature, std::string_view cal
 	writeLine("if (*str == '\\0')");
 	writeLine("\treturn false;");
 	writeLine("char *end;");
+	writeLine("errno = 0;");
 	write("*result = strto");
 	write(call);
 	writeLine(");");
-	writeLine("return *end == '\\0';");
+	writeLine("return *end == '\\0' && errno == 0;");
 	closeBlock();
 }
 

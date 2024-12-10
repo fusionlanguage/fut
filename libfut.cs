@@ -11600,6 +11600,7 @@ namespace Fusion
 		void WriteTryParse(FuExpr obj, List<FuExpr> args)
 		{
 			IncludeStdBool();
+			Include("errno.h");
 			Write("_TryParse(&");
 			obj.Accept(this, FuPriority.Primary);
 			Write(", ");
@@ -13221,10 +13222,11 @@ namespace Fusion
 			WriteLine("if (*str == '\\0')");
 			WriteLine("\treturn false;");
 			WriteLine("char *end;");
+			WriteLine("errno = 0;");
 			Write("*result = strto");
 			Write(call);
 			WriteLine(");");
-			WriteLine("return *end == '\\0';");
+			WriteLine("return *end == '\\0' && errno == 0;");
 			CloseBlock();
 		}
 
