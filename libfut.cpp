@@ -4687,7 +4687,7 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		}
 		return resolved;
 	}
-	std::shared_ptr<FuExpr> left = visitExpr(expr->left);
+	std::shared_ptr<FuExpr> left = visitExpr(expr->left, true);
 	if (left == this->poison)
 		return left;
 	const FuScope * scope;
@@ -5360,7 +5360,7 @@ std::shared_ptr<FuExpr> FuSema::resolveIs(std::shared_ptr<FuBinaryExpr> expr, st
 std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> expr)
 {
 	std::shared_ptr<FuExpr> left = visitExpr(expr->left);
-	std::shared_ptr<FuExpr> right = visitExpr(expr->right);
+	std::shared_ptr<FuExpr> right = visitExpr(expr->right, expr->op == FuToken::is);
 	if (left == this->poison || left->type == this->poison || right == this->poison || right->type == this->poison)
 		return this->poison;
 	std::shared_ptr<FuType> type;
@@ -6020,7 +6020,7 @@ void FuSema::visitVar(std::shared_ptr<FuVar> expr)
 	this->currentScope->add(expr);
 }
 
-std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr)
+std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr, bool allowScope)
 {
 	if (FuAggregateInitializer *aggregate = dynamic_cast<FuAggregateInitializer *>(expr.get())) {
 		std::vector<std::shared_ptr<FuExpr>> * items = &aggregate->items;
@@ -6032,8 +6032,14 @@ std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr)
 		return expr;
 	else if (std::shared_ptr<FuInterpolatedString>interpolated = std::dynamic_pointer_cast<FuInterpolatedString>(expr))
 		return visitInterpolatedString(interpolated);
-	else if (std::shared_ptr<FuSymbolReference>symbol = std::dynamic_pointer_cast<FuSymbolReference>(expr))
-		return visitSymbolReference(symbol);
+	else if (std::shared_ptr<FuSymbolReference>symbol = std::dynamic_pointer_cast<FuSymbolReference>(expr)) {
+		expr = visitSymbolReference(symbol);
+		if (!allowScope && expr == symbol && !dynamic_cast<const FuNamedValue *>(symbol->symbol)) {
+			reportError(symbol.get(), std::format("'{}' is not an expression", symbol->toString()));
+			return this->poison;
+		}
+		return expr;
+	}
 	else if (std::shared_ptr<FuPrefixExpr>prefix = std::dynamic_pointer_cast<FuPrefixExpr>(expr))
 		return visitPrefixExpr(prefix);
 	else if (std::shared_ptr<FuPostfixExpr>postfix = std::dynamic_pointer_cast<FuPostfixExpr>(expr))
@@ -6483,11 +6489,11 @@ void FuSema::resolveCaseType(FuSwitch * statement, const FuClassType * switchPtr
 {
 	const FuSymbolReference * symbol;
 	const FuClass * klass;
-	if (dynamic_cast<const FuLiteralNull *>(visitExpr(value).get())) {
+	if (dynamic_cast<const FuLiteralNull *>(visitExpr(value, true).get())) {
 	}
-	else if ((symbol = dynamic_cast<const FuSymbolReference *>(visitExpr(value).get())) && (klass = dynamic_cast<const FuClass *>(symbol->symbol)))
+	else if ((symbol = dynamic_cast<const FuSymbolReference *>(visitExpr(value, true).get())) && (klass = dynamic_cast<const FuClass *>(symbol->symbol)))
 		checkIsHierarchy(switchPtr, statement->value.get(), klass, value.get(), "case", "always match", "never match");
-	else if (const FuVar *def = dynamic_cast<const FuVar *>(visitExpr(value).get()))
+	else if (const FuVar *def = dynamic_cast<const FuVar *>(visitExpr(value, true).get()))
 		checkIsVar(statement->value.get(), def, def, "case", "always match", "never match");
 	else
 		reportError(value.get(), "Expected 'case Class'");

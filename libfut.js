@@ -5185,7 +5185,7 @@ export class FuSema
 			}
 			return resolved;
 		}
-		let left = this.#visitExpr(expr.left);
+		let left = this.#visitExpr(expr.left, true);
 		if (left == this.#poison)
 			return left;
 		let scope;
@@ -5834,7 +5834,7 @@ export class FuSema
 	#visitBinaryExpr(expr)
 	{
 		let left = this.#visitExpr(expr.left);
-		let right = this.#visitExpr(expr.right);
+		let right = this.#visitExpr(expr.right, expr.op == FuToken.IS);
 		if (left == this.#poison || left.type == this.#poison || right == this.#poison || right.type == this.#poison)
 			return this.#poison;
 		let type;
@@ -6457,7 +6457,7 @@ export class FuSema
 		this.#currentScope.add(expr);
 	}
 
-	#visitExpr(expr)
+	#visitExpr(expr, allowScope = false)
 	{
 		if (expr instanceof FuAggregateInitializer) {
 			const aggregate = expr;
@@ -6474,7 +6474,12 @@ export class FuSema
 		}
 		else if (expr instanceof FuSymbolReference) {
 			const symbol = expr;
-			return this.#visitSymbolReference(symbol);
+			expr = this.#visitSymbolReference(symbol);
+			if (!allowScope && expr == symbol && !(symbol.symbol instanceof FuNamedValue)) {
+				this.#reportError(symbol, `'${symbol}' is not an expression`);
+				return this.#poison;
+			}
+			return expr;
 		}
 		else if (expr instanceof FuPrefixExpr) {
 			const prefix = expr;
@@ -6943,12 +6948,12 @@ export class FuSema
 	{
 		let symbol;
 		let klass;
-		if (this.#visitExpr(value) instanceof FuLiteralNull) {
+		if (this.#visitExpr(value, true) instanceof FuLiteralNull) {
 		}
-		else if ((symbol = this.#visitExpr(value)) instanceof FuSymbolReference && (klass = symbol.symbol) instanceof FuClass)
+		else if ((symbol = this.#visitExpr(value, true)) instanceof FuSymbolReference && (klass = symbol.symbol) instanceof FuClass)
 			this.#checkIsHierarchy(switchPtr, statement.value, klass, value, "case", "always match", "never match");
-		else if (this.#visitExpr(value) instanceof FuVar) {
-			const def = this.#visitExpr(value);
+		else if (this.#visitExpr(value, true) instanceof FuVar) {
+			const def = this.#visitExpr(value, true);
 			this.#checkIsVar(statement.value, def, def, "case", "always match", "never match");
 		}
 		else

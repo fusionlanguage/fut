@@ -4952,7 +4952,7 @@ namespace Fusion
 				}
 				return resolved;
 			}
-			FuExpr left = VisitExpr(expr.Left);
+			FuExpr left = VisitExpr(expr.Left, true);
 			if (left == this.Poison)
 				return left;
 			FuScope scope;
@@ -5568,7 +5568,7 @@ namespace Fusion
 		FuExpr VisitBinaryExpr(FuBinaryExpr expr)
 		{
 			FuExpr left = VisitExpr(expr.Left);
-			FuExpr right = VisitExpr(expr.Right);
+			FuExpr right = VisitExpr(expr.Right, expr.Op == FuToken.Is);
 			if (left == this.Poison || left.Type == this.Poison || right == this.Poison || right.Type == this.Poison)
 				return this.Poison;
 			FuType type;
@@ -6122,7 +6122,7 @@ namespace Fusion
 			this.CurrentScope.Add(expr);
 		}
 
-		FuExpr VisitExpr(FuExpr expr)
+		FuExpr VisitExpr(FuExpr expr, bool allowScope = false)
 		{
 			switch (expr) {
 			case FuAggregateInitializer aggregate:
@@ -6135,7 +6135,12 @@ namespace Fusion
 			case FuInterpolatedString interpolated:
 				return VisitInterpolatedString(interpolated);
 			case FuSymbolReference symbol:
-				return VisitSymbolReference(symbol);
+				expr = VisitSymbolReference(symbol);
+				if (!allowScope && expr == symbol && !(symbol.Symbol is FuNamedValue)) {
+					ReportError(symbol, $"'{symbol}' is not an expression");
+					return this.Poison;
+				}
+				return expr;
 			case FuPrefixExpr prefix:
 				return VisitPrefixExpr(prefix);
 			case FuPostfixExpr postfix:
@@ -6567,7 +6572,7 @@ namespace Fusion
 
 		void ResolveCaseType(FuSwitch statement, FuClassType switchPtr, FuExpr value)
 		{
-			switch (VisitExpr(value)) {
+			switch (VisitExpr(value, true)) {
 			case FuLiteralNull:
 				break;
 			case FuSymbolReference symbol when symbol.Symbol is FuClass klass:

@@ -1773,7 +1773,7 @@ private:
 	void resolveObjectLiteral(const FuClassType * klass, const FuAggregateInitializer * init);
 	static void initUnique(const FuNamedValue * varOrField);
 	void visitVar(std::shared_ptr<FuVar> expr);
-	std::shared_ptr<FuExpr> visitExpr(std::shared_ptr<FuExpr> expr);
+	std::shared_ptr<FuExpr> visitExpr(std::shared_ptr<FuExpr> expr, bool allowScope = false);
 	std::shared_ptr<FuExpr> resolveBool(std::shared_ptr<FuExpr> expr);
 	static std::shared_ptr<FuClassType> createClassPtr(const FuClass * klass, FuToken ptrModifier, bool nullable);
 	void fillGenericClass(FuClassType * result, const FuClass * klass, const FuAggregateInitializer * typeArgExprs);
