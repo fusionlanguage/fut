@@ -1,4 +1,4 @@
-VERSION = 3.2.7
+VERSION = 3.2.8
 DO_SIGN = signtool sign -d "Fusion Transpiler $(VERSION)" -n "Open Source Developer, Piotr Fusik" -tr http://time.certum.pl -fd sha256 -td sha256 $^ && touch $@
 
 signed-msi: fut-$(VERSION)-win64.msi
