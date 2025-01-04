@@ -1,10 +1,12 @@
 public class Test
 {
-	Test Foo() => this;
+	static Test? Foo()
+	{
+		return null; // TODO: short method syntax constant-folds
+	}
 
 	public static bool Run()
 	{
-		Test() o;
-		return o.Foo() is Test; //ERROR: 'Foo' is 'Test', 'is Test' would always equal 'true'
+		return Foo() is Test; //ERROR: 'Foo' is 'Test', 'is Test' would always equal 'true'
 	}
 }
