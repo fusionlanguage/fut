@@ -2298,6 +2298,8 @@ namespace Fusion
 		}
 
 		public override bool IsNewString(bool substringOffset) => this.Type.Id == FuId.StringStorageType && this.Method.Symbol.Id != FuId.ListLast && this.Method.Symbol.Id != FuId.QueuePeek && this.Method.Symbol.Id != FuId.StackPeek && (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
+
+		public override string ToString() => this.Method.Name;
 	}
 
 	class FuLambdaExpr : FuScope

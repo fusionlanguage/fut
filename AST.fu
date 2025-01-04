@@ -1,6 +1,6 @@
 // AST.fu - Fusion abstract syntax tree
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -867,6 +867,7 @@ public class FuCallExpr : FuExpr
 		=> this.Type.Id == FuId.StringStorageType
 			&& this.Method.Symbol.Id != FuId.ListLast && this.Method.Symbol.Id != FuId.QueuePeek && this.Method.Symbol.Id != FuId.StackPeek
 			&& (substringOffset || this.Method.Symbol.Id != FuId.StringSubstring || this.Arguments.Count != 1);
+	public override string() ToString() => this.Method.Name;
 }
 
 class FuLambdaExpr : FuScope

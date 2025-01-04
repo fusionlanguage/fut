@@ -1831,6 +1831,11 @@ bool FuCallExpr::isNewString(bool substringOffset) const
 	return this->type->id == FuId::stringStorageType && this->method->symbol->id != FuId::listLast && this->method->symbol->id != FuId::queuePeek && this->method->symbol->id != FuId::stackPeek && (substringOffset || this->method->symbol->id != FuId::stringSubstring || std::ssize(this->arguments) != 1);
 }
 
+std::string FuCallExpr::toString() const
+{
+	return this->method->name;
+}
+
 void FuLambdaExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitLambdaExpr(this);

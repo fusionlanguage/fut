@@ -970,6 +970,7 @@ public:
 	FuCallExpr() = default;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
+	std::string toString() const override;
 public:
 	std::shared_ptr<FuSymbolReference> method;
 	std::vector<std::shared_ptr<FuExpr>> arguments;

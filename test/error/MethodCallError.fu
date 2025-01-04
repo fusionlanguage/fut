@@ -1,0 +1,10 @@
+public class Test
+{
+	Test Foo() => this;
+
+	public static bool Run()
+	{
+		Test() o;
+		return o.Foo() is Test; //ERROR: 'Foo' is 'Test', 'is Test' would always equal 'true'
+	}
+}

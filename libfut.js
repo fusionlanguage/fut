@@ -2329,6 +2329,11 @@ export class FuCallExpr extends FuExpr
 	{
 		return this.type.id == FuId.STRING_STORAGE_TYPE && this.method.symbol.id != FuId.LIST_LAST && this.method.symbol.id != FuId.QUEUE_PEEK && this.method.symbol.id != FuId.STACK_PEEK && (substringOffset || this.method.symbol.id != FuId.STRING_SUBSTRING || this.arguments_.length != 1);
 	}
+
+	toString()
+	{
+		return this.method.name;
+	}
 }
 
 class FuLambdaExpr extends FuScope
