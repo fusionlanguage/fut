@@ -8403,12 +8403,12 @@ namespace Fusion
 			return true;
 		}
 
-		protected abstract void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent);
+		protected abstract void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent);
 
 		internal override void VisitCallExpr(FuCallExpr expr, FuPriority parent)
 		{
 			FuMethod method = (FuMethod) expr.Method.Symbol;
-			WriteCallExpr(expr.Method.Left, method, expr.Arguments, parent);
+			WriteCallExpr(expr.Type, expr.Method.Left, method, expr.Arguments, parent);
 		}
 
 		internal override void VisitSelectExpr(FuSelectExpr expr, FuPriority parent)
@@ -11690,7 +11690,7 @@ namespace Fusion
 			return false;
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.None:
@@ -11698,7 +11698,7 @@ namespace Fusion
 				WriteCCall(obj, method, args);
 				break;
 			case FuId.EnumFromInt:
-				WriteStaticCast(method.Type, args[0]);
+				WriteStaticCast(type, args[0]);
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -13819,7 +13819,7 @@ namespace Fusion
 				WritePrintfNotInterpolated(args, newLine);
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.None:
@@ -13827,7 +13827,7 @@ namespace Fusion
 				WriteCCall(obj, method, args);
 				break;
 			case FuId.EnumFromInt:
-				WriteStaticCast(method.Type, args[0]);
+				WriteStaticCast(type, args[0]);
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -14767,7 +14767,7 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.None:
@@ -14794,7 +14794,7 @@ namespace Fusion
 				WriteCoercedArgsInParentheses(method, args);
 				break;
 			case FuId.EnumFromInt:
-				WriteStaticCast(method.Type, args[0]);
+				WriteStaticCast(type, args[0]);
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -16578,11 +16578,11 @@ namespace Fusion
 				WriteChar(')');
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.EnumFromInt:
-				WriteStaticCast(method.Type, args[0]);
+				WriteStaticCast(type, args[0]);
 				break;
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
@@ -17926,11 +17926,11 @@ namespace Fusion
 				WriteChar(')');
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.EnumFromInt:
-				WriteStaticCast(method.Type, args[0]);
+				WriteStaticCast(type, args[0]);
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
@@ -19335,7 +19335,7 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.None:
@@ -20713,7 +20713,7 @@ namespace Fusion
 				WriteCall(name, args[0], args[1]);
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.None:
@@ -22751,7 +22751,7 @@ namespace Fusion
 				WriteChar(')');
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.None:
@@ -22783,7 +22783,7 @@ namespace Fusion
 				Write("description");
 				break;
 			case FuId.EnumFromInt:
-				Write(method.Type.Name);
+				Write(type.Name);
 				Write("(rawValue: ");
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
@@ -23079,7 +23079,7 @@ namespace Fusion
 					WriteChar('(');
 				obj.Accept(this, FuPriority.Equality);
 				Write(" as! ");
-				WriteType(method.Type);
+				WriteType(type);
 				if (parent > FuPriority.Equality)
 					WriteChar(')');
 				break;
@@ -24977,11 +24977,11 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		protected override void WriteCallExpr(FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
+		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
 			case FuId.EnumFromInt:
-				WriteName(method.Type);
+				WriteName(type);
 				WriteInParentheses(args);
 				break;
 			case FuId.EnumHasFlag:

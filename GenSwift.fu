@@ -1,6 +1,6 @@
 // GenSwift.fu - Swift code generator
 //
-// Copyright (C) 2020-2024  Piotr Fusik
+// Copyright (C) 2020-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -450,7 +450,7 @@ public class GenSwift : GenPySwift
 			WriteChar(')');
 	}
 
-	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
+	protected override void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
 		case FuId.None:
@@ -482,7 +482,7 @@ public class GenSwift : GenPySwift
 			Write("description");
 			break;
 		case FuId.EnumFromInt:
-			Write(method.Type.Name);
+			Write(type.Name);
 			Write("(rawValue: ");
 			args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
@@ -780,7 +780,7 @@ public class GenSwift : GenPySwift
 				WriteChar('(');
 			obj.Accept(this, FuPriority.Equality); // FIXME?
 			Write(" as! ");
-			WriteType(method.Type);
+			WriteType(type);
 			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;

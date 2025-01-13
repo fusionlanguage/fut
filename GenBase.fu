@@ -1,6 +1,6 @@
 // GenBase.fu - base class for code generators
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1409,12 +1409,12 @@ public abstract class GenBase : FuVisitor
 		return true;
 	}
 
-	protected abstract void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent);
+	protected abstract void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent);
 
 	internal override void VisitCallExpr!(FuCallExpr expr, FuPriority parent)
 	{
 		assert expr.Method.Symbol is FuMethod method;
-		WriteCallExpr(expr.Method.Left, method, expr.Arguments, parent);
+		WriteCallExpr(expr.Type, expr.Method.Left, method, expr.Arguments, parent);
 	}
 
 	internal override void VisitSelectExpr!(FuSelectExpr expr, FuPriority parent)

@@ -8275,7 +8275,7 @@ bool GenBase::writeRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * arg
 void GenBase::visitCallExpr(const FuCallExpr * expr, FuPriority parent)
 {
 	const FuMethod * method = static_cast<const FuMethod *>(expr->method->symbol);
-	writeCallExpr(expr->method->left.get(), method, &expr->arguments, parent);
+	writeCallExpr(expr->type.get(), expr->method->left.get(), method, &expr->arguments, parent);
 }
 
 void GenBase::visitSelectExpr(const FuSelectExpr * expr, FuPriority parent)
@@ -11437,7 +11437,7 @@ bool GenC::writeMathClampMaxMin(const FuMethod * method, const std::vector<std::
 	return false;
 }
 
-void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::none:
@@ -11445,7 +11445,7 @@ void GenC::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std:
 		writeCCall(obj, method, args);
 		break;
 	case FuId::enumFromInt:
-		writeStaticCast(method->type.get(), (*args)[0].get());
+		writeStaticCast(type, (*args)[0].get());
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
@@ -13576,7 +13576,7 @@ void GenCl::writeConsoleWrite(const std::vector<std::shared_ptr<FuExpr>> * args,
 		writePrintfNotInterpolated(args, newLine);
 }
 
-void GenCl::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenCl::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::none:
@@ -13584,7 +13584,7 @@ void GenCl::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std
 		writeCCall(obj, method, args);
 		break;
 	case FuId::enumFromInt:
-		writeStaticCast(method->type.get(), (*args)[0].get());
+		writeStaticCast(type, (*args)[0].get());
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
@@ -14422,7 +14422,7 @@ void GenCpp::writeRegexArgument(const FuExpr * expr)
 	}
 }
 
-void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::none:
@@ -14449,7 +14449,7 @@ void GenCpp::writeCallExpr(const FuExpr * obj, const FuMethod * method, const st
 		writeCoercedArgsInParentheses(method, args);
 		break;
 	case FuId::enumFromInt:
-		writeStaticCast(method->type.get(), (*args)[0].get());
+		writeStaticCast(type, (*args)[0].get());
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
@@ -16195,11 +16195,11 @@ void GenCs::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPrio
 		writeChar(')');
 }
 
-void GenCs::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::enumFromInt:
-		writeStaticCast(method->type.get(), (*args)[0].get());
+		writeStaticCast(type, (*args)[0].get());
 		break;
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
@@ -17372,11 +17372,11 @@ void GenD::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPrior
 		writeChar(')');
 }
 
-void GenD::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::enumFromInt:
-		writeStaticCast(method->type.get(), (*args)[0].get());
+		writeStaticCast(type, (*args)[0].get());
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
@@ -18722,7 +18722,7 @@ void GenJava::writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * arg
 	writeChar(')');
 }
 
-void GenJava::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::none:
@@ -20091,7 +20091,7 @@ void GenJsNoModule::writeMathMaxMin(const FuMethod * method, std::string_view na
 		writeCall(name, (*args)[0].get(), (*args)[1].get());
 }
 
-void GenJsNoModule::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::none:
@@ -21995,7 +21995,7 @@ void GenSwift::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuP
 		writeChar(')');
 }
 
-void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::none:
@@ -22027,7 +22027,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 		write("description");
 		break;
 	case FuId::enumFromInt:
-		write(method->type->name);
+		write(type->name);
 		write("(rawValue: ");
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
@@ -22333,7 +22333,7 @@ void GenSwift::writeCallExpr(const FuExpr * obj, const FuMethod * method, const 
 			writeChar('(');
 		obj->accept(this, FuPriority::equality);
 		write(" as! ");
-		writeType(method->type.get());
+		writeType(type);
 		if (parent > FuPriority::equality)
 			writeChar(')');
 		break;
@@ -24134,11 +24134,11 @@ void GenPy::writeJsonElementIs(const FuExpr * obj, std::string_view name)
 	writeChar(')');
 }
 
-void GenPy::writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
+void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
 	case FuId::enumFromInt:
-		writeName(method->type.get());
+		writeName(type);
 		writeInParentheses(args);
 		break;
 	case FuId::enumHasFlag:

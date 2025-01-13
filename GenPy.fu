@@ -1,6 +1,6 @@
 // GenPy.fu - Python code generator
 //
-// Copyright (C) 2020-2024  Piotr Fusik
+// Copyright (C) 2020-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -814,11 +814,11 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
-	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
+	protected override void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
 		case FuId.EnumFromInt:
-			WriteName(method.Type);
+			WriteName(type);
 			WriteInParentheses(args);
 			break;
 		case FuId.EnumHasFlag:

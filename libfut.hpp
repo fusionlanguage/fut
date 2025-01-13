@@ -1946,7 +1946,7 @@ protected:
 	void writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * args);
 	RegexOptions getRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args) const;
 	bool writeRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args, std::string_view prefix, std::string_view separator, std::string_view suffix, std::string_view i, std::string_view m, std::string_view s);
-	virtual void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) = 0;
+	virtual void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) = 0;
 	void ensureChildBlock();
 	static bool hasTemporaries(const FuExpr * expr);
 	virtual void startTemporaryVar(const FuType * type) = 0;
@@ -2190,7 +2190,7 @@ protected:
 	void writePrintfNotInterpolated(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCCall(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeStringSubstringStart(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent);
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
 	void cleanupBlock(const FuBlock * statement) override;
@@ -2364,7 +2364,7 @@ protected:
 	void writeSubstringEqual(const FuCallExpr * call, std::string_view literal, FuPriority parent, bool not_) override;
 	void writeEqualStringInternal(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeStringLength(const FuExpr * expr) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeAssert(const FuAssert * statement) override;
 	void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
 public:
@@ -2402,7 +2402,7 @@ protected:
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol) override;
 	void writeEnumAsInt(const FuExpr * expr, FuPriority parent) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
 	void writeArrayPtr(const FuExpr * expr, FuPriority parent) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
@@ -2498,7 +2498,7 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	void writeStringLength(const FuExpr * expr) override;
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
 	void defineObjectLiteralTemporary(const FuUnaryExpr * expr) override;
@@ -2557,7 +2557,7 @@ protected:
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
 	void writeStringLength(const FuExpr * expr) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
@@ -2628,7 +2628,7 @@ protected:
 	void writeAnd(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	bool isPromoted(const FuExpr * expr) const override;
 	void writeAssignRight(const FuBinaryExpr * expr) override;
@@ -2705,7 +2705,7 @@ protected:
 	void writeStringLength(const FuExpr * expr) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeOpAssignRight(const FuBinaryExpr * expr) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
@@ -2861,7 +2861,7 @@ protected:
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	std::string_view getReferenceEqOp(bool not_) const override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeNewArrayStorage(const FuArrayStorageType * array) override;
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;
 	void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) override;
@@ -2969,7 +2969,7 @@ protected:
 	void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) override;
 	void writeArrayStorageInit(const FuArrayStorageType * array, const FuExpr * value) override;
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;
-	void writeCallExpr(const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
 	bool visitPreCall(const FuCallExpr * call) override;
 	void startTemporaryVar(const FuType * type) override;

@@ -1,6 +1,6 @@
 // GenCs.fu - C# code generator
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -463,11 +463,11 @@ public class GenCs : GenTyped
 			WriteChar(')');
 	}
 
-	protected override void WriteCallExpr!(FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
+	protected override void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
 		case FuId.EnumFromInt:
-			WriteStaticCast(method.Type, args[0]);
+			WriteStaticCast(type, args[0]);
 			break;
 		case FuId.IntTryParse:
 		case FuId.NIntTryParse:

@@ -8801,7 +8801,7 @@ export class GenBase extends FuVisitor
 	visitCallExpr(expr, parent)
 	{
 		let method = expr.method.symbol;
-		this.writeCallExpr(expr.method.left, method, expr.arguments_, parent);
+		this.writeCallExpr(expr.type, expr.method.left, method, expr.arguments_, parent);
 	}
 
 	visitSelectExpr(expr, parent)
@@ -12148,7 +12148,7 @@ export class GenC extends GenCCpp
 		return false;
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.NONE:
@@ -12156,7 +12156,7 @@ export class GenC extends GenCCpp
 			this.writeCCall(obj, method, args);
 			break;
 		case FuId.ENUM_FROM_INT:
-			this.writeStaticCast(method.type, args[0]);
+			this.writeStaticCast(type, args[0]);
 			break;
 		case FuId.ENUM_HAS_FLAG:
 			this.writeEnumHasFlag(obj, args, parent);
@@ -14304,7 +14304,7 @@ export class GenCl extends GenC
 		}
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.NONE:
@@ -14312,7 +14312,7 @@ export class GenCl extends GenC
 			this.writeCCall(obj, method, args);
 			break;
 		case FuId.ENUM_FROM_INT:
-			this.writeStaticCast(method.type, args[0]);
+			this.writeStaticCast(type, args[0]);
 			break;
 		case FuId.ENUM_HAS_FLAG:
 			this.writeEnumHasFlag(obj, args, parent);
@@ -15254,7 +15254,7 @@ export class GenCpp extends GenCCpp
 		}
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.NONE:
@@ -15281,7 +15281,7 @@ export class GenCpp extends GenCCpp
 			this.writeCoercedArgsInParentheses(method, args);
 			break;
 		case FuId.ENUM_FROM_INT:
-			this.writeStaticCast(method.type, args[0]);
+			this.writeStaticCast(type, args[0]);
 			break;
 		case FuId.ENUM_HAS_FLAG:
 			this.writeEnumHasFlag(obj, args, parent);
@@ -17111,11 +17111,11 @@ export class GenCs extends GenTyped
 			this.writeChar(41);
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.ENUM_FROM_INT:
-			this.writeStaticCast(method.type, args[0]);
+			this.writeStaticCast(type, args[0]);
 			break;
 		case FuId.INT_TRY_PARSE:
 		case FuId.N_INT_TRY_PARSE:
@@ -18488,11 +18488,11 @@ export class GenD extends GenCCppD
 			this.writeChar(41);
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.ENUM_FROM_INT:
-			this.writeStaticCast(method.type, args[0]);
+			this.writeStaticCast(type, args[0]);
 			break;
 		case FuId.ENUM_HAS_FLAG:
 			this.writeEnumHasFlag(obj, args, parent);
@@ -19927,7 +19927,7 @@ export class GenJava extends GenTyped
 		this.writeChar(41);
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.NONE:
@@ -21347,7 +21347,7 @@ export class GenJsNoModule extends GenBase
 			this.writeCall(name, args[0], args[1]);
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.NONE:
@@ -23392,7 +23392,7 @@ export class GenSwift extends GenPySwift
 			this.writeChar(41);
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.NONE:
@@ -23424,7 +23424,7 @@ export class GenSwift extends GenPySwift
 			this.write("description");
 			break;
 		case FuId.ENUM_FROM_INT:
-			this.write(method.type.name);
+			this.write(type.name);
 			this.write("(rawValue: ");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
@@ -23722,7 +23722,7 @@ export class GenSwift extends GenPySwift
 				this.writeChar(40);
 			obj.accept(this, FuPriority.EQUALITY);
 			this.write(" as! ");
-			this.#writeType(method.type);
+			this.#writeType(type);
 			if (parent > FuPriority.EQUALITY)
 				this.writeChar(41);
 			break;
@@ -25643,11 +25643,11 @@ export class GenPy extends GenPySwift
 		this.writeChar(41);
 	}
 
-	writeCallExpr(obj, method, args, parent)
+	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
 		case FuId.ENUM_FROM_INT:
-			this.writeName(method.type);
+			this.writeName(type);
 			this.writeInParentheses(args);
 			break;
 		case FuId.ENUM_HAS_FLAG:
