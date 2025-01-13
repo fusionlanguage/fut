@@ -2458,6 +2458,7 @@ private:
 	void writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeRegexArgument(const FuExpr * expr);
+	void writeMathClampMaxMin(const FuType * type, std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeMatchProperty(const FuSymbolReference * expr, std::string_view name);
 	void writeGtRawPtr(const FuExpr * expr);
 	void writeIsVar(const FuExpr * expr, const FuVar * def, FuPriority parent);

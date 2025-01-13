@@ -15256,6 +15256,24 @@ export class GenCpp extends GenCCpp
 		}
 	}
 
+	#writeMathClampMaxMin(type, function_, args)
+	{
+		this.include("algorithm");
+		this.write(function_);
+		this.writeChar(40);
+		let first = true;
+		for (const arg of args) {
+			if (!first)
+				this.write(", ");
+			first = false;
+			if (arg.type != type)
+				this.writeStaticCast(type, arg);
+			else
+				arg.accept(this, FuPriority.ARGUMENT);
+		}
+		this.writeChar(41);
+	}
+
 	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
@@ -15716,8 +15734,7 @@ export class GenCpp extends GenCCpp
 			this.writeCall("std::ceil", args[0]);
 			break;
 		case FuId.MATH_CLAMP:
-			this.include("algorithm");
-			this.writeCall("std::clamp", args[0], args[1], args[2]);
+			this.#writeMathClampMaxMin(type, "std::clamp", args);
 			break;
 		case FuId.MATH_FUSED_MULTIPLY_ADD:
 			this.includeMath();
@@ -15728,12 +15745,10 @@ export class GenCpp extends GenCCpp
 			this.writeCall("std::isinf", args[0]);
 			break;
 		case FuId.MATH_MAX:
-			this.include("algorithm");
-			this.writeCall("(std::max)", args[0], args[1]);
+			this.#writeMathClampMaxMin(type, "(std::max)", args);
 			break;
 		case FuId.MATH_MIN:
-			this.include("algorithm");
-			this.writeCall("(std::min)", args[0], args[1]);
+			this.#writeMathClampMaxMin(type, "(std::min)", args);
 			break;
 		case FuId.MATH_TRUNCATE:
 			this.includeMath();

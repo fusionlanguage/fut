@@ -14769,6 +14769,24 @@ namespace Fusion
 			}
 		}
 
+		void WriteMathClampMaxMin(FuType type, string function, List<FuExpr> args)
+		{
+			Include("algorithm");
+			Write(function);
+			WriteChar('(');
+			bool first = true;
+			foreach (FuExpr arg in args) {
+				if (!first)
+					Write(", ");
+				first = false;
+				if (arg.Type != type)
+					WriteStaticCast(type, arg);
+				else
+					arg.Accept(this, FuPriority.Argument);
+			}
+			WriteChar(')');
+		}
+
 		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
@@ -15227,8 +15245,7 @@ namespace Fusion
 				WriteCall("std::ceil", args[0]);
 				break;
 			case FuId.MathClamp:
-				Include("algorithm");
-				WriteCall("std::clamp", args[0], args[1], args[2]);
+				WriteMathClampMaxMin(type, "std::clamp", args);
 				break;
 			case FuId.MathFusedMultiplyAdd:
 				IncludeMath();
@@ -15239,12 +15256,10 @@ namespace Fusion
 				WriteCall("std::isinf", args[0]);
 				break;
 			case FuId.MathMax:
-				Include("algorithm");
-				WriteCall("(std::max)", args[0], args[1]);
+				WriteMathClampMaxMin(type, "(std::max)", args);
 				break;
 			case FuId.MathMin:
-				Include("algorithm");
-				WriteCall("(std::min)", args[0], args[1]);
+				WriteMathClampMaxMin(type, "(std::min)", args);
 				break;
 			case FuId.MathTruncate:
 				IncludeMath();

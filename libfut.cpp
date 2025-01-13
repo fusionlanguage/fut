@@ -14424,6 +14424,24 @@ void GenCpp::writeRegexArgument(const FuExpr * expr)
 	}
 }
 
+void GenCpp::writeMathClampMaxMin(const FuType * type, std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	include("algorithm");
+	write(function);
+	writeChar('(');
+	bool first = true;
+	for (const std::shared_ptr<FuExpr> &arg : *args) {
+		if (!first)
+			write(", ");
+		first = false;
+		if (arg->type.get() != type)
+			writeStaticCast(type, arg.get());
+		else
+			arg->accept(this, FuPriority::argument);
+	}
+	writeChar(')');
+}
+
 void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -14888,8 +14906,7 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		writeCall("std::ceil", (*args)[0].get());
 		break;
 	case FuId::mathClamp:
-		include("algorithm");
-		writeCall("std::clamp", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+		writeMathClampMaxMin(type, "std::clamp", args);
 		break;
 	case FuId::mathFusedMultiplyAdd:
 		includeMath();
@@ -14900,12 +14917,10 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		writeCall("std::isinf", (*args)[0].get());
 		break;
 	case FuId::mathMax:
-		include("algorithm");
-		writeCall("(std::max)", (*args)[0].get(), (*args)[1].get());
+		writeMathClampMaxMin(type, "(std::max)", args);
 		break;
 	case FuId::mathMin:
-		include("algorithm");
-		writeCall("(std::min)", (*args)[0].get(), (*args)[1].get());
+		writeMathClampMaxMin(type, "(std::min)", args);
 		break;
 	case FuId::mathTruncate:
 		includeMath();

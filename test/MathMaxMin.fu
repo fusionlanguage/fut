@@ -5,7 +5,7 @@ public static class Test
 		nint n = 1024;
 		long l = 0x1000000;
 		l *= l;
-		return Math.Min(-5, 10) == -5 && Math.Max(-5, 10) == 10 && Math.Min(n, -n) == -n && Math.Max(n, -n) == n && Math.Max(l, l) == l //FAIL: cl TODO
-			&& Math.Min(-3.0, 10.5) == -3 && Math.Max(-3.0, 10.5) == 10.5; //FAIL: swift TODO https://github.com/swiftlang/swift/issues/76416
+		return Math.Min(-5, 10) == -5 && Math.Max(-5, 10) == 10 && Math.Min(n, -n) == -n && Math.Max(n, -n) == n && Math.Max(l, l) == l && Math.Min(0, l) == 0 //FAIL: cl TODO
+			&& Math.Min(-3, 10.5) == -3 && Math.Max(-3, 10.5) == 10.5; //FAIL: swift TODO https://github.com/swiftlang/swift/issues/76416
 	}
 }
