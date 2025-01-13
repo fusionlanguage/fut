@@ -3428,7 +3428,7 @@ namespace Fusion
 
 		FuRangeType UIntType = FuRangeType.New(0, 2147483647);
 
-		FuIntegerType NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
+		internal FuIntegerType NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
 
 		internal FuIntegerType LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
 
@@ -6048,7 +6048,7 @@ namespace Fusion
 				else if (type.Id == FuId.FloatingType)
 					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : this.Host.Program.System.FloatType;
 				else if (type.Id == FuId.NumericType) {
-					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : arguments.Exists(arg => arg.Type.Id == FuId.FloatType) ? this.Host.Program.System.FloatType : arguments.Exists(arg => arg.Type.Id == FuId.LongType) ? this.Host.Program.System.LongType : this.Host.Program.System.IntType;
+					type = arguments.Exists(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType : arguments.Exists(arg => arg.Type.Id == FuId.FloatType) ? this.Host.Program.System.FloatType : arguments.Exists(arg => arg.Type.Id == FuId.LongType) ? this.Host.Program.System.LongType : arguments.Exists(arg => arg.Type.Id == FuId.NIntType) ? this.Host.Program.System.NIntType : this.Host.Program.System.IntType;
 				}
 				expr.Type = type;
 			}
@@ -11669,21 +11669,23 @@ namespace Fusion
 			WriteInParentheses(args);
 		}
 
-		bool WriteMathClampMaxMin(FuMethod method, List<FuExpr> args)
+		bool WriteMathClampMaxMin(FuType type, FuMethod method, List<FuExpr> args)
 		{
-			if (args.Exists(arg => arg.Type is FuFloatingType))
-				return true;
-			if (args.Exists(arg => arg.Type.Id == FuId.LongType)) {
-				this.LongFunctions.Add(method.Id);
-				Write("FuLong_");
-			}
-			else if (args.Exists(arg => arg.Type.Id == FuId.NIntType)) {
-				this.NIntFunctions.Add(method.Id);
-				Write("FuNInt_");
-			}
-			else {
+			switch (type.Id) {
+			case FuId.IntType:
 				this.IntFunctions.Add(method.Id);
 				Write("FuInt_");
+				break;
+			case FuId.NIntType:
+				this.NIntFunctions.Add(method.Id);
+				Write("FuNInt_");
+				break;
+			case FuId.LongType:
+				this.LongFunctions.Add(method.Id);
+				Write("FuLong_");
+				break;
+			default:
+				return true;
 			}
 			Write(method.Name);
 			WriteInParentheses(args);
@@ -12197,9 +12199,9 @@ namespace Fusion
 				WriteMathFloating("ceil", args);
 				break;
 			case FuId.MathClamp:
-				if (WriteMathClampMaxMin(method, args)) {
+				if (WriteMathClampMaxMin(type, method, args)) {
 					IncludeMath();
-					Write(args.Exists(arg => arg.Type.Id == FuId.DoubleType) ? "fmin(fmax(" : "fminf(fmaxf(");
+					Write(type.Id == FuId.DoubleType ? "fmin(fmax(" : "fminf(fmaxf(");
 					WriteClampAsMinMax(args);
 				}
 				break;
@@ -12220,7 +12222,7 @@ namespace Fusion
 				break;
 			case FuId.MathMax:
 			case FuId.MathMin:
-				if (WriteMathClampMaxMin(method, args)) {
+				if (WriteMathClampMaxMin(type, method, args)) {
 					WriteChar('f');
 					WriteMathFloating(method.Name, args);
 				}

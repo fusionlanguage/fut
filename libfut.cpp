@@ -5946,7 +5946,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		else if (type->id == FuId::floatingType)
 			type = std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? this->host->program->system->doubleType : this->host->program->system->floatType;
 		else if (type->id == FuId::numericType) {
-			type = std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? this->host->program->system->doubleType : std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::floatType; }) ? std::static_pointer_cast<FuType>(this->host->program->system->floatType) : std::static_pointer_cast<FuType>(std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::longType; }) ? this->host->program->system->longType : this->host->program->system->intType);
+			type = std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? this->host->program->system->doubleType : std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::floatType; }) ? std::static_pointer_cast<FuType>(this->host->program->system->floatType) : std::static_pointer_cast<FuType>(std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::longType; }) ? this->host->program->system->longType : std::any_of(arguments->begin(), arguments->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::nIntType; }) ? this->host->program->system->nIntType : this->host->program->system->intType);
 		}
 		expr->type = type;
 	}
@@ -11416,21 +11416,23 @@ void GenC::writeMathFloating(std::string_view function, const std::vector<std::s
 	writeInParentheses(args);
 }
 
-bool GenC::writeMathClampMaxMin(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
+bool GenC::writeMathClampMaxMin(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
-	if (std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return dynamic_cast<const FuFloatingType *>(arg->type.get()); }))
-		return true;
-	if (std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::longType; })) {
-		this->longFunctions.insert(method->id);
-		write("FuLong_");
-	}
-	else if (std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::nIntType; })) {
-		this->nIntFunctions.insert(method->id);
-		write("FuNInt_");
-	}
-	else {
+	switch (type->id) {
+	case FuId::intType:
 		this->intFunctions.insert(method->id);
 		write("FuInt_");
+		break;
+	case FuId::nIntType:
+		this->nIntFunctions.insert(method->id);
+		write("FuNInt_");
+		break;
+	case FuId::longType:
+		this->longFunctions.insert(method->id);
+		write("FuLong_");
+		break;
+	default:
+		return true;
 	}
 	write(method->name);
 	writeInParentheses(args);
@@ -11964,9 +11966,9 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writeMathFloating("ceil", args);
 		break;
 	case FuId::mathClamp:
-		if (writeMathClampMaxMin(method, args)) {
+		if (writeMathClampMaxMin(type, method, args)) {
 			includeMath();
-			write(std::any_of(args->begin(), args->end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->type->id == FuId::doubleType; }) ? "fmin(fmax(" : "fminf(fmaxf(");
+			write(type->id == FuId::doubleType ? "fmin(fmax(" : "fminf(fmaxf(");
 			writeClampAsMinMax(args);
 		}
 		break;
@@ -11987,7 +11989,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::mathMax:
 	case FuId::mathMin:
-		if (writeMathClampMaxMin(method, args)) {
+		if (writeMathClampMaxMin(type, method, args)) {
 			writeChar('f');
 			writeMathFloating(method->name, args);
 		}

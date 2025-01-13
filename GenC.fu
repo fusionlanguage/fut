@@ -1967,21 +1967,23 @@ public class GenC : GenCCpp
 		WriteInParentheses(args);
 	}
 
-	bool WriteMathClampMaxMin!(FuMethod method, List<FuExpr#> args)
+	bool WriteMathClampMaxMin!(FuType type, FuMethod method, List<FuExpr#> args)
 	{
-		if (args.Any(arg => arg.Type is FuFloatingType))
-			return true;
-		if (args.Any(arg => arg.Type.Id == FuId.LongType)) {
-			this.LongFunctions.Add(method.Id);
-			Write("FuLong_");
-		}
-		else if (args.Any(arg => arg.Type.Id == FuId.NIntType)) {
-			this.NIntFunctions.Add(method.Id);
-			Write("FuNInt_");
-		}
-		else {
+		switch (type.Id) {
+		case FuId.IntType:
 			this.IntFunctions.Add(method.Id);
 			Write("FuInt_");
+			break;
+		case FuId.NIntType:
+			this.NIntFunctions.Add(method.Id);
+			Write("FuNInt_");
+			break;
+		case FuId.LongType:
+			this.LongFunctions.Add(method.Id);
+			Write("FuLong_");
+			break;
+		default:
+			return true; // floating
 		}
 		Write(method.Name);
 		WriteInParentheses(args);
@@ -2499,9 +2501,9 @@ public class GenC : GenCCpp
 			WriteMathFloating("ceil", args);
 			break;
 		case FuId.MathClamp:
-			if (WriteMathClampMaxMin(method, args)) {
+			if (WriteMathClampMaxMin(type, method, args)) {
 				IncludeMath();
-				Write(args.Any(arg => arg.Type.Id == FuId.DoubleType) ? "fmin(fmax(" : "fminf(fmaxf(");
+				Write(type.Id == FuId.DoubleType ? "fmin(fmax(" : "fminf(fmaxf(");
 				WriteClampAsMinMax(args);
 			}
 			break;
@@ -2522,7 +2524,7 @@ public class GenC : GenCCpp
 			break;
 		case FuId.MathMax:
 		case FuId.MathMin:
-			if (WriteMathClampMaxMin(method, args)) {
+			if (WriteMathClampMaxMin(type, method, args)) {
 				WriteChar('f');
 				WriteMathFloating(method.Name, args);
 			}

@@ -1561,7 +1561,7 @@ public class FuSystem : FuScope
 	FuType# TypeParam0 = new FuType { Id = FuId.TypeParam0, Name = "T" };
 	internal FuIntegerType# IntType = new FuIntegerType { Id = FuId.IntType, Name = "int" };
 	FuRangeType# UIntType = FuRangeType.New(0, int.MaxValue);
-	FuIntegerType# NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
+	internal FuIntegerType# NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
 	internal FuIntegerType# LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
 	internal FuRangeType# ByteType = FuRangeType.New(0, 0xff);
 	internal FuFloatingType# FloatType = new FuFloatingType { Id = FuId.FloatType, Name = "float" };

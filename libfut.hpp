@@ -1538,6 +1538,7 @@ public:
 	std::shared_ptr<FuType> voidType = std::make_shared<FuType>();
 	std::shared_ptr<FuType> nullType = std::make_shared<FuType>();
 	std::shared_ptr<FuIntegerType> intType = std::make_shared<FuIntegerType>();
+	std::shared_ptr<FuIntegerType> nIntType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuIntegerType> longType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuRangeType> byteType = FuRangeType::new_(0, 255);
 	std::shared_ptr<FuFloatingType> floatType = std::make_shared<FuFloatingType>();
@@ -1562,7 +1563,6 @@ public:
 private:
 	std::shared_ptr<FuType> typeParam0 = std::make_shared<FuType>();
 	std::shared_ptr<FuRangeType> uIntType = FuRangeType::new_(0, 2147483647);
-	std::shared_ptr<FuIntegerType> nIntType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuClass> stringClass = FuClass::new_(FuCallType::normal, FuId::stringClass, "string");
 	FuClass * addCollection(FuId id, std::string_view name, int typeParameterCount, FuId clearId, FuId countId);
 	void addSet(FuId id, std::string_view name, FuId addId, FuId clearId, FuId containsId, FuId countId, FuId removeId);
@@ -2320,7 +2320,7 @@ private:
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
 	void writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
-	bool writeMathClampMaxMin(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
+	bool writeMathClampMaxMin(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent);
 	void writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwitch);
 	void trimVarsToDestruct(int i);

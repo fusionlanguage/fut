@@ -1,6 +1,6 @@
 // Sema.fu - semantic analysis of Fusion
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1400,6 +1400,7 @@ public class FuSema
 				type = arguments.Any(arg => arg.Type.Id == FuId.DoubleType) ? this.Host.Program.System.DoubleType
 					: arguments.Any(arg => arg.Type.Id == FuId.FloatType) ? this.Host.Program.System.FloatType
 					: arguments.Any(arg => arg.Type.Id == FuId.LongType) ? this.Host.Program.System.LongType
+					: arguments.Any(arg => arg.Type.Id == FuId.NIntType) ? this.Host.Program.System.NIntType
 					: this.Host.Program.System.IntType;
 			}
 			expr.Type = type;
