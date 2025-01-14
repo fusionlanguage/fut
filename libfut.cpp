@@ -14434,10 +14434,10 @@ void GenCpp::writeMathClampMaxMin(const FuType * type, std::string_view function
 		if (!first)
 			write(", ");
 		first = false;
-		if (arg->type.get() != type)
-			writeStaticCast(type, arg.get());
-		else
+		if (arg->type.get() == type || (type->id == FuId::intType && (dynamic_cast<const FuLiteralLong *>(arg.get()) || isPromoted(arg.get()))))
 			arg->accept(this, FuPriority::argument);
+		else
+			writeStaticCast(type, arg.get());
 	}
 	writeChar(')');
 }

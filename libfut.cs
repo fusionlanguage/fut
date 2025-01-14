@@ -14779,10 +14779,10 @@ namespace Fusion
 				if (!first)
 					Write(", ");
 				first = false;
-				if (arg.Type != type)
-					WriteStaticCast(type, arg);
-				else
+				if (arg.Type == type || (type.Id == FuId.IntType && (arg is FuLiteralLong || IsPromoted(arg))))
 					arg.Accept(this, FuPriority.Argument);
+				else
+					WriteStaticCast(type, arg);
 			}
 			WriteChar(')');
 		}

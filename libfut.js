@@ -15266,10 +15266,10 @@ export class GenCpp extends GenCCpp
 			if (!first)
 				this.write(", ");
 			first = false;
-			if (arg.type != type)
-				this.writeStaticCast(type, arg);
-			else
+			if (arg.type == type || (type.id == FuId.INT_TYPE && (arg instanceof FuLiteralLong || this.isPromoted(arg))))
 				arg.accept(this, FuPriority.ARGUMENT);
+			else
+				this.writeStaticCast(type, arg);
 		}
 		this.writeChar(41);
 	}
