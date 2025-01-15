@@ -26,14 +26,10 @@ find using the object-oriented C output fairly straightforward.
 Runtime library dependencies are minimal. The C output is often a self-contained
 pair of `.c`/`.h` files containing portable, human-readable C99 code.
 Similarly, the outputs in other languages do _not_ rely on anything except
-the standard language. There are two exceptions:
-
-1. If the Fusion code uses regular expressions, `List`, `Queue`, `Stack`,
-   `HashSet`, `SortedSet`, `Dictionary` or `SortedDictionary`, the C output
-   relies on [GLib](https://wiki.gnome.org/Projects/GLib) implementations
-   of these.
-2. `Math.FusedMultiplyAdd` is implemented in Python
-   with [pyfma](https://pypi.org/project/pyfma/).
+the standard language. An exception is that if the Fusion code uses regular
+expressions, `List`, `Queue`, `Stack`, `HashSet`, `SortedSet`, `Dictionary`
+or `SortedDictionary`, the C output relies on
+[GLib](https://wiki.gnome.org/Projects/GLib) implementations of these.
 
 Memory management is native to the target language.
 A garbage collector will be used if available in the target language.

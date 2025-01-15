@@ -9,6 +9,6 @@ public static class Test
 		float g = 3;
 		float h = 1;
 		f = Math.FusedMultiplyAdd(f, g, h);
-		return Math.FusedMultiplyAdd(x, y, z) == 7 && f == 7; //FAIL: py - install pyfma on Travis
+		return Math.FusedMultiplyAdd(x, y, z) == 7 && f == 7; //FAIL: py need Python 3.13
 	}
 }
