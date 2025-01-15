@@ -25000,7 +25000,6 @@ export class GenPy extends GenPySwift
 		case "Not":
 		case "Or":
 		case "Pass":
-		case "Pyfma":
 		case "Raise":
 		case "Re":
 		case "Return":
@@ -25035,7 +25034,6 @@ export class GenPy extends GenPySwift
 		case "not":
 		case "or":
 		case "pass":
-		case "pyfma":
 		case "raise":
 		case "re":
 		case "str":
@@ -25997,8 +25995,8 @@ export class GenPy extends GenPySwift
 			this.writeClampAsMinMax(args);
 			break;
 		case FuId.MATH_FUSED_MULTIPLY_ADD:
-			this.include("pyfma");
-			this.writeCall("pyfma.fma", args[0], args[1], args[2]);
+			this.include("math");
+			this.writeCall("math.fma", args[0], args[1], args[2]);
 			break;
 		case FuId.MATH_IS_INFINITY:
 			this.include("math");

@@ -23544,7 +23544,7 @@ void GenPy::writeNameNotKeyword(std::string_view name)
 {
 	if (name == "this")
 		write("self");
-	else if (name == "And" || name == "Array" || name == "As" || name == "Assert" || name == "Async" || name == "Await" || name == "Bool" || name == "Break" || name == "Class" || name == "Continue" || name == "Def" || name == "Del" || name == "Dict" || name == "Elif" || name == "Else" || name == "Enum" || name == "Except" || name == "Finally" || name == "For" || name == "From" || name == "Global" || name == "If" || name == "Import" || name == "In" || name == "Is" || name == "Lambda" || name == "Len" || name == "List" || name == "Math" || name == "Nonlocal" || name == "Not" || name == "Or" || name == "Pass" || name == "Pyfma" || name == "Raise" || name == "Re" || name == "Return" || name == "Str" || name == "Sys" || name == "Try" || name == "While" || name == "With" || name == "Yield" || name == "and" || name == "array" || name == "as" || name == "async" || name == "await" || name == "def" || name == "del" || name == "dict" || name == "elif" || name == "enum" || name == "except" || name == "finally" || name == "from" || name == "global" || name == "import" || name == "is" || name == "json" || name == "lambda" || name == "len" || name == "list" || name == "math" || name == "nonlocal" || name == "not" || name == "or" || name == "pass" || name == "pyfma" || name == "raise" || name == "re" || name == "str" || name == "sys" || name == "try" || name == "with" || name == "yield") {
+	else if (name == "And" || name == "Array" || name == "As" || name == "Assert" || name == "Async" || name == "Await" || name == "Bool" || name == "Break" || name == "Class" || name == "Continue" || name == "Def" || name == "Del" || name == "Dict" || name == "Elif" || name == "Else" || name == "Enum" || name == "Except" || name == "Finally" || name == "For" || name == "From" || name == "Global" || name == "If" || name == "Import" || name == "In" || name == "Is" || name == "Lambda" || name == "Len" || name == "List" || name == "Math" || name == "Nonlocal" || name == "Not" || name == "Or" || name == "Pass" || name == "Raise" || name == "Re" || name == "Return" || name == "Str" || name == "Sys" || name == "Try" || name == "While" || name == "With" || name == "Yield" || name == "and" || name == "array" || name == "as" || name == "async" || name == "await" || name == "def" || name == "del" || name == "dict" || name == "elif" || name == "enum" || name == "except" || name == "finally" || name == "from" || name == "global" || name == "import" || name == "is" || name == "json" || name == "lambda" || name == "len" || name == "list" || name == "math" || name == "nonlocal" || name == "not" || name == "or" || name == "pass" || name == "raise" || name == "re" || name == "str" || name == "sys" || name == "try" || name == "with" || name == "yield") {
 		writeCamelCase(name);
 		writeChar('_');
 	}
@@ -24490,8 +24490,8 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeClampAsMinMax(args);
 		break;
 	case FuId::mathFusedMultiplyAdd:
-		include("pyfma");
-		writeCall("pyfma.fma", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+		include("math");
+		writeCall("math.fma", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
 		break;
 	case FuId::mathIsInfinity:
 		include("math");

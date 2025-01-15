@@ -24346,7 +24346,6 @@ namespace Fusion
 			case "Not":
 			case "Or":
 			case "Pass":
-			case "Pyfma":
 			case "Raise":
 			case "Re":
 			case "Return":
@@ -24381,7 +24380,6 @@ namespace Fusion
 			case "not":
 			case "or":
 			case "pass":
-			case "pyfma":
 			case "raise":
 			case "re":
 			case "str":
@@ -25330,8 +25328,8 @@ namespace Fusion
 				WriteClampAsMinMax(args);
 				break;
 			case FuId.MathFusedMultiplyAdd:
-				Include("pyfma");
-				WriteCall("pyfma.fma", args[0], args[1], args[2]);
+				Include("math");
+				WriteCall("math.fma", args[0], args[1], args[2]);
 				break;
 			case FuId.MathIsInfinity:
 				Include("math");
