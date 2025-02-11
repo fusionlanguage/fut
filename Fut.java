@@ -1,6 +1,6 @@
 // Fut.java - Fusion transpiler
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -219,7 +219,7 @@ public class Fut
 				return;
 			}
 			else if (arg.equals("--version")) {
-				System.out.println("Fusion Transpiler 3.2.8 (Java)");
+				System.out.println("Fusion Transpiler 3.2.9 (Java)");
 				return;
 			}
 			else if (arg.length() == 2 && i + 1 < args.length) {

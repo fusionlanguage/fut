@@ -1,6 +1,6 @@
 // fut.cs - Fusion transpiler
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -189,7 +189,7 @@ public static class Fut
 				return 0;
 			}
 			else if (arg == "--version") {
-				Console.WriteLine("Fusion Transpiler 3.2.8 (C#)");
+				Console.WriteLine("Fusion Transpiler 3.2.9 (C#)");
 				return 0;
 			}
 			else if (arg.Length == 2 && i + 1 < args.Length) {
