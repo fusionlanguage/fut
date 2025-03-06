@@ -25090,9 +25090,13 @@ namespace Fusion
 				WriteListAdd(obj, "append", args);
 				break;
 			case FuId.ListAddRange:
-				obj.Accept(this, FuPriority.Assign);
-				Write(" += ");
-				args[0].Accept(this, FuPriority.Argument);
+				if (obj is FuSymbolReference) {
+					obj.Accept(this, FuPriority.Assign);
+					Write(" += ");
+					args[0].Accept(this, FuPriority.Argument);
+				}
+				else
+					WriteMethodCall(obj, "extend", args[0]);
 				break;
 			case FuId.ListAll:
 				WriteAllAny("all", obj, args);

@@ -1,5 +1,7 @@
 public static class Test
 {
+	static List<int>! Identity(List<int>! list) => list;
+
 	public static bool Run()
 	{
 		List<int>() dest; //FAIL: cl
@@ -9,6 +11,11 @@ public static class Test
 		src.Add(3);
 		src.Add(6);
 		dest.AddRange(src); //FAIL: c
-		return dest.Count == 4 && dest[0] == 5 && dest[1] == 10 && dest[2] == 3 && dest[3] == 6;
+		Identity(dest).AddRange(src); //FAIL: swift
+		(dest[0] == 5 ? dest : src).AddRange(src);
+		return dest.Count == 8 && dest[0] == 5 && dest[1] == 10
+			&& dest[2] == 3 && dest[3] == 6
+			&& dest[4] == 3 && dest[5] == 6
+			&& dest[6] == 3 && dest[7] == 6;
 	}
 }

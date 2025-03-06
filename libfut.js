@@ -25756,9 +25756,13 @@ export class GenPy extends GenPySwift
 			this.writeListAdd(obj, "append", args);
 			break;
 		case FuId.LIST_ADD_RANGE:
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" += ");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			if (obj instanceof FuSymbolReference) {
+				obj.accept(this, FuPriority.ASSIGN);
+				this.write(" += ");
+				args[0].accept(this, FuPriority.ARGUMENT);
+			}
+			else
+				this.writeMethodCall(obj, "extend", args[0]);
 			break;
 		case FuId.LIST_ALL:
 			this.#writeAllAny("all", obj, args);

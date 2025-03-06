@@ -24249,9 +24249,13 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeListAdd(obj, "append", args);
 		break;
 	case FuId::listAddRange:
-		obj->accept(this, FuPriority::assign);
-		write(" += ");
-		(*args)[0]->accept(this, FuPriority::argument);
+		if (dynamic_cast<const FuSymbolReference *>(obj)) {
+			obj->accept(this, FuPriority::assign);
+			write(" += ");
+			(*args)[0]->accept(this, FuPriority::argument);
+		}
+		else
+			writeMethodCall(obj, "extend", (*args)[0].get());
 		break;
 	case FuId::listAll:
 		writeAllAny("all", obj, args);
