@@ -30,6 +30,6 @@ The translated code is lightweight (no virtual machine, emulation nor
 dependencies), human-readable and fits well with the target language,
 including naming conventions and documentation comments.
 
-Check out [Fusion Playground](https://fusion-lang.org) in your browser.
+Check out [Fusion Playground](https://fusion-lang.org/playground) in your browser.
 
 For further instructions, see [Getting Started](doc/getting-started.md).
