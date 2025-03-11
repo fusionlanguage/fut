@@ -14643,6 +14643,7 @@ export class GenCpp extends GenCCpp
 		case "False":
 		case "Float":
 		case "For":
+		case "Friend":
 		case "Goto":
 		case "If":
 		case "Inline":
@@ -14687,6 +14688,7 @@ export class GenCpp extends GenCCpp
 		case "explicit":
 		case "export":
 		case "extern":
+		case "friend":
 		case "goto":
 		case "inline":
 		case "namespace":

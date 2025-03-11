@@ -14153,6 +14153,7 @@ namespace Fusion
 			case "False":
 			case "Float":
 			case "For":
+			case "Friend":
 			case "Goto":
 			case "If":
 			case "Inline":
@@ -14197,6 +14198,7 @@ namespace Fusion
 			case "explicit":
 			case "export":
 			case "extern":
+			case "friend":
 			case "goto":
 			case "inline":
 			case "namespace":

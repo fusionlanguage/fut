@@ -54,6 +54,7 @@ static class MethodTest
 	public static bool Float(bool b) => b;
 	public static bool For(bool b) => b;
 	public static bool Foreach(bool b) => b;
+	public static bool Friend(bool b) => b;
 	public static bool From(bool b) => b;
 	public static bool Func(bool b) => b;
 	public static bool Function(bool b) => b;
@@ -207,6 +208,7 @@ public class Test
 	bool Float = true;
 	bool For = true;
 	bool Foreach = true;
+	bool Friend = true;
 	bool From = true;
 	bool Func = true;
 	bool Function = true;
@@ -345,6 +347,7 @@ public class Test
 		bool final = true;
 		bool finally = true;
 		bool fixed = true;
+		bool friend = true;
 		bool from = true;
 		bool func = true;
 		bool function = true;
@@ -470,6 +473,7 @@ public class Test
 			&& MethodTest.Float(t)
 			&& MethodTest.For(t)
 			&& MethodTest.Foreach(t)
+			&& MethodTest.Friend(t)
 			&& MethodTest.From(t)
 			&& MethodTest.Func(t)
 			&& MethodTest.Function(t)
@@ -619,6 +623,7 @@ public class Test
 			&& o.Float
 			&& o.For
 			&& o.Foreach
+			&& o.Friend
 			&& o.From
 			&& o.Func
 			&& o.Function
@@ -751,6 +756,7 @@ public class Test
 			&& final
 			&& finally
 			&& fixed
+			&& friend
 			&& from
 			&& func
 			&& function

@@ -113,6 +113,7 @@ public class GenCpp : GenCCpp
 		case "False":
 		case "Float":
 		case "For":
+		case "Friend":
 		case "Goto":
 		case "If":
 		case "Inline":
@@ -157,6 +158,7 @@ public class GenCpp : GenCCpp
 		case "explicit":
 		case "export":
 		case "extern":
+		case "friend":
 		case "goto":
 		case "inline":
 		case "namespace":
