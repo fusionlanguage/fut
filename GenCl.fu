@@ -346,8 +346,9 @@ public class GenCl : GenC
 		}
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
+		this.Namespace = namespace;
 		this.WrittenClasses.Clear();
 		this.StringLength = false;
 		this.StringEquals = false;
@@ -361,7 +362,7 @@ public class GenCl : GenC
 			WriteMethods(klass);
 		}
 
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		WriteTopLevelNatives(program);
 		WriteRegexOptionsEnum(program);
 		WriteTypedefs(program, true);

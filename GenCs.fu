@@ -1031,22 +1031,22 @@ public class GenCs : GenTyped
 		CloseBlock();
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		OpenStringWriter();
-		if (this.Namespace.Length != 0) {
+		if (namespace.Length != 0) {
 			Write("namespace ");
-			WriteLine(this.Namespace);
+			WriteLine(namespace);
 			OpenBlock();
 		}
 		WriteTopLevelNatives(program);
 		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources(program.Resources);
-		if (this.Namespace.Length != 0)
+		if (namespace.Length != 0)
 			CloseBlock();
 
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		WriteIncludes("using ", ";");
 		CloseStringWriter();
 		CloseFile();

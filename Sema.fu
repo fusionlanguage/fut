@@ -220,6 +220,15 @@ public class FuSema
 		assert false;
 	}
 
+	void AddCppFriend(FuMember member)
+	{
+		FuContainerType currentContainer = GetCurrentContainer();
+		if (member.Parent != currentContainer) {
+			assert member.Parent is FuClass! targetClass;
+			targetClass.CppFriends.Add(currentContainer.Name);
+		}
+	}
+
 	FuExpr# VisitSymbolReference!(FuSymbolReference# expr)
 	{
 		if (expr.Left == null) {
@@ -229,6 +238,8 @@ public class FuSema
 				 && nearMember.Parent is FuClass memberClass // not local const
 				 && memberClass != GetCurrentContainer())
 					ReportError(expr, $"Cannot access private member '{expr.Name}'");
+				else if (nearMember.Visibility == FuVisibility.Internal)
+					AddCppFriend(nearMember);
 				if (!nearMember.IsStatic()
 				 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
 					ReportError(expr, $"Cannot use instance member '{expr.Name}' from static context");
@@ -274,6 +285,9 @@ public class FuSema
 				if (member.Parent != this.CurrentMethod.Parent
 				 || this.CurrentMethod.Parent != scope) // enforced by Java, but not C++/C#/TS
 					ReportError(expr, $"Cannot access private member '{expr.Name}'");
+				break;
+			case FuVisibility.Internal:
+				AddCppFriend(member);
 				break;
 			case FuVisibility.Protected:
 				if (isBase)
@@ -1433,10 +1447,11 @@ public class FuSema
 			assert field.Op == FuToken.Assign;
 			assert field.Left is FuSymbolReference# symbol;
 			Lookup(symbol, klass.Class);
-			if (symbol.Symbol is FuField) {
+			if (symbol.Symbol is FuField member) {
 				field.Right = VisitExpr(field.Right);
 				Coerce(field.Right, symbol.Type);
 				SetSharedAssign(field.Left, field.Right);
+				AddCppFriend(member);
 			}
 			else
 				ReportError(field.Left, "Expected a field");

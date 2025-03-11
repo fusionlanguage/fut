@@ -1416,9 +1416,9 @@ public class GenJsNoModule : GenBase
 		WriteLine("\"use strict\";");
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		WriteUseStrict();
 		WriteTopLevelNatives(program);
 		WriteTypes(program);

@@ -20,6 +20,7 @@
 
 public class GenC : GenCCpp
 {
+	protected string Namespace;
 	SortedSet<FuId>() IntFunctions;
 	SortedSet<FuId>() NIntFunctions;
 	SortedSet<FuId>() LongFunctions;
@@ -3912,8 +3913,9 @@ public class GenC : GenCCpp
 		}
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
+		this.Namespace = namespace;
 		this.WrittenClasses.Clear();
 		this.InHeaderFile = true;
 		OpenStringWriter();
@@ -3922,7 +3924,7 @@ public class GenC : GenCCpp
 			WriteSignatures(klass, true);
 		}
 
-		CreateHeaderFile(".h");
+		CreateHeaderFile(outputFile, ".h");
 		WriteLine("#ifdef __cplusplus");
 		WriteLine("extern \"C\" {");
 		WriteLine("#endif");
@@ -3972,7 +3974,7 @@ public class GenC : GenCCpp
 		}
 
 		Include("stdlib.h");
-		CreateImplementationFile(program, ".h");
+		CreateImplementationFile(program, outputFile, ".h");
 		WriteLibrary();
 		WriteRegexOptionsEnum(program);
 		WriteTypedefs(program, false);

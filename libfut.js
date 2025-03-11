@@ -11,6 +11,11 @@ export class FuParserHost
 {
 	program;
 
+	getResources()
+	{
+		return this.program.resources;
+	}
+
 	reportStatementError(statement, message)
 	{
 		let line = this.program.getLine(statement.loc);
@@ -3142,6 +3147,7 @@ export class FuClass extends FuContainerType
 	baseClass = new FuSymbolReference();
 	constructor_;
 	constArrays = [];
+	cppFriends = new Set();
 	#natives = [];
 
 	hasBaseClass()
@@ -3791,6 +3797,13 @@ export class FuProgram extends FuScope
 	regexOptionsEnum = false;
 	lineLocs = [];
 	sourceFiles = [];
+
+	init(parent, system, host)
+	{
+		this.parent = parent;
+		this.system = system;
+		host.program = this;
+	}
 
 	getLine(loc)
 	{
@@ -4949,11 +4962,21 @@ export class GenHost extends FuSemaHost
 
 export class FuConsoleHost extends GenHost
 {
-	hasErrors = false;
+	#errors = false;
+
+	hasErrors()
+	{
+		return this.#errors;
+	}
+
+	setErrors(value)
+	{
+		this.#errors = value;
+	}
 
 	reportError(filename, line, startUtf16Column, endUtf16Column, message)
 	{
-		this.hasErrors = true;
+		this.#errors = true;
 		console.error(`${filename}(${line + 1}): ERROR: ${message}`);
 	}
 }
@@ -5163,6 +5186,15 @@ export class FuSema
 		throw new Error();
 	}
 
+	#addCppFriend(member)
+	{
+		let currentContainer = this.#getCurrentContainer();
+		if (member.parent != currentContainer) {
+			let targetClass = member.parent;
+			targetClass.cppFriends.add(currentContainer.name);
+		}
+	}
+
 	#visitSymbolReference(expr)
 	{
 		if (expr.left == null) {
@@ -5172,6 +5204,8 @@ export class FuSema
 				let memberClass;
 				if (nearMember.visibility == FuVisibility.PRIVATE && (memberClass = nearMember.parent) instanceof FuClass && memberClass != this.#getCurrentContainer())
 					this.#reportError(expr, `Cannot access private member '${expr.name}'`);
+				else if (nearMember.visibility == FuVisibility.INTERNAL)
+					this.#addCppFriend(nearMember);
 				if (!nearMember.isStatic() && (this.#currentMethod == null || this.#currentMethod.isStatic()))
 					this.#reportError(expr, `Cannot use instance member '${expr.name}' from static context`);
 			}
@@ -5225,6 +5259,9 @@ export class FuSema
 			case FuVisibility.PRIVATE:
 				if (member.parent != this.#currentMethod.parent || this.#currentMethod.parent != scope)
 					this.#reportError(expr, `Cannot access private member '${expr.name}'`);
+				break;
+			case FuVisibility.INTERNAL:
+				this.#addCppFriend(member);
 				break;
 			case FuVisibility.PROTECTED:
 				if (isBase)
@@ -6413,10 +6450,12 @@ export class FuSema
 			console.assert(field.op == FuToken.ASSIGN);
 			let symbol = field.left;
 			this.#lookup(symbol, klass.class);
-			if (symbol.symbol instanceof FuField) {
+			let member;
+			if ((member = symbol.symbol) instanceof FuField) {
 				field.right = this.#visitExpr(field.right);
 				this.#coerce(field.right, symbol.type);
 				this.#setSharedAssign(field.left, field.right);
+				this.#addCppFriend(member);
 			}
 			else
 				this.#reportError(field.left, "Expected a field");
@@ -7390,8 +7429,6 @@ export class FuSema
 
 export class GenBase extends FuVisitor
 {
-	namespace;
-	outputFile;
 	#host;
 	#writer;
 	#stringWriter = new StringWriter();
@@ -7645,11 +7682,6 @@ export class GenBase extends FuVisitor
 	{
 		this.#writer = this.#host.createFile(directory, filename);
 		this.writeBanner();
-	}
-
-	createOutputFile()
-	{
-		this.createFile(null, this.outputFile);
 	}
 
 	closeFile()
@@ -10117,9 +10149,9 @@ export class GenCCpp extends GenCCppD
 		return path.substring(0, extIndex) + ext;
 	}
 
-	createHeaderFile(headerExt)
+	createHeaderFile(outputFile, headerExt)
 	{
-		this.createFile(null, GenCCpp.#changeExtension(this.outputFile, headerExt));
+		this.createFile(null, GenCCpp.#changeExtension(outputFile, headerExt));
 		this.writeLine("#pragma once");
 		this.#writeCIncludes();
 	}
@@ -10137,13 +10169,13 @@ export class GenCCpp extends GenCCppD
 		return path.substring(i, i + extIndex - i);
 	}
 
-	createImplementationFile(program, headerExt)
+	createImplementationFile(program, outputFile, headerExt)
 	{
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		this.writeTopLevelNatives(program);
 		this.#writeCIncludes();
 		this.write("#include \"");
-		this.write(GenCCpp.#getFilenameWithoutExtension(this.outputFile));
+		this.write(GenCCpp.#getFilenameWithoutExtension(outputFile));
 		this.write(headerExt);
 		this.writeCharLine(34);
 	}
@@ -10151,6 +10183,7 @@ export class GenCCpp extends GenCCppD
 
 export class GenC extends GenCCpp
 {
+	namespace;
 	#intFunctions = new Set();
 	#nIntFunctions = new Set();
 	#longFunctions = new Set();
@@ -14076,8 +14109,9 @@ export class GenC extends GenCCpp
 		}
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
+		this.namespace = namespace;
 		this.writtenClasses.clear();
 		this.inHeaderFile = true;
 		this.openStringWriter();
@@ -14085,7 +14119,7 @@ export class GenC extends GenCCpp
 			this.#writeNewDelete(klass, false);
 			this.writeSignatures(klass, true);
 		}
-		this.createHeaderFile(".h");
+		this.createHeaderFile(outputFile, ".h");
 		this.writeLine("#ifdef __cplusplus");
 		this.writeLine("extern \"C\" {");
 		this.writeLine("#endif");
@@ -14133,7 +14167,7 @@ export class GenC extends GenCCpp
 			this.writeMethods(klass);
 		}
 		this.include("stdlib.h");
-		this.createImplementationFile(program, ".h");
+		this.createImplementationFile(program, outputFile, ".h");
 		this.#writeLibrary();
 		this.writeRegexOptionsEnum(program);
 		this.writeTypedefs(program, false);
@@ -14479,8 +14513,9 @@ export class GenCl extends GenC
 		}
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
+		this.namespace = namespace;
 		this.writtenClasses.clear();
 		this.#stringLength = false;
 		this.#stringEquals = false;
@@ -14493,7 +14528,7 @@ export class GenCl extends GenC
 			this.writeDestructor(klass);
 			this.writeMethods(klass);
 		}
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		this.writeTopLevelNatives(program);
 		this.writeRegexOptionsEnum(program);
 		this.writeTypedefs(program, true);
@@ -16275,19 +16310,19 @@ export class GenCpp extends GenCCpp
 		this.writeCharLine(59);
 	}
 
-	#openNamespace()
+	#openNamespace(namespace)
 	{
-		if (this.namespace.length == 0)
+		if (namespace.length == 0)
 			return;
 		this.writeNewLine();
 		this.write("namespace ");
-		this.writeLine(this.namespace);
+		this.writeLine(namespace);
 		this.writeCharLine(123);
 	}
 
-	#closeNamespace()
+	#closeNamespace(namespace)
 	{
-		if (this.namespace.length != 0)
+		if (namespace.length != 0)
 			this.writeCharLine(125);
 	}
 
@@ -16354,8 +16389,8 @@ export class GenCpp extends GenCCpp
 		let trailingNative = visibility == FuVisibility.PRIVATE && klass.last instanceof FuNative;
 		if (!constructor && !destructor && !trailingNative && !GenCpp.#hasMembersOfVisibility(klass, visibility))
 			return;
-		this.write(visibilityKeyword);
-		this.writeCharLine(58);
+		this.indent--;
+		this.writeLine(visibilityKeyword);
 		this.indent++;
 		if (constructor) {
 			if (klass.id == FuId.EXCEPTION_CLASS) {
@@ -16440,7 +16475,6 @@ export class GenCpp extends GenCCpp
 			else
 				throw new Error();
 		}
-		this.indent--;
 	}
 
 	writeClassInternal(klass)
@@ -16448,11 +16482,16 @@ export class GenCpp extends GenCCpp
 		this.writeNewLine();
 		this.writeDoc(klass.documentation);
 		this.openClass(klass, klass.callType == FuCallType.SEALED ? " final" : "", " : public ");
+		this.#writeDeclarations(klass, FuVisibility.PUBLIC, "public:");
+		this.#writeDeclarations(klass, FuVisibility.PROTECTED, "protected:");
+		this.#writeDeclarations(klass, FuVisibility.INTERNAL, "private: // internal");
+		for (const name of Array.from(klass.cppFriends).sort()) {
+			this.write("friend ");
+			this.write(name);
+			this.writeCharLine(59);
+		}
+		this.#writeDeclarations(klass, FuVisibility.PRIVATE, "private:");
 		this.indent--;
-		this.#writeDeclarations(klass, FuVisibility.PUBLIC, "public");
-		this.#writeDeclarations(klass, FuVisibility.PROTECTED, "protected");
-		this.#writeDeclarations(klass, FuVisibility.INTERNAL, "public");
-		this.#writeDeclarations(klass, FuVisibility.PRIVATE, "private");
 		this.writeLine("};");
 	}
 
@@ -16521,7 +16560,7 @@ export class GenCpp extends GenCCpp
 		this.closeBlock();
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
 		this.writtenClasses.clear();
 		this.inHeaderFile = true;
@@ -16532,7 +16571,7 @@ export class GenCpp extends GenCCpp
 		this.#stringToLower = false;
 		this.#stringToUpper = false;
 		this.openStringWriter();
-		this.#openNamespace();
+		this.#openNamespace(namespace);
 		this.writeRegexOptionsEnum(program);
 		for (let type = program.first; type != null; type = type.next) {
 			let enu;
@@ -16546,8 +16585,8 @@ export class GenCpp extends GenCCpp
 		}
 		for (const klass of program.classes)
 			this.writeClass(klass, program);
-		this.#closeNamespace();
-		this.createHeaderFile(".hpp");
+		this.#closeNamespace(namespace);
+		this.createHeaderFile(outputFile, ".hpp");
 		if (this.#hasEnumFlags) {
 			this.writeLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 			this.writeLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -16563,18 +16602,18 @@ export class GenCpp extends GenCCpp
 		this.inHeaderFile = false;
 		this.openStringWriter();
 		this.#writeResources(program.resources, false);
-		this.#openNamespace();
+		this.#openNamespace(namespace);
 		for (const klass of program.classes) {
 			this.#writeConstructor(klass);
 			this.writeMethods(klass);
 		}
 		this.#writeResources(program.resources, true);
-		this.#closeNamespace();
+		this.#closeNamespace(namespace);
 		if (this.#stringReplace) {
 			this.include("string");
 			this.include("string_view");
 		}
-		this.createImplementationFile(program, ".hpp");
+		this.createImplementationFile(program, outputFile, ".hpp");
 		if (this.#usingStringViewLiterals)
 			this.writeLine("using namespace std::string_view_literals;");
 		if (this.#numberTryParse) {
@@ -17698,21 +17737,21 @@ export class GenCs extends GenTyped
 		this.closeBlock();
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
 		this.openStringWriter();
-		if (this.namespace.length != 0) {
+		if (namespace.length != 0) {
 			this.write("namespace ");
-			this.writeLine(this.namespace);
+			this.writeLine(namespace);
 			this.openBlock();
 		}
 		this.writeTopLevelNatives(program);
 		this.writeTypes(program);
 		if (Object.keys(program.resources).length > 0)
 			this.#writeResources(program.resources);
-		if (this.namespace.length != 0)
+		if (namespace.length != 0)
 			this.closeBlock();
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		this.writeIncludes("using ", ";");
 		this.closeStringWriter();
 		this.closeFile();
@@ -19262,7 +19301,7 @@ export class GenD extends GenCCppD
 		this.closeBlock();
 	}
 
-	#writeMain(main)
+	#writeMain(main, namespace)
 	{
 		this.writeNewLine();
 		this.writeType(main.type, true);
@@ -19273,8 +19312,8 @@ export class GenD extends GenCCppD
 		}
 		else {
 			this.write(" main() => ");
-			if (this.namespace.length != 0) {
-				this.write(this.namespace);
+			if (namespace.length != 0) {
+				this.write(namespace);
 				this.writeChar(46);
 			}
 			this.writeName(main.parent);
@@ -19282,7 +19321,7 @@ export class GenD extends GenCCppD
 		}
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
 		this.#hasListInsert = false;
 		this.#hasListRemoveAt = false;
@@ -19291,9 +19330,9 @@ export class GenD extends GenCCppD
 		this.#hasSortedDictionaryInsert = false;
 		this.#hasSortedDictionaryFind = false;
 		this.openStringWriter();
-		if (this.namespace.length != 0) {
+		if (namespace.length != 0) {
 			this.write("struct ");
-			this.writeLine(this.namespace);
+			this.writeLine(namespace);
 			this.openBlock();
 			this.writeLine("static:");
 		}
@@ -19301,9 +19340,9 @@ export class GenD extends GenCCppD
 		this.writeTypes(program);
 		if (Object.keys(program.resources).length > 0)
 			this.#writeResources(program.resources);
-		if (this.namespace.length != 0)
+		if (namespace.length != 0)
 			this.closeBlock();
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		if (this.#hasListInsert || this.#hasListRemoveAt || this.#hasStackPop)
 			this.include("std.container.array");
 		if (this.#hasSortedDictionaryInsert) {
@@ -19356,13 +19395,15 @@ export class GenD extends GenCCppD
 		}
 		this.closeStringWriter();
 		if (program.main != null)
-			this.#writeMain(program.main);
+			this.#writeMain(program.main, namespace);
 		this.closeFile();
 	}
 }
 
 export class GenJava extends GenTyped
 {
+	#outputFile;
+	#namespace;
 
 	getTargetName()
 	{
@@ -20587,10 +20628,10 @@ export class GenJava extends GenTyped
 
 	#createJavaFile(className)
 	{
-		this.createFile(this.outputFile, className + ".java");
-		if (this.namespace.length != 0) {
+		this.createFile(this.#outputFile, className + ".java");
+		if (this.#namespace.length != 0) {
 			this.write("package ");
-			this.write(this.namespace);
+			this.write(this.#namespace);
 			this.writeCharLine(59);
 		}
 	}
@@ -20832,8 +20873,10 @@ export class GenJava extends GenTyped
 		this.closeFile();
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
+		this.#outputFile = outputFile;
+		this.#namespace = namespace;
 		this.writeTypes(program);
 		if (Object.keys(program.resources).length > 0)
 			this.#writeResources();
@@ -22242,9 +22285,9 @@ export class GenJsNoModule extends GenBase
 		this.writeLine("\"use strict\";");
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		this.writeUseStrict();
 		this.writeTopLevelNatives(program);
 		this.writeTypes(program);
@@ -22561,10 +22604,10 @@ export class GenTs extends GenJs
 		this.closeBlock();
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
 		this.#system = program.system;
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		if (this.#genFullCode)
 			this.writeTopLevelNatives(program);
 		this.writeTypes(program);
@@ -24827,7 +24870,7 @@ export class GenSwift extends GenPySwift
 		this.writeCharLine(41);
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
 		this.#system = program.system;
 		this.#throwException = false;
@@ -24837,7 +24880,7 @@ export class GenSwift extends GenPySwift
 		this.#stringSubstring = false;
 		this.openStringWriter();
 		this.writeTypes(program);
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		this.writeTopLevelNatives(program);
 		if (program.main != null && program.main.type.id == FuId.INT_TYPE)
 			this.include("Foundation");
@@ -26491,13 +26534,13 @@ export class GenPy extends GenPySwift
 		this.writeCharLine(41);
 	}
 
-	writeProgram(program)
+	writeProgram(program, outputFile, namespace)
 	{
 		this.#writtenTypes.clear();
 		this.#switchBreak = false;
 		this.openStringWriter();
 		this.writeTypes(program);
-		this.createOutputFile();
+		this.createFile(null, outputFile);
 		this.writeTopLevelNatives(program);
 		if (program.main != null && (program.main.type.id == FuId.INT_TYPE || program.main.parameters.count() == 1))
 			this.include("sys");

@@ -13,9 +13,11 @@ namespace Fusion
 
 		internal FuProgram Program;
 
+		protected SortedDictionary<string, List<byte>> GetResources() => this.Program.Resources;
+
 		public abstract void ReportError(string filename, int line, int startUtf16Column, int endUtf16Column, string message);
 
-		internal void ReportStatementError(FuStatement statement, string message)
+		public void ReportStatementError(FuStatement statement, string message)
 		{
 			int line = this.Program.GetLine(statement.Loc);
 			int column = statement.Loc - this.Program.LineLocs[line];
@@ -3004,6 +3006,8 @@ namespace Fusion
 
 		internal readonly List<FuConst> ConstArrays = new List<FuConst>();
 
+		internal readonly SortedSet<string> CppFriends = new SortedSet<string>();
+
 		readonly List<FuNative> Natives = new List<FuNative>();
 
 		public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
@@ -3544,7 +3548,7 @@ namespace Fusion
 			target.Add(NewConstLong("MaxValue", max));
 		}
 
-		internal static FuSystem New() => new FuSystem();
+		public static FuSystem New() => new FuSystem();
 	}
 
 	class FuSourceFile
@@ -3573,6 +3577,13 @@ namespace Fusion
 		internal readonly List<int> LineLocs = new List<int>();
 
 		internal readonly List<FuSourceFile> SourceFiles = new List<FuSourceFile>();
+
+		public void Init(FuScope parent, FuSystem system, FuParserHost host)
+		{
+			this.Parent = parent;
+			this.System = system;
+			host.Program = this;
+		}
 
 		internal int GetLine(int loc)
 		{
@@ -4714,11 +4725,18 @@ namespace Fusion
 	public abstract class FuConsoleHost : GenHost
 	{
 
-		internal bool HasErrors = false;
+		bool Errors = false;
+
+		public bool HasErrors() => this.Errors;
+
+		public void SetErrors(bool value)
+		{
+			this.Errors = value;
+		}
 
 		public override void ReportError(string filename, int line, int startUtf16Column, int endUtf16Column, string message)
 		{
-			this.HasErrors = true;
+			this.Errors = true;
 			Console.Error.WriteLine($"{filename}({line + 1}): ERROR: {message}");
 		}
 	}
@@ -4932,6 +4950,15 @@ namespace Fusion
 			throw new NotImplementedException();
 		}
 
+		void AddCppFriend(FuMember member)
+		{
+			FuContainerType currentContainer = GetCurrentContainer();
+			if (member.Parent != currentContainer) {
+				FuClass targetClass = (FuClass) member.Parent;
+				targetClass.CppFriends.Add(currentContainer.Name);
+			}
+		}
+
 		FuExpr VisitSymbolReference(FuSymbolReference expr)
 		{
 			if (expr.Left == null) {
@@ -4939,6 +4966,8 @@ namespace Fusion
 				if (expr.Symbol is FuMember nearMember) {
 					if (nearMember.Visibility == FuVisibility.Private && nearMember.Parent is FuClass memberClass && memberClass != GetCurrentContainer())
 						ReportError(expr, $"Cannot access private member '{expr.Name}'");
+					else if (nearMember.Visibility == FuVisibility.Internal)
+						AddCppFriend(nearMember);
 					if (!nearMember.IsStatic() && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
 						ReportError(expr, $"Cannot use instance member '{expr.Name}' from static context");
 				}
@@ -4981,6 +5010,9 @@ namespace Fusion
 				case FuVisibility.Private:
 					if (member.Parent != this.CurrentMethod.Parent || this.CurrentMethod.Parent != scope)
 						ReportError(expr, $"Cannot access private member '{expr.Name}'");
+					break;
+				case FuVisibility.Internal:
+					AddCppFriend(member);
 					break;
 				case FuVisibility.Protected:
 					if (isBase)
@@ -6080,10 +6112,11 @@ namespace Fusion
 				Debug.Assert(field.Op == FuToken.Assign);
 				FuSymbolReference symbol = (FuSymbolReference) field.Left;
 				Lookup(symbol, klass.Class);
-				if (symbol.Symbol is FuField) {
+				if (symbol.Symbol is FuField member) {
 					field.Right = VisitExpr(field.Right);
 					Coerce(field.Right, symbol.Type);
 					SetSharedAssign(field.Left, field.Right);
+					AddCppFriend(member);
 				}
 				else
 					ReportError(field.Left, "Expected a field");
@@ -7000,10 +7033,6 @@ namespace Fusion
 	public abstract class GenBase : FuVisitor
 	{
 
-		internal string Namespace;
-
-		internal string OutputFile;
-
 		GenHost Host;
 
 		TextWriter Writer;
@@ -7270,11 +7299,6 @@ namespace Fusion
 		{
 			this.Writer = this.Host.CreateFile(directory, filename);
 			WriteBanner();
-		}
-
-		protected void CreateOutputFile()
-		{
-			CreateFile(null, this.OutputFile);
 		}
 
 		protected void CloseFile()
@@ -9147,7 +9171,7 @@ namespace Fusion
 			}
 		}
 
-		public abstract void WriteProgram(FuProgram program);
+		public abstract void WriteProgram(FuProgram program, string outputFile, string namespace_);
 	}
 
 	public abstract class GenTyped : GenBase
@@ -9684,9 +9708,9 @@ namespace Fusion
 			return path.Substring(0, extIndex) + ext;
 		}
 
-		protected void CreateHeaderFile(string headerExt)
+		protected void CreateHeaderFile(string outputFile, string headerExt)
 		{
-			CreateFile(null, ChangeExtension(this.OutputFile, headerExt));
+			CreateFile(null, ChangeExtension(outputFile, headerExt));
 			WriteLine("#pragma once");
 			WriteCIncludes();
 		}
@@ -9704,13 +9728,13 @@ namespace Fusion
 			return path.Substring(i, extIndex - i);
 		}
 
-		protected void CreateImplementationFile(FuProgram program, string headerExt)
+		protected void CreateImplementationFile(FuProgram program, string outputFile, string headerExt)
 		{
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			WriteTopLevelNatives(program);
 			WriteCIncludes();
 			Write("#include \"");
-			Write(GetFilenameWithoutExtension(this.OutputFile));
+			Write(GetFilenameWithoutExtension(outputFile));
 			Write(headerExt);
 			WriteCharLine('"');
 		}
@@ -9718,6 +9742,8 @@ namespace Fusion
 
 	public class GenC : GenCCpp
 	{
+
+		protected string Namespace;
 
 		readonly SortedSet<FuId> IntFunctions = new SortedSet<FuId>();
 
@@ -13596,8 +13622,9 @@ namespace Fusion
 			}
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
+			this.Namespace = namespace_;
 			this.WrittenClasses.Clear();
 			this.InHeaderFile = true;
 			OpenStringWriter();
@@ -13605,7 +13632,7 @@ namespace Fusion
 				WriteNewDelete(klass, false);
 				WriteSignatures(klass, true);
 			}
-			CreateHeaderFile(".h");
+			CreateHeaderFile(outputFile, ".h");
 			WriteLine("#ifdef __cplusplus");
 			WriteLine("extern \"C\" {");
 			WriteLine("#endif");
@@ -13653,7 +13680,7 @@ namespace Fusion
 				WriteMethods(klass);
 			}
 			Include("stdlib.h");
-			CreateImplementationFile(program, ".h");
+			CreateImplementationFile(program, outputFile, ".h");
 			WriteLibrary();
 			WriteRegexOptionsEnum(program);
 			WriteTypedefs(program, false);
@@ -13994,8 +14021,9 @@ namespace Fusion
 			}
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
+			this.Namespace = namespace_;
 			this.WrittenClasses.Clear();
 			this.StringLength = false;
 			this.StringEquals = false;
@@ -14008,7 +14036,7 @@ namespace Fusion
 				WriteDestructor(klass);
 				WriteMethods(klass);
 			}
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			WriteTopLevelNatives(program);
 			WriteRegexOptionsEnum(program);
 			WriteTypedefs(program, true);
@@ -15764,19 +15792,19 @@ namespace Fusion
 			WriteCharLine(';');
 		}
 
-		void OpenNamespace()
+		void OpenNamespace(string namespace_)
 		{
-			if (this.Namespace.Length == 0)
+			if (namespace_.Length == 0)
 				return;
 			WriteNewLine();
 			Write("namespace ");
-			WriteLine(this.Namespace);
+			WriteLine(namespace_);
 			WriteCharLine('{');
 		}
 
-		void CloseNamespace()
+		void CloseNamespace(string namespace_)
 		{
-			if (this.Namespace.Length != 0)
+			if (namespace_.Length != 0)
 				WriteCharLine('}');
 		}
 
@@ -15842,8 +15870,8 @@ namespace Fusion
 			bool trailingNative = visibility == FuVisibility.Private && klass.Last is FuNative;
 			if (!constructor && !destructor && !trailingNative && !HasMembersOfVisibility(klass, visibility))
 				return;
-			Write(visibilityKeyword);
-			WriteCharLine(':');
+			this.Indent--;
+			WriteLine(visibilityKeyword);
 			this.Indent++;
 			if (constructor) {
 				if (klass.Id == FuId.ExceptionClass) {
@@ -15926,7 +15954,6 @@ namespace Fusion
 					throw new NotImplementedException();
 				}
 			}
-			this.Indent--;
 		}
 
 		protected override void WriteClassInternal(FuClass klass)
@@ -15934,11 +15961,16 @@ namespace Fusion
 			WriteNewLine();
 			WriteDoc(klass.Documentation);
 			OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ");
+			WriteDeclarations(klass, FuVisibility.Public, "public:");
+			WriteDeclarations(klass, FuVisibility.Protected, "protected:");
+			WriteDeclarations(klass, FuVisibility.Internal, "private: // internal");
+			foreach (string name in klass.CppFriends) {
+				Write("friend ");
+				Write(name);
+				WriteCharLine(';');
+			}
+			WriteDeclarations(klass, FuVisibility.Private, "private:");
 			this.Indent--;
-			WriteDeclarations(klass, FuVisibility.Public, "public");
-			WriteDeclarations(klass, FuVisibility.Protected, "protected");
-			WriteDeclarations(klass, FuVisibility.Internal, "public");
-			WriteDeclarations(klass, FuVisibility.Private, "private");
 			WriteLine("};");
 		}
 
@@ -16007,7 +16039,7 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.WrittenClasses.Clear();
 			this.InHeaderFile = true;
@@ -16018,7 +16050,7 @@ namespace Fusion
 			this.StringToLower = false;
 			this.StringToUpper = false;
 			OpenStringWriter();
-			OpenNamespace();
+			OpenNamespace(namespace_);
 			WriteRegexOptionsEnum(program);
 			for (FuSymbol type = program.First; type != null; type = type.Next) {
 				if (type is FuEnum enu)
@@ -16031,8 +16063,8 @@ namespace Fusion
 			}
 			foreach (FuClass klass in program.Classes)
 				WriteClass(klass, program);
-			CloseNamespace();
-			CreateHeaderFile(".hpp");
+			CloseNamespace(namespace_);
+			CreateHeaderFile(outputFile, ".hpp");
 			if (this.HasEnumFlags) {
 				WriteLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 				WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -16048,18 +16080,18 @@ namespace Fusion
 			this.InHeaderFile = false;
 			OpenStringWriter();
 			WriteResources(program.Resources, false);
-			OpenNamespace();
+			OpenNamespace(namespace_);
 			foreach (FuClass klass in program.Classes) {
 				WriteConstructor(klass);
 				WriteMethods(klass);
 			}
 			WriteResources(program.Resources, true);
-			CloseNamespace();
+			CloseNamespace(namespace_);
 			if (this.StringReplace) {
 				Include("string");
 				Include("string_view");
 			}
-			CreateImplementationFile(program, ".hpp");
+			CreateImplementationFile(program, outputFile, ".hpp");
 			if (this.UsingStringViewLiterals)
 				WriteLine("using namespace std::string_view_literals;");
 			if (this.NumberTryParse) {
@@ -17155,21 +17187,21 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			OpenStringWriter();
-			if (this.Namespace.Length != 0) {
+			if (namespace_.Length != 0) {
 				Write("namespace ");
-				WriteLine(this.Namespace);
+				WriteLine(namespace_);
 				OpenBlock();
 			}
 			WriteTopLevelNatives(program);
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources(program.Resources);
-			if (this.Namespace.Length != 0)
+			if (namespace_.Length != 0)
 				CloseBlock();
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			WriteIncludes("using ", ";");
 			CloseStringWriter();
 			CloseFile();
@@ -18688,7 +18720,7 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		void WriteMain(FuMethod main)
+		void WriteMain(FuMethod main, string namespace_)
 		{
 			WriteNewLine();
 			WriteType(main.Type, true);
@@ -18699,8 +18731,8 @@ namespace Fusion
 			}
 			else {
 				Write(" main() => ");
-				if (this.Namespace.Length != 0) {
-					Write(this.Namespace);
+				if (namespace_.Length != 0) {
+					Write(namespace_);
 					WriteChar('.');
 				}
 				WriteName(main.Parent);
@@ -18708,7 +18740,7 @@ namespace Fusion
 			}
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.HasListInsert = false;
 			this.HasListRemoveAt = false;
@@ -18717,9 +18749,9 @@ namespace Fusion
 			this.HasSortedDictionaryInsert = false;
 			this.HasSortedDictionaryFind = false;
 			OpenStringWriter();
-			if (this.Namespace.Length != 0) {
+			if (namespace_.Length != 0) {
 				Write("struct ");
-				WriteLine(this.Namespace);
+				WriteLine(namespace_);
 				OpenBlock();
 				WriteLine("static:");
 			}
@@ -18727,9 +18759,9 @@ namespace Fusion
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources(program.Resources);
-			if (this.Namespace.Length != 0)
+			if (namespace_.Length != 0)
 				CloseBlock();
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			if (this.HasListInsert || this.HasListRemoveAt || this.HasStackPop)
 				Include("std.container.array");
 			if (this.HasSortedDictionaryInsert) {
@@ -18782,13 +18814,17 @@ namespace Fusion
 			}
 			CloseStringWriter();
 			if (program.Main != null)
-				WriteMain(program.Main);
+				WriteMain(program.Main, namespace_);
 			CloseFile();
 		}
 	}
 
 	public class GenJava : GenTyped
 	{
+
+		string OutputFile;
+
+		string Namespace;
 
 		protected override string GetTargetName() => "Java";
 
@@ -20214,8 +20250,10 @@ namespace Fusion
 			CloseFile();
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
+			this.OutputFile = outputFile;
+			this.Namespace = namespace_;
 			WriteTypes(program);
 			if (program.Resources.Count > 0)
 				WriteResources();
@@ -21614,9 +21652,9 @@ namespace Fusion
 			WriteLine("\"use strict\";");
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			WriteUseStrict();
 			WriteTopLevelNatives(program);
 			WriteTypes(program);
@@ -21939,10 +21977,10 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.System = program.System;
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			if (this.GenFullCode)
 				WriteTopLevelNatives(program);
 			WriteTypes(program);
@@ -24176,7 +24214,7 @@ namespace Fusion
 			WriteCharLine(')');
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.System = program.System;
 			this.ThrowException = false;
@@ -24186,7 +24224,7 @@ namespace Fusion
 			this.StringSubstring = false;
 			OpenStringWriter();
 			WriteTypes(program);
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			WriteTopLevelNatives(program);
 			if (program.Main != null && program.Main.Type.Id == FuId.IntType)
 				Include("Foundation");
@@ -25813,13 +25851,13 @@ namespace Fusion
 			WriteCharLine(')');
 		}
 
-		public override void WriteProgram(FuProgram program)
+		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.WrittenTypes.Clear();
 			this.SwitchBreak = false;
 			OpenStringWriter();
 			WriteTypes(program);
-			CreateOutputFile();
+			CreateFile(null, outputFile);
 			WriteTopLevelNatives(program);
 			if (program.Main != null && (program.Main.Type.Id == FuId.IntType || program.Main.Parameters.Count() == 1))
 				Include("sys");

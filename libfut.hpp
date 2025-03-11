@@ -483,11 +483,16 @@ class FuParserHost
 public:
 	virtual ~FuParserHost() = default;
 	virtual void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) = 0;
+	void reportStatementError(const FuStatement * statement, std::string_view message);
 protected:
 	FuParserHost() = default;
-public:
+	std::map<std::string, std::vector<uint8_t>> * getResources() const;
+private: // internal
 	FuProgram * program;
-	void reportStatementError(const FuStatement * statement, std::string_view message);
+	friend FuLexer;
+	friend FuParser;
+	friend FuProgram;
+	friend FuSema;
 };
 
 class FuLexer
@@ -520,10 +525,14 @@ protected:
 	bool eat(FuToken token);
 	bool expect(FuToken expected);
 	void expectOrSkip(FuToken expected);
-public:
+private: // internal
 	static bool isLetterOrDigit(int c);
 	static int getEscapedChar(int c);
 	static std::string_view tokenToString(FuToken token);
+	friend FuLiteralString;
+	friend FuSema;
+	friend GenBase;
+	friend GenJsNoModule;
 private:
 	int inputLength;
 	int nextOffset;
@@ -570,16 +579,26 @@ class FuDocText : public FuDocInline
 {
 public:
 	FuDocText() = default;
-public:
+private: // internal
 	std::string text;
+	friend FuParser;
+	friend GenBase;
+	friend GenCs;
+	friend GenD;
+	friend GenPySwift;
 };
 
 class FuDocCode : public FuDocInline
 {
 public:
 	FuDocCode() = default;
-public:
+private: // internal
 	std::string text;
+	friend FuParser;
+	friend GenBase;
+	friend GenCs;
+	friend GenD;
+	friend GenPySwift;
 };
 
 class FuDocLine : public FuDocInline
@@ -600,25 +619,41 @@ class FuDocPara : public FuDocBlock
 {
 public:
 	FuDocPara() = default;
-public:
+private: // internal
 	std::vector<std::shared_ptr<FuDocInline>> children;
+	friend FuParser;
+	friend GenBase;
+	friend GenCs;
+	friend GenD;
+	friend GenPySwift;
 };
 
 class FuDocList : public FuDocBlock
 {
 public:
 	FuDocList() = default;
-public:
+private: // internal
 	std::vector<FuDocPara> items;
+	friend FuParser;
+	friend GenBase;
+	friend GenCs;
+	friend GenD;
+	friend GenPySwift;
 };
 
 class FuCodeDoc
 {
 public:
 	FuCodeDoc() = default;
-public:
+private: // internal
 	FuDocPara summary;
 	std::vector<std::shared_ptr<FuDocBlock>> details;
+	friend FuParser;
+	friend GenBase;
+	friend GenCs;
+	friend GenD;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuVisitor
@@ -628,7 +663,7 @@ public:
 protected:
 	FuVisitor() = default;
 	void visitOptionalStatement(const FuStatement * statement);
-public:
+private: // internal
 	virtual void visitConst(const FuConst * statement) = 0;
 	virtual void visitExpr(const FuExpr * statement) = 0;
 	virtual void visitBlock(const FuBlock * statement) = 0;
@@ -663,6 +698,40 @@ public:
 	virtual void visitCallExpr(const FuCallExpr * expr, FuPriority parent) = 0;
 	virtual void visitLambdaExpr(const FuLambdaExpr * expr) = 0;
 	virtual void visitVar(const FuVar * expr) = 0;
+	friend FuAggregateInitializer;
+	friend FuAssert;
+	friend FuBinaryExpr;
+	friend FuBlock;
+	friend FuBreak;
+	friend FuCallExpr;
+	friend FuConst;
+	friend FuContinue;
+	friend FuDoWhile;
+	friend FuEnum;
+	friend FuExpr;
+	friend FuFor;
+	friend FuForeach;
+	friend FuIf;
+	friend FuInterpolatedString;
+	friend FuLambdaExpr;
+	friend FuLiteralChar;
+	friend FuLiteralDouble;
+	friend FuLiteralFalse;
+	friend FuLiteralLong;
+	friend FuLiteralNull;
+	friend FuLiteralString;
+	friend FuLiteralTrue;
+	friend FuLock;
+	friend FuNative;
+	friend FuPostfixExpr;
+	friend FuPrefixExpr;
+	friend FuReturn;
+	friend FuSelectExpr;
+	friend FuSwitch;
+	friend FuSymbolReference;
+	friend FuThrow;
+	friend FuVar;
+	friend FuWhile;
 };
 
 class FuStatement
@@ -674,8 +743,13 @@ public:
 	virtual void acceptStatement(FuVisitor * visitor) const = 0;
 protected:
 	FuStatement() = default;
-public:
+private: // internal
 	int loc = 0;
+	friend FuLiteralChar;
+	friend FuParser;
+	friend FuParserHost;
+	friend FuSema;
+	friend FuSystem;
 };
 
 class FuExpr : public FuStatement
@@ -696,8 +770,39 @@ public:
 	virtual void setShared() const;
 protected:
 	FuExpr() = default;
-public:
+private: // internal
 	std::shared_ptr<FuType> type;
+	friend FuBinaryExpr;
+	friend FuCallExpr;
+	friend FuLiteralChar;
+	friend FuMethod;
+	friend FuMethodBase;
+	friend FuNamedValue;
+	friend FuParser;
+	friend FuPrefixExpr;
+	friend FuProperty;
+	friend FuRangeType;
+	friend FuSema;
+	friend FuStaticProperty;
+	friend FuSwitch;
+	friend FuSymbolReference;
+	friend FuSystem;
+	friend FuVar;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCCppD;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTs;
+	friend GenTyped;
 };
 
 class FuName : public FuExpr
@@ -708,8 +813,36 @@ public:
 	virtual const FuSymbol * getSymbol() const = 0;
 protected:
 	FuName() = default;
-public:
+private: // internal
 	std::string name{""};
+	friend FuCallExpr;
+	friend FuClass;
+	friend FuClassType;
+	friend FuMethod;
+	friend FuMethodGroup;
+	friend FuParser;
+	friend FuProperty;
+	friend FuRangeType;
+	friend FuScope;
+	friend FuSema;
+	friend FuSemaHost;
+	friend FuStaticProperty;
+	friend FuSymbol;
+	friend FuSymbolReference;
+	friend FuSystem;
+	friend FuVar;
+	friend GenBase;
+	friend GenC;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTs;
+	friend GenTyped;
 };
 
 class FuSymbol : public FuName
@@ -720,11 +853,48 @@ public:
 	std::string toString() const override;
 protected:
 	FuSymbol() = default;
-public:
+private: // internal
 	FuId id = FuId::none;
 	FuSymbol * next;
 	FuScope * parent;
 	std::shared_ptr<FuCodeDoc> documentation = nullptr;
+	friend FuBinaryExpr;
+	friend FuCallExpr;
+	friend FuClass;
+	friend FuClassType;
+	friend FuDynamicPtrType;
+	friend FuEnum;
+	friend FuIntegerType;
+	friend FuMethod;
+	friend FuNative;
+	friend FuParser;
+	friend FuProgram;
+	friend FuProperty;
+	friend FuRangeType;
+	friend FuReadWriteClassType;
+	friend FuScope;
+	friend FuSema;
+	friend FuStaticProperty;
+	friend FuStorageType;
+	friend FuSwitch;
+	friend FuSymbolReference;
+	friend FuSystem;
+	friend FuVar;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCCppD;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTs;
+	friend GenTyped;
 };
 
 class FuScope : public FuSymbol
@@ -740,9 +910,25 @@ protected:
 	FuScope() = default;
 	std::unordered_map<std::string_view, std::shared_ptr<FuSymbol>> dict;
 	void addToList(std::shared_ptr<FuSymbol> symbol);
-public:
+private: // internal
 	FuSymbol * first = nullptr;
 	FuSymbol * last = nullptr;
+	friend FuClass;
+	friend FuEnum;
+	friend FuForeach;
+	friend FuMethod;
+	friend FuMethodBase;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuAggregateInitializer : public FuExpr
@@ -750,8 +936,17 @@ class FuAggregateInitializer : public FuExpr
 public:
 	FuAggregateInitializer() = default;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-public:
+private: // internal
 	std::vector<std::shared_ptr<FuExpr>> items;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenCpp;
+	friend GenD;
+	friend GenJsNoModule;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTyped;
 };
 
 class FuLiteral : public FuExpr
@@ -806,8 +1001,20 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string getLiteralString() const override;
 	std::string toString() const override;
-public:
+private: // internal
 	int64_t value;
+	friend FuLiteralChar;
+	friend FuRangeType;
+	friend FuSema;
+	friend FuSystem;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCpp;
+	friend GenCs;
+	friend GenJava;
+	friend GenPy;
+	friend GenTyped;
 };
 
 class FuLiteralChar : public FuLiteralLong
@@ -827,8 +1034,12 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	std::string getLiteralString() const override;
 	std::string toString() const override;
-public:
+private: // internal
 	double value;
+	friend FuParser;
+	friend FuSema;
+	friend FuSystem;
+	friend GenTyped;
 };
 
 class FuLiteralString : public FuLiteral
@@ -843,21 +1054,38 @@ public:
 	int getAsciiLength() const;
 	int getAsciiAt(int i) const;
 	int getOneAscii() const;
-public:
+private: // internal
 	std::string value;
+	friend FuSema;
+	friend FuSystem;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenJsNoModule;
 };
 
 class FuInterpolatedPart
 {
 public:
 	FuInterpolatedPart() = default;
-public:
+private: // internal
 	std::string prefix;
 	std::shared_ptr<FuExpr> argument;
 	std::shared_ptr<FuExpr> widthExpr;
 	int width;
 	int format;
 	int precision;
+	friend FuInterpolatedString;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
 };
 
 class FuInterpolatedString : public FuExpr
@@ -868,9 +1096,19 @@ public:
 	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
-public:
+private: // internal
 	std::vector<FuInterpolatedPart> parts;
 	std::string suffix;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenCpp;
+	friend GenCs;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
 };
 
 class FuImplicitEnumValue : public FuExpr
@@ -878,8 +1116,10 @@ class FuImplicitEnumValue : public FuExpr
 public:
 	FuImplicitEnumValue() = default;
 	int intValue() const override;
-public:
+private: // internal
 	int value;
+	friend FuSema;
+	friend GenJava;
 };
 
 class FuSymbolReference : public FuName
@@ -895,9 +1135,25 @@ public:
 	void setShared() const override;
 	const FuSymbol * getSymbol() const override;
 	std::string toString() const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> left = nullptr;
 	FuSymbol * symbol;
+	friend FuCallExpr;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTyped;
 };
 
 class FuUnaryExpr : public FuExpr
@@ -907,9 +1163,19 @@ public:
 	int getLocLength() const override;
 protected:
 	FuUnaryExpr() = default;
-public:
+private: // internal
 	FuToken op;
 	std::shared_ptr<FuExpr> inner;
+	friend FuParser;
+	friend FuPrefixExpr;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenJava;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
 };
 
 class FuPrefixExpr : public FuUnaryExpr
@@ -943,10 +1209,26 @@ public:
 	bool isAssign() const;
 	std::string_view getOpString() const;
 	std::string toString() const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> left;
 	FuToken op;
 	std::shared_ptr<FuExpr> right;
+	friend FuParser;
+	friend FuSema;
+	friend FuSwitch;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTs;
+	friend GenTyped;
 };
 
 class FuSelectExpr : public FuExpr
@@ -958,10 +1240,17 @@ public:
 	bool isUnique() const override;
 	void setShared() const override;
 	std::string toString() const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> cond;
 	std::shared_ptr<FuExpr> onTrue;
 	std::shared_ptr<FuExpr> onFalse;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenCpp;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
 };
 
 class FuCallExpr : public FuExpr
@@ -971,9 +1260,21 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	std::string toString() const override;
-public:
+private: // internal
 	std::shared_ptr<FuSymbolReference> method;
 	std::vector<std::shared_ptr<FuExpr>> arguments;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCl;
+	friend GenCpp;
+	friend GenJava;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTyped;
 };
 
 class FuLambdaExpr : public FuScope
@@ -981,8 +1282,17 @@ class FuLambdaExpr : public FuScope
 public:
 	FuLambdaExpr() = default;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> body;
+	friend FuParser;
+	friend FuSema;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuCondCompletionStatement : public FuScope
@@ -1002,8 +1312,14 @@ class FuBlock : public FuCondCompletionStatement
 public:
 	FuBlock() = default;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::vector<std::shared_ptr<FuStatement>> statements;
+	friend FuParser;
+	friend FuSema;
+	friend FuSwitch;
+	friend GenBase;
+	friend GenC;
+	friend GenPySwift;
 };
 
 class FuAssert : public FuStatement
@@ -1013,9 +1329,20 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> cond;
 	std::shared_ptr<FuExpr> message = nullptr;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenCCpp;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuLoop : public FuCondCompletionStatement
@@ -1024,10 +1351,22 @@ public:
 	virtual ~FuLoop() = default;
 protected:
 	FuLoop() = default;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> cond;
 	std::shared_ptr<FuStatement> body;
 	bool hasBreak = false;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
 };
 
 class FuBreak : public FuStatement
@@ -1037,8 +1376,13 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	FuCondCompletionStatement * loopOrSwitch;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenPy;
 };
 
 class FuContinue : public FuStatement
@@ -1048,8 +1392,11 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	const FuLoop * loop;
+	friend FuParser;
+	friend GenC;
+	friend GenPySwift;
 };
 
 class FuDoWhile : public FuLoop
@@ -1066,12 +1413,16 @@ public:
 	FuFor() = default;
 	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> init;
 	std::shared_ptr<FuExpr> advance;
 	bool isRange = false;
 	bool isIndVarUsed;
 	int64_t rangeStep;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenPySwift;
 };
 
 class FuForeach : public FuLoop
@@ -1082,8 +1433,18 @@ public:
 	void acceptStatement(FuVisitor * visitor) const override;
 	FuVar * getVar() const;
 	FuVar * getValueVar() const;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> collection;
+	friend FuParser;
+	friend FuSema;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuIf : public FuCondCompletionStatement
@@ -1092,10 +1453,17 @@ public:
 	FuIf() = default;
 	int getLocLength() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> cond;
 	std::shared_ptr<FuStatement> onTrue;
 	std::shared_ptr<FuStatement> onFalse;
+	friend FuParser;
+	friend FuSema;
+	friend FuSwitch;
+	friend GenBase;
+	friend GenCpp;
+	friend GenJava;
+	friend GenPySwift;
 };
 
 class FuLock : public FuStatement
@@ -1105,9 +1473,18 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> lock;
 	std::shared_ptr<FuStatement> body;
+	friend FuParser;
+	friend FuSema;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuNative : public FuSymbol
@@ -1118,8 +1495,10 @@ public:
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 	const FuMember * getFollowingMember() const;
-public:
+private: // internal
 	std::string content;
+	friend FuParser;
+	friend GenBase;
 };
 
 class FuReturn : public FuScope
@@ -1129,17 +1508,35 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> value;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCpp;
+	friend GenD;
+	friend GenJava;
+	friend GenPySwift;
 };
 
 class FuCase
 {
 public:
 	FuCase() = default;
-public:
+private: // internal
 	std::vector<std::shared_ptr<FuExpr>> values;
 	std::vector<std::shared_ptr<FuStatement>> body;
+	friend FuParser;
+	friend FuSema;
+	friend FuSwitch;
+	friend GenBase;
+	friend GenCCppD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuSwitch : public FuCondCompletionStatement
@@ -1154,10 +1551,21 @@ public:
 	bool hasDefault() const;
 	static bool hasEarlyBreak(const std::vector<std::shared_ptr<FuStatement>> * body);
 	static bool hasEarlyBreakAndContinue(const std::vector<std::shared_ptr<FuStatement>> * body);
-public:
+private: // internal
 	std::shared_ptr<FuExpr> value;
 	std::vector<FuCase> cases;
 	std::vector<std::shared_ptr<FuStatement>> defaultBody;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenCCpp;
+	friend GenCCppD;
+	friend GenCpp;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 private:
 	static bool hasBreak(const FuStatement * statement);
 	static bool listHasContinue(const std::vector<std::shared_ptr<FuStatement>> * statements);
@@ -1171,9 +1579,14 @@ public:
 	int getLocLength() const override;
 	bool completesNormally() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
-public:
+private: // internal
 	std::shared_ptr<FuSymbolReference> class_;
 	std::shared_ptr<FuExpr> message;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuWhile : public FuLoop
@@ -1203,8 +1616,17 @@ public:
 	virtual const FuType * getBaseType() const;
 	virtual const FuType * getStorageType() const;
 	const FuClassType * asClassType() const;
-public:
+private: // internal
 	bool nullable = false;
+	friend FuClassType;
+	friend FuDynamicPtrType;
+	friend FuReadWriteClassType;
+	friend FuSema;
+	friend FuSystem;
+	friend GenC;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTs;
 };
 
 class FuNumericType : public FuType
@@ -1232,9 +1654,14 @@ public:
 	bool equalsType(const FuType * right) const override;
 	static int getMask(int v);
 	int getVariableBits() const;
-public:
+private: // internal
 	int min;
 	int max;
+	friend FuSema;
+	friend GenC;
+	friend GenCs;
+	friend GenJava;
+	friend GenPy;
 private:
 	static void addMinMaxValue(std::shared_ptr<FuRangeType> target, std::string_view name, int value);
 };
@@ -1253,9 +1680,26 @@ public:
 	bool isAssignableStorage() const;
 protected:
 	FuNamedValue() = default;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> typeExpr;
 	std::shared_ptr<FuExpr> value;
+	friend FuParser;
+	friend FuRangeType;
+	friend FuSema;
+	friend FuSymbolReference;
+	friend FuSystem;
+	friend FuVar;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTs;
 };
 
 class FuMember : public FuNamedValue
@@ -1265,12 +1709,29 @@ public:
 	virtual bool isStatic() const = 0;
 protected:
 	FuMember();
-public:
+private: // internal
 	FuVisibility visibility;
 	int startLine;
 	int startColumn;
 	int endLine;
 	int endColumn;
+	friend FuMethod;
+	friend FuMethodGroup;
+	friend FuParser;
+	friend FuProperty;
+	friend FuRangeType;
+	friend FuSema;
+	friend FuStaticProperty;
+	friend FuSystem;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTs;
 };
 
 class FuVar : public FuNamedValue
@@ -1280,8 +1741,12 @@ public:
 	static std::shared_ptr<FuVar> new_(std::shared_ptr<FuType> type, std::string_view name, std::shared_ptr<FuExpr> defaultValue = nullptr);
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	FuVar * nextVar() const;
-public:
+private: // internal
 	bool isAssigned = false;
+	friend FuParser;
+	friend FuSema;
+	friend GenJsNoModule;
+	friend GenSwift;
 };
 
 class FuConst : public FuMember
@@ -1290,10 +1755,17 @@ public:
 	FuConst() = default;
 	void acceptStatement(FuVisitor * visitor) const override;
 	bool isStatic() const override;
-public:
+private: // internal
 	const FuMethodBase * inMethod;
 	int inMethodIndex = 0;
 	FuVisitStatus visitStatus;
+	friend FuParser;
+	friend FuRangeType;
+	friend FuSema;
+	friend FuSystem;
+	friend GenBase;
+	friend GenCs;
+	friend GenSwift;
 };
 
 class FuField : public FuMember
@@ -1323,8 +1795,14 @@ class FuThrowsDeclaration : public FuSymbolReference
 {
 public:
 	FuThrowsDeclaration() = default;
-public:
+private: // internal
 	std::shared_ptr<FuCodeDoc> documentation;
+	friend FuParser;
+	friend GenBase;
+	friend GenCs;
+	friend GenD;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuMethodBase : public FuMember
@@ -1335,12 +1813,24 @@ public:
 	bool isStatic() const override;
 	void addThis(const FuClass * klass, bool isMutator);
 	bool isMutator() const;
-public:
+private: // internal
 	FuParameters parameters;
 	std::vector<std::shared_ptr<FuThrowsDeclaration>> throws;
 	std::shared_ptr<FuScope> body;
 	bool isLive = false;
 	std::unordered_set<FuMethod *> calls;
+	friend FuMethod;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
 };
 
 class FuMethod : public FuMethodBase
@@ -1355,8 +1845,21 @@ public:
 	FuVar * firstParameter() const;
 	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;
-public:
+private: // internal
 	FuCallType callType;
+	friend FuClass;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTs;
 };
 
 class FuMethodGroup : public FuMember
@@ -1365,8 +1868,9 @@ public:
 	FuMethodGroup();
 	bool isStatic() const override;
 	static std::shared_ptr<FuMethodGroup> new_(std::shared_ptr<FuMethod> method0, std::shared_ptr<FuMethod> method1);
-public:
+private: // internal
 	std::array<std::shared_ptr<FuMethod>, 2> methods;
+	friend FuSema;
 };
 
 class FuContainerType : public FuType
@@ -1375,12 +1879,19 @@ public:
 	virtual ~FuContainerType() = default;
 protected:
 	FuContainerType() = default;
-public:
+private: // internal
 	bool isPublic;
 	int startLine;
 	int startColumn;
 	int endLine;
 	int endColumn;
+	friend FuParser;
+	friend FuSema;
+	friend FuSystem;
+	friend GenBase;
+	friend GenC;
+	friend GenJs;
+	friend GenPy;
 };
 
 class FuEnum : public FuContainerType
@@ -1390,8 +1901,10 @@ public:
 	virtual ~FuEnum() = default;
 	const FuSymbol * getFirstValue() const;
 	void acceptValues(FuVisitor * visitor) const;
-public:
+private: // internal
 	bool hasExplicitValue = false;
+	friend FuSema;
+	friend GenSwift;
 };
 
 class FuEnumFlags : public FuEnum
@@ -1413,13 +1926,27 @@ public:
 	bool isSameOrBaseOf(const FuClass * derived) const;
 	bool hasToString() const;
 	bool addsToString() const;
-public:
+private: // internal
 	FuCallType callType;
 	int typeParameterCount = 0;
 	bool hasSubclasses = false;
 	FuSymbolReference baseClass;
 	std::shared_ptr<FuMethodBase> constructor;
 	std::vector<FuConst *> constArrays;
+	std::set<std::string_view> cppFriends;
+	friend FuClassType;
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTs;
 private:
 	std::vector<std::shared_ptr<FuNative>> natives;
 };
@@ -1442,11 +1969,31 @@ public:
 protected:
 	bool isAssignableFromClass(const FuClassType * right) const;
 	bool equalsTypeInternal(const FuClassType * that) const;
-public:
+private: // internal
 	const FuClass * class_;
 	std::shared_ptr<FuType> typeArg0;
 	std::shared_ptr<FuType> typeArg1;
 	bool equalTypeArguments(const FuClassType * right) const;
+	friend FuMethodBase;
+	friend FuPrintableType;
+	friend FuSema;
+	friend FuStorageType;
+	friend FuSwitch;
+	friend FuSystem;
+	friend GenBase;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCCppD;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTs;
 private:
 	std::string_view getNullableSuffix() const;
 };
@@ -1489,8 +2036,12 @@ public:
 	bool equalsType(const FuType * right) const override;
 	std::string getArraySuffix() const override;
 	std::string_view getClassSuffix() const override;
-public:
+private: // internal
 	bool unique = false;
+	friend FuSema;
+	friend FuSymbolReference;
+	friend GenC;
+	friend GenCpp;
 };
 
 class FuArrayStorageType : public FuStorageType
@@ -1502,10 +2053,22 @@ public:
 	std::string getArraySuffix() const override;
 	bool equalsType(const FuType * right) const override;
 	const FuType * getStorageType() const override;
-public:
+private: // internal
 	std::shared_ptr<FuExpr> lengthExpr;
 	int length;
 	bool ptrTaken = false;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTyped;
 };
 
 class FuStringType : public FuClassType
@@ -1534,7 +2097,8 @@ class FuSystem : public FuScope
 {
 public:
 	FuSystem();
-public:
+	static std::shared_ptr<FuSystem> new_();
+private: // internal
 	std::shared_ptr<FuType> voidType = std::make_shared<FuType>();
 	std::shared_ptr<FuType> nullType = std::make_shared<FuType>();
 	std::shared_ptr<FuIntegerType> intType = std::make_shared<FuIntegerType>();
@@ -1559,7 +2123,11 @@ public:
 	std::shared_ptr<FuType> promoteFloatingTypes(const FuType * left, const FuType * right) const;
 	std::shared_ptr<FuType> promoteNumericTypes(std::shared_ptr<FuType> left, std::shared_ptr<FuType> right) const;
 	std::shared_ptr<FuEnum> newEnum(bool flags) const;
-	static std::shared_ptr<FuSystem> new_();
+	friend FuParser;
+	friend FuSema;
+	friend GenBase;
+	friend GenSwift;
+	friend GenTs;
 private:
 	std::shared_ptr<FuType> typeParam0 = std::make_shared<FuType>();
 	std::shared_ptr<FuRangeType> uIntType = FuRangeType::new_(0, 2147483647);
@@ -1577,16 +2145,21 @@ class FuSourceFile
 {
 public:
 	FuSourceFile() = default;
-public:
+private: // internal
 	std::string filename;
 	int line;
+	friend FuLexer;
+	friend FuParser;
+	friend FuParserHost;
+	friend FuProgram;
 };
 
 class FuProgram : public FuScope
 {
 public:
 	FuProgram() = default;
-public:
+	void init(FuScope * parent, const FuSystem * system, FuParserHost * host);
+private: // internal
 	const FuSystem * system;
 	std::vector<std::string> topLevelNatives;
 	std::vector<FuClass *> classes;
@@ -1597,6 +2170,21 @@ public:
 	std::vector<FuSourceFile> sourceFiles;
 	int getLine(int loc) const;
 	const FuSourceFile * getSourceFile(int line) const;
+	friend FuLexer;
+	friend FuParser;
+	friend FuParserHost;
+	friend FuSema;
+	friend GenBase;
+	friend GenC;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenSwift;
+	friend GenTs;
 };
 
 class FuParser : public FuLexer
@@ -1681,8 +2269,9 @@ public:
 	virtual ~FuSemaHost() = default;
 protected:
 	FuSemaHost() = default;
-public:
+private: // internal
 	virtual int getResourceLength(std::string_view name, const FuPrefixExpr * expr);
+	friend FuSema;
 };
 
 class GenHost : public FuSemaHost
@@ -1698,11 +2287,13 @@ protected:
 class FuConsoleHost : public GenHost
 {
 public:
+	bool hasErrors() const;
+	void setErrors(bool value);
 	void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) override;
 protected:
 	FuConsoleHost() = default;
-public:
-	bool hasErrors = false;
+private:
+	bool errors = false;
 };
 
 class FuSema
@@ -1728,6 +2319,7 @@ private:
 	std::shared_ptr<FuExpr> visitInterpolatedString(std::shared_ptr<FuInterpolatedString> expr);
 	std::shared_ptr<FuExpr> lookup(std::shared_ptr<FuSymbolReference> expr, const FuScope * scope);
 	FuContainerType * getCurrentContainer() const;
+	void addCppFriend(const FuMember * member) const;
 	std::shared_ptr<FuExpr> visitSymbolReference(std::shared_ptr<FuSymbolReference> expr);
 	static std::shared_ptr<FuRangeType> union_(std::shared_ptr<FuRangeType> left, std::shared_ptr<FuRangeType> right);
 	std::shared_ptr<FuType> getIntegerType(const FuExpr * left, const FuExpr * right) const;
@@ -1814,7 +2406,7 @@ class GenBase : public FuVisitor
 public:
 	virtual ~GenBase() = default;
 	void setHost(GenHost * host);
-	virtual void writeProgram(const FuProgram * program) = 0;
+	virtual void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) = 0;
 protected:
 	GenBase() = default;
 	int indent = 0;
@@ -1843,7 +2435,6 @@ protected:
 	virtual void writeName(const FuSymbol * symbol) = 0;
 	virtual void writeBanner();
 	void createFile(std::string_view directory, std::string_view filename);
-	void createOutputFile();
 	void closeFile();
 	void openStringWriter();
 	void closeStringWriter();
@@ -2003,9 +2594,7 @@ protected:
 	bool writeBaseClass(const FuClass * klass, const FuProgram * program);
 	virtual void writeClass(const FuClass * klass, const FuProgram * program) = 0;
 	void writeTypes(const FuProgram * program);
-public:
-	std::string namespace_;
-	std::string outputFile;
+private: // internal
 	void visitLiteralNull() override;
 	void visitLiteralFalse() override;
 	void visitLiteralTrue() override;
@@ -2035,6 +2624,19 @@ public:
 	void visitThrow(const FuThrow * statement) override;
 	void visitWhile(const FuWhile * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCCppD;
+	friend GenCl;
+	friend GenCpp;
+	friend GenCs;
+	friend GenD;
+	friend GenJava;
+	friend GenJsNoModule;
+	friend GenPy;
+	friend GenPySwift;
+	friend GenSwift;
+	friend GenTyped;
 private:
 	GenHost * host;
 	std::ostream * writer;
@@ -2078,7 +2680,7 @@ protected:
 	void startTemporaryVar(const FuType * type) override;
 	void writeAssertCast(const FuBinaryExpr * expr) override;
 	void writeExceptionConstructor(const FuClass * klass, std::string_view s);
-public:
+private: // internal
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
 };
 
@@ -2091,9 +2693,13 @@ protected:
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 	void writeThrowNoMessage() override;
-public:
+private: // internal
 	void visitLiteralLong(int64_t i) override;
 	void visitConst(const FuConst * statement) override;
+	friend GenC;
+	friend GenCCpp;
+	friend GenCpp;
+	friend GenD;
 private:
 	static bool isPtrTo(const FuExpr * ptr, const FuExpr * other);
 };
@@ -2125,12 +2731,14 @@ protected:
 	void writeMethods(const FuClass * klass);
 	virtual void writeClassInternal(const FuClass * klass) = 0;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-	void createHeaderFile(std::string_view headerExt);
-	void createImplementationFile(const FuProgram * program, std::string_view headerExt);
-public:
+	void createHeaderFile(std::string_view outputFile, std::string_view headerExt);
+	void createImplementationFile(const FuProgram * program, std::string_view outputFile, std::string_view headerExt);
+private: // internal
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
 	void visitReturn(const FuReturn * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
+	friend GenC;
+	friend GenCpp;
 private:
 	void writeCIncludes();
 	static std::string changeExtension(std::string_view path, std::string_view ext);
@@ -2142,8 +2750,9 @@ class GenC : public GenCCpp
 public:
 	GenC() = default;
 	virtual ~GenC() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
+	std::string_view namespace_;
 	const FuClass * currentClass;
 	std::string_view getTargetName() const override;
 	void writeSelfDoc(const FuMethod * method) override;
@@ -2209,7 +2818,7 @@ protected:
 	void writeDestructor(const FuClass * klass);
 	void writeMethod(const FuMethod * method) override;
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
-public:
+private: // internal
 	void visitLiteralNull() override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
@@ -2349,7 +2958,7 @@ class GenCl : public GenC
 {
 public:
 	GenCl() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void includeStdBool() override;
@@ -2367,7 +2976,7 @@ protected:
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeAssert(const FuAssert * statement) override;
 	void writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements) override;
-public:
+private: // internal
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 private:
 	bool stringLength;
@@ -2382,7 +2991,7 @@ class GenCpp : public GenCCpp
 {
 public:
 	GenCpp() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void includeStdInt() override;
@@ -2419,7 +3028,7 @@ protected:
 	void writeField(const FuField * field) override;
 	void writeClassInternal(const FuClass * klass) override;
 	void writeMethod(const FuMethod * method) override;
-public:
+private: // internal
 	void visitLiteralNull() override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
@@ -2465,8 +3074,8 @@ private:
 	static bool hasLambdaCapture(const FuExpr * expr, const FuLambdaExpr * lambda);
 	static bool isIsVar(const FuExpr * expr);
 	bool hasVariables(const FuStatement * statement) const;
-	void openNamespace();
-	void closeNamespace();
+	void openNamespace(std::string_view namespace_);
+	void closeNamespace(std::string_view namespace_);
 	static FuVisibility getConstructorVisibility(const FuClass * klass);
 	static bool hasMembersOfVisibility(const FuClass * klass, FuVisibility visibility);
 	void writeParametersAndConst(const FuMethod * method, bool defaultArguments);
@@ -2479,7 +3088,7 @@ class GenCs : public GenTyped
 {
 public:
 	GenCs() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void startDocLine() override;
@@ -2515,7 +3124,7 @@ protected:
 	bool isShortMethod(const FuMethod * method) const override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-public:
+private: // internal
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
 	void visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent) override;
@@ -2535,7 +3144,7 @@ class GenD : public GenCCppD
 {
 public:
 	GenD() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void startDocLine() override;
@@ -2572,7 +3181,7 @@ protected:
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
-public:
+private: // internal
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
@@ -2605,14 +3214,14 @@ private:
 	void writeIsVar(const FuExpr * left, const FuExpr * right, FuPriority parent);
 	static bool isLong(const FuSymbolReference * expr);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
-	void writeMain(const FuMethod * main);
+	void writeMain(const FuMethod * main, std::string_view namespace_);
 };
 
 class GenJava : public GenTyped
 {
 public:
 	GenJava() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	int getLiteralChars() const override;
@@ -2648,7 +3257,7 @@ protected:
 	void writeField(const FuField * field) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-public:
+private: // internal
 	void visitLiteralLong(int64_t value) override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent) override;
@@ -2662,6 +3271,8 @@ public:
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
+	std::string_view outputFile;
+	std::string_view namespace_;
 	void writeToString(const FuExpr * expr, FuPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeVisibility(FuVisibility visibility);
@@ -2688,7 +3299,7 @@ class GenJsNoModule : public GenBase
 public:
 	GenJsNoModule() = default;
 	virtual ~GenJsNoModule() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void writeName(const FuSymbol * symbol) override;
@@ -2731,7 +3342,7 @@ protected:
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 	void writeLib(const FuProgram * program);
 	virtual void writeUseStrict();
-public:
+private: // internal
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
@@ -2772,7 +3383,7 @@ class GenTs : public GenJs
 public:
 	GenTs() = default;
 	const GenTs * withGenFullCode();
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void writeEnum(const FuEnum * enu) override;
@@ -2786,7 +3397,7 @@ protected:
 	void writeField(const FuField * field) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-public:
+private: // internal
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	const FuSystem * system;
@@ -2822,7 +3433,7 @@ protected:
 	virtual void writeForRange(const FuVar * iter, const FuBinaryExpr * cond, int64_t rangeStep) = 0;
 	virtual void writeElseIf() = 0;
 	virtual void writeResultVar() = 0;
-public:
+private: // internal
 	void visitAggregateInitializer(const FuAggregateInitializer * expr) override;
 	void visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent) override;
 	void visitPostfixExpr(const FuPostfixExpr * expr, FuPriority parent) override;
@@ -2834,6 +3445,8 @@ public:
 	void visitIf(const FuIf * statement) override;
 	void visitReturn(const FuReturn * statement) override;
 	void visitWhile(const FuWhile * statement) override;
+	friend GenPy;
+	friend GenSwift;
 private:
 	static bool isPtr(const FuExpr * expr);
 	bool openCond(std::string_view statement, const FuExpr * cond, FuPriority parent);
@@ -2846,7 +3459,7 @@ class GenSwift : public GenPySwift
 {
 public:
 	GenSwift() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void startDocLine() override;
@@ -2894,7 +3507,7 @@ protected:
 	void writeThrowsDoc(const FuThrowsDeclaration * decl) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-public:
+private: // internal
 	void visitLiteralNull() override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
@@ -2949,7 +3562,7 @@ class GenPy : public GenPySwift
 {
 public:
 	GenPy() = default;
-	void writeProgram(const FuProgram * program) override;
+	void writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_) override;
 protected:
 	std::string_view getTargetName() const override;
 	void writeBanner() override;
@@ -2990,7 +3603,7 @@ protected:
 	void writeMethod(const FuMethod * method) override;
 	void writeInitField(const FuField * field) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
-public:
+private: // internal
 	void visitLiteralNull() override;
 	void visitLiteralFalse() override;
 	void visitLiteralTrue() override;

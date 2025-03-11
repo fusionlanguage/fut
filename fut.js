@@ -52,10 +52,10 @@ class FileGenHost extends FuConsoleHost
 
 	getResourceLength(name, expr)
 	{
-		if (this.program.resources.hasOwnProperty(name))
-			return this.program.resources[name].length;
+		if (this.getResources().hasOwnProperty(name))
+			return this.getResources()[name].length;
 		const content = this.#readResource(name, expr);
-		this.program.resources[name] = content;
+		this.getResources()[name] = content;
 		return content.length;
 	}
 
@@ -73,7 +73,7 @@ class FileGenHost extends FuConsoleHost
 
 	closeFile()
 	{
-		if (this.hasErrors) {
+		if (this.hasErrors()) {
 			const filename = this.#currentFile.path;
 			this.#currentFile.close(() => fs.unlinkSync(filename));
 		}
@@ -115,10 +115,10 @@ function parseAndResolve(parser, system, parent, files, sema, host)
 		const input = fs.readFileSync(file);
 		parser.parse(file, input, input.length);
 	}
-	if (host.hasErrors)
+	if (host.hasErrors())
 		process.exit(1);
 	sema.process();
-	if (host.hasErrors)
+	if (host.hasErrors())
 		process.exit(1);
 	return host.program;
 }
@@ -178,12 +178,10 @@ function emit(program, lang, namespace, outputFile, host)
 		process.exitCode = 1;
 		return;
 	}
-	gen.namespace = namespace;
-	gen.outputFile = outputFile;
 	gen.setHost(host);
-	gen.writeProgram(program);
-	if (host.hasErrors) {
-		host.hasErrors = false;
+	gen.writeProgram(program, outputFile, namespace);
+	if (host.hasErrors()) {
+		host.setErrors(false);
 		process.exitCode = 1;
 	}
 }

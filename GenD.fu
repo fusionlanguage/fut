@@ -1532,7 +1532,7 @@ public class GenD : GenCCppD
 		CloseBlock();
 	}
 
-	void WriteMain!(FuMethod main)
+	void WriteMain!(FuMethod main, string namespace)
 	{
 		WriteNewLine();
 		WriteType(main.Type, true);
@@ -1543,8 +1543,8 @@ public class GenD : GenCCppD
 		}
 		else {
 			Write(" main() => ");
-			if (this.Namespace.Length != 0) {
-				Write(this.Namespace);
+			if (namespace.Length != 0) {
+				Write(namespace);
 				WriteChar('.');
 			}
 			WriteName(main.Parent);
@@ -1552,7 +1552,7 @@ public class GenD : GenCCppD
 		}
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.HasListInsert = false;
 		this.HasListRemoveAt = false;
@@ -1562,9 +1562,9 @@ public class GenD : GenCCppD
 		this.HasSortedDictionaryFind = false;
 
 		OpenStringWriter();
-		if (this.Namespace.Length != 0) {
+		if (namespace.Length != 0) {
 			Write("struct ");
-			WriteLine(this.Namespace);
+			WriteLine(namespace);
 			OpenBlock();
 			WriteLine("static:");
 		}
@@ -1572,10 +1572,10 @@ public class GenD : GenCCppD
 		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources(program.Resources);
-		if (this.Namespace.Length != 0)
+		if (namespace.Length != 0)
 			CloseBlock();
 
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		if (this.HasListInsert || this.HasListRemoveAt || this.HasStackPop)
 			Include("std.container.array");
 		if (this.HasSortedDictionaryInsert) {
@@ -1628,7 +1628,7 @@ public class GenD : GenCCppD
 		}
 		CloseStringWriter();
 		if (program.Main != null)
-			WriteMain(program.Main);
+			WriteMain(program.Main, namespace);
 		CloseFile();
 	}
 }

@@ -26,8 +26,6 @@ public abstract class GenHost : FuSemaHost
 
 public abstract class GenBase : FuVisitor
 {
-	internal string() Namespace;
-	internal string() OutputFile;
 	GenHost! Host;
 	TextWriter! Writer;
 	StringWriter() StringWriter;
@@ -270,11 +268,6 @@ public abstract class GenBase : FuVisitor
 	{
 		this.Writer = this.Host.CreateFile(directory, filename);
 		WriteBanner();
-	}
-
-	protected void CreateOutputFile!()
-	{
-		CreateFile(null, this.OutputFile);
 	}
 
 	protected void CloseFile!()
@@ -2154,5 +2147,5 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
-	public abstract void WriteProgram!(FuProgram program);
+	public abstract void WriteProgram!(FuProgram program, string outputFile, string namespace);
 }

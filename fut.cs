@@ -54,9 +54,9 @@ class FileGenHost : FuConsoleHost
 
 	internal override int GetResourceLength(string name, FuPrefixExpr expr)
 	{
-		if (!this.Program.Resources.TryGetValue(name, out List<byte> content)) {
+		if (!GetResources().TryGetValue(name, out List<byte> content)) {
 			content = ReadResource(name, expr);
-			this.Program.Resources.Add(name, content);
+			GetResources().Add(name, content);
 		}
 		return content.Count;
 	}
@@ -73,7 +73,7 @@ class FileGenHost : FuConsoleHost
 	public override void CloseFile()
 	{
 		this.CurrentFile.Close();
-		if (this.HasErrors)
+		if (HasErrors())
 			File.Delete(this.Filename);
 	}
 }
@@ -111,10 +111,10 @@ public static class Fut
 			byte[] input = File.ReadAllBytes(file);
 			parser.Parse(file, input, input.Length);
 		}
-		if (host.HasErrors)
+		if (host.HasErrors())
 			return null;
 		sema.Process();
-		if (host.HasErrors)
+		if (host.HasErrors())
 			return null;
 		return host.Program;
 	}
@@ -161,13 +161,11 @@ public static class Fut
 			break;
 		default:
 			Console.Error.WriteLine($"fut: ERROR: Unknown language: {lang}");
-			host.HasErrors = true;
+			host.SetErrors(true);
 			return;
 		}
-		gen.Namespace = namespace_;
-		gen.OutputFile = outputFile;
 		gen.SetHost(host);
-		gen.WriteProgram(program);
+		gen.WriteProgram(program, outputFile, namespace_);
 	}
 
 	public static int Main(string[] args)
@@ -249,7 +247,7 @@ public static class Fut
 
 			if (lang != null) {
 				Emit(program, lang, namespace_, outputFile, host);
-				return host.HasErrors ? 1 : 0;
+				return host.HasErrors() ? 1 : 0;
 			}
 			for (int i = outputFile.Length; --i >= 0; ) {
 				char c = outputFile[i];
@@ -263,8 +261,8 @@ public static class Fut
 					int exitCode = 0;
 					foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
 						Emit(program, outputExt, namespace_, outputBase + outputExt, host);
-						if (host.HasErrors) {
-							host.HasErrors = false;
+						if (host.HasErrors()) {
+							host.SetErrors(false);
 							exitCode = 1;
 						}
 					}

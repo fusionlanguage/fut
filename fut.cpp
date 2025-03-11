@@ -96,7 +96,7 @@ public:
 
 	int getResourceLength(std::string_view name, const FuPrefixExpr *expr) override
 	{
-		auto p = this->program->resources.try_emplace(std::string(name));
+		auto p = getResources()->try_emplace(std::string(name));
 		std::vector<uint8_t> &content = p.first->second;
 		if (p.second)
 			readResource(name, expr, content);
@@ -113,19 +113,17 @@ public:
 	void closeFile() override
 	{
 		currentFile.close();
-		if (hasErrors)
+		if (hasErrors())
 			std::remove(currentFilename.c_str());
 		else if (!currentFile) {
 			std::cerr << currentFilename << ": ERROR: " << strerror(errno) << '\n';
-			hasErrors = true;
+			setErrors(true);
 		}
 	}
 };
 
-static bool parseAndResolve(FuParser *parser, FuProgram *program,
-	const std::vector<const char *> &files, FuSema *sema, FuConsoleHost *host)
+static bool parseAndResolve(FuParser *parser, const std::vector<const char *> &files, FuSema *sema, FuConsoleHost *host)
 {
-	host->program = program;
 	for (const char *file : files) {
 		std::ifstream stream(file);
 		std::string input = slurp(stream);
@@ -135,10 +133,10 @@ static bool parseAndResolve(FuParser *parser, FuProgram *program,
 		}
 		parser->parse(file, reinterpret_cast<const uint8_t *>(input.data()), input.size());
 	}
-	if (host->hasErrors)
+	if (host->hasErrors())
 		return false;
 	sema->process();
-	return !host->hasErrors;
+	return !host->hasErrors();
 }
 
 static void emit(FuProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host)
@@ -177,13 +175,11 @@ static void emit(FuProgram *program, const char *lang, const char *namespace_, c
 		gen = std::make_unique<GenCl>();
 	else {
 		std::cerr << "fut: ERROR: Unknown language: " << lang << '\n';
-		host->hasErrors = true;
+		host->setErrors(true);
 		return;
 	}
-	gen->namespace_ = namespace_;
-	gen->outputFile = outputFile;
 	gen->setHost(host);
-	gen->writeProgram(program);
+	gen->writeProgram(program, outputFile, namespace_);
 }
 
 int main(int argc, char **argv)
@@ -255,21 +251,19 @@ int main(int argc, char **argv)
 	FuScope *parent = system.get();
 	FuProgram references;
 	if (!referencedFiles.empty()) {
-		references.parent = parent;
-		references.system = system.get();
-		if (!parseAndResolve(&parser, &references, referencedFiles, &sema, &host))
+		references.init(parent, system.get(), &host);
+		if (!parseAndResolve(&parser, referencedFiles, &sema, &host))
 			return 1;
 		parent = &references;
 	}
 	FuProgram program;
-	program.parent = parent;
-	program.system = system.get();
-	if (!parseAndResolve(&parser, &program, inputFiles, &sema, &host))
+	program.init(parent, system.get(), &host);
+	if (!parseAndResolve(&parser, inputFiles, &sema, &host))
 		return 1;
 
 	if (lang != nullptr) {
 		emit(&program, lang, namespace_, outputFile, &host);
-		return host.hasErrors ? 1 : 0;
+		return host.hasErrors() ? 1 : 0;
 	}
 	for (size_t i = strlen(outputFile); --i >= 0; ) {
 		char c = outputFile[i];
@@ -288,14 +282,14 @@ int main(int argc, char **argv)
 					break;
 				std::string outputExt = std::string(extBegin, extEnd);
 				emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str(), &host);
-				if (host.hasErrors) {
-					host.hasErrors = false;
+				if (host.hasErrors()) {
+					host.setErrors(false);
 					exitCode = 1;
 				}
 				extBegin = extEnd + 1;
 			}
 			emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str(), &host);
-			return host.hasErrors ? 1 : exitCode;
+			return host.hasErrors() ? 1 : exitCode;
 		}
 		if (c == '/' || c == '\\' || c == ':')
 			break;

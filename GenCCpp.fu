@@ -1,6 +1,6 @@
 // GenCCpp.fu - C/C++ code generator
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -260,9 +260,9 @@ public abstract class GenCCpp : GenCCppD
 		return path.Substring(0, extIndex) + ext;
 	}
 
-	protected void CreateHeaderFile!(string headerExt)
+	protected void CreateHeaderFile!(string outputFile, string headerExt)
 	{
-		CreateFile(null, ChangeExtension(this.OutputFile, headerExt));
+		CreateFile(null, ChangeExtension(outputFile, headerExt));
 		WriteLine("#pragma once");
 		WriteCIncludes();
 	}
@@ -280,13 +280,13 @@ public abstract class GenCCpp : GenCCppD
 		return path.Substring(i, extIndex - i);
 	}
 
-	protected void CreateImplementationFile!(FuProgram program, string headerExt)
+	protected void CreateImplementationFile!(FuProgram program, string outputFile, string headerExt)
 	{
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		WriteTopLevelNatives(program);
 		WriteCIncludes();
 		Write("#include \"");
-		Write(GetFilenameWithoutExtension(this.OutputFile));
+		Write(GetFilenameWithoutExtension(outputFile));
 		Write(headerExt);
 		WriteCharLine('"');
 	}

@@ -20,6 +20,9 @@
 
 public class GenJava : GenTyped
 {
+	string OutputFile;
+	string Namespace;
+
 	protected override string GetTargetName() => "Java";
 
 	internal override void VisitLiteralLong!(long value)
@@ -1478,8 +1481,10 @@ public class GenJava : GenTyped
 		CloseFile();
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
+		this.OutputFile = outputFile;
+		this.Namespace = namespace;
 		WriteTypes(program);
 		if (program.Resources.Count > 0)
 			WriteResources();

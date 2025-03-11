@@ -1,7 +1,7 @@
 // GenTs.fu - TypeScript code generator
 //
 // Copyright (C) 2020-2021  Andy Edwards
-// Copyright (C) 2020-2024  Piotr Fusik
+// Copyright (C) 2020-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -329,10 +329,10 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.System = program.System;
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		if (this.GenFullCode)
 			WriteTopLevelNatives(program);
 		WriteTypes(program);

@@ -1771,19 +1771,19 @@ public class GenCpp : GenCCpp
 		WriteCharLine(';');
 	}
 
-	void OpenNamespace!()
+	void OpenNamespace!(string namespace)
 	{
-		if (this.Namespace.Length == 0)
+		if (namespace.Length == 0)
 			return;
 		WriteNewLine();
 		Write("namespace ");
-		WriteLine(this.Namespace);
+		WriteLine(namespace);
 		WriteCharLine('{');
 	}
 
-	void CloseNamespace!()
+	void CloseNamespace!(string namespace)
 	{
-		if (this.Namespace.Length != 0)
+		if (namespace.Length != 0)
 			WriteCharLine('}');
 	}
 
@@ -1850,8 +1850,8 @@ public class GenCpp : GenCCpp
 		if (!constructor && !destructor && !trailingNative && !HasMembersOfVisibility(klass, visibility))
 			return;
 
-		Write(visibilityKeyword);
-		WriteCharLine(':');
+		this.Indent--;
+		WriteLine(visibilityKeyword);
 		this.Indent++;
 
 		if (constructor) {
@@ -1937,8 +1937,6 @@ public class GenCpp : GenCCpp
 				assert false;
 			}
 		}
-
-		this.Indent--;
 	}
 
 	protected override void WriteClassInternal!(FuClass klass)
@@ -1946,11 +1944,16 @@ public class GenCpp : GenCCpp
 		WriteNewLine();
 		WriteDoc(klass.Documentation);
 		OpenClass(klass, klass.CallType == FuCallType.Sealed ? " final" : "", " : public ");
+		WriteDeclarations(klass, FuVisibility.Public, "public:");
+		WriteDeclarations(klass, FuVisibility.Protected, "protected:");
+		WriteDeclarations(klass, FuVisibility.Internal, "private: // internal");
+		foreach (string name in klass.CppFriends) {
+			Write("friend ");
+			Write(name);
+			WriteCharLine(';');
+		}
+		WriteDeclarations(klass, FuVisibility.Private, "private:");
 		this.Indent--;
-		WriteDeclarations(klass, FuVisibility.Public, "public");
-		WriteDeclarations(klass, FuVisibility.Protected, "protected");
-		WriteDeclarations(klass, FuVisibility.Internal, "public");
-		WriteDeclarations(klass, FuVisibility.Private, "private");
 		WriteLine("};");
 	}
 
@@ -2019,7 +2022,7 @@ public class GenCpp : GenCCpp
 		CloseBlock();
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.WrittenClasses.Clear();
 		this.InHeaderFile = true;
@@ -2030,7 +2033,7 @@ public class GenCpp : GenCCpp
 		this.StringToLower = false;
 		this.StringToUpper = false;
 		OpenStringWriter();
-		OpenNamespace();
+		OpenNamespace(namespace);
 		WriteRegexOptionsEnum(program);
 		for (FuSymbol? type = program.First; type != null; type = type.Next) {
 			if (type is FuEnum enu)
@@ -2043,9 +2046,9 @@ public class GenCpp : GenCCpp
 		}
 		foreach (FuClass klass in program.Classes)
 			WriteClass(klass, program);
-		CloseNamespace();
+		CloseNamespace(namespace);
 
-		CreateHeaderFile(".hpp");
+		CreateHeaderFile(outputFile, ".hpp");
 		if (this.HasEnumFlags) {
 			WriteLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 			WriteLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -2062,19 +2065,19 @@ public class GenCpp : GenCCpp
 		this.InHeaderFile = false;
 		OpenStringWriter();
 		WriteResources(program.Resources, false);
-		OpenNamespace();
+		OpenNamespace(namespace);
 		foreach (FuClass klass in program.Classes) {
 			WriteConstructor(klass);
 			WriteMethods(klass);
 		}
 		WriteResources(program.Resources, true);
-		CloseNamespace();
+		CloseNamespace(namespace);
 
 		if (this.StringReplace) {
 			Include("string");
 			Include("string_view");
 		}
-		CreateImplementationFile(program, ".hpp");
+		CreateImplementationFile(program, outputFile, ".hpp");
 		if (this.UsingStringViewLiterals)
 			WriteLine("using namespace std::string_view_literals;");
 		if (this.NumberTryParse) {

@@ -1877,7 +1877,7 @@ public class GenSwift : GenPySwift
 		WriteCharLine(')');
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.System = program.System;
 		this.ThrowException = false;
@@ -1888,7 +1888,7 @@ public class GenSwift : GenPySwift
 		OpenStringWriter();
 		WriteTypes(program);
 
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		WriteTopLevelNatives(program);
 		if (program.Main != null && program.Main.Type.Id == FuId.IntType)
 			Include("Foundation");

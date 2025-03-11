@@ -1638,13 +1638,13 @@ public class GenPy : GenPySwift
 		WriteCharLine(')');
 	}
 
-	public override void WriteProgram!(FuProgram program)
+	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.WrittenTypes.Clear();
 		this.SwitchBreak = false;
 		OpenStringWriter();
 		WriteTypes(program);
-		CreateOutputFile();
+		CreateFile(null, outputFile);
 		WriteTopLevelNatives(program);
 		if (program.Main != null && (program.Main.Type.Id == FuId.IntType || program.Main.Parameters.Count() == 1))
 			Include("sys");

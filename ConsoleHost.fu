@@ -1,6 +1,6 @@
 // ConsoleHost.fu - emit errors to stderr
 //
-// Copyright (C) 2023-2024  Piotr Fusik
+// Copyright (C) 2023-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -20,11 +20,18 @@
 
 public abstract class FuConsoleHost : GenHost
 {
-	internal bool HasErrors = false;
+	bool Errors = false;
+
+	public bool HasErrors() => this.Errors;
+
+	public void SetErrors!(bool value)
+	{
+		this.Errors = value;
+	}
 
 	public override void ReportError!(string filename, int line, int startUtf16Column, int endUtf16Column, string message)
 	{
-		this.HasErrors = true;
+		this.Errors = true;
 		Console.Error.WriteLine($"{filename}({line + 1}): ERROR: {message}");
 	}
 }

@@ -1376,6 +1376,7 @@ public class FuClass : FuContainerType
 	internal FuSymbolReference() BaseClass;
 	internal FuMethodBase#? Constructor;
 	internal List<FuConst!>() ConstArrays;
+	internal SortedSet<string>() CppFriends;
 	List<FuNative#>() Natives; // FIXME: avoid by moving the ownership from the dictionary to the linked list?
 	public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
 	public bool AddsVirtualMethods()
@@ -1889,7 +1890,7 @@ public class FuSystem : FuScope
 		LockPtrType.Class = lockClass;
 	}
 
-	internal static FuSystem# New() => new FuSystem();
+	public static FuSystem# New() => new FuSystem();
 }
 
 class FuSourceFile
@@ -1908,6 +1909,13 @@ public class FuProgram : FuScope
 	internal bool RegexOptionsEnum = false;
 	internal List<int>() LineLocs;
 	internal List<FuSourceFile()>() SourceFiles;
+
+	public void Init!(FuScope! parent, FuSystem system, FuParserHost! host)
+	{
+		this.Parent = parent;
+		this.System = system;
+		host.Program = this;
+	}
 
 	internal int GetLine(int loc)
 	{

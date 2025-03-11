@@ -31,6 +31,11 @@ static std::string FuString_Replace(std::string_view s, std::string_view oldValu
 	}
 }
 
+std::map<std::string, std::vector<uint8_t>> * FuParserHost::getResources() const
+{
+	return &this->program->resources;
+}
+
 void FuParserHost::reportStatementError(const FuStatement * statement, std::string_view message)
 {
 	int line = this->program->getLine(statement->loc);
@@ -3086,6 +3091,13 @@ std::shared_ptr<FuSystem> FuSystem::new_()
 	return std::make_shared<FuSystem>();
 }
 
+void FuProgram::init(FuScope * parent, const FuSystem * system, FuParserHost * host)
+{
+	this->parent = parent;
+	this->system = system;
+	host->program = this;
+}
+
 int FuProgram::getLine(int loc) const
 {
 	int l = 0;
@@ -4459,9 +4471,19 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 	}
 }
 
+bool FuConsoleHost::hasErrors() const
+{
+	return this->errors;
+}
+
+void FuConsoleHost::setErrors(bool value)
+{
+	this->errors = value;
+}
+
 void FuConsoleHost::reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message)
 {
-	this->hasErrors = true;
+	this->errors = true;
 	std::cerr << filename << "(" << (line + 1) << "): ERROR: " << message << '\n';
 }
 
@@ -4669,6 +4691,15 @@ FuContainerType * FuSema::getCurrentContainer() const
 	std::abort();
 }
 
+void FuSema::addCppFriend(const FuMember * member) const
+{
+	const FuContainerType * currentContainer = getCurrentContainer();
+	if (member->parent != currentContainer) {
+		FuClass * targetClass = static_cast<FuClass *>(member->parent);
+		targetClass->cppFriends.insert(currentContainer->name);
+	}
+}
+
 std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolReference> expr)
 {
 	if (expr->left == nullptr) {
@@ -4677,6 +4708,8 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 			const FuClass * memberClass;
 			if (nearMember->visibility == FuVisibility::private_ && (memberClass = dynamic_cast<const FuClass *>(nearMember->parent)) && memberClass != getCurrentContainer())
 				reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
+			else if (nearMember->visibility == FuVisibility::internal)
+				addCppFriend(nearMember);
 			if (!nearMember->isStatic() && (this->currentMethod == nullptr || this->currentMethod->isStatic()))
 				reportError(expr.get(), std::format("Cannot use instance member '{}' from static context", expr->name));
 		}
@@ -4725,6 +4758,9 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		case FuVisibility::private_:
 			if (member->parent != this->currentMethod->parent || this->currentMethod->parent != scope)
 				reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
+			break;
+		case FuVisibility::internal:
+			addCppFriend(member);
 			break;
 		case FuVisibility::protected_:
 			if (isBase)
@@ -5978,10 +6014,11 @@ void FuSema::resolveObjectLiteral(const FuClassType * klass, const FuAggregateIn
 		assert(field->op == FuToken::assign);
 		std::shared_ptr<FuSymbolReference> symbol = std::static_pointer_cast<FuSymbolReference>(field->left);
 		lookup(symbol, klass->class_);
-		if (dynamic_cast<const FuField *>(symbol->symbol)) {
+		if (const FuField *member = dynamic_cast<const FuField *>(symbol->symbol)) {
 			field->right = visitExpr(field->right);
 			coerce(field->right.get(), symbol->type.get());
 			setSharedAssign(field->left.get(), field->right.get());
+			addCppFriend(member);
 		}
 		else
 			reportError(field->left.get(), "Expected a field");
@@ -7141,11 +7178,6 @@ void GenBase::createFile(std::string_view directory, std::string_view filename)
 {
 	this->writer = this->host->createFile(directory, filename);
 	writeBanner();
-}
-
-void GenBase::createOutputFile()
-{
-	createFile(std::string_view(), this->outputFile);
 }
 
 void GenBase::closeFile()
@@ -9530,9 +9562,9 @@ std::string GenCCpp::changeExtension(std::string_view path, std::string_view ext
 	return std::string(path.data(), extIndex) + std::string(ext);
 }
 
-void GenCCpp::createHeaderFile(std::string_view headerExt)
+void GenCCpp::createHeaderFile(std::string_view outputFile, std::string_view headerExt)
 {
-	createFile(std::string_view(), changeExtension(this->outputFile, headerExt));
+	createFile(std::string_view(), changeExtension(outputFile, headerExt));
 	writeLine("#pragma once");
 	writeCIncludes();
 }
@@ -9550,13 +9582,13 @@ std::string GenCCpp::getFilenameWithoutExtension(std::string_view path)
 	return std::string(path.data() + i, extIndex - i);
 }
 
-void GenCCpp::createImplementationFile(const FuProgram * program, std::string_view headerExt)
+void GenCCpp::createImplementationFile(const FuProgram * program, std::string_view outputFile, std::string_view headerExt)
 {
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	writeTopLevelNatives(program);
 	writeCIncludes();
 	write("#include \"");
-	write(getFilenameWithoutExtension(this->outputFile));
+	write(getFilenameWithoutExtension(outputFile));
 	write(headerExt);
 	writeCharLine('"');
 }
@@ -13371,8 +13403,9 @@ void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 	}
 }
 
-void GenC::writeProgram(const FuProgram * program)
+void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
+	this->namespace_ = namespace_;
 	this->writtenClasses.clear();
 	this->inHeaderFile = true;
 	openStringWriter();
@@ -13380,7 +13413,7 @@ void GenC::writeProgram(const FuProgram * program)
 		writeNewDelete(klass, false);
 		writeSignatures(klass, true);
 	}
-	createHeaderFile(".h");
+	createHeaderFile(outputFile, ".h");
 	writeLine("#ifdef __cplusplus");
 	writeLine("extern \"C\" {");
 	writeLine("#endif");
@@ -13428,7 +13461,7 @@ void GenC::writeProgram(const FuProgram * program)
 		writeMethods(klass);
 	}
 	include("stdlib.h");
-	createImplementationFile(program, ".h");
+	createImplementationFile(program, outputFile, ".h");
 	writeLibrary();
 	writeRegexOptionsEnum(program);
 	writeTypedefs(program, false);
@@ -13753,8 +13786,9 @@ void GenCl::writeLibrary()
 	}
 }
 
-void GenCl::writeProgram(const FuProgram * program)
+void GenCl::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
+	this->namespace_ = namespace_;
 	this->writtenClasses.clear();
 	this->stringLength = false;
 	this->stringEquals = false;
@@ -13767,7 +13801,7 @@ void GenCl::writeProgram(const FuProgram * program)
 		writeDestructor(klass);
 		writeMethods(klass);
 	}
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	writeTopLevelNatives(program);
 	writeRegexOptionsEnum(program);
 	writeTypedefs(program, true);
@@ -15416,19 +15450,19 @@ void GenCpp::visitThrow(const FuThrow * statement)
 	writeCharLine(';');
 }
 
-void GenCpp::openNamespace()
+void GenCpp::openNamespace(std::string_view namespace_)
 {
-	if (this->namespace_.empty())
+	if (namespace_.empty())
 		return;
 	writeNewLine();
 	write("namespace ");
-	writeLine(this->namespace_);
+	writeLine(namespace_);
 	writeCharLine('{');
 }
 
-void GenCpp::closeNamespace()
+void GenCpp::closeNamespace(std::string_view namespace_)
 {
-	if (!this->namespace_.empty())
+	if (!namespace_.empty())
 		writeCharLine('}');
 }
 
@@ -15495,8 +15529,8 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 	bool trailingNative = visibility == FuVisibility::private_ && dynamic_cast<const FuNative *>(klass->last);
 	if (!constructor && !destructor && !trailingNative && !hasMembersOfVisibility(klass, visibility))
 		return;
-	write(visibilityKeyword);
-	writeCharLine(':');
+	this->indent--;
+	writeLine(visibilityKeyword);
 	this->indent++;
 	if (constructor) {
 		if (klass->id == FuId::exceptionClass) {
@@ -15577,7 +15611,6 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 		else
 			std::abort();
 	}
-	this->indent--;
 }
 
 void GenCpp::writeClassInternal(const FuClass * klass)
@@ -15585,11 +15618,16 @@ void GenCpp::writeClassInternal(const FuClass * klass)
 	writeNewLine();
 	writeDoc(klass->documentation.get());
 	openClass(klass, klass->callType == FuCallType::sealed ? " final" : "", " : public ");
+	writeDeclarations(klass, FuVisibility::public_, "public:");
+	writeDeclarations(klass, FuVisibility::protected_, "protected:");
+	writeDeclarations(klass, FuVisibility::internal, "private: // internal");
+	for (std::string_view name : klass->cppFriends) {
+		write("friend ");
+		write(name);
+		writeCharLine(';');
+	}
+	writeDeclarations(klass, FuVisibility::private_, "private:");
 	this->indent--;
-	writeDeclarations(klass, FuVisibility::public_, "public");
-	writeDeclarations(klass, FuVisibility::protected_, "protected");
-	writeDeclarations(klass, FuVisibility::internal, "public");
-	writeDeclarations(klass, FuVisibility::private_, "private");
 	writeLine("};");
 }
 
@@ -15658,7 +15696,7 @@ void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * 
 	closeBlock();
 }
 
-void GenCpp::writeProgram(const FuProgram * program)
+void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->writtenClasses.clear();
 	this->inHeaderFile = true;
@@ -15669,7 +15707,7 @@ void GenCpp::writeProgram(const FuProgram * program)
 	this->stringToLower = false;
 	this->stringToUpper = false;
 	openStringWriter();
-	openNamespace();
+	openNamespace(namespace_);
 	writeRegexOptionsEnum(program);
 	for (const FuSymbol * type = program->first; type != nullptr; type = type->next) {
 		if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type))
@@ -15682,8 +15720,8 @@ void GenCpp::writeProgram(const FuProgram * program)
 	}
 	for (const FuClass * klass : program->classes)
 		writeClass(klass, program);
-	closeNamespace();
-	createHeaderFile(".hpp");
+	closeNamespace(namespace_);
+	createHeaderFile(outputFile, ".hpp");
 	if (this->hasEnumFlags) {
 		writeLine("#define FU_ENUM_FLAG_OPERATORS(T) \\");
 		writeLine("\tinline constexpr T operator~(T a) { return static_cast<T>(~static_cast<std::underlying_type_t<T>>(a)); } \\");
@@ -15699,18 +15737,18 @@ void GenCpp::writeProgram(const FuProgram * program)
 	this->inHeaderFile = false;
 	openStringWriter();
 	writeResources(&program->resources, false);
-	openNamespace();
+	openNamespace(namespace_);
 	for (const FuClass * klass : program->classes) {
 		writeConstructor(klass);
 		writeMethods(klass);
 	}
 	writeResources(&program->resources, true);
-	closeNamespace();
+	closeNamespace(namespace_);
 	if (this->stringReplace) {
 		include("string");
 		include("string_view");
 	}
-	createImplementationFile(program, ".hpp");
+	createImplementationFile(program, outputFile, ".hpp");
 	if (this->usingStringViewLiterals)
 		writeLine("using namespace std::string_view_literals;");
 	if (this->numberTryParse) {
@@ -16788,21 +16826,21 @@ void GenCs::writeResources(const std::map<std::string, std::vector<uint8_t>> * r
 	closeBlock();
 }
 
-void GenCs::writeProgram(const FuProgram * program)
+void GenCs::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	openStringWriter();
-	if (!this->namespace_.empty()) {
+	if (!namespace_.empty()) {
 		write("namespace ");
-		writeLine(this->namespace_);
+		writeLine(namespace_);
 		openBlock();
 	}
 	writeTopLevelNatives(program);
 	writeTypes(program);
 	if (std::ssize(program->resources) > 0)
 		writeResources(&program->resources);
-	if (!this->namespace_.empty())
+	if (!namespace_.empty())
 		closeBlock();
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	writeIncludes("using ", ";");
 	closeStringWriter();
 	closeFile();
@@ -18145,7 +18183,7 @@ void GenD::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 	closeBlock();
 }
 
-void GenD::writeMain(const FuMethod * main)
+void GenD::writeMain(const FuMethod * main, std::string_view namespace_)
 {
 	writeNewLine();
 	writeType(main->type.get(), true);
@@ -18156,8 +18194,8 @@ void GenD::writeMain(const FuMethod * main)
 	}
 	else {
 		write(" main() => ");
-		if (!this->namespace_.empty()) {
-			write(this->namespace_);
+		if (!namespace_.empty()) {
+			write(namespace_);
 			writeChar('.');
 		}
 		writeName(main->parent);
@@ -18165,7 +18203,7 @@ void GenD::writeMain(const FuMethod * main)
 	}
 }
 
-void GenD::writeProgram(const FuProgram * program)
+void GenD::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->hasListInsert = false;
 	this->hasListRemoveAt = false;
@@ -18174,9 +18212,9 @@ void GenD::writeProgram(const FuProgram * program)
 	this->hasSortedDictionaryInsert = false;
 	this->hasSortedDictionaryFind = false;
 	openStringWriter();
-	if (!this->namespace_.empty()) {
+	if (!namespace_.empty()) {
 		write("struct ");
-		writeLine(this->namespace_);
+		writeLine(namespace_);
 		openBlock();
 		writeLine("static:");
 	}
@@ -18184,9 +18222,9 @@ void GenD::writeProgram(const FuProgram * program)
 	writeTypes(program);
 	if (std::ssize(program->resources) > 0)
 		writeResources(&program->resources);
-	if (!this->namespace_.empty())
+	if (!namespace_.empty())
 		closeBlock();
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	if (this->hasListInsert || this->hasListRemoveAt || this->hasStackPop)
 		include("std.container.array");
 	if (this->hasSortedDictionaryInsert) {
@@ -18239,7 +18277,7 @@ void GenD::writeProgram(const FuProgram * program)
 	}
 	closeStringWriter();
 	if (program->main != nullptr)
-		writeMain(program->main);
+		writeMain(program->main, namespace_);
 	closeFile();
 }
 
@@ -19619,8 +19657,10 @@ void GenJava::writeResources()
 	closeFile();
 }
 
-void GenJava::writeProgram(const FuProgram * program)
+void GenJava::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
+	this->outputFile = outputFile;
+	this->namespace_ = namespace_;
 	writeTypes(program);
 	if (std::ssize(program->resources) > 0)
 		writeResources();
@@ -20985,9 +21025,9 @@ void GenJsNoModule::writeUseStrict()
 	writeLine("\"use strict\";");
 }
 
-void GenJsNoModule::writeProgram(const FuProgram * program)
+void GenJsNoModule::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	writeUseStrict();
 	writeTopLevelNatives(program);
 	writeTypes(program);
@@ -21289,10 +21329,10 @@ void GenTs::writeClass(const FuClass * klass, const FuProgram * program)
 	closeBlock();
 }
 
-void GenTs::writeProgram(const FuProgram * program)
+void GenTs::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->system = program->system;
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	if (this->genFullCode)
 		writeTopLevelNatives(program);
 	writeTypes(program);
@@ -23419,7 +23459,7 @@ void GenSwift::writeMain(const FuMethod * main)
 	writeCharLine(')');
 }
 
-void GenSwift::writeProgram(const FuProgram * program)
+void GenSwift::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->system = program->system;
 	this->throwException = false;
@@ -23429,7 +23469,7 @@ void GenSwift::writeProgram(const FuProgram * program)
 	this->stringSubstring = false;
 	openStringWriter();
 	writeTypes(program);
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	writeTopLevelNatives(program);
 	if (program->main != nullptr && program->main->type->id == FuId::intType)
 		include("Foundation");
@@ -24982,13 +25022,13 @@ void GenPy::writeMain(const FuMethod * main)
 	writeCharLine(')');
 }
 
-void GenPy::writeProgram(const FuProgram * program)
+void GenPy::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->writtenTypes.clear();
 	this->switchBreak = false;
 	openStringWriter();
 	writeTypes(program);
-	createOutputFile();
+	createFile(std::string_view(), outputFile);
 	writeTopLevelNatives(program);
 	if (program->main != nullptr && (program->main->type->id == FuId::intType || program->main->parameters.count() == 1))
 		include("sys");
