@@ -72,10 +72,10 @@ class FileGenHost extends FuConsoleHost
 
 	protected @Override int getResourceLength(String name, FuPrefixExpr expr)
 	{
-		ArrayList<Byte> content = this.program.resources.get(name);
+		ArrayList<Byte> content = getResources().get(name);
 		if (content == null) {
 			content = readResource(name, expr);
-			this.program.resources.put(name, content);
+			getResources().put(name, content);
 		}
 		return content.size();
 	}
@@ -100,7 +100,7 @@ class FileGenHost extends FuConsoleHost
 		catch (IOException e) {
 			throw new RuntimeException(e); // TODO
 		}
-		if (this.hasErrors)
+		if (hasErrors())
 			filename.delete();
 	}
 }
@@ -133,17 +133,15 @@ public class Fut
 
 	private static FuProgram parseAndResolve(FuParser parser, FuSystem system, FuScope parent, ArrayList<String> files, FuSema sema, FuConsoleHost host) throws IOException
 	{
-		host.program = new FuProgram();
-		host.program.parent = parent;
-		host.program.system = system;
+		new FuProgram().init(parent, system, host);
 		for (String file : files) {
 			byte[] input = Files.readAllBytes(Paths.get(file));
 			parser.parse(file, input, input.length);
 		}
-		if (host.hasErrors)
+		if (host.hasErrors())
 			System.exit(1);
 		sema.process();
-		if (host.hasErrors)
+		if (host.hasErrors())
 			System.exit(1);
 		return host.program;
 	}
@@ -191,13 +189,11 @@ public class Fut
 			break;
 		default:
 			System.err.format("fut: ERROR: Unknown language: %s\n", lang);
-			host.hasErrors = true;
+			host.setErrors(true);
 			return;
 		}
-		gen.namespace = namespace;
-		gen.outputFile = outputFile;
 		gen.setHost(host);
-		gen.writeProgram(program);
+		gen.writeProgram(program, outputFile, namespace);
 	}
 
 	public static void main(String[] args)
@@ -274,7 +270,7 @@ public class Fut
 
 			if (lang != null) {
 				emit(program, lang, namespace, outputFile, host);
-				if (host.hasErrors)
+				if (host.hasErrors())
 					System.exit(1);
 				return;
 			}
@@ -290,8 +286,8 @@ public class Fut
 					boolean error = false;
 					for (String outputExt : outputFile.substring(i + 1).split(",")) {
 						emit(program, outputExt, namespace, outputBase + outputExt, host);
-						if (host.hasErrors) {
-							host.hasErrors = false;
+						if (host.hasErrors()) {
+							host.setErrors(false);
 							error = true;
 						}
 					}
