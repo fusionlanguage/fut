@@ -1361,6 +1361,7 @@ namespace Fusion
 		MathPositiveInfinity,
 		EnumFromInt,
 		EnumHasFlag,
+		EnumToInt,
 		IntTryParse,
 		NIntTryParse,
 		LongTryParse,
@@ -3496,6 +3497,7 @@ namespace Fusion
 		{
 			FuEnum enu = flags ? new FuEnumFlags() : new FuEnum();
 			enu.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, enu, FuId.EnumFromInt, "FromInt", false, FuVar.New(this.IntType, "value")));
+			enu.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.IntType, FuId.EnumToInt, "ToInt", false));
 			if (flags)
 				enu.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.EnumHasFlag, "HasFlag", false, FuVar.New(enu, "flag")));
 			return enu;
@@ -11733,6 +11735,9 @@ namespace Fusion
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
+			case FuId.EnumToInt:
+				obj.Accept(this, parent);
+				break;
 			case FuId.IntTryParse:
 				Include("limits.h");
 				this.IntFunctions.Add(FuId.IntTryParse);
@@ -13863,6 +13868,9 @@ namespace Fusion
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
+			case FuId.EnumToInt:
+				obj.Accept(this, parent);
+				break;
 			case FuId.StringStartsWith:
 				int c = GetOneAscii(args[0]);
 				if (c >= 0) {
@@ -14850,6 +14858,9 @@ namespace Fusion
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
+				break;
+			case FuId.EnumToInt:
+				WriteEnumAsInt(obj, parent);
 				break;
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
@@ -16637,6 +16648,10 @@ namespace Fusion
 			case FuId.EnumFromInt:
 				WriteStaticCast(type, args[0]);
 				break;
+			case FuId.EnumToInt:
+				Write("(int) ");
+				obj.Accept(this, FuPriority.Primary);
+				break;
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
@@ -17987,6 +18002,9 @@ namespace Fusion
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
+				break;
+			case FuId.EnumToInt:
+				obj.Accept(this, parent);
 				break;
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
@@ -19450,6 +19468,13 @@ namespace Fusion
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
 				break;
+			case FuId.EnumToInt:
+				FuEnum enu = (FuEnum) obj.Type;
+				if (IsJavaEnum(enu))
+					WritePostfix(obj, ".ordinal()");
+				else
+					obj.Accept(this, parent);
+				break;
 			case FuId.DoubleTryParse:
 				Include("java.util.function.DoubleSupplier");
 				Write("!Double.isNaN(");
@@ -20812,6 +20837,9 @@ namespace Fusion
 				break;
 			case FuId.EnumHasFlag:
 				WriteEnumHasFlag(obj, args, parent);
+				break;
+			case FuId.EnumToInt:
+				obj.Accept(this, parent);
 				break;
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
@@ -22846,6 +22874,9 @@ namespace Fusion
 				Write("(rawValue: ");
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
+				break;
+			case FuId.EnumToInt:
+				WritePostfix(obj, ".rawValue");
 				break;
 			case FuId.EnumHasFlag:
 				WriteMethodCall(obj, "contains", args[0]);
@@ -25040,6 +25071,9 @@ namespace Fusion
 			case FuId.EnumFromInt:
 				WriteName(type);
 				WriteInParentheses(args);
+				break;
+			case FuId.EnumToInt:
+				WritePostfix(obj, ".value");
 				break;
 			case FuId.EnumHasFlag:
 			case FuId.StringContains:

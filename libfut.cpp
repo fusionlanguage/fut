@@ -3018,6 +3018,7 @@ std::shared_ptr<FuEnum> FuSystem::newEnum(bool flags) const
 {
 	std::shared_ptr<FuEnum> enu = flags ? std::make_shared<FuEnumFlags>() : std::make_shared<FuEnum>();
 	enu->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, enu, FuId::enumFromInt, "FromInt", false, FuVar::new_(this->intType, "value")));
+	enu->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->intType, FuId::enumToInt, "ToInt", false));
 	if (flags)
 		enu->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::enumHasFlag, "HasFlag", false, FuVar::new_(enu, "flag")));
 	return enu;
@@ -11486,6 +11487,9 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
 		break;
+	case FuId::enumToInt:
+		obj->accept(this, parent);
+		break;
 	case FuId::intTryParse:
 		include("limits.h");
 		this->intFunctions.insert(FuId::intTryParse);
@@ -13626,6 +13630,9 @@ void GenCl::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
 		break;
+	case FuId::enumToInt:
+		obj->accept(this, parent);
+		break;
 	case FuId::stringStartsWith:
 		{
 			int c = getOneAscii((*args)[0].get());
@@ -14509,6 +14516,9 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
+		break;
+	case FuId::enumToInt:
+		writeEnumAsInt(obj, parent);
 		break;
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
@@ -16258,6 +16268,10 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::enumFromInt:
 		writeStaticCast(type, (*args)[0].get());
 		break;
+	case FuId::enumToInt:
+		write("(int) ");
+		obj->accept(this, FuPriority::primary);
+		break;
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
 	case FuId::longTryParse:
@@ -17437,6 +17451,9 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
+		break;
+	case FuId::enumToInt:
+		obj->accept(this, parent);
 		break;
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
@@ -18837,6 +18854,15 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
 		break;
+	case FuId::enumToInt:
+		{
+			const FuEnum * enu = static_cast<const FuEnum *>(obj->type.get());
+			if (isJavaEnum(enu))
+				writePostfix(obj, ".ordinal()");
+			else
+				obj->accept(this, parent);
+			break;
+		}
 	case FuId::doubleTryParse:
 		include("java.util.function.DoubleSupplier");
 		write("!Double.isNaN(");
@@ -20190,6 +20216,9 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		break;
 	case FuId::enumHasFlag:
 		writeEnumHasFlag(obj, args, parent);
+		break;
+	case FuId::enumToInt:
+		obj->accept(this, parent);
 		break;
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
@@ -22090,6 +22119,9 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		write("(rawValue: ");
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
+		break;
+	case FuId::enumToInt:
+		writePostfix(obj, ".rawValue");
 		break;
 	case FuId::enumHasFlag:
 		writeMethodCall(obj, "contains", (*args)[0].get());
@@ -24199,6 +24231,9 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::enumFromInt:
 		writeName(type);
 		writeInParentheses(args);
+		break;
+	case FuId::enumToInt:
+		writePostfix(obj, ".value");
 		break;
 	case FuId::enumHasFlag:
 	case FuId::stringContains:

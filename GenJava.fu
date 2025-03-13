@@ -655,6 +655,13 @@ public class GenJava : GenTyped
 		case FuId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;
+		case FuId.EnumToInt:
+			assert obj.Type is FuEnum enu;
+			if (IsJavaEnum(enu))
+				WritePostfix(obj, ".ordinal()");
+			else
+				obj.Accept(this, parent);
+			break;
 		case FuId.DoubleTryParse:
 			Include("java.util.function.DoubleSupplier");
 			Write("!Double.isNaN(");

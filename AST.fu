@@ -117,6 +117,7 @@ public enum FuId
 	MathPositiveInfinity,
 	EnumFromInt,
 	EnumHasFlag,
+	EnumToInt,
 	IntTryParse,
 	NIntTryParse,
 	LongTryParse,
@@ -1615,6 +1616,7 @@ public class FuSystem : FuScope
 	{
 		FuEnum# enu = flags ? new FuEnumFlags() : new FuEnum();
 		enu.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, enu, FuId.EnumFromInt, "FromInt", false, FuVar.New(IntType, "value")));
+		enu.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, IntType, FuId.EnumToInt, "ToInt", false));
 		if (flags)
 			enu.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.EnumHasFlag, "HasFlag", false, FuVar.New(enu, "flag")));
 		return enu;

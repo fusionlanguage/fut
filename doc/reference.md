@@ -269,7 +269,8 @@ Seasons s = Seasons.Warm;
 bool ok = s.HasFlag(Seasons.Summer);
 ```
 
-Convert an integer to an enumeration with the `FromInt` method:
+Convert an integer to an enumeration with the `FromInt` method
+and back with the `ToInt` method:
 
 ```csharp
 enum Magic
@@ -279,6 +280,7 @@ enum Magic
 }
 
 assert Magic.FromInt(42) == Magic.Answer;
+assert Magic.One.ToInt() == 1;
 ```
 
 ### Strings

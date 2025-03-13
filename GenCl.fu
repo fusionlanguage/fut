@@ -186,6 +186,9 @@ public class GenCl : GenC
 		case FuId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;
+		case FuId.EnumToInt:
+			obj.Accept(this, parent);
+			break;
 		case FuId.StringStartsWith:
 			int c = GetOneAscii(args[0]);
 			if (c >= 0) {

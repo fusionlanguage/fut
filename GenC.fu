@@ -2006,6 +2006,9 @@ public class GenC : GenCCpp
 		case FuId.EnumHasFlag:
 			WriteEnumHasFlag(obj, args, parent);
 			break;
+		case FuId.EnumToInt:
+			obj.Accept(this, parent);
+			break;
 		case FuId.IntTryParse:
 			Include("limits.h");
 			this.IntFunctions.Add(FuId.IntTryParse);

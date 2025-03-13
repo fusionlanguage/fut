@@ -819,6 +819,9 @@ public class GenPy : GenPySwift
 			WriteName(type);
 			WriteInParentheses(args);
 			break;
+		case FuId.EnumToInt:
+			WritePostfix(obj, ".value");
+			break;
 		case FuId.EnumHasFlag:
 		case FuId.StringContains:
 		case FuId.ArrayContains:

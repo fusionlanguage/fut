@@ -245,6 +245,7 @@ enum class FuId
 	mathPositiveInfinity,
 	enumFromInt,
 	enumHasFlag,
+	enumToInt,
 	intTryParse,
 	nIntTryParse,
 	longTryParse,

@@ -469,6 +469,10 @@ public class GenCs : GenTyped
 		case FuId.EnumFromInt:
 			WriteStaticCast(type, args[0]);
 			break;
+		case FuId.EnumToInt:
+			Write("(int) ");
+			obj.Accept(this, FuPriority.Primary);
+			break;
 		case FuId.IntTryParse:
 		case FuId.NIntTryParse:
 		case FuId.LongTryParse:

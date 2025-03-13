@@ -487,6 +487,9 @@ public class GenSwift : GenPySwift
 			args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
+		case FuId.EnumToInt:
+			WritePostfix(obj, ".rawValue");
+			break;
 		case FuId.EnumHasFlag:
 			WriteMethodCall(obj, "contains", args[0]);
 			break;
