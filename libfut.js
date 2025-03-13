@@ -11842,7 +11842,9 @@ export class GenC extends GenCCpp
 
 	writeArrayFill(obj, args)
 	{
-		this.write("for (size_t _i = 0; _i < ");
+		this.write("for (");
+		this.write(args.length != 1 && this.getTypeId(args[2].type, true) == FuId.INT_TYPE ? "int" : "size_t");
+		this.write(" _i = 0; _i < ");
 		if (args.length == 1)
 			this.writeArrayStorageLength(obj);
 		else

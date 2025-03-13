@@ -11385,7 +11385,9 @@ namespace Fusion
 
 		protected void WriteArrayFill(FuExpr obj, List<FuExpr> args)
 		{
-			Write("for (size_t _i = 0; _i < ");
+			Write("for (");
+			Write(args.Count != 1 && GetTypeId(args[2].Type, true) == FuId.IntType ? "int" : "size_t");
+			Write(" _i = 0; _i < ");
 			if (args.Count == 1)
 				WriteArrayStorageLength(obj);
 			else

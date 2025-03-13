@@ -11140,7 +11140,9 @@ void GenC::writeSizeofCompare(const FuType * elementType)
 
 void GenC::writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
-	write("for (size_t _i = 0; _i < ");
+	write("for (");
+	write(std::ssize(*args) != 1 && getTypeId((*args)[2]->type.get(), true) == FuId::intType ? "int" : "size_t");
+	write(" _i = 0; _i < ");
 	if (std::ssize(*args) == 1)
 		writeArrayStorageLength(obj);
 	else
