@@ -7325,6 +7325,9 @@ export class FuSema
 			this.#currentMethod = null;
 		}
 		for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
+			let baseSymbol = klass.parent.tryLookup(symbol.name, false);
+			if (baseSymbol == symbol)
+				baseSymbol = null;
 			if (symbol instanceof FuField) {
 				const field = symbol;
 				if (field.value != null) {
@@ -7337,10 +7340,10 @@ export class FuSema
 			}
 			else if (symbol instanceof FuMethod) {
 				const method = symbol;
-				if (method.body != null) {
+				if (method.callType != FuCallType.ABSTRACT) {
 					if (method.callType == FuCallType.OVERRIDE || method.callType == FuCallType.SEALED) {
 						let baseMethod;
-						if ((baseMethod = klass.parent.tryLookup(method.name, false)) instanceof FuMethod) {
+						if ((baseMethod = baseSymbol) instanceof FuMethod) {
 							if (!baseMethod.isAbstractVirtualOrOverride())
 								this.#reportError(method, "Base method is not abstract or virtual");
 							else if (method.isMutator() != baseMethod.isMutator()) {
@@ -7372,6 +7375,7 @@ export class FuSema
 						}
 						else
 							this.#reportError(method, "No method to override");
+						baseSymbol = null;
 					}
 					this.#currentScope = method.parameters;
 					this.#currentMethod = method;
@@ -7380,6 +7384,13 @@ export class FuSema
 						this.#reportError(method, "Method can complete without a return value");
 					this.#currentMethod = null;
 				}
+			}
+			let baseMember;
+			if ((baseMember = baseSymbol) instanceof FuMember && baseMember.visibility != FuVisibility.PRIVATE) {
+				if (symbol instanceof FuMethod && baseSymbol instanceof FuMethod)
+					this.#reportError(symbol, `Method defined in base class '${baseSymbol.parent.name}'. Did you mean 'override'?`);
+				else
+					this.#reportError(symbol, `Duplicate definition of '${symbol.name}' in base class '${baseSymbol.parent.name}'`);
 			}
 		}
 	}

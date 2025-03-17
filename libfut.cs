@@ -6923,6 +6923,9 @@ namespace Fusion
 				this.CurrentMethod = null;
 			}
 			for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
+				FuSymbol baseSymbol = klass.Parent.TryLookup(symbol.Name, false);
+				if (baseSymbol == symbol)
+					baseSymbol = null;
 				switch (symbol) {
 				case FuField field:
 					if (field.Value != null) {
@@ -6932,9 +6935,9 @@ namespace Fusion
 					}
 					break;
 				case FuMethod method:
-					if (method.Body != null) {
+					if (method.CallType != FuCallType.Abstract) {
 						if (method.CallType == FuCallType.Override || method.CallType == FuCallType.Sealed) {
-							if (klass.Parent.TryLookup(method.Name, false) is FuMethod baseMethod) {
+							if (baseSymbol is FuMethod baseMethod) {
 								if (!baseMethod.IsAbstractVirtualOrOverride())
 									ReportError(method, "Base method is not abstract or virtual");
 								else if (method.IsMutator() != baseMethod.IsMutator()) {
@@ -6966,6 +6969,7 @@ namespace Fusion
 							}
 							else
 								ReportError(method, "No method to override");
+							baseSymbol = null;
 						}
 						this.CurrentScope = method.Parameters;
 						this.CurrentMethod = method;
@@ -6977,6 +6981,12 @@ namespace Fusion
 					break;
 				default:
 					break;
+				}
+				if (baseSymbol is FuMember baseMember && baseMember.Visibility != FuVisibility.Private) {
+					if (symbol is FuMethod && baseSymbol is FuMethod)
+						ReportError(symbol, $"Method defined in base class '{baseSymbol.Parent.Name}'. Did you mean 'override'?");
+					else
+						ReportError(symbol, $"Duplicate definition of '{symbol.Name}' in base class '{baseSymbol.Parent.Name}'");
 				}
 			}
 		}

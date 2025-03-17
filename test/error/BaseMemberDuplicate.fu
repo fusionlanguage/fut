@@ -1,0 +1,13 @@
+public class Base
+{
+	public const int Const = 0;
+	protected int Field;
+	public int Method() => 0;
+}
+
+public class Derived : Base
+{
+	public const int Const = 1; //ERROR: Duplicate definition of 'Const' in base class 'Base'
+	protected int Field; //ERROR: Duplicate definition of 'Field' in base class 'Base'
+	public int Method() => 1; //ERROR: Method defined in base class 'Base'. Did you mean 'override'?
+}

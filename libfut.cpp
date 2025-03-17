@@ -6834,6 +6834,9 @@ void FuSema::resolveCode(FuClass * klass)
 		this->currentMethod = nullptr;
 	}
 	for (FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
+		FuSymbol * baseSymbol = klass->parent->tryLookup(symbol->name, false).get();
+		if (baseSymbol == symbol)
+			baseSymbol = nullptr;
 		if (FuField *field = dynamic_cast<FuField *>(symbol)) {
 			if (field->value != nullptr) {
 				field->value = visitExpr(field->value);
@@ -6844,9 +6847,9 @@ void FuSema::resolveCode(FuClass * klass)
 			}
 		}
 		else if (FuMethod *method = dynamic_cast<FuMethod *>(symbol)) {
-			if (method->body != nullptr) {
+			if (method->callType != FuCallType::abstract) {
 				if (method->callType == FuCallType::override_ || method->callType == FuCallType::sealed) {
-					if (FuMethod *baseMethod = dynamic_cast<FuMethod *>(klass->parent->tryLookup(method->name, false).get())) {
+					if (FuMethod *baseMethod = dynamic_cast<FuMethod *>(baseSymbol)) {
 						if (!baseMethod->isAbstractVirtualOrOverride())
 							reportError(method, "Base method is not abstract or virtual");
 						else if (method->isMutator() != baseMethod->isMutator()) {
@@ -6878,6 +6881,7 @@ void FuSema::resolveCode(FuClass * klass)
 					}
 					else
 						reportError(method, "No method to override");
+					baseSymbol = nullptr;
 				}
 				this->currentScope = &method->parameters;
 				this->currentMethod = method;
@@ -6886,6 +6890,13 @@ void FuSema::resolveCode(FuClass * klass)
 					reportError(method, "Method can complete without a return value");
 				this->currentMethod = nullptr;
 			}
+		}
+		const FuMember * baseMember;
+		if ((baseMember = dynamic_cast<const FuMember *>(baseSymbol)) && baseMember->visibility != FuVisibility::private_) {
+			if (dynamic_cast<const FuMethod *>(symbol) && dynamic_cast<const FuMethod *>(baseSymbol))
+				reportError(symbol, std::format("Method defined in base class '{}'. Did you mean 'override'?", baseSymbol->parent->name));
+			else
+				reportError(symbol, std::format("Duplicate definition of '{}' in base class '{}'", symbol->name, baseSymbol->parent->name));
 		}
 	}
 }
