@@ -1409,6 +1409,14 @@ public class GenD : GenCCppD
 		}
 	}
 
+	protected override void WriteThrowMessage!(FuExpr? expr)
+	{
+		if (expr == null)
+			Write("\"\"");
+		else
+			expr.Accept(this, FuPriority.Argument);
+	}
+
 	protected override void WriteEnum!(FuEnum enu)
 	{
 		WriteNewLine();

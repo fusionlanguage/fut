@@ -8819,18 +8819,17 @@ void GenBase::writeExceptionClass(const FuSymbol * klass)
 		writeName(klass);
 }
 
-void GenBase::writeThrowNoMessage()
+void GenBase::writeThrowMessage(const FuExpr * expr)
 {
+	if (expr != nullptr)
+		expr->accept(this, FuPriority::argument);
 }
 
 void GenBase::writeThrowArgument(const FuThrow * statement)
 {
 	writeExceptionClass(statement->class_->symbol);
 	writeChar('(');
-	if (statement->message != nullptr)
-		statement->message->accept(this, FuPriority::argument);
-	else
-		writeThrowNoMessage();
+	writeThrowMessage(statement->message.get());
 	writeChar(')');
 }
 
@@ -9336,11 +9335,6 @@ void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
 	}
 	else
 		writeSwitchAsIfs(statement, true);
-}
-
-void GenCCppD::writeThrowNoMessage()
-{
-	write("\"\"");
 }
 
 void GenCCpp::writeDocCode(std::string_view s)
@@ -15466,6 +15460,16 @@ void GenCpp::writeException()
 	write("std::runtime_error");
 }
 
+void GenCpp::writeThrowMessage(const FuExpr * expr)
+{
+	if (expr == nullptr)
+		write("\"\"");
+	else if (expr->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteralString *>(expr))
+		writeCall("std::string", expr);
+	else
+		expr->accept(this, FuPriority::argument);
+}
+
 void GenCpp::visitThrow(const FuThrow * statement)
 {
 	write("throw ");
@@ -18078,6 +18082,14 @@ void GenD::visitSwitch(const FuSwitch * statement)
 		this->indent--;
 		writeCharLine('}');
 	}
+}
+
+void GenD::writeThrowMessage(const FuExpr * expr)
+{
+	if (expr == nullptr)
+		write("\"\"");
+	else
+		expr->accept(this, FuPriority::argument);
 }
 
 void GenD::writeEnum(const FuEnum * enu)

@@ -1769,6 +1769,16 @@ public class GenCpp : GenCCpp
 		Write("std::runtime_error");
 	}
 
+	protected override void WriteThrowMessage!(FuExpr? expr)
+	{
+		if (expr == null)
+			Write("\"\"");
+		else if (expr.Type.Id == FuId.StringPtrType && !(expr is FuLiteralString))
+			WriteCall("std::string", expr);
+		else
+			expr.Accept(this, FuPriority.Argument);
+	}
+
 	internal override void VisitThrow!(FuThrow statement)
 	{
 		Write("throw ");

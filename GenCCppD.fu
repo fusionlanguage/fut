@@ -1,6 +1,6 @@
 // GenCCppD.fu - base for C/C++/D code generators
 //
-// Copyright (C) 2011-2023  Piotr Fusik
+// Copyright (C) 2011-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -69,10 +69,5 @@ public abstract class GenCCppD : GenTyped
 		}
 		else
 			WriteSwitchAsIfs(statement, true);
-	}
-
-	protected override void WriteThrowNoMessage!()
-	{
-		Write("\"\"");
 	}
 }

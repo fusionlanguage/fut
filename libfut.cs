@@ -8950,18 +8950,17 @@ namespace Fusion
 				WriteName(klass);
 		}
 
-		protected virtual void WriteThrowNoMessage()
+		protected virtual void WriteThrowMessage(FuExpr expr)
 		{
+			if (expr != null)
+				expr.Accept(this, FuPriority.Argument);
 		}
 
 		protected void WriteThrowArgument(FuThrow statement)
 		{
 			WriteExceptionClass(statement.Class.Symbol);
 			WriteChar('(');
-			if (statement.Message != null)
-				statement.Message.Accept(this, FuPriority.Argument);
-			else
-				WriteThrowNoMessage();
+			WriteThrowMessage(statement.Message);
 			WriteChar(')');
 		}
 
@@ -9476,11 +9475,6 @@ namespace Fusion
 			}
 			else
 				WriteSwitchAsIfs(statement, true);
-		}
-
-		protected override void WriteThrowNoMessage()
-		{
-			Write("\"\"");
 		}
 	}
 
@@ -15810,6 +15804,16 @@ namespace Fusion
 			Write("std::runtime_error");
 		}
 
+		protected override void WriteThrowMessage(FuExpr expr)
+		{
+			if (expr == null)
+				Write("\"\"");
+			else if (expr.Type.Id == FuId.StringPtrType && !(expr is FuLiteralString))
+				WriteCall("std::string", expr);
+			else
+				expr.Accept(this, FuPriority.Argument);
+		}
+
 		internal override void VisitThrow(FuThrow statement)
 		{
 			Write("throw ");
@@ -18624,6 +18628,14 @@ namespace Fusion
 				this.Indent--;
 				WriteCharLine('}');
 			}
+		}
+
+		protected override void WriteThrowMessage(FuExpr expr)
+		{
+			if (expr == null)
+				Write("\"\"");
+			else
+				expr.Accept(this, FuPriority.Argument);
 		}
 
 		protected override void WriteEnum(FuEnum enu)

@@ -9375,18 +9375,17 @@ export class GenBase extends FuVisitor
 			this.writeName(klass);
 	}
 
-	writeThrowNoMessage()
+	writeThrowMessage(expr)
 	{
+		if (expr != null)
+			expr.accept(this, FuPriority.ARGUMENT);
 	}
 
 	writeThrowArgument(statement)
 	{
 		this.writeExceptionClass(statement.class.symbol);
 		this.writeChar(40);
-		if (statement.message != null)
-			statement.message.accept(this, FuPriority.ARGUMENT);
-		else
-			this.writeThrowNoMessage();
+		this.writeThrowMessage(statement.message);
 		this.writeChar(41);
 	}
 
@@ -9917,11 +9916,6 @@ export class GenCCppD extends GenTyped
 		}
 		else
 			this.writeSwitchAsIfs(statement, true);
-	}
-
-	writeThrowNoMessage()
-	{
-		this.write("\"\"");
 	}
 }
 
@@ -16329,6 +16323,16 @@ export class GenCpp extends GenCCpp
 		this.write("std::runtime_error");
 	}
 
+	writeThrowMessage(expr)
+	{
+		if (expr == null)
+			this.write("\"\"");
+		else if (expr.type.id == FuId.STRING_PTR_TYPE && !(expr instanceof FuLiteralString))
+			this.writeCall("std::string", expr);
+		else
+			expr.accept(this, FuPriority.ARGUMENT);
+	}
+
 	visitThrow(statement)
 	{
 		this.write("throw ");
@@ -19199,6 +19203,14 @@ export class GenD extends GenCCppD
 			this.indent--;
 			this.writeCharLine(125);
 		}
+	}
+
+	writeThrowMessage(expr)
+	{
+		if (expr == null)
+			this.write("\"\"");
+		else
+			expr.accept(this, FuPriority.ARGUMENT);
 	}
 
 	writeEnum(enu)
