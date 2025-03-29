@@ -21844,6 +21844,11 @@ void GenSwift::openIndexing(const FuExpr * collection)
 	writeChar('[');
 }
 
+FuId GenSwift::getTypeId(const FuType * type, bool promote) const
+{
+	return type->id == FuId::intType || (promote && dynamic_cast<const FuRangeType *>(type)) ? FuId::nIntType : type->id;
+}
+
 bool GenSwift::isArrayRef(const FuArrayStorageType * array)
 {
 	return array->ptrTaken || dynamic_cast<const FuStorageType *>(array->getElementType().get());

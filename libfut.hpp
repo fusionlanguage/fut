@@ -3471,6 +3471,7 @@ protected:
 	void writeName(const FuSymbol * symbol) override;
 	void writeLocalName(const FuSymbol * symbol, FuPriority parent) override;
 	void writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol) override;
+	FuId getTypeId(const FuType * type, bool promote) const override;
 	void writeTypeAndName(const FuNamedValue * value) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;

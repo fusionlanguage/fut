@@ -23243,6 +23243,11 @@ export class GenSwift extends GenPySwift
 		this.writeChar(91);
 	}
 
+	getTypeId(type, promote)
+	{
+		return type.id == FuId.INT_TYPE || (promote && type instanceof FuRangeType) ? FuId.N_INT_TYPE : type.id;
+	}
+
 	static #isArrayRef(array)
 	{
 		return array.ptrTaken || array.getElementType() instanceof FuStorageType;
