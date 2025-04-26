@@ -5529,56 +5529,79 @@ export class FuSema
 
 	#checkLValue(expr)
 	{
-		let indexing;
-		if (expr instanceof FuSymbolReference) {
-			const symbol = expr;
-			if (symbol.symbol instanceof FuVar) {
-				const def = symbol.symbol;
-				def.isAssigned = true;
-				if (symbol.symbol.parent instanceof FuFor) {
-					const forLoop = symbol.symbol.parent;
-					forLoop.isRange = false;
-				}
-				else if (symbol.symbol.parent instanceof FuForeach)
-					this.#reportError(expr, "Cannot assign a foreach iteration variable");
-				for (let scope = this.#currentScope; !(scope instanceof FuClass); scope = scope.parent) {
-					let forLoop;
-					let binaryCond;
-					if ((forLoop = scope) instanceof FuFor && forLoop.isRange && (binaryCond = forLoop.cond) instanceof FuBinaryExpr && binaryCond.right.isReferenceTo(symbol.symbol))
+		for (;;) {
+			let indexing;
+			if (expr instanceof FuSymbolReference) {
+				const symbol = expr;
+				if (symbol.symbol instanceof FuVar) {
+					const def = symbol.symbol;
+					def.isAssigned = true;
+					if (symbol.symbol.parent instanceof FuFor) {
+						const forLoop = symbol.symbol.parent;
 						forLoop.isRange = false;
-				}
-			}
-			else if (symbol.symbol instanceof FuField) {
-				if (symbol.left == null) {
-					if (!this.#currentMethod.isMutator())
-						this.#reportError(expr, "Cannot modify field in a non-mutating method");
-				}
-				else {
-					if (symbol.left.type instanceof FuStorageType) {
 					}
-					else if (symbol.left.type instanceof FuReadWriteClassType) {
+					else if (symbol.symbol.parent instanceof FuForeach)
+						this.#reportError(expr, "Cannot assign a foreach iteration variable");
+					for (let scope = this.#currentScope; !(scope instanceof FuClass); scope = scope.parent) {
+						let forLoop;
+						let binaryCond;
+						if ((forLoop = scope) instanceof FuFor && forLoop.isRange && (binaryCond = forLoop.cond) instanceof FuBinaryExpr && binaryCond.right.isReferenceTo(symbol.symbol))
+							forLoop.isRange = false;
 					}
-					else if (symbol.left.type instanceof FuClassType)
+					return;
+				}
+				else if (symbol.symbol instanceof FuField) {
+					if (symbol.left == null) {
+						if (!this.#currentMethod.isMutator())
+							this.#reportError(expr, "Cannot modify field in a non-mutating method");
+						return;
+					}
+					if (symbol.left.type instanceof FuStorageType)
+						expr = symbol.left;
+					else if (symbol.left.type instanceof FuReadWriteClassType)
+						return;
+					else if (symbol.left.type instanceof FuClassType) {
 						this.#reportError(expr, "Cannot modify field through a read-only reference");
+						return;
+					}
 					else
 						throw new Error();
 				}
+				else if (symbol.symbol instanceof FuStaticProperty)
+					return;
+				else {
+					this.#reportError(expr, "Cannot modify this");
+					return;
+				}
 			}
-			else
+			else if ((indexing = expr) instanceof FuBinaryExpr && indexing.op == FuToken.LEFT_BRACKET) {
+				if (indexing.left.type instanceof FuStorageType)
+					expr = indexing.left;
+				else if (indexing.left.type instanceof FuReadWriteClassType)
+					return;
+				else if (indexing.left.type instanceof FuClassType) {
+					this.#reportError(expr, "Cannot modify collection through a read-only reference");
+					return;
+				}
+				else
+					throw new Error();
+			}
+			else if (expr instanceof FuCallExpr) {
+				const call = expr;
+				if (call.type instanceof FuReadWriteClassType)
+					return;
+				else if (call.type instanceof FuClassType) {
+					this.#reportError(expr, "Cannot modify this");
+					return;
+				}
+				else
+					throw new Error();
+			}
+			else {
 				this.#reportError(expr, "Cannot modify this");
-		}
-		else if ((indexing = expr) instanceof FuBinaryExpr && indexing.op == FuToken.LEFT_BRACKET) {
-			if (indexing.left.type instanceof FuStorageType) {
+				return;
 			}
-			else if (indexing.left.type instanceof FuReadWriteClassType) {
-			}
-			else if (indexing.left.type instanceof FuClassType)
-				this.#reportError(expr, "Cannot modify collection through a read-only reference");
-			else
-				throw new Error();
 		}
-		else
-			this.#reportError(expr, "Cannot modify this");
 	}
 
 	#concatenate(left, right)
@@ -6326,6 +6349,8 @@ export class FuSema
 				let baseRef;
 				if ((baseRef = symbol.left) instanceof FuSymbolReference && baseRef.symbol.id == FuId.BASE_PTR) {
 				}
+				else if (symbol.left.type instanceof FuStorageType)
+					this.#checkLValue(symbol.left);
 				else if (!(symbol.left.type instanceof FuReadWriteClassType)) {
 					switch (method.id) {
 					case FuId.INT_TRY_PARSE:

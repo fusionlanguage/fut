@@ -5265,66 +5265,81 @@ namespace Fusion
 
 		void CheckLValue(FuExpr expr)
 		{
-			switch (expr) {
-			case FuSymbolReference symbol:
-				switch (symbol.Symbol) {
-				case FuVar def:
-					def.IsAssigned = true;
-					switch (symbol.Symbol.Parent) {
-					case FuFor forLoop:
-						forLoop.IsRange = false;
-						break;
-					case FuForeach:
-						ReportError(expr, "Cannot assign a foreach iteration variable");
-						break;
-					default:
-						break;
-					}
-					for (FuScope scope = this.CurrentScope; !(scope is FuClass); scope = scope.Parent) {
-						if (scope is FuFor forLoop && forLoop.IsRange && forLoop.Cond is FuBinaryExpr binaryCond && binaryCond.Right.IsReferenceTo(symbol.Symbol))
+			for (;;) {
+				switch (expr) {
+				case FuSymbolReference symbol:
+					switch (symbol.Symbol) {
+					case FuVar def:
+						def.IsAssigned = true;
+						switch (symbol.Symbol.Parent) {
+						case FuFor forLoop:
 							forLoop.IsRange = false;
-					}
-					break;
-				case FuField:
-					if (symbol.Left == null) {
-						if (!this.CurrentMethod.IsMutator())
-							ReportError(expr, "Cannot modify field in a non-mutating method");
-					}
-					else {
+							break;
+						case FuForeach:
+							ReportError(expr, "Cannot assign a foreach iteration variable");
+							break;
+						default:
+							break;
+						}
+						for (FuScope scope = this.CurrentScope; !(scope is FuClass); scope = scope.Parent) {
+							if (scope is FuFor forLoop && forLoop.IsRange && forLoop.Cond is FuBinaryExpr binaryCond && binaryCond.Right.IsReferenceTo(symbol.Symbol))
+								forLoop.IsRange = false;
+						}
+						return;
+					case FuField:
+						if (symbol.Left == null) {
+							if (!this.CurrentMethod.IsMutator())
+								ReportError(expr, "Cannot modify field in a non-mutating method");
+							return;
+						}
 						switch (symbol.Left.Type) {
 						case FuStorageType:
+							expr = symbol.Left;
 							break;
 						case FuReadWriteClassType:
-							break;
+							return;
 						case FuClassType:
 							ReportError(expr, "Cannot modify field through a read-only reference");
-							break;
+							return;
 						default:
 							throw new NotImplementedException();
 						}
+						break;
+					case FuStaticProperty:
+						return;
+					default:
+						ReportError(expr, "Cannot modify this");
+						return;
 					}
 					break;
+				case FuBinaryExpr indexing when indexing.Op == FuToken.LeftBracket:
+					switch (indexing.Left.Type) {
+					case FuStorageType:
+						expr = indexing.Left;
+						break;
+					case FuReadWriteClassType:
+						return;
+					case FuClassType:
+						ReportError(expr, "Cannot modify collection through a read-only reference");
+						return;
+					default:
+						throw new NotImplementedException();
+					}
+					break;
+				case FuCallExpr call:
+					switch (call.Type) {
+					case FuReadWriteClassType:
+						return;
+					case FuClassType:
+						ReportError(expr, "Cannot modify this");
+						return;
+					default:
+						throw new NotImplementedException();
+					}
 				default:
 					ReportError(expr, "Cannot modify this");
-					break;
+					return;
 				}
-				break;
-			case FuBinaryExpr indexing when indexing.Op == FuToken.LeftBracket:
-				switch (indexing.Left.Type) {
-				case FuStorageType:
-					break;
-				case FuReadWriteClassType:
-					break;
-				case FuClassType:
-					ReportError(expr, "Cannot modify collection through a read-only reference");
-					break;
-				default:
-					throw new NotImplementedException();
-				}
-				break;
-			default:
-				ReportError(expr, "Cannot modify this");
-				break;
 			}
 		}
 
@@ -5996,6 +6011,8 @@ namespace Fusion
 				}
 				else if (symbol.Left is FuSymbolReference baseRef && baseRef.Symbol.Id == FuId.BasePtr) {
 				}
+				else if (symbol.Left.Type is FuStorageType)
+					CheckLValue(symbol.Left);
 				else if (!(symbol.Left.Type is FuReadWriteClassType)) {
 					switch (method.Id) {
 					case FuId.IntTryParse:

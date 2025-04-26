@@ -5041,52 +5041,74 @@ std::shared_ptr<FuLiteralDouble> FuSema::toLiteralDouble(const FuExpr * expr, do
 
 void FuSema::checkLValue(const FuExpr * expr) const
 {
-	const FuBinaryExpr * indexing;
-	if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
-		if (FuVar *def = dynamic_cast<FuVar *>(symbol->symbol)) {
-			def->isAssigned = true;
-			if (FuFor *forLoop = dynamic_cast<FuFor *>(symbol->symbol->parent))
-				forLoop->isRange = false;
-			else if (dynamic_cast<const FuForeach *>(symbol->symbol->parent))
-				reportError(expr, "Cannot assign a foreach iteration variable");
-			for (FuScope * scope = this->currentScope; !dynamic_cast<const FuClass *>(scope); scope = scope->parent) {
-				FuFor * forLoop;
-				const FuBinaryExpr * binaryCond;
-				if ((forLoop = dynamic_cast<FuFor *>(scope)) && forLoop->isRange && (binaryCond = dynamic_cast<const FuBinaryExpr *>(forLoop->cond.get())) && binaryCond->right->isReferenceTo(symbol->symbol))
+	for (;;) {
+		const FuBinaryExpr * indexing;
+		if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr)) {
+			if (FuVar *def = dynamic_cast<FuVar *>(symbol->symbol)) {
+				def->isAssigned = true;
+				if (FuFor *forLoop = dynamic_cast<FuFor *>(symbol->symbol->parent))
 					forLoop->isRange = false;
-			}
-		}
-		else if (dynamic_cast<const FuField *>(symbol->symbol)) {
-			if (symbol->left == nullptr) {
-				if (!this->currentMethod->isMutator())
-					reportError(expr, "Cannot modify field in a non-mutating method");
-			}
-			else {
-				if (dynamic_cast<const FuStorageType *>(symbol->left->type.get())) {
+				else if (dynamic_cast<const FuForeach *>(symbol->symbol->parent))
+					reportError(expr, "Cannot assign a foreach iteration variable");
+				for (FuScope * scope = this->currentScope; !dynamic_cast<const FuClass *>(scope); scope = scope->parent) {
+					FuFor * forLoop;
+					const FuBinaryExpr * binaryCond;
+					if ((forLoop = dynamic_cast<FuFor *>(scope)) && forLoop->isRange && (binaryCond = dynamic_cast<const FuBinaryExpr *>(forLoop->cond.get())) && binaryCond->right->isReferenceTo(symbol->symbol))
+						forLoop->isRange = false;
 				}
-				else if (dynamic_cast<const FuReadWriteClassType *>(symbol->left->type.get())) {
+				return;
+			}
+			else if (dynamic_cast<const FuField *>(symbol->symbol)) {
+				if (symbol->left == nullptr) {
+					if (!this->currentMethod->isMutator())
+						reportError(expr, "Cannot modify field in a non-mutating method");
+					return;
 				}
-				else if (dynamic_cast<const FuClassType *>(symbol->left->type.get()))
+				if (dynamic_cast<const FuStorageType *>(symbol->left->type.get()))
+					expr = symbol->left.get();
+				else if (dynamic_cast<const FuReadWriteClassType *>(symbol->left->type.get()))
+					return;
+				else if (dynamic_cast<const FuClassType *>(symbol->left->type.get())) {
 					reportError(expr, "Cannot modify field through a read-only reference");
+					return;
+				}
 				else
 					std::abort();
 			}
+			else if (dynamic_cast<const FuStaticProperty *>(symbol->symbol))
+				return;
+			else {
+				reportError(expr, "Cannot modify this");
+				return;
+			}
 		}
-		else
+		else if ((indexing = dynamic_cast<const FuBinaryExpr *>(expr)) && indexing->op == FuToken::leftBracket) {
+			if (dynamic_cast<const FuStorageType *>(indexing->left->type.get()))
+				expr = indexing->left.get();
+			else if (dynamic_cast<const FuReadWriteClassType *>(indexing->left->type.get()))
+				return;
+			else if (dynamic_cast<const FuClassType *>(indexing->left->type.get())) {
+				reportError(expr, "Cannot modify collection through a read-only reference");
+				return;
+			}
+			else
+				std::abort();
+		}
+		else if (const FuCallExpr *call = dynamic_cast<const FuCallExpr *>(expr)) {
+			if (dynamic_cast<const FuReadWriteClassType *>(call->type.get()))
+				return;
+			else if (dynamic_cast<const FuClassType *>(call->type.get())) {
+				reportError(expr, "Cannot modify this");
+				return;
+			}
+			else
+				std::abort();
+		}
+		else {
 			reportError(expr, "Cannot modify this");
-	}
-	else if ((indexing = dynamic_cast<const FuBinaryExpr *>(expr)) && indexing->op == FuToken::leftBracket) {
-		if (dynamic_cast<const FuStorageType *>(indexing->left->type.get())) {
+			return;
 		}
-		else if (dynamic_cast<const FuReadWriteClassType *>(indexing->left->type.get())) {
-		}
-		else if (dynamic_cast<const FuClassType *>(indexing->left->type.get()))
-			reportError(expr, "Cannot modify collection through a read-only reference");
-		else
-			std::abort();
 	}
-	else
-		reportError(expr, "Cannot modify this");
 }
 
 std::shared_ptr<FuInterpolatedString> FuSema::concatenate(const FuInterpolatedString * left, const FuInterpolatedString * right) const
@@ -5887,6 +5909,8 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 			const FuSymbolReference * baseRef;
 			if ((baseRef = dynamic_cast<const FuSymbolReference *>(symbol->left.get())) && baseRef->symbol->id == FuId::basePtr) {
 			}
+			else if (dynamic_cast<const FuStorageType *>(symbol->left->type.get()))
+				checkLValue(symbol->left.get());
 			else if (!dynamic_cast<const FuReadWriteClassType *>(symbol->left->type.get())) {
 				switch (method->id) {
 				case FuId::intTryParse:
