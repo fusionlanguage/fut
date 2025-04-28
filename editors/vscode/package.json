@@ -1,6 +1,6 @@
 {
   "name": "fusion",
-  "version": "3.2.9",
+  "version": "3.2.10",
   "publisher": "fusionlanguage",
   "license": "MIT",
   "displayName": "Fusion",
@@ -63,6 +63,6 @@
   },
   "devDependencies": {
     "@types/vscode": "^1.0.0",
-    "typescript": "^5.7.3"
+    "typescript": "^5.8.3"
   }
 }
