@@ -16535,7 +16535,7 @@ namespace Fusion
 			foreach (FuInterpolatedPart part in expr.Parts) {
 				WriteDoubling(part.Prefix, '{');
 				WriteChar('{');
-				part.Argument.Accept(this, FuPriority.Argument);
+				part.Argument.Accept(this, FuPriority.SelectCond);
 				if (part.WidthExpr != null) {
 					WriteChar(',');
 					VisitLiteralLong(part.Width);

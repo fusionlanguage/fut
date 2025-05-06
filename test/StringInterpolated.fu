@@ -14,12 +14,15 @@ public static class Test
 		string() s6 = $"{f}";
 		double d = f;
 		string() s7 = $"{d}";
+		bool b = false;
+		string() s8 = $"{b ? 1 : 0}";
 		return s1 == "1 + 2 == 3"
 			&& s2 == "\"`{$1$"
 			&& s3 == "1"
 			&& s4 == "1"
 			&& s5 == "42"
 			&& s6 == "10.5"
-			&& s7 == "10.5";
+			&& s7 == "10.5"
+			&& s8 == "0";
 	}
 }

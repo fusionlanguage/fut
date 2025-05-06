@@ -17075,7 +17075,7 @@ export class GenCs extends GenTyped
 		for (const part of expr.parts) {
 			this.writeDoubling(part.prefix, 123);
 			this.writeChar(123);
-			part.argument.accept(this, FuPriority.ARGUMENT);
+			part.argument.accept(this, FuPriority.SELECT_COND);
 			if (part.widthExpr != null) {
 				this.writeChar(44);
 				this.visitLiteralLong(BigInt(part.width));

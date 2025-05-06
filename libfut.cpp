@@ -16154,7 +16154,7 @@ void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 	for (const FuInterpolatedPart &part : expr->parts) {
 		writeDoubling(part.prefix, '{');
 		writeChar('{');
-		part.argument->accept(this, FuPriority::argument);
+		part.argument->accept(this, FuPriority::selectCond);
 		if (part.widthExpr != nullptr) {
 			writeChar(',');
 			visitLiteralLong(part.width);
