@@ -1,0 +1,22 @@
+abstract class Base
+{
+	public virtual void Foo!()
+	{
+	}
+	internal abstract void Bar!();
+}
+
+class Derived : Base
+{
+	protected override void Foo!() //ERROR: Access modifier different from the overridden method
+	{
+	}
+	public override void Bar!() //ERROR: Access modifier different from the overridden method
+	{
+	}
+}
+
+public static class Test
+{
+	public static bool Run() => true;
+}

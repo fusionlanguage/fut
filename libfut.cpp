@@ -6876,6 +6876,8 @@ void FuSema::resolveCode(FuClass * klass)
 					if (FuMethod *baseMethod = dynamic_cast<FuMethod *>(baseSymbol)) {
 						if (!baseMethod->isAbstractVirtualOrOverride())
 							reportError(method, "Base method is not abstract or virtual");
+						else if (method->visibility != baseMethod->visibility)
+							reportError(method, "Access modifier different from the overridden method");
 						else if (method->isMutator() != baseMethod->isMutator()) {
 							if (method->isMutator())
 								reportError(method, "Mutating method cannot override a non-mutating method");

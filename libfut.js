@@ -7371,6 +7371,8 @@ export class FuSema
 						if ((baseMethod = baseSymbol) instanceof FuMethod) {
 							if (!baseMethod.isAbstractVirtualOrOverride())
 								this.#reportError(method, "Base method is not abstract or virtual");
+							else if (method.visibility != baseMethod.visibility)
+								this.#reportError(method, "Access modifier different from the overridden method");
 							else if (method.isMutator() != baseMethod.isMutator()) {
 								if (method.isMutator())
 									this.#reportError(method, "Mutating method cannot override a non-mutating method");

@@ -6957,6 +6957,8 @@ namespace Fusion
 							if (baseSymbol is FuMethod baseMethod) {
 								if (!baseMethod.IsAbstractVirtualOrOverride())
 									ReportError(method, "Base method is not abstract or virtual");
+								else if (method.Visibility != baseMethod.Visibility)
+									ReportError(method, "Access modifier different from the overridden method");
 								else if (method.IsMutator() != baseMethod.IsMutator()) {
 									if (method.IsMutator())
 										ReportError(method, "Mutating method cannot override a non-mutating method");
