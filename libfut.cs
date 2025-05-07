@@ -8666,6 +8666,12 @@ namespace Fusion
 		{
 		}
 
+		void TrimTemporariesAndCloseBlock(int temporariesCount)
+		{
+			this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
+			CloseBlock();
+		}
+
 		internal override void VisitBlock(FuBlock statement)
 		{
 			if (this.AtChildStart) {
@@ -8677,8 +8683,7 @@ namespace Fusion
 			int temporariesCount = this.CurrentTemporaries.Count;
 			WriteStatements(statement.Statements);
 			CleanupBlock(statement);
-			this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
-			CloseBlock();
+			TrimTemporariesAndCloseBlock(temporariesCount);
 		}
 
 		protected virtual void WriteChild(FuStatement statement)
@@ -8687,9 +8692,10 @@ namespace Fusion
 			this.AtLineStart = true;
 			this.AtChildStart = true;
 			this.InChildBlock = false;
+			int temporariesCount = this.CurrentTemporaries.Count;
 			statement.AcceptStatement(this);
 			if (this.InChildBlock)
-				CloseBlock();
+				TrimTemporariesAndCloseBlock(temporariesCount);
 			else if (!(statement is FuBlock))
 				this.Indent--;
 			this.InChildBlock = wasInChildBlock;

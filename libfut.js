@@ -9090,6 +9090,12 @@ export class GenBase extends FuVisitor
 	{
 	}
 
+	#trimTemporariesAndCloseBlock(temporariesCount)
+	{
+		this.currentTemporaries.splice(temporariesCount, this.currentTemporaries.length - temporariesCount);
+		this.closeBlock();
+	}
+
 	visitBlock(statement)
 	{
 		if (this.#atChildStart) {
@@ -9101,8 +9107,7 @@ export class GenBase extends FuVisitor
 		let temporariesCount = this.currentTemporaries.length;
 		this.writeStatements(statement.statements);
 		this.cleanupBlock(statement);
-		this.currentTemporaries.splice(temporariesCount, this.currentTemporaries.length - temporariesCount);
-		this.closeBlock();
+		this.#trimTemporariesAndCloseBlock(temporariesCount);
 	}
 
 	writeChild(statement)
@@ -9111,9 +9116,10 @@ export class GenBase extends FuVisitor
 		this.atLineStart = true;
 		this.#atChildStart = true;
 		this.#inChildBlock = false;
+		let temporariesCount = this.currentTemporaries.length;
 		statement.acceptStatement(this);
 		if (this.#inChildBlock)
-			this.closeBlock();
+			this.#trimTemporariesAndCloseBlock(temporariesCount);
 		else if (!(statement instanceof FuBlock))
 			this.indent--;
 		this.#inChildBlock = wasInChildBlock;

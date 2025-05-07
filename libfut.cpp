@@ -3171,9 +3171,9 @@ bool FuParser::docParseLine(FuDocPara * para)
 			for (;;) {
 				int c = peekChar();
 				if (c == '`') {
-					std::shared_ptr<FuDocCode> futemp2 = std::make_shared<FuDocCode>();
-					futemp2->text = getLexeme();
-					para->children.push_back(futemp2);
+					std::shared_ptr<FuDocCode> futemp1 = std::make_shared<FuDocCode>();
+					futemp1->text = getLexeme();
+					para->children.push_back(futemp1);
 					readChar();
 					break;
 				}
@@ -3393,28 +3393,28 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		break;
 	case FuToken::false_:
 		{
-			std::shared_ptr<FuLiteralFalse> futemp3 = std::make_shared<FuLiteralFalse>();
+			std::shared_ptr<FuLiteralFalse> futemp2 = std::make_shared<FuLiteralFalse>();
+			futemp2->loc = this->tokenLoc;
+			futemp2->type = this->host->program->system->boolType;
+			result = futemp2;
+			nextToken();
+			break;
+		}
+	case FuToken::true_:
+		{
+			std::shared_ptr<FuLiteralTrue> futemp3 = std::make_shared<FuLiteralTrue>();
 			futemp3->loc = this->tokenLoc;
 			futemp3->type = this->host->program->system->boolType;
 			result = futemp3;
 			nextToken();
 			break;
 		}
-	case FuToken::true_:
-		{
-			std::shared_ptr<FuLiteralTrue> futemp4 = std::make_shared<FuLiteralTrue>();
-			futemp4->loc = this->tokenLoc;
-			futemp4->type = this->host->program->system->boolType;
-			result = futemp4;
-			nextToken();
-			break;
-		}
 	case FuToken::null:
 		{
-			std::shared_ptr<FuLiteralNull> futemp5 = std::make_shared<FuLiteralNull>();
-			futemp5->loc = this->tokenLoc;
-			futemp5->type = this->host->program->system->nullType;
-			result = futemp5;
+			std::shared_ptr<FuLiteralNull> futemp4 = std::make_shared<FuLiteralNull>();
+			futemp4->loc = this->tokenLoc;
+			futemp4->type = this->host->program->system->nullType;
+			result = futemp4;
 			nextToken();
 			break;
 		}
@@ -3455,11 +3455,11 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			int loc = this->tokenLoc;
 			nextToken();
 			if (eat(FuToken::less) && this->stringValue == "byte" && eat(FuToken::id) && eat(FuToken::leftBracket) && eat(FuToken::rightBracket) && eat(FuToken::greater)) {
-				std::shared_ptr<FuPrefixExpr> futemp6 = std::make_shared<FuPrefixExpr>();
-				futemp6->loc = loc;
-				futemp6->op = FuToken::resource;
-				futemp6->inner = parseParenthesized();
-				result = futemp6;
+				std::shared_ptr<FuPrefixExpr> futemp5 = std::make_shared<FuPrefixExpr>();
+				futemp5->loc = loc;
+				futemp5->op = FuToken::resource;
+				futemp5->inner = parseParenthesized();
+				result = futemp5;
 			}
 			else {
 				reportError("Expected 'resource<byte[]>'");
@@ -3497,12 +3497,12 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			break;
 		case FuToken::leftBracket:
 			{
-				std::shared_ptr<FuBinaryExpr> futemp7 = std::make_shared<FuBinaryExpr>();
-				futemp7->loc = this->tokenLoc;
-				futemp7->left = result;
-				futemp7->op = nextToken();
-				futemp7->right = see(FuToken::rightBracket) ? nullptr : parseExpr();
-				result = futemp7;
+				std::shared_ptr<FuBinaryExpr> futemp5 = std::make_shared<FuBinaryExpr>();
+				futemp5->loc = this->tokenLoc;
+				futemp5->left = result;
+				futemp5->op = nextToken();
+				futemp5->right = see(FuToken::rightBracket) ? nullptr : parseExpr();
+				result = futemp5;
 				expect(FuToken::rightBracket);
 				break;
 			}
@@ -3510,32 +3510,32 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 		case FuToken::decrement:
 			checkXcrementParent();
 			{
-				std::shared_ptr<FuPostfixExpr> futemp8 = std::make_shared<FuPostfixExpr>();
-				futemp8->loc = this->tokenLoc;
-				futemp8->inner = result;
-				futemp8->op = nextToken();
-				result = futemp8;
+				std::shared_ptr<FuPostfixExpr> futemp6 = std::make_shared<FuPostfixExpr>();
+				futemp6->loc = this->tokenLoc;
+				futemp6->inner = result;
+				futemp6->op = nextToken();
+				result = futemp6;
 				break;
 			}
 		case FuToken::exclamationMark:
 		case FuToken::hash:
 			{
-				std::shared_ptr<FuPostfixExpr> futemp9 = std::make_shared<FuPostfixExpr>();
-				futemp9->loc = this->tokenLoc;
-				futemp9->inner = result;
-				futemp9->op = nextToken();
-				result = futemp9;
+				std::shared_ptr<FuPostfixExpr> futemp7 = std::make_shared<FuPostfixExpr>();
+				futemp7->loc = this->tokenLoc;
+				futemp7->inner = result;
+				futemp7->op = nextToken();
+				result = futemp7;
 				break;
 			}
 		case FuToken::questionMark:
 			if (!type)
 				return result;
 			{
-				std::shared_ptr<FuPostfixExpr> futemp10 = std::make_shared<FuPostfixExpr>();
-				futemp10->loc = this->tokenLoc;
-				futemp10->inner = result;
-				futemp10->op = nextToken();
-				result = futemp10;
+				std::shared_ptr<FuPostfixExpr> futemp8 = std::make_shared<FuPostfixExpr>();
+				futemp8->loc = this->tokenLoc;
+				futemp8->inner = result;
+				futemp8->op = nextToken();
+				result = futemp8;
 				break;
 			}
 		default:
@@ -8536,6 +8536,12 @@ void GenBase::cleanupBlock(const FuBlock * statement)
 {
 }
 
+void GenBase::trimTemporariesAndCloseBlock(int temporariesCount)
+{
+	this->currentTemporaries.erase(this->currentTemporaries.begin() + temporariesCount, this->currentTemporaries.begin() + temporariesCount + (std::ssize(this->currentTemporaries) - temporariesCount));
+	closeBlock();
+}
+
 void GenBase::visitBlock(const FuBlock * statement)
 {
 	if (this->atChildStart) {
@@ -8547,8 +8553,7 @@ void GenBase::visitBlock(const FuBlock * statement)
 	int temporariesCount = std::ssize(this->currentTemporaries);
 	writeStatements(&statement->statements);
 	cleanupBlock(statement);
-	this->currentTemporaries.erase(this->currentTemporaries.begin() + temporariesCount, this->currentTemporaries.begin() + temporariesCount + (std::ssize(this->currentTemporaries) - temporariesCount));
-	closeBlock();
+	trimTemporariesAndCloseBlock(temporariesCount);
 }
 
 void GenBase::writeChild(FuStatement * statement)
@@ -8557,9 +8562,10 @@ void GenBase::writeChild(FuStatement * statement)
 	this->atLineStart = true;
 	this->atChildStart = true;
 	this->inChildBlock = false;
+	int temporariesCount = std::ssize(this->currentTemporaries);
 	statement->acceptStatement(this);
 	if (this->inChildBlock)
-		closeBlock();
+		trimTemporariesAndCloseBlock(temporariesCount);
 	else if (!dynamic_cast<const FuBlock *>(statement))
 		this->indent--;
 	this->inChildBlock = wasInChildBlock;

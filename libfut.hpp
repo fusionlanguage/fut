@@ -2652,6 +2652,7 @@ private:
 	static const FuAggregateInitializer * getAggregateInitializer(const FuNamedValue * def);
 	void writeAggregateInitField(const FuExpr * obj, const FuExpr * item);
 	static bool isBitOp(FuPriority parent);
+	void trimTemporariesAndCloseBlock(int temporariesCount);
 	void startIfWhile(const FuExpr * expr);
 	void writeIf(const FuIf * statement);
 };

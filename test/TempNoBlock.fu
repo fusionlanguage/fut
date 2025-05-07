@@ -1,0 +1,15 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		byte[2] a;
+		a[0] = 0x12;
+		a[1] = 0x34;
+		string() hex = ""; //FAIL: cl
+		foreach (byte b in a)
+			hex += $"{b:X2} ";
+		foreach (byte b in a)
+			hex += $"{b:X2} ";
+		return hex == "12 34 12 34 ";
+	}
+}
