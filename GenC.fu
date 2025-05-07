@@ -245,6 +245,7 @@ public class GenC : GenCCpp
 		case "Inline":
 		case "Int":
 		case "Long":
+		case "Nullptr":
 		case "Register":
 		case "Restrict":
 		case "Return":
@@ -268,6 +269,7 @@ public class GenC : GenCCpp
 		case "extern":
 		case "goto":
 		case "inline":
+		case "nullptr":
 		case "register":
 		case "restrict":
 		case "signed":

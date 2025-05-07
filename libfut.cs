@@ -10018,6 +10018,7 @@ namespace Fusion
 			case "Inline":
 			case "Int":
 			case "Long":
+			case "Nullptr":
 			case "Register":
 			case "Restrict":
 			case "Return":
@@ -10041,6 +10042,7 @@ namespace Fusion
 			case "extern":
 			case "goto":
 			case "inline":
+			case "nullptr":
 			case "register":
 			case "restrict":
 			case "signed":

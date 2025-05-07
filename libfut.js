@@ -10447,6 +10447,7 @@ export class GenC extends GenCCpp
 		case "Inline":
 		case "Int":
 		case "Long":
+		case "Nullptr":
 		case "Register":
 		case "Restrict":
 		case "Return":
@@ -10470,6 +10471,7 @@ export class GenC extends GenCCpp
 		case "extern":
 		case "goto":
 		case "inline":
+		case "nullptr":
 		case "register":
 		case "restrict":
 		case "signed":
