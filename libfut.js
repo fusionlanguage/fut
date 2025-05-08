@@ -19990,6 +19990,19 @@ export class GenJava extends GenTyped
 		this.writeMethodCall(expr.left, "charAt", expr.right);
 	}
 
+	static #isForeachUnsignedBytes(expr)
+	{
+		let loop;
+		if ((loop = expr.symbol.parent) instanceof FuForeach) {
+			let klass = loop.collection.type;
+			if (klass.class.id == FuId.STRING_CLASS)
+				return false;
+			let elementType = expr.symbol == loop.first ? klass.getElementType() : klass.getValueType();
+			return GenJava.#isUnsignedByte(elementType);
+		}
+		return false;
+	}
+
 	visitSymbolReference(expr, parent)
 	{
 		switch (expr.symbol.id) {
@@ -20019,7 +20032,17 @@ export class GenJava extends GenTyped
 			this.write("Float.POSITIVE_INFINITY");
 			break;
 		default:
-			if (!this.writeJavaMatchProperty(expr, parent))
+			if (this.writeJavaMatchProperty(expr, parent))
+				break;
+			if (GenJava.#isForeachUnsignedBytes(expr)) {
+				if (parent > FuPriority.AND)
+					this.writeChar(40);
+				super.visitSymbolReference(expr, FuPriority.AND);
+				this.write(" & 0xff");
+				if (parent > FuPriority.AND)
+					this.writeChar(41);
+			}
+			else
 				super.visitSymbolReference(expr, parent);
 			break;
 		}

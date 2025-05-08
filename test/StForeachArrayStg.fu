@@ -12,6 +12,11 @@ public class Test
 		foreach (int i in a)
 			sum += i;
 
+		byte[1] ba;
+		ba[0] = 200;
+		foreach (byte i in ba)
+			sum += i;
+
 		Test()[2] oa;
 		foreach (Test t in oa) {
 			Test p = t;
@@ -30,6 +35,6 @@ public class Test
 		foreach (string s in sa)
 			sum += s.Length;
 
-		return sum == 30 + 4 + 2 + 7;
+		return sum == 30 + 200 + 4 + 2 + 7;
 	}
 }

@@ -12,6 +12,11 @@ public class Test
 		foreach (int i in list)
 			sum += i;
 
+		List<byte>() byl;
+		byl.Add(200);
+		foreach (byte b in byl)
+			sum += b;
+
 		List<string>() spl;
 		spl.Add("foo");
 		spl.Add("s");
@@ -47,6 +52,6 @@ public class Test
 		foreach (Test d in dl)
 			sum += d.Foo;
 
-		return sum == 30 + 4 + 5 + 1 + 15 + 10;
+		return sum == 30 + 200 + 4 + 5 + 1 + 15 + 10;
 	}
 }

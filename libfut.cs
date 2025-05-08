@@ -19385,6 +19385,18 @@ namespace Fusion
 			WriteMethodCall(expr.Left, "charAt", expr.Right);
 		}
 
+		static bool IsForeachUnsignedBytes(FuSymbolReference expr)
+		{
+			if (expr.Symbol.Parent is FuForeach loop) {
+				FuClassType klass = (FuClassType) loop.Collection.Type;
+				if (klass.Class.Id == FuId.StringClass)
+					return false;
+				FuType elementType = expr.Symbol == loop.First ? klass.GetElementType() : klass.GetValueType();
+				return IsUnsignedByte(elementType);
+			}
+			return false;
+		}
+
 		internal override void VisitSymbolReference(FuSymbolReference expr, FuPriority parent)
 		{
 			switch (expr.Symbol.Id) {
@@ -19414,7 +19426,17 @@ namespace Fusion
 				Write("Float.POSITIVE_INFINITY");
 				break;
 			default:
-				if (!WriteJavaMatchProperty(expr, parent))
+				if (WriteJavaMatchProperty(expr, parent))
+					break;
+				if (IsForeachUnsignedBytes(expr)) {
+					if (parent > FuPriority.And)
+						WriteChar('(');
+					base.VisitSymbolReference(expr, FuPriority.And);
+					Write(" & 0xff");
+					if (parent > FuPriority.And)
+						WriteChar(')');
+				}
+				else
 					base.VisitSymbolReference(expr, parent);
 				break;
 			}

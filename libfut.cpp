@@ -18776,6 +18776,18 @@ void GenJava::writeCharAt(const FuBinaryExpr * expr)
 	writeMethodCall(expr->left.get(), "charAt", expr->right.get());
 }
 
+bool GenJava::isForeachUnsignedBytes(const FuSymbolReference * expr)
+{
+	if (const FuForeach *loop = dynamic_cast<const FuForeach *>(expr->symbol->parent)) {
+		const FuClassType * klass = static_cast<const FuClassType *>(loop->collection->type.get());
+		if (klass->class_->id == FuId::stringClass)
+			return false;
+		const FuType * elementType = expr->symbol == loop->first ? klass->getElementType().get() : klass->getValueType().get();
+		return isUnsignedByte(elementType);
+	}
+	return false;
+}
+
 void GenJava::visitSymbolReference(const FuSymbolReference * expr, FuPriority parent)
 {
 	switch (expr->symbol->id) {
@@ -18805,7 +18817,17 @@ void GenJava::visitSymbolReference(const FuSymbolReference * expr, FuPriority pa
 		write("Float.POSITIVE_INFINITY");
 		break;
 	default:
-		if (!writeJavaMatchProperty(expr, parent))
+		if (writeJavaMatchProperty(expr, parent))
+			break;
+		if (isForeachUnsignedBytes(expr)) {
+			if (parent > FuPriority::and_)
+				writeChar('(');
+			GenBase::visitSymbolReference(expr, FuPriority::and_);
+			write(" & 0xff");
+			if (parent > FuPriority::and_)
+				writeChar(')');
+		}
+		else
 			GenBase::visitSymbolReference(expr, parent);
 		break;
 	}
