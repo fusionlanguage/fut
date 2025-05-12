@@ -1744,6 +1744,7 @@ public class GenCpp : GenCCpp
 	protected override void WriteSwitchCaseBody!(List<FuStatement#> statements)
 	{
 		bool block = false;
+		int temporariesCount = this.CurrentTemporaries.Count;
 		foreach (FuStatement statement in statements) {
 			if (!block && HasVariables(statement)) {
 				OpenBlock();
@@ -1752,7 +1753,7 @@ public class GenCpp : GenCCpp
 			statement.AcceptStatement(this);
 		}
 		if (block)
-			CloseBlock();
+			TrimTemporariesAndCloseBlock(temporariesCount);
 	}
 
 	internal override void VisitSwitch!(FuSwitch statement)

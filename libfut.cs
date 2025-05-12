@@ -8668,7 +8668,7 @@ namespace Fusion
 		{
 		}
 
-		void TrimTemporariesAndCloseBlock(int temporariesCount)
+		protected void TrimTemporariesAndCloseBlock(int temporariesCount)
 		{
 			this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
 			CloseBlock();
@@ -15806,6 +15806,7 @@ namespace Fusion
 		protected override void WriteSwitchCaseBody(List<FuStatement> statements)
 		{
 			bool block = false;
+			int temporariesCount = this.CurrentTemporaries.Count;
 			foreach (FuStatement statement in statements) {
 				if (!block && HasVariables(statement)) {
 					OpenBlock();
@@ -15814,7 +15815,7 @@ namespace Fusion
 				statement.AcceptStatement(this);
 			}
 			if (block)
-				CloseBlock();
+				TrimTemporariesAndCloseBlock(temporariesCount);
 		}
 
 		internal override void VisitSwitch(FuSwitch statement)

@@ -2554,6 +2554,7 @@ protected:
 	void writeFirstStatements(const std::vector<std::shared_ptr<FuStatement>> * statements, int count);
 	virtual void writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements);
 	virtual void cleanupBlock(const FuBlock * statement);
+	void trimTemporariesAndCloseBlock(int temporariesCount);
 	virtual void writeChild(FuStatement * statement);
 	virtual void startBreakGoto();
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
@@ -2652,7 +2653,6 @@ private:
 	static const FuAggregateInitializer * getAggregateInitializer(const FuNamedValue * def);
 	void writeAggregateInitField(const FuExpr * obj, const FuExpr * item);
 	static bool isBitOp(FuPriority parent);
-	void trimTemporariesAndCloseBlock(int temporariesCount);
 	void startIfWhile(const FuExpr * expr);
 	void writeIf(const FuIf * statement);
 };

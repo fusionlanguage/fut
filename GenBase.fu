@@ -1612,7 +1612,7 @@ public abstract class GenBase : FuVisitor
 	{
 	}
 
-	void TrimTemporariesAndCloseBlock!(int temporariesCount)
+	protected void TrimTemporariesAndCloseBlock!(int temporariesCount)
 	{
 		this.CurrentTemporaries.RemoveRange(temporariesCount, this.CurrentTemporaries.Count - temporariesCount);
 		CloseBlock();

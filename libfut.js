@@ -9092,7 +9092,7 @@ export class GenBase extends FuVisitor
 	{
 	}
 
-	#trimTemporariesAndCloseBlock(temporariesCount)
+	trimTemporariesAndCloseBlock(temporariesCount)
 	{
 		this.currentTemporaries.splice(temporariesCount, this.currentTemporaries.length - temporariesCount);
 		this.closeBlock();
@@ -9109,7 +9109,7 @@ export class GenBase extends FuVisitor
 		let temporariesCount = this.currentTemporaries.length;
 		this.writeStatements(statement.statements);
 		this.cleanupBlock(statement);
-		this.#trimTemporariesAndCloseBlock(temporariesCount);
+		this.trimTemporariesAndCloseBlock(temporariesCount);
 	}
 
 	writeChild(statement)
@@ -9121,7 +9121,7 @@ export class GenBase extends FuVisitor
 		let temporariesCount = this.currentTemporaries.length;
 		statement.acceptStatement(this);
 		if (this.#inChildBlock)
-			this.#trimTemporariesAndCloseBlock(temporariesCount);
+			this.trimTemporariesAndCloseBlock(temporariesCount);
 		else if (!(statement instanceof FuBlock))
 			this.indent--;
 		this.#inChildBlock = wasInChildBlock;
@@ -16333,6 +16333,7 @@ export class GenCpp extends GenCCpp
 	writeSwitchCaseBody(statements)
 	{
 		let block = false;
+		let temporariesCount = this.currentTemporaries.length;
 		for (const statement of statements) {
 			if (!block && this.#hasVariables(statement)) {
 				this.openBlock();
@@ -16341,7 +16342,7 @@ export class GenCpp extends GenCCpp
 			statement.acceptStatement(this);
 		}
 		if (block)
-			this.closeBlock();
+			this.trimTemporariesAndCloseBlock(temporariesCount);
 	}
 
 	visitSwitch(statement)
