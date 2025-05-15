@@ -20312,7 +20312,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 			notSupported((*args)[1].get(), "Radix");
 		write("(() => { try { ");
 		obj->accept(this, FuPriority::assign);
-		write("  = BigInt(");
+		write(" = BigInt(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write("); return true; } catch { return false; }})()");
 		break;

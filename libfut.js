@@ -21576,7 +21576,7 @@ export class GenJsNoModule extends GenBase
 				this.notSupported(args[1], "Radix");
 			this.write("(() => { try { ");
 			obj.accept(this, FuPriority.ASSIGN);
-			this.write("  = BigInt(");
+			this.write(" = BigInt(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write("); return true; } catch { return false; }})()");
 			break;

@@ -1441,7 +1441,7 @@ public abstract class GenBase : FuVisitor
 		case FuUnaryExpr unary:
 			return unary.Inner != null && (HasTemporaries(unary.Inner) || unary.Inner is FuAggregateInitializer);
 		case FuBinaryExpr binary:
-			return HasTemporaries(binary.Left) || (binary.Op == FuToken.Is ?  binary.Right is FuVar : HasTemporaries(binary.Right));
+			return HasTemporaries(binary.Left) || (binary.Op == FuToken.Is ? binary.Right is FuVar : HasTemporaries(binary.Right));
 		case FuSelectExpr select:
 			return HasTemporaries(select.Cond) || HasTemporaries(select.OnTrue) || HasTemporaries(select.OnFalse);
 		case FuCallExpr call:

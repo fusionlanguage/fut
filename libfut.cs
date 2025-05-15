@@ -20927,7 +20927,7 @@ namespace Fusion
 					NotSupported(args[1], "Radix");
 				Write("(() => { try { ");
 				obj.Accept(this, FuPriority.Assign);
-				Write("  = BigInt(");
+				Write(" = BigInt(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write("); return true; } catch { return false; }})()");
 				break;

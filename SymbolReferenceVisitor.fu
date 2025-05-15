@@ -1,6 +1,6 @@
 // SymbolReferenceVisitor.fu - visitor of symbol references
 //
-// Copyright (C) 2024  Piotr Fusik
+// Copyright (C) 2024-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -131,7 +131,7 @@ public abstract class FuSymbolReferenceVisitor : FuVisitor
 			foreach (FuExpr value in kase.Values)
 				value.Accept(this, FuPriority.Statement);
 			VisitStatements(kase.Body);
-		}	
+		}
 		VisitStatements(statement.DefaultBody);
 	}
 

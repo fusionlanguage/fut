@@ -412,7 +412,7 @@ public class GenCpp : GenCCpp
 	{
 		if (expr.Type is FuDynamicPtrType)
 			return true;
-		 return expr is FuSymbolReference symbol
+		return expr is FuSymbolReference symbol
 			&& symbol.Symbol.Parent is FuForeach loop
 			&& loop.Collection.Type.AsClassType().GetElementType() is FuDynamicPtrType;
 	}

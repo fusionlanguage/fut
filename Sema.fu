@@ -798,7 +798,7 @@ public class FuSema
 		case FuClassType leftClass:
 			if (left.Nullable && right.Id == FuId.NullType)
 				return true;
-			 if ((left is FuStorageType && right is FuOwningType)
+			if ((left is FuStorageType && right is FuOwningType)
 			 || (left is FuDynamicPtrType && right is FuStorageType))
 				return false;
 			return right is FuClassType rightClass
