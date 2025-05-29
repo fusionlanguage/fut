@@ -354,6 +354,8 @@ FuToken FuLexer::readString(bool interpolated)
 				int endOffset = this->charOffset;
 				readChar();
 				this->stringValue = std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset);
+				if (interpolated)
+					this->stringValue = FuString_Replace(this->stringValue, "{{", "{");
 			}
 			return FuToken::literalString;
 		case '{':
@@ -363,7 +365,7 @@ FuToken FuLexer::readString(bool interpolated)
 				if (eatChar('{'))
 					break;
 				if (!this->skippingUnmet) {
-					this->stringValue = std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset);
+					this->stringValue = FuString_Replace(std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset), "{{", "{");
 					return FuToken::interpolatedString;
 				}
 				for (;;) {
@@ -3274,7 +3276,7 @@ std::shared_ptr<FuInterpolatedString> FuParser::parseInterpolatedString()
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
 	result->loc = this->tokenLoc;
 	do {
-		std::string prefix{FuString_Replace(this->stringValue, "{{", "{")};
+		std::string prefix{this->stringValue};
 		nextToken();
 		std::shared_ptr<FuExpr> arg = parseExpr();
 		std::shared_ptr<FuExpr> width = eat(FuToken::comma) ? parseExpr() : nullptr;
@@ -3293,7 +3295,7 @@ std::shared_ptr<FuInterpolatedString> FuParser::parseInterpolatedString()
 		check(FuToken::rightBrace);
 	}
 	while (readString(true) == FuToken::interpolatedString);
-	result->suffix = FuString_Replace(this->stringValue, "{{", "{");
+	result->suffix = this->stringValue;
 	nextToken();
 	return result;
 }

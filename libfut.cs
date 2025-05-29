@@ -486,6 +486,8 @@ namespace Fusion
 						int endOffset = this.CharOffset;
 						ReadChar();
 						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+						if (interpolated)
+							this.StringValue = this.StringValue.Replace("{{", "{");
 					}
 					return FuToken.LiteralString;
 				case '{':
@@ -495,7 +497,7 @@ namespace Fusion
 						if (EatChar('{'))
 							break;
 						if (!this.SkippingUnmet) {
-							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
+							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{");
 							return FuToken.InterpolatedString;
 						}
 						for (;;) {
@@ -3760,7 +3762,7 @@ namespace Fusion
 		{
 			FuInterpolatedString result = new FuInterpolatedString { Loc = this.TokenLoc };
 			do {
-				string prefix = this.StringValue.Replace("{{", "{");
+				string prefix = this.StringValue;
 				NextToken();
 				FuExpr arg = ParseExpr();
 				FuExpr width = Eat(FuToken.Comma) ? ParseExpr() : null;
@@ -3779,7 +3781,7 @@ namespace Fusion
 				Check(FuToken.RightBrace);
 			}
 			while (ReadString(true) == FuToken.InterpolatedString);
-			result.Suffix = this.StringValue.Replace("{{", "{");
+			result.Suffix = this.StringValue;
 			NextToken();
 			return result;
 		}

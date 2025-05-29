@@ -153,7 +153,7 @@ public class FuParser : FuLexer
 	{
 		FuInterpolatedString# result = new FuInterpolatedString { Loc = this.TokenLoc };
 		do {
-			string() prefix = this.StringValue.Replace("{{", "{");
+			string() prefix = this.StringValue;
 			NextToken();
 			FuExpr# arg = ParseExpr();
 			FuExpr# width = Eat(FuToken.Comma) ? ParseExpr() : null;
@@ -171,7 +171,7 @@ public class FuParser : FuLexer
 			result.AddPart(prefix, arg, width, format, precision);
 			Check(FuToken.RightBrace);
 		} while (ReadString(true) == FuToken.InterpolatedString);
-		result.Suffix = this.StringValue.Replace("{{", "{");
+		result.Suffix = this.StringValue;
 		NextToken();
 		return result;
 	}

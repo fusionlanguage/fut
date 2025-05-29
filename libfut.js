@@ -466,6 +466,8 @@ export class FuLexer
 					let endOffset = this.charOffset;
 					this.readChar();
 					this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset));
+					if (interpolated)
+						this.stringValue = this.stringValue.replaceAll("{{", "{");
 				}
 				return FuToken.LITERAL_STRING;
 			case 123:
@@ -475,7 +477,7 @@ export class FuLexer
 					if (this.#eatChar(123))
 						break;
 					if (!this.#skippingUnmet) {
-						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset));
+						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset)).replaceAll("{{", "{");
 						return FuToken.INTERPOLATED_STRING;
 					}
 					for (;;) {
@@ -3976,7 +3978,7 @@ export class FuParser extends FuLexer
 	{
 		let result = Object.assign(new FuInterpolatedString(), { loc: this.tokenLoc });
 		do {
-			let prefix = this.stringValue.replaceAll("{{", "{");
+			let prefix = this.stringValue;
 			this.nextToken();
 			let arg = this.#parseExpr();
 			let width = this.eat(FuToken.COMMA) ? this.#parseExpr() : null;
@@ -3995,7 +3997,7 @@ export class FuParser extends FuLexer
 			this.check(FuToken.RIGHT_BRACE);
 		}
 		while (this.readString(true) == FuToken.INTERPOLATED_STRING);
-		result.suffix = this.stringValue.replaceAll("{{", "{");
+		result.suffix = this.stringValue;
 		this.nextToken();
 		return result;
 	}
