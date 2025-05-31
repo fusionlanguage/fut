@@ -22202,6 +22202,11 @@ namespace Fusion
 			expr.Accept(this, parent);
 		}
 
+		protected virtual void WriteElementCoerced(FuType type, FuExpr value)
+		{
+			WriteCoerced(type, value, FuPriority.Argument);
+		}
+
 		protected void WriteListAppend(FuExpr obj, List<FuExpr> args)
 		{
 			WritePostfix(obj, ".append(");
@@ -22209,7 +22214,7 @@ namespace Fusion
 			if (args.Count == 0)
 				WriteNewStorage(elementType);
 			else
-				WriteCoerced(elementType, args[0], FuPriority.Argument);
+				WriteElementCoerced(elementType, args[0]);
 			WriteChar(')');
 		}
 
@@ -22634,13 +22639,23 @@ namespace Fusion
 
 		protected override void WriteLocalName(FuSymbol symbol, FuPriority parent)
 		{
-			if (symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuStringType) {
-				Write("Int(");
-				WriteCamelCaseNotKeyword(symbol.Name);
-				Write(".value)");
+			if (symbol.Parent is FuForeach loop) {
+				FuClassType klass = (FuClassType) loop.Collection.Type;
+				if (klass.Class.Id == FuId.StringClass) {
+					Write("Int(");
+					WriteCamelCaseNotKeyword(symbol.Name);
+					Write(".value)");
+					return;
+				}
+				FuType elementType = symbol == loop.First ? klass.GetElementType() : klass.GetValueType();
+				if (elementType.Id == FuId.IntType) {
+					Write("Int(");
+					WriteCamelCaseNotKeyword(symbol.Name);
+					WriteChar(')');
+					return;
+				}
 			}
-			else
-				base.WriteLocalName(symbol, parent);
+			base.WriteLocalName(symbol, parent);
 		}
 
 		protected override void WriteMemberOp(FuExpr left, FuSymbolReference symbol)
@@ -22735,6 +22750,8 @@ namespace Fusion
 					Write("UInt16");
 					break;
 				case FuId.IntType:
+					Write("Int32");
+					break;
 				case FuId.NIntType:
 					Write("Int");
 					break;
@@ -22773,12 +22790,20 @@ namespace Fusion
 			}
 		}
 
+		void WritePromotedType(FuType type)
+		{
+			if (type.Id == FuId.IntType)
+				Write("Int");
+			else
+				WriteType(type);
+		}
+
 		protected override void WriteTypeAndName(FuNamedValue value)
 		{
 			WriteName(value);
 			if (!value.Type.IsFinal() || value.IsAssignableStorage()) {
 				Write(" : ");
-				WriteType(value.Type);
+				WritePromotedType(value.Type);
 			}
 		}
 
@@ -22819,10 +22844,19 @@ namespace Fusion
 			}
 		}
 
+		static bool IsIntIndexing(FuExpr expr)
+		{
+			if (expr.Type.Id != FuId.IntType)
+				return false;
+			if (expr is FuUnaryExpr unary && (unary.Op == FuToken.Increment || unary.Op == FuToken.Decrement))
+				expr = unary.Inner;
+			return expr.IsIndexing();
+		}
+
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
 		{
-			if (type is FuNumericType && !(expr is FuLiteral) && GetTypeId(type, false) != GetTypeId(expr.Type, expr is FuBinaryExpr binary && binary.Op != FuToken.LeftBracket)) {
-				WriteType(type);
+			if ((type is FuNumericType && !(expr is FuLiteral) && GetTypeId(type, false) != GetTypeId(expr.Type, expr is FuBinaryExpr && !expr.IsIndexing())) || IsIntIndexing(expr)) {
+				WritePromotedType(type);
 				WriteChar('(');
 				if (type is FuIntegerType && expr is FuCallExpr call && call.Method.Symbol.Id == FuId.MathTruncate)
 					call.Arguments[0].Accept(this, FuPriority.Argument);
@@ -22892,6 +22926,17 @@ namespace Fusion
 			WriteCoerced(this.System.IntType, startIndex, FuPriority.Shift);
 			Write("..<");
 			WriteAdd(startIndex, length);
+		}
+
+		protected override void WriteElementCoerced(FuType type, FuExpr value)
+		{
+			if (type.Id == FuId.IntType && !IsIntIndexing(value)) {
+				Write("Int32(");
+				value.Accept(this, FuPriority.Argument);
+				WriteChar(')');
+			}
+			else
+				WriteCoerced(type, value, FuPriority.Argument);
 		}
 
 		bool AddVar(string name)
@@ -23036,8 +23081,9 @@ namespace Fusion
 					WriteChar(')');
 				}
 				else {
-					Write(".fill");
-					WriteCoercedArgsInParentheses(method, args);
+					Write(".fill(");
+					WriteElementCoerced(obj.Type.AsClassType().GetElementType(), args[0]);
+					WriteChar(')');
 				}
 				break;
 			case FuId.ArrayFillPart:
@@ -23053,8 +23099,13 @@ namespace Fusion
 				else {
 					obj.Accept(this, FuPriority.Primary);
 					WriteMemberOp(obj, null);
-					Write("fill");
-					WriteCoercedArgsInParentheses(method, args);
+					Write("fill(");
+					WriteElementCoerced(obj.Type.AsClassType().GetElementType(), args[0]);
+					Write(", ");
+					WriteCoerced(this.System.IntType, args[1], FuPriority.Argument);
+					Write(", ");
+					WriteCoerced(this.System.IntType, args[2], FuPriority.Argument);
+					WriteChar(')');
 				}
 				break;
 			case FuId.ArraySortAll:
@@ -23420,7 +23471,7 @@ namespace Fusion
 				case FuToken.ShiftRight when expr == binary.Left:
 					if (!(expr is FuLiteral)) {
 						FuType type = this.System.PromoteNumericTypes(binary.Left.Type, binary.Right.Type);
-						if (type != expr.Type) {
+						if (type != expr.Type || IsIntIndexing(expr)) {
 							WriteCoerced(type, expr, parent);
 							return;
 						}
@@ -23469,7 +23520,16 @@ namespace Fusion
 			WriteChar(' ');
 			Write(expr.GetOpString());
 			WriteChar(' ');
-			if (right is FuLiteralNull && expr.Left is FuBinaryExpr leftBinary && leftBinary.Op == FuToken.LeftBracket && leftBinary.Left.Type is FuClassType dict && dict.Class.TypeParameterCount == 2) {
+			if (IsIntIndexing(expr.Left)) {
+				if (IsIntIndexing(right))
+					right.Accept(this, FuPriority.Argument);
+				else {
+					Write("Int32(");
+					right.Accept(this, FuPriority.Argument);
+					WriteChar(')');
+				}
+			}
+			else if (right is FuLiteralNull && expr.Left is FuBinaryExpr leftBinary && leftBinary.Op == FuToken.LeftBracket && leftBinary.Left.Type is FuClassType dict && dict.Class.TypeParameterCount == 2) {
 				WriteType(dict.GetValueType());
 				Write(".none");
 			}
@@ -23865,7 +23925,7 @@ namespace Fusion
 		protected override void WriteResultVar()
 		{
 			Write("let result : ");
-			WriteType(this.CurrentMethod.Type);
+			WritePromotedType(this.CurrentMethod.Type);
 		}
 
 		void WriteSwiftCaseValue(FuSwitch statement, FuExpr value)
@@ -23879,7 +23939,7 @@ namespace Fusion
 				Write("let ");
 				WriteCamelCaseNotKeyword(def.Name);
 				Write(" as ");
-				WriteType(def.Type);
+				WritePromotedType(def.Type);
 				break;
 			case FuBinaryExpr when1 when when1.Op == FuToken.When:
 				WriteSwiftCaseValue(statement, when1.Left);
@@ -23962,7 +24022,7 @@ namespace Fusion
 			else
 				WriteName(param);
 			Write(" : ");
-			WriteType(param.Type);
+			WritePromotedType(param.Type);
 		}
 
 		internal override void VisitEnumValue(FuConst konst, FuConst previous)
@@ -24141,7 +24201,7 @@ namespace Fusion
 					Write(" throws");
 				if (method.Type.Id != FuId.VoidType) {
 					Write(" -> ");
-					WriteType(method.Type);
+					WritePromotedType(method.Type);
 				}
 			}
 			WriteNewLine();

@@ -1,6 +1,6 @@
 // GenPySwift.fu - Python/Swift code generator
 //
-// Copyright (C) 2020-2023  Piotr Fusik
+// Copyright (C) 2020-2025  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -123,6 +123,11 @@ public abstract class GenPySwift : GenBase
 		expr.Accept(this, parent);
 	}
 
+	protected virtual void WriteElementCoerced!(FuType type, FuExpr value)
+	{
+		WriteCoerced(type, value, FuPriority.Argument);
+	}
+
 	protected void WriteListAppend!(FuExpr obj, List<FuExpr#> args)
 	{
 		WritePostfix(obj, ".append(");
@@ -130,7 +135,7 @@ public abstract class GenPySwift : GenBase
 		if (args.Count == 0)
 			WriteNewStorage(elementType);
 		else
-			WriteCoerced(elementType, args[0], FuPriority.Argument);
+			WriteElementCoerced(elementType, args[0]);
 		WriteChar(')');
 	}
 

@@ -21552,6 +21552,11 @@ void GenPySwift::writeExpr(const FuExpr * expr, FuPriority parent)
 	expr->accept(this, parent);
 }
 
+void GenPySwift::writeElementCoerced(const FuType * type, const FuExpr * value)
+{
+	writeCoerced(type, value, FuPriority::argument);
+}
+
 void GenPySwift::writeListAppend(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	writePostfix(obj, ".append(");
@@ -21559,7 +21564,7 @@ void GenPySwift::writeListAppend(const FuExpr * obj, const std::vector<std::shar
 	if (std::ssize(*args) == 0)
 		writeNewStorage(elementType);
 	else
-		writeCoerced(elementType, (*args)[0].get(), FuPriority::argument);
+		writeElementCoerced(elementType, (*args)[0].get());
 	writeChar(')');
 }
 
@@ -21876,14 +21881,23 @@ void GenSwift::writeName(const FuSymbol * symbol)
 
 void GenSwift::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 {
-	const FuForeach * forEach;
-	if ((forEach = dynamic_cast<const FuForeach *>(symbol->parent)) && dynamic_cast<const FuStringType *>(forEach->collection->type.get())) {
-		write("Int(");
-		writeCamelCaseNotKeyword(symbol->name);
-		write(".value)");
+	if (const FuForeach *loop = dynamic_cast<const FuForeach *>(symbol->parent)) {
+		const FuClassType * klass = static_cast<const FuClassType *>(loop->collection->type.get());
+		if (klass->class_->id == FuId::stringClass) {
+			write("Int(");
+			writeCamelCaseNotKeyword(symbol->name);
+			write(".value)");
+			return;
+		}
+		const FuType * elementType = symbol == loop->first ? klass->getElementType().get() : klass->getValueType().get();
+		if (elementType->id == FuId::intType) {
+			write("Int(");
+			writeCamelCaseNotKeyword(symbol->name);
+			writeChar(')');
+			return;
+		}
 	}
-	else
-		GenPySwift::writeLocalName(symbol, parent);
+	GenPySwift::writeLocalName(symbol, parent);
 }
 
 void GenSwift::writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol)
@@ -21983,6 +21997,8 @@ void GenSwift::writeType(const FuType * type)
 			write("UInt16");
 			break;
 		case FuId::intType:
+			write("Int32");
+			break;
 		case FuId::nIntType:
 			write("Int");
 			break;
@@ -22019,12 +22035,20 @@ void GenSwift::writeType(const FuType * type)
 		std::abort();
 }
 
+void GenSwift::writePromotedType(const FuType * type)
+{
+	if (type->id == FuId::intType)
+		write("Int");
+	else
+		writeType(type);
+}
+
 void GenSwift::writeTypeAndName(const FuNamedValue * value)
 {
 	writeName(value);
 	if (!value->type->isFinal() || value->isAssignableStorage()) {
 		write(" : ");
-		writeType(value->type.get());
+		writePromotedType(value->type.get());
 	}
 }
 
@@ -22068,11 +22092,20 @@ void GenSwift::visitInterpolatedString(const FuInterpolatedString * expr, FuPrio
 	}
 }
 
+bool GenSwift::isIntIndexing(const FuExpr * expr)
+{
+	if (expr->type->id != FuId::intType)
+		return false;
+	const FuUnaryExpr * unary;
+	if ((unary = dynamic_cast<const FuUnaryExpr *>(expr)) && (unary->op == FuToken::increment || unary->op == FuToken::decrement))
+		expr = unary->inner.get();
+	return expr->isIndexing();
+}
+
 void GenSwift::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
 {
-	const FuBinaryExpr * binary;
-	if (dynamic_cast<const FuNumericType *>(type) && !dynamic_cast<const FuLiteral *>(expr) && getTypeId(type, false) != getTypeId(expr->type.get(), (binary = dynamic_cast<const FuBinaryExpr *>(expr)) && binary->op != FuToken::leftBracket)) {
-		writeType(type);
+	if ((dynamic_cast<const FuNumericType *>(type) && !dynamic_cast<const FuLiteral *>(expr) && getTypeId(type, false) != getTypeId(expr->type.get(), dynamic_cast<const FuBinaryExpr *>(expr) && !expr->isIndexing())) || isIntIndexing(expr)) {
+		writePromotedType(type);
 		writeChar('(');
 		const FuCallExpr * call;
 		if (dynamic_cast<const FuIntegerType *>(type) && (call = dynamic_cast<const FuCallExpr *>(expr)) && call->method->symbol->id == FuId::mathTruncate)
@@ -22146,6 +22179,17 @@ void GenSwift::writeRange(const FuExpr * startIndex, const FuExpr * length)
 	writeCoerced(this->system->intType.get(), startIndex, FuPriority::shift);
 	write("..<");
 	writeAdd(startIndex, length);
+}
+
+void GenSwift::writeElementCoerced(const FuType * type, const FuExpr * value)
+{
+	if (type->id == FuId::intType && !isIntIndexing(value)) {
+		write("Int32(");
+		value->accept(this, FuPriority::argument);
+		writeChar(')');
+	}
+	else
+		writeCoerced(type, value, FuPriority::argument);
 }
 
 bool GenSwift::addVar(std::string_view name)
@@ -22292,8 +22336,9 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 				writeChar(')');
 			}
 			else {
-				write(".fill");
-				writeCoercedArgsInParentheses(method, args);
+				write(".fill(");
+				writeElementCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
+				writeChar(')');
 			}
 			break;
 		}
@@ -22312,8 +22357,13 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 			else {
 				obj->accept(this, FuPriority::primary);
 				writeMemberOp(obj, nullptr);
-				write("fill");
-				writeCoercedArgsInParentheses(method, args);
+				write("fill(");
+				writeElementCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
+				write(", ");
+				writeCoerced(this->system->intType.get(), (*args)[1].get(), FuPriority::argument);
+				write(", ");
+				writeCoerced(this->system->intType.get(), (*args)[2].get(), FuPriority::argument);
+				writeChar(')');
 			}
 			break;
 		}
@@ -22667,7 +22717,7 @@ void GenSwift::writeBinaryOperand(const FuExpr * expr, FuPriority parent, const 
 		if (binary->op == FuToken::plus || binary->op == FuToken::minus || binary->op == FuToken::asterisk || binary->op == FuToken::slash || binary->op == FuToken::mod || binary->op == FuToken::and_ || binary->op == FuToken::or_ || binary->op == FuToken::xor_ || (binary->op == FuToken::shiftLeft && expr == binary->left.get()) || (binary->op == FuToken::shiftRight && expr == binary->left.get())) {
 			if (!dynamic_cast<const FuLiteral *>(expr)) {
 				const FuType * type = this->system->promoteNumericTypes(binary->left->type, binary->right->type).get();
-				if (type != expr->type.get()) {
+				if (type != expr->type.get() || isIntIndexing(expr)) {
 					writeCoerced(type, expr, parent);
 					return;
 				}
@@ -22710,14 +22760,25 @@ void GenSwift::writeSwiftAssign(const FuBinaryExpr * expr, const FuExpr * right)
 	writeChar(' ');
 	write(expr->getOpString());
 	writeChar(' ');
-	const FuBinaryExpr * leftBinary;
-	const FuClassType * dict;
-	if (dynamic_cast<const FuLiteralNull *>(right) && (leftBinary = dynamic_cast<const FuBinaryExpr *>(expr->left.get())) && leftBinary->op == FuToken::leftBracket && (dict = dynamic_cast<const FuClassType *>(leftBinary->left->type.get())) && dict->class_->typeParameterCount == 2) {
-		writeType(dict->getValueType().get());
-		write(".none");
+	if (isIntIndexing(expr->left.get())) {
+		if (isIntIndexing(right))
+			right->accept(this, FuPriority::argument);
+		else {
+			write("Int32(");
+			right->accept(this, FuPriority::argument);
+			writeChar(')');
+		}
 	}
-	else
-		writeCoerced(expr->type.get(), right, FuPriority::argument);
+	else {
+		const FuBinaryExpr * leftBinary;
+		const FuClassType * dict;
+		if (dynamic_cast<const FuLiteralNull *>(right) && (leftBinary = dynamic_cast<const FuBinaryExpr *>(expr->left.get())) && leftBinary->op == FuToken::leftBracket && (dict = dynamic_cast<const FuClassType *>(leftBinary->left->type.get())) && dict->class_->typeParameterCount == 2) {
+			writeType(dict->getValueType().get());
+			write(".none");
+		}
+		else
+			writeCoerced(expr->type.get(), right, FuPriority::argument);
+	}
 }
 
 void GenSwift::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
@@ -23117,7 +23178,7 @@ void GenSwift::visitLock(const FuLock * statement)
 void GenSwift::writeResultVar()
 {
 	write("let result : ");
-	writeType(this->currentMethod->type.get());
+	writePromotedType(this->currentMethod->type.get());
 }
 
 void GenSwift::writeSwiftCaseValue(const FuSwitch * statement, const FuExpr * value)
@@ -23133,7 +23194,7 @@ void GenSwift::writeSwiftCaseValue(const FuSwitch * statement, const FuExpr * va
 		write("let ");
 		writeCamelCaseNotKeyword(def->name);
 		write(" as ");
-		writeType(def->type.get());
+		writePromotedType(def->type.get());
 	}
 	else if ((when1 = dynamic_cast<const FuBinaryExpr *>(value)) && when1->op == FuToken::when) {
 		writeSwiftCaseValue(statement, when1->left.get());
@@ -23214,7 +23275,7 @@ void GenSwift::writeParameter(const FuVar * param)
 	else
 		writeName(param);
 	write(" : ");
-	writeType(param->type.get());
+	writePromotedType(param->type.get());
 }
 
 void GenSwift::visitEnumValue(const FuConst * konst, const FuConst * previous)
@@ -23394,7 +23455,7 @@ void GenSwift::writeMethod(const FuMethod * method)
 			write(" throws");
 		if (method->type->id != FuId::voidType) {
 			write(" -> ");
-			writeType(method->type.get());
+			writePromotedType(method->type.get());
 		}
 	}
 	writeNewLine();

@@ -3423,6 +3423,7 @@ protected:
 	virtual std::string_view getReferenceEqOp(bool not_) const = 0;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	virtual void writeExpr(const FuExpr * expr, FuPriority parent);
+	virtual void writeElementCoerced(const FuType * type, const FuExpr * value);
 	void writeListAppend(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	virtual bool visitPreCall(const FuCallExpr * call);
 	bool visitXcrement(const FuExpr * expr, bool postfix, bool write);
@@ -3480,6 +3481,7 @@ protected:
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	std::string_view getReferenceEqOp(bool not_) const override;
+	void writeElementCoerced(const FuType * type, const FuExpr * value) override;
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeNewArrayStorage(const FuArrayStorageType * array) override;
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;
@@ -3542,7 +3544,9 @@ private:
 	void writeArrayRef(const FuType * elementType);
 	void writeClassName(const FuClassType * klass);
 	void writeType(const FuType * type);
+	void writePromotedType(const FuType * type);
 	void writeUnwrapped(const FuExpr * expr, FuPriority parent, bool substringOk);
+	static bool isIntIndexing(const FuExpr * expr);
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRange(const FuExpr * startIndex, const FuExpr * length);
 	bool addVar(std::string_view name);
