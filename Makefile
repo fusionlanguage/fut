@@ -1,4 +1,4 @@
-VERSION = 3.2.10
+VERSION = 3.2.11
 
 prefix := /usr/local
 bindir = $(prefix)/bin
