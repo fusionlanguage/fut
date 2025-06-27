@@ -67,6 +67,7 @@ public enum FuId
 	TypeParam0,
 	TypeParam0NotFinal,
 	TypeParam0Predicate,
+	TypeParam1,
 	SByteRange,
 	ByteRange,
 	ShortRange,
@@ -1561,6 +1562,7 @@ public class FuSystem : FuScope
 	internal FuType# VoidType = new FuType { Id = FuId.VoidType, Name = "void" };
 	internal FuType# NullType = new FuType { Id = FuId.NullType, Name = "null", Nullable = true };
 	FuType# TypeParam0 = new FuType { Id = FuId.TypeParam0, Name = "T" };
+	FuType# TypeParam1 = new FuType { Id = FuId.TypeParam1, Name = "T" };
 	internal FuIntegerType# IntType = new FuIntegerType { Id = FuId.IntType, Name = "int" };
 	FuRangeType# UIntType = FuRangeType.New(0, int.MaxValue);
 	internal FuIntegerType# NIntType = new FuIntegerType { Id = FuId.NIntType, Name = "nint" };
@@ -1762,9 +1764,9 @@ public class FuSystem : FuScope
 		stackClass.AddMethod(TypeParam0, FuId.StackPeek, "Peek", false);
 		stackClass.AddMethod(VoidType, FuId.StackPush, "Push", true, FuVar.New(TypeParam0, "value"));
 		stackClass.AddMethod(TypeParam0, FuId.StackPop, "Pop", true);
-		FuClass! priorityQueueClass = AddCollection(FuId.PriorityQueueClass, "PriorityQueue", 1, FuId.PriorityQueueClear, FuId.PriorityQueueCount);
+		FuClass! priorityQueueClass = AddCollection(FuId.PriorityQueueClass, "PriorityQueue", 2, FuId.PriorityQueueClear, FuId.PriorityQueueCount);
 		priorityQueueClass.AddMethod(TypeParam0, FuId.PriorityQueueDequeue, "Dequeue", true);
-		priorityQueueClass.AddMethod(VoidType, FuId.PriorityQueueEnqueue, "Enqueue", true, FuVar.New(TypeParam0, "value"));
+		priorityQueueClass.AddMethod(VoidType, FuId.PriorityQueueEnqueue, "Enqueue", true, FuVar.New(TypeParam0, "element"), FuVar.New(TypeParam1, "priority"));
 		priorityQueueClass.AddMethod(TypeParam0, FuId.PriorityQueuePeek, "Peek", false);
 		AddSet(FuId.HashSetClass, "HashSet", FuId.HashSetAdd, FuId.HashSetClear, FuId.HashSetContains, FuId.HashSetCount, FuId.HashSetRemove);
 		AddSet(FuId.SortedSetClass, "SortedSet", FuId.SortedSetAdd, FuId.SortedSetClear, FuId.SortedSetContains, FuId.SortedSetCount, FuId.SortedSetRemove);

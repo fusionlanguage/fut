@@ -317,7 +317,11 @@ public class GenPy : GenPySwift
 				WriteCollectionTypeAnnotation("collections.deque", klass);
 				break;
 			case FuId.PriorityQueueClass:
-				WriteCollectionTypeAnnotation("list", klass);
+				Write("list[tuple[");
+				WriteTypeAnnotation(klass.TypeArg1);
+				Write(", ");
+				WriteTypeAnnotation(klass.TypeArg0);
+				Write("]]");
 				break;
 			case FuId.HashSetClass:
 			case FuId.SortedSetClass:
@@ -973,19 +977,29 @@ public class GenPy : GenPySwift
 			WriteListAppend(obj, args);
 			break;
 		case FuId.QueuePeek:
-		case FuId.PriorityQueuePeek:
 			WritePostfix(obj, "[0]");
 			break;
 		case FuId.PriorityQueueClear:
 			WritePostfix(obj, ".clear()");
 			break;
-		case FuId.PriorityQueueEnqueue:
-			Include("heapq");
-			WriteCall("heapq.heappush", obj, args[0]);
-			break;
 		case FuId.PriorityQueueDequeue:
 			Include("heapq");
-			WriteCall("heapq.heappop", obj);
+			Write("heapq.heappop(");
+			obj.Accept(this, FuPriority.Argument);
+			Write(")[1]");
+			break;
+		case FuId.PriorityQueueEnqueue:
+			Include("heapq");
+			Write("heapq.heappush(");
+			obj.Accept(this, FuPriority.Argument);
+			Write(", (");
+			args[1].Accept(this, FuPriority.Argument);
+			Write(", ");
+			args[0].Accept(this, FuPriority.Argument);
+			Write("))");
+			break;
+		case FuId.PriorityQueuePeek:
+			WritePostfix(obj, "[0][1]");
 			break;
 		case FuId.DictionaryAdd:
 			WriteDictionaryAdd(obj, args);

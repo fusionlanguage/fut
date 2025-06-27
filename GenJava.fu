@@ -22,6 +22,7 @@ public class GenJava : GenTyped
 {
 	string OutputFile;
 	string Namespace;
+	bool HasPriorityQueue;
 
 	protected override string GetTargetName() => "Java";
 
@@ -315,7 +316,13 @@ public class GenJava : GenTyped
 				WriteCollectionType("Stack", klass.GetElementType());
 				break;
 			case FuId.PriorityQueueClass:
-				WriteCollectionType("PriorityQueue", klass.GetElementType());
+				this.HasPriorityQueue = true;
+				Include("java.util.PriorityQueue");
+				Write("PriorityQueue<FuPriorityQueueEntry<");
+				WriteJavaType(klass.TypeArg0, false, true);
+				Write(", ");
+				WriteJavaType(klass.TypeArg1, false, true);
+				Write(">>");
 				break;
 			case FuId.HashSetClass:
 				WriteCollectionType("HashSet", klass.GetElementType());
@@ -792,16 +799,26 @@ public class GenJava : GenTyped
 			Write(").sort(null)");
 			break;
 		case FuId.QueueDequeue:
-		case FuId.PriorityQueueDequeue:
 			WritePostfix(obj, ".remove()");
 			break;
 		case FuId.QueueEnqueue:
-		case FuId.PriorityQueueEnqueue:
 			WriteMethodCall(obj, "add", args[0]);
 			break;
 		case FuId.QueuePeek:
-		case FuId.PriorityQueuePeek:
 			WritePostfix(obj, ".element()");
+			break;
+		case FuId.PriorityQueueDequeue:
+			WritePostfix(obj, ".remove().get()");
+			break;
+		case FuId.PriorityQueueEnqueue:
+			WritePostfix(obj, ".add(new FuPriorityQueueEntry(");
+			args[0].Accept(this, FuPriority.Argument);
+			Write(", ");
+			args[1].Accept(this, FuPriority.Argument);
+			Write("))");
+			break;
+		case FuId.PriorityQueuePeek:
+			WritePostfix(obj, ".element().get()");
 			break;
 		case FuId.DictionaryAdd:
 			WritePostfix(obj, ".put(");
@@ -1475,14 +1492,41 @@ public class GenJava : GenTyped
 		CloseFile();
 	}
 
+	void WritePriorityQueue!()
+	{
+		CreateJavaFile("FuPriorityQueueEntry");
+		WriteLine("class FuPriorityQueueEntry<TElement, TPriority extends Comparable<TPriority>>");
+		WriteLine("\timplements Comparable<FuPriorityQueueEntry<TElement, TPriority>>");
+		OpenBlock();
+		WriteLine("private final TElement element;");
+		WriteLine("private final TPriority priority;");
+		WriteNewLine();
+		WriteLine("public FuPriorityQueueEntry(TElement element, TPriority priority)");
+		OpenBlock();
+		WriteLine("this.element = element;");
+		WriteLine("this.priority = priority;");
+		CloseBlock();
+		WriteNewLine();
+		WriteLine("public TElement get()");
+		OpenBlock();
+		WriteLine("return element;");
+		CloseBlock();
+		WriteNewLine();
+		WriteLine("public int compareTo(FuPriorityQueueEntry<TElement, TPriority> o)");
+		OpenBlock();
+		WriteLine("return priority.compareTo(o.priority);");
+		CloseBlock();
+		CloseBlock();
+		CloseFile();
+	}
+
 	void WriteResources!()
 	{
 		CreateJavaFile("FuResource");
 		WriteLine("import java.io.DataInputStream;");
 		WriteLine("import java.io.IOException;");
 		WriteNewLine();
-		Write("class FuResource");
-		WriteNewLine();
+		WriteLine("class FuResource");
 		OpenBlock();
 		WriteLine("static byte[] getByteArray(String name, int length)");
 		OpenBlock();
@@ -1514,7 +1558,10 @@ public class GenJava : GenTyped
 	{
 		this.OutputFile = outputFile;
 		this.Namespace = namespace;
+		this.HasPriorityQueue = false;
 		WriteTypes(program);
+		if (this.HasPriorityQueue)
+			WritePriorityQueue();
 		if (program.Resources.Count > 0)
 			WriteResources();
 	}

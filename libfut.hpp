@@ -195,6 +195,7 @@ enum class FuId
 	typeParam0,
 	typeParam0NotFinal,
 	typeParam0Predicate,
+	typeParam1,
 	sByteRange,
 	byteRange,
 	shortRange,
@@ -2131,6 +2132,7 @@ private: // internal
 	friend GenTs;
 private:
 	std::shared_ptr<FuType> typeParam0 = std::make_shared<FuType>();
+	std::shared_ptr<FuType> typeParam1 = std::make_shared<FuType>();
 	std::shared_ptr<FuRangeType> uIntType = FuRangeType::new_(0, 2147483647);
 	std::shared_ptr<FuClass> stringClass = FuClass::new_(FuCallType::normal, FuId::stringClass, "string");
 	FuClass * addCollection(FuId id, std::string_view name, int typeParameterCount, FuId clearId, FuId countId);
@@ -3041,6 +3043,7 @@ private: // internal
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;
 private:
+	bool hasPriorityQueue;
 	bool usingStringViewLiterals;
 	bool hasEnumFlags;
 	bool numberTryParse;
@@ -3059,7 +3062,7 @@ private:
 	static bool isClassPtr(const FuType * type);
 	static bool isCppPtr(const FuExpr * expr);
 	void writeCollectionObject(const FuExpr * obj, FuPriority priority);
-	void writePop(const FuExpr * obj, FuPriority parent, int p, std::string_view front);
+	void writePop(const FuExpr * obj, FuPriority parent, int p, std::string_view front, std::string_view frontSuffix = "");
 	void writeBeginEnd(const FuExpr * obj);
 	void writePtrRange(const FuExpr * obj, const FuExpr * index, const FuExpr * count);
 	void writeNotRawStringLiteral(const FuExpr * obj, FuPriority priority);
@@ -3276,6 +3279,7 @@ private: // internal
 private:
 	std::string_view outputFile;
 	std::string_view namespace_;
+	bool hasPriorityQueue;
 	void writeToString(const FuExpr * expr, FuPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeVisibility(FuVisibility visibility);
@@ -3295,6 +3299,7 @@ private:
 	void createJavaFile(std::string_view className);
 	void writeSignature(const FuMethod * method, int paramCount);
 	void writeOverloads(const FuMethod * method, int paramCount);
+	void writePriorityQueue();
 	void writeResources();
 };
 

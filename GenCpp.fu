@@ -20,6 +20,7 @@
 
 public class GenCpp : GenCCpp
 {
+	bool HasPriorityQueue;
 	bool UsingStringViewLiterals;
 	bool HasEnumFlags;
 	bool NumberTryParse;
@@ -233,13 +234,12 @@ public class GenCpp : GenCCpp
 			cppType = "stack";
 			break;
 		case FuId.PriorityQueueClass:
+			this.HasPriorityQueue = true;
 			Include("queue");
-			Write("std::priority_queue<");
+			Write("std::priority_queue<FuPriorityQueueEntry<");
 			WriteType(elementType, false);
-			Write(", std::vector<");
-			WriteType(elementType, false);
-			Write(">, std::greater<");
-			WriteType(elementType, false);
+			Write(", ");
+			WriteType(klass.TypeArg1, false);
 			Write(">>");
 			return;
 		case FuId.HashSetClass:
@@ -548,7 +548,7 @@ public class GenCpp : GenCCpp
 			obj.Accept(this, priority);
 	}
 
-	void WritePop!(FuExpr obj, FuPriority parent, int p, string front)
+	void WritePop!(FuExpr obj, FuPriority parent, int p, string front, string frontSuffix = "")
 	{
 		if (parent == FuPriority.Statement) {
 			StartMethodCall(obj);
@@ -569,6 +569,7 @@ public class GenCpp : GenCCpp
 			WriteChar(p);
 			WriteChar('.');
 			Write(front);
+			Write(frontSuffix);
 			Write("(); ");
 			WriteChar(p);
 			Write(".pop(); return ");
@@ -1013,7 +1014,6 @@ public class GenCpp : GenCCpp
 			WritePop(obj, parent, 'q', "front");
 			break;
 		case FuId.QueueEnqueue:
-		case FuId.PriorityQueueEnqueue:
 			WriteMethodCall(obj, "push", args[0]);
 			break;
 		case FuId.QueuePeek:
@@ -1021,7 +1021,6 @@ public class GenCpp : GenCCpp
 			Write("front()");
 			break;
 		case FuId.StackPeek:
-		case FuId.PriorityQueuePeek:
 			StartMethodCall(obj);
 			Write("top()");
 			break;
@@ -1032,7 +1031,14 @@ public class GenCpp : GenCCpp
 			WriteCollectionMethod(obj, "push", args);
 			break;
 		case FuId.PriorityQueueDequeue:
-			WritePop(obj, parent, 'q', "top");
+			WritePop(obj, parent, 'q', "top", "().get");
+			break;
+		case FuId.PriorityQueueEnqueue:
+			WriteMethodCall(obj, "emplace", args[0], args[1]);
+			break;
+		case FuId.PriorityQueuePeek:
+			StartMethodCall(obj);
+			Write("top().get()");
 			break;
 		case FuId.HashSetAdd:
 		case FuId.SortedSetAdd:
@@ -2042,6 +2048,7 @@ public class GenCpp : GenCCpp
 	{
 		this.WrittenClasses.Clear();
 		this.InHeaderFile = true;
+		this.HasPriorityQueue = false;
 		this.UsingStringViewLiterals = false;
 		this.HasEnumFlags = false;
 		this.NumberTryParse = false;
@@ -2179,7 +2186,21 @@ public class GenCpp : GenCCpp
 			}
 			WriteNewLine();
 			WriteLine("#endif");
-
+		}
+		if (this.HasPriorityQueue) {
+			WriteLine("template <class TElement, class TPriority>");
+			WriteLine("class FuPriorityQueueEntry");
+			OpenBlock();
+			WriteLine("TPriority priority;");
+			WriteLine("TElement element;");
+			this.Indent--;
+			WriteLine("public:");
+			this.Indent++;
+			WriteLine("FuPriorityQueueEntry(const TElement &element, const TPriority &priority) : priority(priority), element(element) {}");
+			WriteLine("const TElement &get() const { return element; }");
+			WriteLine("bool operator<(const FuPriorityQueueEntry &that) const { return that.priority < priority; }");
+			this.Indent--;
+			WriteLine("};");
 		}
 		CloseStringWriter();
 		CloseFile();

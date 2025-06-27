@@ -1271,10 +1271,16 @@ public class FuSema
 
 	FuType# EvalType(FuClassType generic, FuType# type)
 	{
-		if (type.Id == FuId.TypeParam0)
+		switch (type.Id) {
+		case FuId.TypeParam0:
 			return generic.TypeArg0;
-		if (type.Id == FuId.TypeParam0NotFinal)
+		case FuId.TypeParam0NotFinal:
 			return generic.TypeArg0.IsFinal() ? null : generic.TypeArg0;
+		case FuId.TypeParam1:
+			return generic.TypeArg1;
+		default:
+			break;
+		}
 		if (type is FuClassType collection && collection.Class.TypeParameterCount == 1 && collection.TypeArg0.Id == FuId.TypeParam0) {
 			FuClassType# result = type is FuReadWriteClassType ? new FuReadWriteClassType() : new FuClassType();
 			result.Class = collection.Class;
