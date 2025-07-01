@@ -13,7 +13,7 @@ public static class Test
 		HashSet<byte>() sb;
 		sb.Add(200);
 		int b = 222;
-		sb.Add(b); //FAIL: d TODO
+		sb.Add(b);
 		HashSet<string()>() ss;
 		ss.Add("foo");
 		string p = "bar";

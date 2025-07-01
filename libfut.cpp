@@ -17710,7 +17710,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::hashSetAdd:
 		writePostfix(obj, ".require(");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeCoercedExpr(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		write(", true)");
 		break;
 	case FuId::hashSetClear:

@@ -18834,7 +18834,7 @@ export class GenD extends GenCCppD
 			break;
 		case FuId.HASH_SET_ADD:
 			this.writePostfix(obj, ".require(");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.writeCoercedExpr(obj.type.asClassType().getElementType(), args[0]);
 			this.write(", true)");
 			break;
 		case FuId.HASH_SET_CLEAR:

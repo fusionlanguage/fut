@@ -18258,7 +18258,7 @@ namespace Fusion
 				break;
 			case FuId.HashSetAdd:
 				WritePostfix(obj, ".require(");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteCoercedExpr(obj.Type.AsClassType().GetElementType(), args[0]);
 				Write(", true)");
 				break;
 			case FuId.HashSetClear:
