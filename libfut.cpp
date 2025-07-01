@@ -17693,7 +17693,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::stackPush:
 		writeClassReference(obj);
 		write(" ~= ");
-		(*args)[0]->accept(this, FuPriority::assign);
+		writeCoercedExpr(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		break;
 	case FuId::stackPop:
 		this->hasStackPop = true;

@@ -18241,7 +18241,7 @@ namespace Fusion
 			case FuId.StackPush:
 				WriteClassReference(obj);
 				Write(" ~= ");
-				args[0].Accept(this, FuPriority.Assign);
+				WriteCoercedExpr(obj.Type.AsClassType().GetElementType(), args[0]);
 				break;
 			case FuId.StackPop:
 				this.HasStackPop = true;

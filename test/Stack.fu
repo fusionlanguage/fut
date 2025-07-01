@@ -10,7 +10,7 @@ public static class Test
 		s.Push(15);
 		s.Pop();
 		Stack<byte>() sb;
-		sb.Push(200); //FAIL: d TODO
+		sb.Push(200);
 		return s.Count == 2 && s.Pop() == 10 && s.Peek() == 5
 			&& sb.Peek() == 200 && sb.Pop() == 200;
 	}

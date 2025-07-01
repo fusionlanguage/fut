@@ -18817,7 +18817,7 @@ export class GenD extends GenCCppD
 		case FuId.STACK_PUSH:
 			this.#writeClassReference(obj);
 			this.write(" ~= ");
-			args[0].accept(this, FuPriority.ASSIGN);
+			this.writeCoercedExpr(obj.type.asClassType().getElementType(), args[0]);
 			break;
 		case FuId.STACK_POP:
 			this.#hasStackPop = true;
