@@ -17361,6 +17361,8 @@ export class GenCs extends GenTyped
 			this.writeCall("Array.Sort", obj, args[0], args[1]);
 			break;
 		case FuId.LIST_ADD:
+		case FuId.HASH_SET_ADD:
+		case FuId.SORTED_SET_ADD:
 			this.writeListAdd(obj, "Add", args);
 			break;
 		case FuId.LIST_ALL:
@@ -17374,6 +17376,12 @@ export class GenCs extends GenTyped
 			break;
 		case FuId.LIST_LAST:
 			this.writePostfix(obj, "[^1]");
+			break;
+		case FuId.QUEUE_ENQUEUE:
+			this.writeListAdd(obj, "Enqueue", args);
+			break;
+		case FuId.STACK_PUSH:
+			this.writeListAdd(obj, "Push", args);
 			break;
 		case FuId.LIST_SORT_PART:
 			this.writePostfix(obj, ".Sort(");

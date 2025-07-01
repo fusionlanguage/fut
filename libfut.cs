@@ -16812,6 +16812,8 @@ namespace Fusion
 				WriteCall("Array.Sort", obj, args[0], args[1]);
 				break;
 			case FuId.ListAdd:
+			case FuId.HashSetAdd:
+			case FuId.SortedSetAdd:
 				WriteListAdd(obj, "Add", args);
 				break;
 			case FuId.ListAll:
@@ -16825,6 +16827,12 @@ namespace Fusion
 				break;
 			case FuId.ListLast:
 				WritePostfix(obj, "[^1]");
+				break;
+			case FuId.QueueEnqueue:
+				WriteListAdd(obj, "Enqueue", args);
+				break;
+			case FuId.StackPush:
+				WriteListAdd(obj, "Push", args);
 				break;
 			case FuId.ListSortPart:
 				WritePostfix(obj, ".Sort(");

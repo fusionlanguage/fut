@@ -16441,6 +16441,8 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeCall("Array.Sort", obj, (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::listAdd:
+	case FuId::hashSetAdd:
+	case FuId::sortedSetAdd:
 		writeListAdd(obj, "Add", args);
 		break;
 	case FuId::listAll:
@@ -16454,6 +16456,12 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		break;
 	case FuId::listLast:
 		writePostfix(obj, "[^1]");
+		break;
+	case FuId::queueEnqueue:
+		writeListAdd(obj, "Enqueue", args);
+		break;
+	case FuId::stackPush:
+		writeListAdd(obj, "Push", args);
 		break;
 	case FuId::listSortPart:
 		writePostfix(obj, ".Sort(");

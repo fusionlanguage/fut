@@ -12,11 +12,15 @@ public static class Test
 		s.Remove(2);
 		SortedSet<byte>() sb; //FAIL: java order FIXME
 		sb.Add(200);
+		int b = 222;
+		sb.Add(b);
 		SortedSet<string()>() ss;
 		ss.Add("foo");
 		string p = "bar";
 		ss.Add(p);
-		if (s.Contains(42) || !s.Contains(11) || !sb.Contains(200) || !ss.Contains("foo") || ss.Contains("quux"))
+		if (s.Contains(42) || !s.Contains(11)
+		 || !sb.Contains(200) || !sb.Contains(222)
+		 || !ss.Contains("foo") || ss.Contains("quux"))
 			return false;
 		int i = 0;
 		foreach (int x in s) { //FAIL: c - needs glib-2.68
