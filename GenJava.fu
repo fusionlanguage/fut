@@ -603,6 +603,28 @@ public class GenJava : GenTyped
 		WriteChar(')');
 	}
 
+	void WriteMethodCallNoArgs!(FuExpr obj, string method)
+	{
+		obj.Accept(this, FuPriority.Primary);
+		WriteChar('.');
+		Write(method);
+		Write("()");
+	}
+
+	void WriteCollectionGet!(FuExpr obj, string method, FuPriority parent)
+	{
+		if (IsUnsignedByte(obj.Type.AsClassType().GetElementType())) {
+			if (parent > FuPriority.And)
+				WriteChar('(');
+			WriteMethodCallNoArgs(obj, method);
+			Write(" & 0xff");
+			if (parent > FuPriority.And)
+				WriteChar(')');
+		}
+		else
+			WriteMethodCallNoArgs(obj, method);
+	}
+
 	void WriteWrite!(FuMethod method, List<FuExpr#> args, bool newLine)
 	{
 		if (args.Count == 1 && args[0] is FuInterpolatedString interpolated) {
@@ -642,17 +664,10 @@ public class GenJava : GenTyped
 		case FuId.ListIndexOf:
 		case FuId.QueueClear:
 		case FuId.StackClear:
-		case FuId.StackPeek:
-		case FuId.StackPush:
-		case FuId.StackPop:
 		case FuId.PriorityQueueClear:
-		case FuId.HashSetAdd:
 		case FuId.HashSetClear:
-		case FuId.HashSetContains:
 		case FuId.HashSetRemove:
-		case FuId.SortedSetAdd:
 		case FuId.SortedSetClear:
-		case FuId.SortedSetContains:
 		case FuId.SortedSetRemove:
 		case FuId.DictionaryClear:
 		case FuId.DictionaryContainsKey:
@@ -751,6 +766,9 @@ public class GenJava : GenTyped
 			WriteChar(')');
 			break;
 		case FuId.ListAdd:
+		case FuId.QueueEnqueue:
+		case FuId.HashSetAdd:
+		case FuId.SortedSetAdd:
 			WriteListAdd(obj, "add", args);
 			break;
 		case FuId.ListAddRange:
@@ -799,26 +817,36 @@ public class GenJava : GenTyped
 			Write(").sort(null)");
 			break;
 		case FuId.QueueDequeue:
-			WritePostfix(obj, ".remove()");
-			break;
-		case FuId.QueueEnqueue:
-			WriteMethodCall(obj, "add", args[0]);
+			WriteCollectionGet(obj, "remove", parent);
 			break;
 		case FuId.QueuePeek:
-			WritePostfix(obj, ".element()");
+			WriteCollectionGet(obj, "element", parent);
+			break;
+		case FuId.StackPeek:
+			WriteCollectionGet(obj, "peek", parent);
+			break;
+		case FuId.StackPop:
+			WriteCollectionGet(obj, "pop", parent);
+			break;
+		case FuId.StackPush:
+			WriteListAdd(obj, "push", args);
 			break;
 		case FuId.PriorityQueueDequeue:
-			WritePostfix(obj, ".remove().get()");
+			WriteCollectionGet(obj, "remove().get", parent);
 			break;
 		case FuId.PriorityQueueEnqueue:
 			WritePostfix(obj, ".add(new FuPriorityQueueEntry(");
-			args[0].Accept(this, FuPriority.Argument);
+			WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			Write(", ");
 			args[1].Accept(this, FuPriority.Argument);
 			Write("))");
 			break;
 		case FuId.PriorityQueuePeek:
-			WritePostfix(obj, ".element().get()");
+			WriteCollectionGet(obj, "element().get", parent);
+			break;
+		case FuId.HashSetContains:
+		case FuId.SortedSetContains:
+			WriteListAdd(obj, "contains", args);
 			break;
 		case FuId.DictionaryAdd:
 			WritePostfix(obj, ".put(");

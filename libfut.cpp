@@ -18877,6 +18877,28 @@ void GenJava::writeArrayBinarySearchFill(const FuExpr * obj, std::string_view me
 	writeChar(')');
 }
 
+void GenJava::writeMethodCallNoArgs(const FuExpr * obj, std::string_view method)
+{
+	obj->accept(this, FuPriority::primary);
+	writeChar('.');
+	write(method);
+	write("()");
+}
+
+void GenJava::writeCollectionGet(const FuExpr * obj, std::string_view method, FuPriority parent)
+{
+	if (isUnsignedByte(obj->type->asClassType()->getElementType().get())) {
+		if (parent > FuPriority::and_)
+			writeChar('(');
+		writeMethodCallNoArgs(obj, method);
+		write(" & 0xff");
+		if (parent > FuPriority::and_)
+			writeChar(')');
+	}
+	else
+		writeMethodCallNoArgs(obj, method);
+}
+
 void GenJava::writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	const FuInterpolatedString * interpolated;
@@ -18917,17 +18939,10 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::listIndexOf:
 	case FuId::queueClear:
 	case FuId::stackClear:
-	case FuId::stackPeek:
-	case FuId::stackPush:
-	case FuId::stackPop:
 	case FuId::priorityQueueClear:
-	case FuId::hashSetAdd:
 	case FuId::hashSetClear:
-	case FuId::hashSetContains:
 	case FuId::hashSetRemove:
-	case FuId::sortedSetAdd:
 	case FuId::sortedSetClear:
-	case FuId::sortedSetContains:
 	case FuId::sortedSetRemove:
 	case FuId::dictionaryClear:
 	case FuId::dictionaryContainsKey:
@@ -19019,6 +19034,9 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		writeChar(')');
 		break;
 	case FuId::listAdd:
+	case FuId::queueEnqueue:
+	case FuId::hashSetAdd:
+	case FuId::sortedSetAdd:
 		writeListAdd(obj, "add", args);
 		break;
 	case FuId::listAddRange:
@@ -19067,26 +19085,36 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		write(").sort(null)");
 		break;
 	case FuId::queueDequeue:
-		writePostfix(obj, ".remove()");
-		break;
-	case FuId::queueEnqueue:
-		writeMethodCall(obj, "add", (*args)[0].get());
+		writeCollectionGet(obj, "remove", parent);
 		break;
 	case FuId::queuePeek:
-		writePostfix(obj, ".element()");
+		writeCollectionGet(obj, "element", parent);
+		break;
+	case FuId::stackPeek:
+		writeCollectionGet(obj, "peek", parent);
+		break;
+	case FuId::stackPop:
+		writeCollectionGet(obj, "pop", parent);
+		break;
+	case FuId::stackPush:
+		writeListAdd(obj, "push", args);
 		break;
 	case FuId::priorityQueueDequeue:
-		writePostfix(obj, ".remove().get()");
+		writeCollectionGet(obj, "remove().get", parent);
 		break;
 	case FuId::priorityQueueEnqueue:
 		writePostfix(obj, ".add(new FuPriorityQueueEntry(");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		write(", ");
 		(*args)[1]->accept(this, FuPriority::argument);
 		write("))");
 		break;
 	case FuId::priorityQueuePeek:
-		writePostfix(obj, ".element().get()");
+		writeCollectionGet(obj, "element().get", parent);
+		break;
+	case FuId::hashSetContains:
+	case FuId::sortedSetContains:
+		writeListAdd(obj, "contains", args);
 		break;
 	case FuId::dictionaryAdd:
 		writePostfix(obj, ".put(");

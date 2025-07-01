@@ -9,10 +9,13 @@ public static class Test
 		q.Enqueue(10);
 		q.Enqueue(15);
 		q.Dequeue();
+		Queue<byte>() qb;
+		qb.Enqueue(200);
 		Queue<string()>() q2;
 		q2.Clear();
 		q2.Enqueue("foo");
 		return q.Count == 2 && q.Dequeue() == 10 && q.Peek() == 15
+			&& qb.Peek() == 200 && qb.Dequeue() == 200
 			&& q2.Peek() == "foo";
 	}
 }

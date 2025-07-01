@@ -3293,6 +3293,8 @@ private:
 	void writeSByteLiteral(const FuLiteralLong * literal);
 	static bool isForeachUnsignedBytes(const FuSymbolReference * expr);
 	void writeArrayBinarySearchFill(const FuExpr * obj, std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeMethodCallNoArgs(const FuExpr * obj, std::string_view method);
+	void writeCollectionGet(const FuExpr * obj, std::string_view method, FuPriority parent);
 	void writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	static bool isTryParse(FuId id);

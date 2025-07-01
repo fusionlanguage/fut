@@ -20094,6 +20094,28 @@ export class GenJava extends GenTyped
 		this.writeChar(41);
 	}
 
+	#writeMethodCallNoArgs(obj, method)
+	{
+		obj.accept(this, FuPriority.PRIMARY);
+		this.writeChar(46);
+		this.write(method);
+		this.write("()");
+	}
+
+	#writeCollectionGet(obj, method, parent)
+	{
+		if (GenJava.#isUnsignedByte(obj.type.asClassType().getElementType())) {
+			if (parent > FuPriority.AND)
+				this.writeChar(40);
+			this.#writeMethodCallNoArgs(obj, method);
+			this.write(" & 0xff");
+			if (parent > FuPriority.AND)
+				this.writeChar(41);
+		}
+		else
+			this.#writeMethodCallNoArgs(obj, method);
+	}
+
 	#writeWrite(method, args, newLine)
 	{
 		let interpolated;
@@ -20134,17 +20156,10 @@ export class GenJava extends GenTyped
 		case FuId.LIST_INDEX_OF:
 		case FuId.QUEUE_CLEAR:
 		case FuId.STACK_CLEAR:
-		case FuId.STACK_PEEK:
-		case FuId.STACK_PUSH:
-		case FuId.STACK_POP:
 		case FuId.PRIORITY_QUEUE_CLEAR:
-		case FuId.HASH_SET_ADD:
 		case FuId.HASH_SET_CLEAR:
-		case FuId.HASH_SET_CONTAINS:
 		case FuId.HASH_SET_REMOVE:
-		case FuId.SORTED_SET_ADD:
 		case FuId.SORTED_SET_CLEAR:
-		case FuId.SORTED_SET_CONTAINS:
 		case FuId.SORTED_SET_REMOVE:
 		case FuId.DICTIONARY_CLEAR:
 		case FuId.DICTIONARY_CONTAINS_KEY:
@@ -20234,6 +20249,9 @@ export class GenJava extends GenTyped
 			this.writeChar(41);
 			break;
 		case FuId.LIST_ADD:
+		case FuId.QUEUE_ENQUEUE:
+		case FuId.HASH_SET_ADD:
+		case FuId.SORTED_SET_ADD:
 			this.writeListAdd(obj, "add", args);
 			break;
 		case FuId.LIST_ADD_RANGE:
@@ -20282,26 +20300,36 @@ export class GenJava extends GenTyped
 			this.write(").sort(null)");
 			break;
 		case FuId.QUEUE_DEQUEUE:
-			this.writePostfix(obj, ".remove()");
-			break;
-		case FuId.QUEUE_ENQUEUE:
-			this.writeMethodCall(obj, "add", args[0]);
+			this.#writeCollectionGet(obj, "remove", parent);
 			break;
 		case FuId.QUEUE_PEEK:
-			this.writePostfix(obj, ".element()");
+			this.#writeCollectionGet(obj, "element", parent);
+			break;
+		case FuId.STACK_PEEK:
+			this.#writeCollectionGet(obj, "peek", parent);
+			break;
+		case FuId.STACK_POP:
+			this.#writeCollectionGet(obj, "pop", parent);
+			break;
+		case FuId.STACK_PUSH:
+			this.writeListAdd(obj, "push", args);
 			break;
 		case FuId.PRIORITY_QUEUE_DEQUEUE:
-			this.writePostfix(obj, ".remove().get()");
+			this.#writeCollectionGet(obj, "remove().get", parent);
 			break;
 		case FuId.PRIORITY_QUEUE_ENQUEUE:
 			this.writePostfix(obj, ".add(new FuPriorityQueueEntry(");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
 			this.write(", ");
 			args[1].accept(this, FuPriority.ARGUMENT);
 			this.write("))");
 			break;
 		case FuId.PRIORITY_QUEUE_PEEK:
-			this.writePostfix(obj, ".element().get()");
+			this.#writeCollectionGet(obj, "element().get", parent);
+			break;
+		case FuId.HASH_SET_CONTAINS:
+		case FuId.SORTED_SET_CONTAINS:
+			this.writeListAdd(obj, "contains", args);
 			break;
 		case FuId.DICTIONARY_ADD:
 			this.writePostfix(obj, ".put(");

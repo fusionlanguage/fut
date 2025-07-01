@@ -10,6 +10,9 @@ public static class Test
 		q.Enqueue("one", 1);
 		q.Enqueue("ten", 10);
 		q.Dequeue();
-		return q.Count == 3 && q.Dequeue() == "five" && q.Peek() == "ten";
+		PriorityQueue<byte, int>() qb;
+		qb.Enqueue(200, 5);
+		return q.Count == 3 && q.Dequeue() == "five" && q.Peek() == "ten"
+			&& qb.Peek() == 200 && qb.Dequeue() == 200;
 	}
 }
