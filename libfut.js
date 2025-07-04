@@ -11507,9 +11507,8 @@ export class GenC extends GenCCpp
 	{
 		if (def.isAssignableStorage())
 			return false;
-		let klass;
 		let storage;
-		return (def instanceof FuField && (def.value != null || GenC.#isHeapAllocated(def.type.getStorageType()) || ((klass = def.type) instanceof FuClassType && (klass.class.id == FuId.LIST_CLASS || klass.class.id == FuId.STACK_CLASS || klass.class.id == FuId.DICTIONARY_CLASS || klass.class.id == FuId.SORTED_DICTIONARY_CLASS)))) || (def.value != null && GenC.#getThrowingMethod(def.value) != null) || ((storage = def.type.getStorageType()) instanceof FuStorageType && (storage.class.id == FuId.LOCK_CLASS || this.needsConstructor(storage.class))) || GenC.#hasListDestroy(def.type) || super.hasInitCode(def);
+		return (def instanceof FuField && (def.value != null || GenC.#isHeapAllocated(def.type.getStorageType()))) || (def.value != null && GenC.#getThrowingMethod(def.value) != null) || ((storage = def.type.getStorageType()) instanceof FuStorageType && (GenC.#isCollection(storage.class) || storage.class.id == FuId.LOCK_CLASS || this.needsConstructor(storage.class))) || GenC.#hasListDestroy(def.type) || super.hasInitCode(def);
 	}
 
 	#startForwardThrow(throwingMethod)

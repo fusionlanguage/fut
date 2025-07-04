@@ -10807,9 +10807,8 @@ bool GenC::hasInitCode(const FuNamedValue * def) const
 {
 	if (def->isAssignableStorage())
 		return false;
-	const FuClassType * klass;
 	const FuStorageType * storage;
-	return (dynamic_cast<const FuField *>(def) && (def->value != nullptr || isHeapAllocated(def->type->getStorageType()) || ((klass = dynamic_cast<const FuClassType *>(def->type.get())) && (klass->class_->id == FuId::listClass || klass->class_->id == FuId::stackClass || klass->class_->id == FuId::dictionaryClass || klass->class_->id == FuId::sortedDictionaryClass)))) || (def->value != nullptr && getThrowingMethod(def->value.get()) != nullptr) || ((storage = dynamic_cast<const FuStorageType *>(def->type->getStorageType())) && (storage->class_->id == FuId::lockClass || needsConstructor(storage->class_))) || hasListDestroy(def->type.get()) || GenBase::hasInitCode(def);
+	return (dynamic_cast<const FuField *>(def) && (def->value != nullptr || isHeapAllocated(def->type->getStorageType()))) || (def->value != nullptr && getThrowingMethod(def->value.get()) != nullptr) || ((storage = dynamic_cast<const FuStorageType *>(def->type->getStorageType())) && (isCollection(storage->class_) || storage->class_->id == FuId::lockClass || needsConstructor(storage->class_))) || hasListDestroy(def->type.get()) || GenBase::hasInitCode(def);
 }
 
 FuPriority GenC::startForwardThrow(const FuMethod * throwingMethod)

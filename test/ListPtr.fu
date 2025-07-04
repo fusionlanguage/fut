@@ -1,8 +1,10 @@
 public class Test
 {
+	List<int> Bar; //FAIL: swift TODO; cl
+
 	string() Foo;
 
-	static int GetCount(List<int> l) => l.Count; //FAIL: swift TODO; cl
+	static int GetCount(List<int> l) => l.Count;
 
 	static void Add(List<int>! l)
 	{
