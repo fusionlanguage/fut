@@ -13676,15 +13676,6 @@ namespace Fusion
 			this.InHeaderFile = true;
 			OpenStringWriter();
 			foreach (FuClass klass in program.Classes) {
-				WriteNewDelete(klass, false);
-				WriteSignatures(klass, true);
-			}
-			CreateHeaderFile(outputFile, ".h");
-			WriteLine("#ifdef __cplusplus");
-			WriteLine("extern \"C\" {");
-			WriteLine("#endif");
-			WriteTypedefs(program, true);
-			foreach (FuClass klass in program.Classes) {
 				if (!klass.IsPublic)
 					continue;
 				for (FuSymbol member = klass.First; member != null; member = member.Next) {
@@ -13694,6 +13685,15 @@ namespace Fusion
 					}
 				}
 			}
+			foreach (FuClass klass in program.Classes) {
+				WriteNewDelete(klass, false);
+				WriteSignatures(klass, true);
+			}
+			CreateHeaderFile(outputFile, ".h");
+			WriteLine("#ifdef __cplusplus");
+			WriteLine("extern \"C\" {");
+			WriteLine("#endif");
+			WriteTypedefs(program, true);
 			CloseStringWriter();
 			WriteNewLine();
 			WriteLine("#ifdef __cplusplus");

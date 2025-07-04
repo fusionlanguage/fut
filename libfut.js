@@ -14171,15 +14171,6 @@ export class GenC extends GenCCpp
 		this.inHeaderFile = true;
 		this.openStringWriter();
 		for (const klass of program.classes) {
-			this.#writeNewDelete(klass, false);
-			this.writeSignatures(klass, true);
-		}
-		this.createHeaderFile(outputFile, ".h");
-		this.writeLine("#ifdef __cplusplus");
-		this.writeLine("extern \"C\" {");
-		this.writeLine("#endif");
-		this.writeTypedefs(program, true);
-		for (const klass of program.classes) {
 			if (!klass.isPublic)
 				continue;
 			for (let member = klass.first; member != null; member = member.next) {
@@ -14190,6 +14181,15 @@ export class GenC extends GenCCpp
 				}
 			}
 		}
+		for (const klass of program.classes) {
+			this.#writeNewDelete(klass, false);
+			this.writeSignatures(klass, true);
+		}
+		this.createHeaderFile(outputFile, ".h");
+		this.writeLine("#ifdef __cplusplus");
+		this.writeLine("extern \"C\" {");
+		this.writeLine("#endif");
+		this.writeTypedefs(program, true);
 		this.closeStringWriter();
 		this.writeNewLine();
 		this.writeLine("#ifdef __cplusplus");

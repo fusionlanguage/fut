@@ -13461,15 +13461,6 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->inHeaderFile = true;
 	openStringWriter();
 	for (const FuClass * klass : program->classes) {
-		writeNewDelete(klass, false);
-		writeSignatures(klass, true);
-	}
-	createHeaderFile(outputFile, ".h");
-	writeLine("#ifdef __cplusplus");
-	writeLine("extern \"C\" {");
-	writeLine("#endif");
-	writeTypedefs(program, true);
-	for (const FuClass * klass : program->classes) {
 		if (!klass->isPublic)
 			continue;
 		for (const FuSymbol * member = klass->first; member != nullptr; member = member->next) {
@@ -13480,6 +13471,15 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 			}
 		}
 	}
+	for (const FuClass * klass : program->classes) {
+		writeNewDelete(klass, false);
+		writeSignatures(klass, true);
+	}
+	createHeaderFile(outputFile, ".h");
+	writeLine("#ifdef __cplusplus");
+	writeLine("extern \"C\" {");
+	writeLine("#endif");
+	writeTypedefs(program, true);
 	closeStringWriter();
 	writeNewLine();
 	writeLine("#ifdef __cplusplus");
