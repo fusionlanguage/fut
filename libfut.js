@@ -4878,8 +4878,6 @@ export class FuParser extends FuLexer
 					this.#foundName = method;
 				continue;
 			}
-			if (visibility == FuVisibility.PUBLIC)
-				this.#reportFormerError(line, column, 6, "Field cannot be public");
 			if (callType != FuCallType.NORMAL)
 				this.#reportCallTypeError(callTypeLine, callTypeColumn, "Field", callType);
 			if (type == this.host.program.system.voidType)
@@ -14181,6 +14179,17 @@ export class GenC extends GenCCpp
 		this.writeLine("extern \"C\" {");
 		this.writeLine("#endif");
 		this.writeTypedefs(program, true);
+		for (const klass of program.classes) {
+			if (!klass.isPublic)
+				continue;
+			for (let member = klass.first; member != null; member = member.next) {
+				let field;
+				if ((field = member) instanceof FuField && field.visibility == FuVisibility.PUBLIC) {
+					this.writeClass(klass, program);
+					break;
+				}
+			}
+		}
 		this.closeStringWriter();
 		this.writeNewLine();
 		this.writeLine("#ifdef __cplusplus");

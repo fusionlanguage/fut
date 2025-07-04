@@ -3936,6 +3936,16 @@ public class GenC : GenCCpp
 		WriteLine("extern \"C\" {");
 		WriteLine("#endif");
 		WriteTypedefs(program, true);
+		foreach (FuClass klass in program.Classes) {
+			if (!klass.IsPublic)
+				continue;
+			for (FuSymbol? member = klass.First; member != null; member = member.Next) {
+				if (member is FuField field && field.Visibility == FuVisibility.Public) {
+					WriteClass(klass, program);
+					break;
+				}
+			}
+		}
 		CloseStringWriter();
 		WriteNewLine();
 		WriteLine("#ifdef __cplusplus");

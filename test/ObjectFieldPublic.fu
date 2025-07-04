@@ -1,0 +1,14 @@
+public class Foo
+{
+	public int Bar;
+}
+
+public static class Test
+{
+	public static bool Run()
+	{
+		Foo() o;
+		o.Bar = 42;
+		return o.Bar == 42;
+	}
+}

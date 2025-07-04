@@ -4390,8 +4390,6 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 				this->foundName = method.get();
 			continue;
 		}
-		if (visibility == FuVisibility::public_)
-			reportFormerError(line, column, 6, "Field cannot be public");
 		if (callType != FuCallType::normal)
 			reportCallTypeError(callTypeLine, callTypeColumn, "Field", callType);
 		if (type == this->host->program->system->voidType)
@@ -13471,6 +13469,17 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	writeLine("extern \"C\" {");
 	writeLine("#endif");
 	writeTypedefs(program, true);
+	for (const FuClass * klass : program->classes) {
+		if (!klass->isPublic)
+			continue;
+		for (const FuSymbol * member = klass->first; member != nullptr; member = member->next) {
+			const FuField * field;
+			if ((field = dynamic_cast<const FuField *>(member)) && field->visibility == FuVisibility::public_) {
+				writeClass(klass, program);
+				break;
+			}
+		}
+	}
 	closeStringWriter();
 	writeNewLine();
 	writeLine("#ifdef __cplusplus");

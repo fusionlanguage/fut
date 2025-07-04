@@ -636,20 +636,6 @@ class Point
 }
 ```
 
-Fields _cannot be_ public. Instead, define _getter/setter_ methods:
-
-```csharp
-public class Image
-{
-    int Width;
-    public int GetWidth() { return Width; }
-    public int SetWidth!(int value) { Width = value; }
-
-    int Height;
-    public int GetHeight() => Height; // syntax sugar
-}
-```
-
 Fields _cannot be_ static. Shared state poses problems with lifetime
 and multithreading.
 

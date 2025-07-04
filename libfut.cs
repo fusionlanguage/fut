@@ -4654,8 +4654,6 @@ namespace Fusion
 						this.FoundName = method;
 					continue;
 				}
-				if (visibility == FuVisibility.Public)
-					ReportFormerError(line, column, 6, "Field cannot be public");
 				if (callType != FuCallType.Normal)
 					ReportCallTypeError(callTypeLine, callTypeColumn, "Field", callType);
 				if (type == this.Host.Program.System.VoidType)
@@ -13686,6 +13684,16 @@ namespace Fusion
 			WriteLine("extern \"C\" {");
 			WriteLine("#endif");
 			WriteTypedefs(program, true);
+			foreach (FuClass klass in program.Classes) {
+				if (!klass.IsPublic)
+					continue;
+				for (FuSymbol member = klass.First; member != null; member = member.Next) {
+					if (member is FuField field && field.Visibility == FuVisibility.Public) {
+						WriteClass(klass, program);
+						break;
+					}
+				}
+			}
 			CloseStringWriter();
 			WriteNewLine();
 			WriteLine("#ifdef __cplusplus");

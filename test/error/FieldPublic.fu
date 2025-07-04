@@ -1,5 +1,0 @@
-public class Test
-{
-	public //ERROR: Field cannot be public
-		int Foo;
-}
