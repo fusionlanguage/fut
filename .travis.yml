@@ -39,7 +39,7 @@ jobs:
   - name: host-diff
     install:
       - sudo apt update
-      - sudo apt dotnet-sdk-8.0
+      - sudo apt install dotnet-sdk-8.0
       - nvm install --lts
     script:
       - make -j5 host-diff
