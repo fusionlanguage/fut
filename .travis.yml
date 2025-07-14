@@ -1,5 +1,5 @@
 language: cpp
-dist: jammy
+dist: noble
 env: SWIFT_VERSION=6.1.2
 vm:
   size: large
@@ -13,51 +13,34 @@ jobs:
       - chmod +x codecov
     script: PATH+=:$HOME/.dotnet/tools make codecov
   - name: c, cl, error
-    install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo apt install g++-13
-      - sudo sysctl vm.mmap_rnd_bits=28
-    script: make -j5 test-c test-cl test-error CXX=g++-13
+    script: make -j5 test-c test-cl test-error
   - name: cpp, java
-    install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo apt install g++-13
-      - sudo sysctl vm.mmap_rnd_bits=28
-    script: make -j5 test-cpp test-java CXX=g++-13
+    script: make -j5 test-cpp test-java
   - name: cs
     install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo apt install g++-13 dotnet-sdk-8.0
-    script: make -j5 test-cs CXX=g++-13
+      - sudo apt install dotnet-sdk-8.0
+    script: make -j5 test-cs
   - name: d
     install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo apt install g++-13
       - curl -fsS https://dlang.org/install.sh -O
       - bash install.sh
-    script: source `bash install.sh -a` && make -j5 test-d CXX=g++-13
+    script: source `bash install.sh -a` && make -j5 test-d
   - name: js, ts
     install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo apt install g++-13
       - nvm install --lts
-    script: make -j5 test-js test-ts CXX=g++-13
+    script: make -j5 test-js test-ts
   - name: py, swift
     install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo add-apt-repository -y ppa:deadsnakes/ppa
-      - sudo apt install g++-13 python3.13
       - pip install mypy
       - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2204/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz
       - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz -C ..
-    script: make -j5 test-py test-swift CXX=g++-13 PYTHON=python3.13 SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc
+    script: make -j5 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc
   - name: host-diff
     install:
-      - sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
-      - sudo apt install g++-13 dotnet-sdk-8.0
+      - sudo apt dotnet-sdk-8.0
       - nvm install --lts
     script:
-      - make -j5 host-diff CXX=g++-13
+      - make -j5 host-diff
       - make -j5 test-error FUT_HOST=cs
       - rm test/bin/*/error.txt
       - make -j5 test-error FUT_HOST=node
