@@ -14,8 +14,7 @@ jobs:
     script: PATH+=:$HOME/.dotnet/tools make codecov
   - name: c, cl, error
     install:
-      - update-alternatives --get-selections
-      - sudo apt install libstdc++-14-dev
+      - sudo apt install libstdc++-14-dev libclang-rt-18-dev
     script: make -j5 test-c test-cl test-error
   - name: cpp, java
     script: make -j5 test-cpp test-java

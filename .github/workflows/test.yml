@@ -1,9 +1,7 @@
 name: tests
 on:
   push:
-    paths-ignore:
-      - .travis.yml
-      - '**.md'
+    paths-ignore: .travis.yml **.md
 jobs:
   c-cl-error:
     runs-on: ubuntu-24.04
