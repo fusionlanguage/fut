@@ -12637,7 +12637,7 @@ void GenC::writeTypedefs(const FuProgram * program, bool pub)
 				writeTypedef(klass);
 		}
 		else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type)) {
-			if (enu->isPublic == pub)
+			if ((enu->isPublic || this->writtenTypes.contains(enu)) == pub)
 				writeEnum(enu);
 		}
 		else
@@ -12813,6 +12813,9 @@ void GenC::writeClassInternal(const FuClass * klass)
 		}
 		for (const FuSymbol * symbol = klass->first; symbol != nullptr; symbol = symbol->next) {
 			if (const FuField *field = dynamic_cast<const FuField *>(symbol)) {
+				const FuEnum * enu;
+				if (this->inHeaderFile && (enu = dynamic_cast<const FuEnum *>(field->type.get())))
+					this->writtenTypes.insert(enu);
 				writeDoc(field->documentation.get());
 				writeTypeAndName(field);
 				writeCharLine(';');

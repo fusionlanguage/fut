@@ -12851,7 +12851,7 @@ namespace Fusion
 						WriteTypedef(klass);
 					break;
 				case FuEnum enu:
-					if (enu.IsPublic == pub)
+					if ((enu.IsPublic || this.WrittenTypes.Contains(enu)) == pub)
 						WriteEnum(enu);
 					break;
 				default:
@@ -13026,6 +13026,8 @@ namespace Fusion
 				for (FuSymbol symbol = klass.First; symbol != null; symbol = symbol.Next) {
 					switch (symbol) {
 					case FuField field:
+						if (this.InHeaderFile && field.Type is FuEnum enu)
+							this.WrittenTypes.Add(enu);
 						WriteDoc(field.Documentation);
 						WriteTypeAndName(field);
 						WriteCharLine(';');

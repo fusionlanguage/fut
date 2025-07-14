@@ -1,6 +1,15 @@
+enum Season
+{
+	Spring,
+	Summer,
+	Fall,
+	Winter
+}
+
 public class Foo
 {
 	public long Bar;
+	Season Fav;
 }
 
 public static class Test

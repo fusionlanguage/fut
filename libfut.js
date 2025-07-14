@@ -13338,7 +13338,7 @@ export class GenC extends GenCCpp
 			}
 			else if (type instanceof FuEnum) {
 				const enu = type;
-				if (enu.isPublic == pub)
+				if ((enu.isPublic || this.writtenTypes.has(enu)) == pub)
 					this.writeEnum(enu);
 			}
 			else
@@ -13518,6 +13518,9 @@ export class GenC extends GenCCpp
 			for (let symbol = klass.first; symbol != null; symbol = symbol.next) {
 				if (symbol instanceof FuField) {
 					const field = symbol;
+					let enu;
+					if (this.inHeaderFile && (enu = field.type) instanceof FuEnum)
+						this.writtenTypes.add(enu);
 					this.writeDoc(field.documentation);
 					this.writeTypeAndName(field);
 					this.writeCharLine(59);

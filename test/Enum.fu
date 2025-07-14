@@ -9,9 +9,18 @@ public enum DayOfWeek
 	Saturday
 }
 
+enum Season
+{
+	Spring,
+	Summer,
+	Fall,
+	Winter
+}
+
 public class Test
 {
 	DayOfWeek Day;
+	Season Seas;
 
 	public static bool Run()
 	{
