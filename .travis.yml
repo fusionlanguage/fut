@@ -18,6 +18,7 @@ jobs:
     script: make -j5 test-cpp test-java
   - name: cs
     install:
+      - sudo apt update
       - sudo apt install dotnet-sdk-8.0
     script: make -j5 test-cs
   - name: d
@@ -37,6 +38,7 @@ jobs:
     script: make -j5 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc
   - name: host-diff
     install:
+      - sudo apt update
       - sudo apt dotnet-sdk-8.0
       - nvm install --lts
     script:
