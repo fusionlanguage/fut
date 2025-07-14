@@ -9058,9 +9058,9 @@ bool GenBase::writeBaseClass(const FuClass * klass, const FuProgram * program)
 {
 	if (klass->name == "Exception")
 		return false;
-	if (this->writtenClasses.contains(klass))
+	if (this->writtenTypes.contains(klass))
 		return false;
-	this->writtenClasses.insert(klass);
+	this->writtenTypes.insert(klass);
 	if (const FuClass *baseClass = dynamic_cast<const FuClass *>(klass->parent))
 		writeClass(baseClass, program);
 	return true;
@@ -13456,7 +13456,7 @@ void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->namespace_ = namespace_;
-	this->writtenClasses.clear();
+	this->writtenTypes.clear();
 	this->inHeaderFile = true;
 	openStringWriter();
 	for (const FuClass * klass : program->classes) {
@@ -13853,7 +13853,7 @@ void GenCl::writeLibrary()
 void GenCl::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->namespace_ = namespace_;
-	this->writtenClasses.clear();
+	this->writtenTypes.clear();
 	this->stringLength = false;
 	this->stringEquals = false;
 	this->stringStartsWith = false;
@@ -15781,7 +15781,7 @@ void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * 
 
 void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
-	this->writtenClasses.clear();
+	this->writtenTypes.clear();
 	this->inHeaderFile = true;
 	this->hasPriorityQueue = false;
 	this->usingStringViewLiterals = false;
@@ -25250,6 +25250,7 @@ void GenPy::writeClass(const FuClass * klass, const FuProgram * program)
 {
 	if (!writeBaseClass(klass, program))
 		return;
+	this->writtenTypes.erase(klass);
 	writePyClass(klass);
 	if (const FuClass *baseClass = dynamic_cast<const FuClass *>(klass->parent)) {
 		writeChar('(');

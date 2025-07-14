@@ -2046,7 +2046,7 @@ public class GenCpp : GenCCpp
 
 	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
-		this.WrittenClasses.Clear();
+		this.WrittenTypes.Clear();
 		this.InHeaderFile = true;
 		this.HasPriorityQueue = false;
 		this.UsingStringViewLiterals = false;

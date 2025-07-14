@@ -20,7 +20,6 @@
 
 public class GenPy : GenPySwift
 {
-	HashSet<FuContainerType>() WrittenTypes;
 	bool ChildPass;
 	bool SwitchBreak;
 
@@ -1576,6 +1575,7 @@ public class GenPy : GenPySwift
 	{
 		if (!WriteBaseClass(klass, program))
 			return;
+		this.WrittenTypes.Remove(klass);
 
 		WritePyClass(klass);
 		if (klass.Parent is FuClass baseClass) {

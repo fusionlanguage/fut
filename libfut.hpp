@@ -2416,7 +2416,7 @@ protected:
 	bool atLineStart = true;
 	bool inHeaderFile = false;
 	const FuMethodBase * currentMethod = nullptr;
-	std::unordered_set<const FuClass *> writtenClasses;
+	std::unordered_set<const FuContainerType *> writtenTypes;
 	std::vector<const FuSwitch *> switchesWithGoto;
 	std::vector<const FuExpr *> currentTemporaries;
 	virtual std::string_view getTargetName() const = 0;
@@ -3637,7 +3637,6 @@ private: // internal
 	void visitThrow(const FuThrow * statement) override;
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
-	std::unordered_set<const FuContainerType *> writtenTypes;
 	bool childPass;
 	bool switchBreak;
 	void startDoc(const FuCodeDoc * doc);

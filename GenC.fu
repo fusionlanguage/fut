@@ -3923,7 +3923,7 @@ public class GenC : GenCCpp
 	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.Namespace = namespace;
-		this.WrittenClasses.Clear();
+		this.WrittenTypes.Clear();
 		this.InHeaderFile = true;
 		OpenStringWriter();
 		foreach (FuClass klass in program.Classes) {

@@ -36,7 +36,7 @@ public abstract class GenBase : FuVisitor
 	protected bool InHeaderFile = false;
 	SortedDictionary<string(), bool>() Includes;
 	protected FuMethodBase? CurrentMethod = null;
-	protected HashSet<FuClass>() WrittenClasses;
+	protected HashSet<FuContainerType>() WrittenTypes;
 	protected List<FuSwitch>() SwitchesWithGoto;
 	protected List<FuExpr>() CurrentTemporaries; // FuExpr or FuType
 
@@ -2125,9 +2125,9 @@ public abstract class GenBase : FuVisitor
 		if (klass.Name == "Exception")
 			return false;
 		// topological sorting of class hierarchy
-		if (this.WrittenClasses.Contains(klass))
+		if (this.WrittenTypes.Contains(klass))
 			return false;
-		this.WrittenClasses.Add(klass);
+		this.WrittenTypes.Add(klass);
 		if (klass.Parent is FuClass baseClass)
 			WriteClass(baseClass, program);
 		return true;

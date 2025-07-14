@@ -7093,7 +7093,7 @@ namespace Fusion
 
 		protected FuMethodBase CurrentMethod = null;
 
-		protected readonly HashSet<FuClass> WrittenClasses = new HashSet<FuClass>();
+		protected readonly HashSet<FuContainerType> WrittenTypes = new HashSet<FuContainerType>();
 
 		protected readonly List<FuSwitch> SwitchesWithGoto = new List<FuSwitch>();
 
@@ -9189,9 +9189,9 @@ namespace Fusion
 		{
 			if (klass.Name == "Exception")
 				return false;
-			if (this.WrittenClasses.Contains(klass))
+			if (this.WrittenTypes.Contains(klass))
 				return false;
-			this.WrittenClasses.Add(klass);
+			this.WrittenTypes.Add(klass);
 			if (klass.Parent is FuClass baseClass)
 				WriteClass(baseClass, program);
 			return true;
@@ -13672,7 +13672,7 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.Namespace = namespace_;
-			this.WrittenClasses.Clear();
+			this.WrittenTypes.Clear();
 			this.InHeaderFile = true;
 			OpenStringWriter();
 			foreach (FuClass klass in program.Classes) {
@@ -14084,7 +14084,7 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.Namespace = namespace_;
-			this.WrittenClasses.Clear();
+			this.WrittenTypes.Clear();
 			this.StringLength = false;
 			this.StringEquals = false;
 			this.StringStartsWith = false;
@@ -16124,7 +16124,7 @@ namespace Fusion
 
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
-			this.WrittenClasses.Clear();
+			this.WrittenTypes.Clear();
 			this.InHeaderFile = true;
 			this.HasPriorityQueue = false;
 			this.UsingStringViewLiterals = false;
@@ -24526,8 +24526,6 @@ namespace Fusion
 	public class GenPy : GenPySwift
 	{
 
-		readonly HashSet<FuContainerType> WrittenTypes = new HashSet<FuContainerType>();
-
 		bool ChildPass;
 
 		bool SwitchBreak;
@@ -26075,6 +26073,7 @@ namespace Fusion
 		{
 			if (!WriteBaseClass(klass, program))
 				return;
+			this.WrittenTypes.Remove(klass);
 			WritePyClass(klass);
 			if (klass.Parent is FuClass baseClass) {
 				WriteChar('(');

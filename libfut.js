@@ -7487,7 +7487,7 @@ export class GenBase extends FuVisitor
 	inHeaderFile = false;
 	#includes = {};
 	currentMethod = null;
-	writtenClasses = new Set();
+	writtenTypes = new Set();
 	switchesWithGoto = [];
 	currentTemporaries = [];
 
@@ -9624,9 +9624,9 @@ export class GenBase extends FuVisitor
 	{
 		if (klass.name == "Exception")
 			return false;
-		if (this.writtenClasses.has(klass))
+		if (this.writtenTypes.has(klass))
 			return false;
-		this.writtenClasses.add(klass);
+		this.writtenTypes.add(klass);
 		let baseClass;
 		if ((baseClass = klass.parent) instanceof FuClass)
 			this.writeClass(baseClass, program);
@@ -14166,7 +14166,7 @@ export class GenC extends GenCCpp
 	writeProgram(program, outputFile, namespace)
 	{
 		this.namespace = namespace;
-		this.writtenClasses.clear();
+		this.writtenTypes.clear();
 		this.inHeaderFile = true;
 		this.openStringWriter();
 		for (const klass of program.classes) {
@@ -14584,7 +14584,7 @@ export class GenCl extends GenC
 	writeProgram(program, outputFile, namespace)
 	{
 		this.namespace = namespace;
-		this.writtenClasses.clear();
+		this.writtenTypes.clear();
 		this.#stringLength = false;
 		this.#stringEquals = false;
 		this.#stringStartsWith = false;
@@ -16652,7 +16652,7 @@ export class GenCpp extends GenCCpp
 
 	writeProgram(program, outputFile, namespace)
 	{
-		this.writtenClasses.clear();
+		this.writtenTypes.clear();
 		this.inHeaderFile = true;
 		this.#hasPriorityQueue = false;
 		this.#usingStringViewLiterals = false;
@@ -25193,7 +25193,6 @@ export class GenSwift extends GenPySwift
 
 export class GenPy extends GenPySwift
 {
-	#writtenTypes = new Set();
 	#childPass;
 	#switchBreak;
 
@@ -25423,7 +25422,7 @@ export class GenPy extends GenPySwift
 
 	#writePyClassAnnotation(type)
 	{
-		if (this.#writtenTypes.has(type))
+		if (this.writtenTypes.has(type))
 			this.writeName(type);
 		else {
 			this.writeChar(34);
@@ -25462,7 +25461,7 @@ export class GenPy extends GenPySwift
 			nullable = nullable ? !(klass instanceof FuStorageType) : klass.nullable;
 			switch (klass.class.id) {
 			case FuId.NONE:
-				if (nullable && !this.#writtenTypes.has(klass.class)) {
+				if (nullable && !this.writtenTypes.has(klass.class)) {
 					this.writeChar(34);
 					this.writeName(klass.class);
 					this.write(" | None\"");
@@ -26686,7 +26685,7 @@ export class GenPy extends GenPySwift
 		this.writeDoc(enu.documentation);
 		enu.acceptValues(this);
 		this.closeChild();
-		this.#writtenTypes.add(enu);
+		this.writtenTypes.add(enu);
 	}
 
 	writeConst(konst)
@@ -26769,6 +26768,7 @@ export class GenPy extends GenPySwift
 	{
 		if (!this.writeBaseClass(klass, program))
 			return;
+		this.writtenTypes.delete(klass);
 		this.#writePyClass(klass);
 		let baseClass;
 		if ((baseClass = klass.parent) instanceof FuClass) {
@@ -26797,7 +26797,7 @@ export class GenPy extends GenPySwift
 		}
 		this.writeMembers(klass, true);
 		this.closeChild();
-		this.#writtenTypes.add(klass);
+		this.writtenTypes.add(klass);
 	}
 
 	#writeResourceByte(b)
@@ -26850,7 +26850,7 @@ export class GenPy extends GenPySwift
 
 	writeProgram(program, outputFile, namespace)
 	{
-		this.#writtenTypes.clear();
+		this.writtenTypes.clear();
 		this.#switchBreak = false;
 		this.openStringWriter();
 		this.writeTypes(program);

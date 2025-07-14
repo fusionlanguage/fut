@@ -352,7 +352,7 @@ public class GenCl : GenC
 	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.Namespace = namespace;
-		this.WrittenClasses.Clear();
+		this.WrittenTypes.Clear();
 		this.StringLength = false;
 		this.StringEquals = false;
 		this.StringStartsWith = false;
