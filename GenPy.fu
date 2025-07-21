@@ -1243,7 +1243,8 @@ public class GenPy : GenPySwift
 	{
 	}
 
-	protected override bool HasInitCode(FuNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
+	protected override bool HasInitCode(FuNamedValue def) => def.Type is FuArrayStorageType
+		|| (def.Type.IsFinal() ? !(def.Value is FuLiteralNull) : def.Value != null);
 
 	internal override void VisitExpr!(FuExpr statement)
 	{

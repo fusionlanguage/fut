@@ -2875,7 +2875,7 @@ export class FuNamedValue extends FuSymbol
 
 	isAssignableStorage()
 	{
-		return this.type instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && this.value instanceof FuLiteralNull;
+		return this.type instanceof FuStorageType && !(this.type instanceof FuArrayStorageType) && this.value != null && !(this.value instanceof FuSymbolReference) && !(this.value instanceof FuAggregateInitializer);
 	}
 }
 
@@ -8253,19 +8253,17 @@ export class GenBase extends FuVisitor
 
 	writeVarInit(def)
 	{
-		if (def.isAssignableStorage()) {
+		let array;
+		if ((array = def.type) instanceof FuArrayStorageType)
+			this.writeArrayStorageInit(array, def.value);
+		else if (def.type.isFinal() && def.value instanceof FuLiteralNull) {
 		}
-		else {
-			let array;
-			if ((array = def.type) instanceof FuArrayStorageType)
-				this.writeArrayStorageInit(array, def.value);
-			else if (def.value != null && !(def.value instanceof FuAggregateInitializer)) {
-				this.write(" = ");
-				this.writeCoercedExpr(def.type, def.value);
-			}
-			else if (def.type.isFinal() && !(def.parent instanceof FuParameters))
-				this.writeStorageInit(def);
+		else if (def.value != null && !(def.value instanceof FuAggregateInitializer)) {
+			this.write(" = ");
+			this.writeCoercedExpr(def.type, def.value);
 		}
+		else if (def.type.isFinal() && !(def.parent instanceof FuParameters))
+			this.writeStorageInit(def);
 	}
 
 	writeVar(def)
@@ -26435,7 +26433,7 @@ export class GenPy extends GenPySwift
 
 	hasInitCode(def)
 	{
-		return (def.value != null || def.type.isFinal()) && !def.isAssignableStorage();
+		return def.type instanceof FuArrayStorageType || (def.type.isFinal() ? !(def.value instanceof FuLiteralNull) : def.value != null);
 	}
 
 	visitExpr(statement)

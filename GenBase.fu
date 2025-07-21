@@ -793,10 +793,10 @@ public abstract class GenBase : FuVisitor
 
 	protected virtual void WriteVarInit!(FuNamedValue def)
 	{
-		if (def.IsAssignableStorage()) {
-		}
-		else if (def.Type is FuArrayStorageType array)
+		if (def.Type is FuArrayStorageType array)
 			WriteArrayStorageInit(array, def.Value);
+		else if (def.Type.IsFinal() && def.Value is FuLiteralNull) {
+		}
 		else if (def.Value != null && !(def.Value is FuAggregateInitializer)) {
 			Write(" = ");
 			WriteCoercedExpr(def.Type, def.Value);

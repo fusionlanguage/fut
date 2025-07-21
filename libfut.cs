@@ -2741,7 +2741,7 @@ namespace Fusion
 
 		internal FuExpr Value;
 
-		public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
+		public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value != null && !(this.Value is FuSymbolReference) && !(this.Value is FuAggregateInitializer);
 	}
 
 	public abstract class FuMember : FuNamedValue
@@ -7863,10 +7863,10 @@ namespace Fusion
 
 		protected virtual void WriteVarInit(FuNamedValue def)
 		{
-			if (def.IsAssignableStorage()) {
-			}
-			else if (def.Type is FuArrayStorageType array)
+			if (def.Type is FuArrayStorageType array)
 				WriteArrayStorageInit(array, def.Value);
+			else if (def.Type.IsFinal() && def.Value is FuLiteralNull) {
+			}
 			else if (def.Value != null && !(def.Value is FuAggregateInitializer)) {
 				Write(" = ");
 				WriteCoercedExpr(def.Type, def.Value);
@@ -25747,7 +25747,7 @@ namespace Fusion
 		{
 		}
 
-		protected override bool HasInitCode(FuNamedValue def) => (def.Value != null || def.Type.IsFinal()) && !def.IsAssignableStorage();
+		protected override bool HasInitCode(FuNamedValue def) => def.Type is FuArrayStorageType || (def.Type.IsFinal() ? !(def.Value is FuLiteralNull) : def.Value != null);
 
 		internal override void VisitExpr(FuExpr statement)
 		{

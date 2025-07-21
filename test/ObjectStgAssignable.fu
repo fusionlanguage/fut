@@ -1,11 +1,17 @@
 class Data
 {
-	internal int X;
+	internal int X = 0;
 }
 
 public class Test
 {
 	Data() Foo = null;
+
+	static Data() Bar()
+	{
+		Data() d = { X = 3 };
+		return d;
+	}
 
 	public static bool Run()
 	{
@@ -18,7 +24,9 @@ public class Test
 		o2.X = 10;
 		Test() t;
 		t.Foo = o2;
+		Data() o3 = Bar();
 		return a.X == 5
-			&& t.Foo.X == 10;
+			&& t.Foo.X == 10
+			&& o3.X == 3;
 	}
 }

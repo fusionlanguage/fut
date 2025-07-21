@@ -1177,7 +1177,8 @@ public abstract class FuNamedValue : FuSymbol
 {
 	internal FuExpr#? TypeExpr;
 	internal FuExpr#? Value;
-	public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType) && this.Value is FuLiteralNull;
+	public bool IsAssignableStorage() => this.Type is FuStorageType && !(this.Type is FuArrayStorageType)
+		&& this.Value != null && !(this.Value is FuSymbolReference) && !(this.Value is FuAggregateInitializer);
 }
 
 public abstract class FuMember : FuNamedValue

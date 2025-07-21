@@ -2237,7 +2237,7 @@ bool FuFloatingType::isAssignableFrom(const FuType * right) const
 
 bool FuNamedValue::isAssignableStorage() const
 {
-	return dynamic_cast<const FuStorageType *>(this->type.get()) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && dynamic_cast<const FuLiteralNull *>(this->value.get());
+	return dynamic_cast<const FuStorageType *>(this->type.get()) && !dynamic_cast<const FuArrayStorageType *>(this->type.get()) && this->value != nullptr && !dynamic_cast<const FuSymbolReference *>(this->value.get()) && !dynamic_cast<const FuAggregateInitializer *>(this->value.get());
 }
 FuMember::FuMember()
 {
@@ -7733,10 +7733,10 @@ void GenBase::writeStorageInit(const FuNamedValue * def)
 
 void GenBase::writeVarInit(const FuNamedValue * def)
 {
-	if (def->isAssignableStorage()) {
-	}
-	else if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(def->type.get()))
+	if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(def->type.get()))
 		writeArrayStorageInit(array, def->value.get());
+	else if (def->type->isFinal() && dynamic_cast<const FuLiteralNull *>(def->value.get())) {
+	}
 	else if (def->value != nullptr && !dynamic_cast<const FuAggregateInitializer *>(def->value.get())) {
 		write(" = ");
 		writeCoercedExpr(def->type.get(), def->value.get());
@@ -24920,7 +24920,7 @@ void GenPy::startTemporaryVar(const FuType * type)
 
 bool GenPy::hasInitCode(const FuNamedValue * def) const
 {
-	return (def->value != nullptr || def->type->isFinal()) && !def->isAssignableStorage();
+	return dynamic_cast<const FuArrayStorageType *>(def->type.get()) || (def->type->isFinal() ? !dynamic_cast<const FuLiteralNull *>(def->value.get()) : def->value != nullptr);
 }
 
 void GenPy::visitExpr(const FuExpr * statement)
