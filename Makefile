@@ -38,7 +38,7 @@ else
 DO = @echo $@ &&
 endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
-TARGET_LANG = $(subst mjs,js,$(subst .,,$(suffix $@)))
+TARGET_LANG = $(subst .,,$(suffix $@))
 UC_TARGET_LANG = $(subst a,A,$(subst c,C,$(subst d,D,$(subst f,F,$(subst i,I,$(subst j,J,$(subst l,L,$(subst p,P,$(subst s,S,$(subst t,T,$(subst v,V,$(subst w,W,$(subst y,Y,$(TARGET_LANG))))))))))))))
 DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ $(if $(findstring $*, Namespace), -n Ns) -D $(UC_TARGET_LANG) -I $(<D) $(if $(findstring $*, MainArgs MainVoid), $<, $(filter %.fu, $^)) || grep '//FAIL:.*\<$(TARGET_LANG)\>' $<)
 SOURCE_FU = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
@@ -162,7 +162,7 @@ test/bin/%/d.txt: test/bin/%/d.exe
 test/bin/%/java.txt: test/bin/%/Test.class
 	$(DO)java -cp $(<D) Runner $(END_RUN_TEST)
 
-test/bin/%/js.txt: test/bin/%/Test.mjs
+test/bin/%/js.txt: test/bin/%/Test.js
 	$(DO)node $< $(END_RUN_TEST)
 
 test/bin/%/ts.txt: test/bin/%/Test.ts test/node_modules test/tsconfig.json
@@ -220,7 +220,7 @@ test/bin/%/Test.d: test/%.fu test/Runner.fu fut
 test/bin/%/Test.java: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
-test/bin/%/Test.mjs: test/%.fu test/Runner.fu fut
+test/bin/%/Test.js: test/%.fu test/Runner.fu fut
 	$(DO_FUT)
 
 test/bin/%/Test.ts: test/%.fu test/Runner.fu fut
@@ -241,7 +241,7 @@ test/bin/Namespace/java.txt: test/bin/Namespace/Test.class
 test/bin/Resource/java.txt: test/bin/Resource/Test.class test/lipsum.txt
 	$(DO)java -cp "$(<D)$(JAVACPSEP)test" Runner >$@
 
-.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.mjs test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
+.PRECIOUS: test/bin/%/Test.c test/bin/%/Test.cpp test/bin/%/Test.cs test/bin/%/Test.d test/bin/%/Test.java test/bin/%/Test.js test/bin/%/Test.ts test/bin/%/Test.d.ts test/bin/%/Test.py test/bin/%/Test.swift test/bin/%/Test.cl
 
 test/node_modules: test/package.json
 	cd $(<D) && npm i --no-package-lock
