@@ -6703,6 +6703,16 @@ export class FuSema
 				return this.#host.program.system.stringStorageType;
 			let klass2;
 			if ((klass2 = this.#host.program.tryLookup(call.method.name, true)) instanceof FuClass) {
+				switch (klass2.callType) {
+				case FuCallType.STATIC:
+					this.#reportError(expr, "Cannot instantiate static class");
+					break;
+				case FuCallType.ABSTRACT:
+					this.#reportError(expr, "Cannot instantiate abstract class");
+					break;
+				default:
+					break;
+				}
 				call.method.symbol = klass2;
 				return Object.assign(new FuStorageType(), { class: klass2 });
 			}

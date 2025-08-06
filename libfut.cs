@@ -6326,6 +6326,16 @@ namespace Fusion
 				if (call.Method.Name == "string")
 					return this.Host.Program.System.StringStorageType;
 				if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass2) {
+					switch (klass2.CallType) {
+					case FuCallType.Static:
+						ReportError(expr, "Cannot instantiate static class");
+						break;
+					case FuCallType.Abstract:
+						ReportError(expr, "Cannot instantiate abstract class");
+						break;
+					default:
+						break;
+					}
 					call.Method.Symbol = klass2;
 					return new FuStorageType { Class = klass2 };
 				}

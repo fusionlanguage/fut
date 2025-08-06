@@ -1,0 +1,10 @@
+public abstract class Test
+{
+	public static bool Run()
+	{
+		Test() o; //ERROR: Cannot instantiate abstract class
+		Test()[3] a; //ERROR: Cannot instantiate abstract class
+		Test# p = new Test(); //ERROR: Cannot instantiate abstract class
+		return true;
+	}
+}

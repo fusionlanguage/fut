@@ -1,0 +1,10 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Test() o; //ERROR: Cannot instantiate static class
+		Test()[3] a; //ERROR: Cannot instantiate static class
+		Test# p = new Test(); //ERROR: Cannot instantiate static class
+		return true;
+	}
+}

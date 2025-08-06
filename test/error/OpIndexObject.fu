@@ -1,4 +1,4 @@
-public static class Test
+public class Test
 {
 	public static bool Run()
 	{

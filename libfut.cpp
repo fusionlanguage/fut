@@ -6239,6 +6239,16 @@ std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, b
 		if (call->method->name == "string")
 			return this->host->program->system->stringStorageType;
 		if (FuClass *klass2 = dynamic_cast<FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
+			switch (klass2->callType) {
+			case FuCallType::static_:
+				reportError(expr, "Cannot instantiate static class");
+				break;
+			case FuCallType::abstract:
+				reportError(expr, "Cannot instantiate abstract class");
+				break;
+			default:
+				break;
+			}
 			call->method->symbol = klass2;
 			std::shared_ptr<FuStorageType> futemp0 = std::make_shared<FuStorageType>();
 			futemp0->class_ = klass2;
