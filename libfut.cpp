@@ -5168,6 +5168,20 @@ void FuSema::closeScope()
 	this->currentScope = this->currentScope->parent;
 }
 
+void FuSema::checkInstantiable(const FuClass * klass, const FuExpr * location)
+{
+	switch (klass->callType) {
+	case FuCallType::static_:
+		reportError(location, "Cannot instantiate static class");
+		break;
+	case FuCallType::abstract:
+		reportError(location, "Cannot instantiate abstract class");
+		break;
+	default:
+		break;
+	}
+}
+
 std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 {
 	if (expr->type != nullptr)
@@ -5179,6 +5193,7 @@ std::shared_ptr<FuExpr> FuSema::resolveNew(std::shared_ptr<FuPrefixExpr> expr)
 		const FuClassType * klass;
 		if (!(klass = dynamic_cast<const FuClassType *>(type.get())) || dynamic_cast<const FuReadWriteClassType *>(klass))
 			return poisonError(expr.get(), "Invalid argument to new");
+		checkInstantiable(klass->class_, expr.get());
 		std::shared_ptr<FuAggregateInitializer> init = std::static_pointer_cast<FuAggregateInitializer>(binaryNew->right);
 		resolveObjectLiteral(klass, init.get());
 		std::shared_ptr<FuDynamicPtrType> futemp0 = std::make_shared<FuDynamicPtrType>();
@@ -6239,16 +6254,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, b
 		if (call->method->name == "string")
 			return this->host->program->system->stringStorageType;
 		if (FuClass *klass2 = dynamic_cast<FuClass *>(this->host->program->tryLookup(call->method->name, true).get())) {
-			switch (klass2->callType) {
-			case FuCallType::static_:
-				reportError(expr, "Cannot instantiate static class");
-				break;
-			case FuCallType::abstract:
-				reportError(expr, "Cannot instantiate abstract class");
-				break;
-			default:
-				break;
-			}
+			checkInstantiable(klass2, expr);
 			call->method->symbol = klass2;
 			std::shared_ptr<FuStorageType> futemp0 = std::make_shared<FuStorageType>();
 			futemp0->class_ = klass2;

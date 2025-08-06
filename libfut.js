@@ -5659,6 +5659,20 @@ export class FuSema
 		this.#currentScope = this.#currentScope.parent;
 	}
 
+	#checkInstantiable(klass, location)
+	{
+		switch (klass.callType) {
+		case FuCallType.STATIC:
+			this.#reportError(location, "Cannot instantiate static class");
+			break;
+		case FuCallType.ABSTRACT:
+			this.#reportError(location, "Cannot instantiate abstract class");
+			break;
+		default:
+			break;
+		}
+	}
+
 	#resolveNew(expr)
 	{
 		if (expr.type != null)
@@ -5670,6 +5684,7 @@ export class FuSema
 			let klass;
 			if (!((klass = type) instanceof FuClassType) || klass instanceof FuReadWriteClassType)
 				return this.#poisonError(expr, "Invalid argument to new");
+			this.#checkInstantiable(klass.class, expr);
 			let init = binaryNew.right;
 			this.#resolveObjectLiteral(klass, init);
 			expr.type = Object.assign(new FuDynamicPtrType(), { loc: expr.loc, class: klass.class });
@@ -6703,16 +6718,7 @@ export class FuSema
 				return this.#host.program.system.stringStorageType;
 			let klass2;
 			if ((klass2 = this.#host.program.tryLookup(call.method.name, true)) instanceof FuClass) {
-				switch (klass2.callType) {
-				case FuCallType.STATIC:
-					this.#reportError(expr, "Cannot instantiate static class");
-					break;
-				case FuCallType.ABSTRACT:
-					this.#reportError(expr, "Cannot instantiate abstract class");
-					break;
-				default:
-					break;
-				}
+				this.#checkInstantiable(klass2, expr);
 				call.method.symbol = klass2;
 				return Object.assign(new FuStorageType(), { class: klass2 });
 			}

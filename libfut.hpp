@@ -2347,6 +2347,7 @@ private:
 	void checkComparison(const FuExpr * left, const FuExpr * right) const;
 	void openScope(FuScope * scope);
 	void closeScope();
+	void checkInstantiable(const FuClass * klass, const FuExpr * location);
 	std::shared_ptr<FuExpr> resolveNew(std::shared_ptr<FuPrefixExpr> expr);
 	std::shared_ptr<FuExpr> visitPrefixExpr(std::shared_ptr<FuPrefixExpr> expr);
 	std::shared_ptr<FuExpr> visitPostfixExpr(std::shared_ptr<FuPostfixExpr> expr);

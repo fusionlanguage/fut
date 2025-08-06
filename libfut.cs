@@ -5397,6 +5397,20 @@ namespace Fusion
 			this.CurrentScope = this.CurrentScope.Parent;
 		}
 
+		void CheckInstantiable(FuClass klass, FuExpr location)
+		{
+			switch (klass.CallType) {
+			case FuCallType.Static:
+				ReportError(location, "Cannot instantiate static class");
+				break;
+			case FuCallType.Abstract:
+				ReportError(location, "Cannot instantiate abstract class");
+				break;
+			default:
+				break;
+			}
+		}
+
 		FuExpr ResolveNew(FuPrefixExpr expr)
 		{
 			if (expr.Type != null)
@@ -5406,6 +5420,7 @@ namespace Fusion
 				type = ToType(binaryNew.Left, true);
 				if (!(type is FuClassType klass) || klass is FuReadWriteClassType)
 					return PoisonError(expr, "Invalid argument to new");
+				CheckInstantiable(klass.Class, expr);
 				FuAggregateInitializer init = (FuAggregateInitializer) binaryNew.Right;
 				ResolveObjectLiteral(klass, init);
 				expr.Type = new FuDynamicPtrType { Loc = expr.Loc, Class = klass.Class };
@@ -6326,16 +6341,7 @@ namespace Fusion
 				if (call.Method.Name == "string")
 					return this.Host.Program.System.StringStorageType;
 				if (this.Host.Program.TryLookup(call.Method.Name, true) is FuClass klass2) {
-					switch (klass2.CallType) {
-					case FuCallType.Static:
-						ReportError(expr, "Cannot instantiate static class");
-						break;
-					case FuCallType.Abstract:
-						ReportError(expr, "Cannot instantiate abstract class");
-						break;
-					default:
-						break;
-					}
+					CheckInstantiable(klass2, expr);
 					call.Method.Symbol = klass2;
 					return new FuStorageType { Class = klass2 };
 				}
