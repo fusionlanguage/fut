@@ -22934,7 +22934,7 @@ namespace Fusion
 		{
 			WriteName(value);
 			if (!value.Type.IsFinal() || value.IsAssignableStorage()) {
-				Write(" : ");
+				Write(": ");
 				WritePromotedType(value.Type);
 			}
 		}
@@ -24056,7 +24056,7 @@ namespace Fusion
 
 		protected override void WriteResultVar()
 		{
-			Write("let result : ");
+			Write("let result: ");
 			WritePromotedType(this.CurrentMethod.Type);
 		}
 
@@ -24153,7 +24153,7 @@ namespace Fusion
 				WriteReadOnlyParameter(param);
 			else
 				WriteName(param);
-			Write(" : ");
+			Write(": ");
 			WritePromotedType(param.Type);
 		}
 
@@ -24183,16 +24183,16 @@ namespace Fusion
 			if (enu is FuEnumFlags) {
 				Write("struct ");
 				Write(enu.Name);
-				WriteLine(" : OptionSet");
+				WriteLine(": OptionSet");
 				OpenBlock();
-				WriteLine("let rawValue : Int");
+				WriteLine("let rawValue: Int");
 				enu.AcceptValues(this);
 			}
 			else {
 				Write("enum ");
 				Write(enu.Name);
 				if (enu.HasExplicitValue)
-					Write(" : Int");
+					Write(": Int");
 				WriteNewLine();
 				OpenBlock();
 				Dictionary<int, FuConst> valueToConst = new Dictionary<int, FuConst>();
@@ -24324,7 +24324,7 @@ namespace Fusion
 				break;
 			}
 			if (method.Id == FuId.ClassToString)
-				Write("var description : String");
+				Write("var description: String");
 			else {
 				Write("func ");
 				WriteName(method);
@@ -24365,10 +24365,10 @@ namespace Fusion
 			WritePublic(klass);
 			if (klass.CallType == FuCallType.Sealed)
 				Write("final ");
-			StartClass(klass, "", " : ");
+			StartClass(klass, "", ": ");
 			if (klass.AddsToString()) {
-				Write(klass.HasBaseClass() ? ", " : " : ");
-				Write("CustomStringConvertible");
+				WriteChar(klass.HasBaseClass() ? ',' : ':');
+				Write(" CustomStringConvertible");
 			}
 			WriteNewLine();
 			OpenBlock();
@@ -24395,18 +24395,18 @@ namespace Fusion
 		{
 			if (this.ThrowException) {
 				WriteNewLine();
-				WriteLine("public enum FuError : Error");
+				WriteLine("public enum FuError: Error");
 				OpenBlock();
 				WriteLine("case error(String)");
 				CloseBlock();
 			}
 			if (this.ArrayRef) {
 				WriteNewLine();
-				WriteLine("public class ArrayRef<T> : Sequence");
+				WriteLine("public class ArrayRef<T>: Sequence");
 				OpenBlock();
-				WriteLine("var array : [T]");
+				WriteLine("var array: [T]");
 				WriteNewLine();
-				WriteLine("init(_ array : [T])");
+				WriteLine("init(_ array: [T])");
 				OpenBlock();
 				WriteLine("self.array = array");
 				CloseBlock();
@@ -24449,7 +24449,7 @@ namespace Fusion
 				WriteLine("array = [T](repeating: value, count: array.count)");
 				CloseBlock();
 				WriteNewLine();
-				WriteLine("func fill(_ value: T, _ startIndex : Int, _ count : Int)");
+				WriteLine("func fill(_ value: T, _ startIndex: Int, _ count: Int)");
 				OpenBlock();
 				WriteLine("array[startIndex ..< startIndex + count] = ArraySlice(repeating: value, count: count)");
 				CloseBlock();
@@ -24469,7 +24469,7 @@ namespace Fusion
 			}
 			if (this.StringIndexOf) {
 				WriteNewLine();
-				WriteLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+				WriteLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 				OpenBlock();
 				WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 				WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");

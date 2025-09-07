@@ -22175,7 +22175,7 @@ void GenSwift::writeTypeAndName(const FuNamedValue * value)
 {
 	writeName(value);
 	if (!value->type->isFinal() || value->isAssignableStorage()) {
-		write(" : ");
+		write(": ");
 		writePromotedType(value->type.get());
 	}
 }
@@ -23305,7 +23305,7 @@ void GenSwift::visitLock(const FuLock * statement)
 
 void GenSwift::writeResultVar()
 {
-	write("let result : ");
+	write("let result: ");
 	writePromotedType(this->currentMethod->type.get());
 }
 
@@ -23402,7 +23402,7 @@ void GenSwift::writeParameter(const FuVar * param)
 		writeReadOnlyParameter(param);
 	else
 		writeName(param);
-	write(" : ");
+	write(": ");
 	writePromotedType(param->type.get());
 }
 
@@ -23432,16 +23432,16 @@ void GenSwift::writeEnum(const FuEnum * enu)
 	if (dynamic_cast<const FuEnumFlags *>(enu)) {
 		write("struct ");
 		write(enu->name);
-		writeLine(" : OptionSet");
+		writeLine(": OptionSet");
 		openBlock();
-		writeLine("let rawValue : Int");
+		writeLine("let rawValue: Int");
 		enu->acceptValues(this);
 	}
 	else {
 		write("enum ");
 		write(enu->name);
 		if (enu->hasExplicitValue)
-			write(" : Int");
+			write(": Int");
 		writeNewLine();
 		openBlock();
 		std::unordered_map<int, const FuConst *> valueToConst;
@@ -23574,7 +23574,7 @@ void GenSwift::writeMethod(const FuMethod * method)
 		break;
 	}
 	if (method->id == FuId::classToString)
-		write("var description : String");
+		write("var description: String");
 	else {
 		write("func ");
 		writeName(method);
@@ -23615,10 +23615,10 @@ void GenSwift::writeClass(const FuClass * klass, const FuProgram * program)
 	writePublic(klass);
 	if (klass->callType == FuCallType::sealed)
 		write("final ");
-	startClass(klass, "", " : ");
+	startClass(klass, "", ": ");
 	if (klass->addsToString()) {
-		write(klass->hasBaseClass() ? ", " : " : ");
-		write("CustomStringConvertible");
+		writeChar(klass->hasBaseClass() ? ',' : ':');
+		write(" CustomStringConvertible");
 	}
 	writeNewLine();
 	openBlock();
@@ -23645,18 +23645,18 @@ void GenSwift::writeLibrary()
 {
 	if (this->throwException) {
 		writeNewLine();
-		writeLine("public enum FuError : Error");
+		writeLine("public enum FuError: Error");
 		openBlock();
 		writeLine("case error(String)");
 		closeBlock();
 	}
 	if (this->arrayRef) {
 		writeNewLine();
-		writeLine("public class ArrayRef<T> : Sequence");
+		writeLine("public class ArrayRef<T>: Sequence");
 		openBlock();
-		writeLine("var array : [T]");
+		writeLine("var array: [T]");
 		writeNewLine();
-		writeLine("init(_ array : [T])");
+		writeLine("init(_ array: [T])");
 		openBlock();
 		writeLine("self.array = array");
 		closeBlock();
@@ -23699,7 +23699,7 @@ void GenSwift::writeLibrary()
 		writeLine("array = [T](repeating: value, count: array.count)");
 		closeBlock();
 		writeNewLine();
-		writeLine("func fill(_ value: T, _ startIndex : Int, _ count : Int)");
+		writeLine("func fill(_ value: T, _ startIndex: Int, _ count: Int)");
 		openBlock();
 		writeLine("array[startIndex ..< startIndex + count] = ArraySlice(repeating: value, count: count)");
 		closeBlock();
@@ -23719,7 +23719,7 @@ void GenSwift::writeLibrary()
 	}
 	if (this->stringIndexOf) {
 		writeNewLine();
-		writeLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+		writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 		openBlock();
 		writeLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 		writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");

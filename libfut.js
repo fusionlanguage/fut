@@ -23581,7 +23581,7 @@ export class GenSwift extends GenPySwift
 	{
 		this.writeName(value);
 		if (!value.type.isFinal() || value.isAssignableStorage()) {
-			this.write(" : ");
+			this.write(": ");
 			this.#writePromotedType(value.type);
 		}
 	}
@@ -24720,7 +24720,7 @@ export class GenSwift extends GenPySwift
 
 	writeResultVar()
 	{
-		this.write("let result : ");
+		this.write("let result: ");
 		this.#writePromotedType(this.currentMethod.type);
 	}
 
@@ -24818,7 +24818,7 @@ export class GenSwift extends GenPySwift
 			this.#writeReadOnlyParameter(param);
 		else
 			this.writeName(param);
-		this.write(" : ");
+		this.write(": ");
 		this.#writePromotedType(param.type);
 	}
 
@@ -24848,16 +24848,16 @@ export class GenSwift extends GenPySwift
 		if (enu instanceof FuEnumFlags) {
 			this.write("struct ");
 			this.write(enu.name);
-			this.writeLine(" : OptionSet");
+			this.writeLine(": OptionSet");
 			this.openBlock();
-			this.writeLine("let rawValue : Int");
+			this.writeLine("let rawValue: Int");
 			enu.acceptValues(this);
 		}
 		else {
 			this.write("enum ");
 			this.write(enu.name);
 			if (enu.hasExplicitValue)
-				this.write(" : Int");
+				this.write(": Int");
 			this.writeNewLine();
 			this.openBlock();
 			const valueToConst = {};
@@ -24991,7 +24991,7 @@ export class GenSwift extends GenPySwift
 			break;
 		}
 		if (method.id == FuId.CLASS_TO_STRING)
-			this.write("var description : String");
+			this.write("var description: String");
 		else {
 			this.write("func ");
 			this.writeName(method);
@@ -25032,10 +25032,10 @@ export class GenSwift extends GenPySwift
 		this.writePublic(klass);
 		if (klass.callType == FuCallType.SEALED)
 			this.write("final ");
-		this.startClass(klass, "", " : ");
+		this.startClass(klass, "", ": ");
 		if (klass.addsToString()) {
-			this.write(klass.hasBaseClass() ? ", " : " : ");
-			this.write("CustomStringConvertible");
+			this.writeChar(klass.hasBaseClass() ? 44 : 58);
+			this.write(" CustomStringConvertible");
 		}
 		this.writeNewLine();
 		this.openBlock();
@@ -25062,18 +25062,18 @@ export class GenSwift extends GenPySwift
 	{
 		if (this.#throwException) {
 			this.writeNewLine();
-			this.writeLine("public enum FuError : Error");
+			this.writeLine("public enum FuError: Error");
 			this.openBlock();
 			this.writeLine("case error(String)");
 			this.closeBlock();
 		}
 		if (this.#arrayRef) {
 			this.writeNewLine();
-			this.writeLine("public class ArrayRef<T> : Sequence");
+			this.writeLine("public class ArrayRef<T>: Sequence");
 			this.openBlock();
-			this.writeLine("var array : [T]");
+			this.writeLine("var array: [T]");
 			this.writeNewLine();
-			this.writeLine("init(_ array : [T])");
+			this.writeLine("init(_ array: [T])");
 			this.openBlock();
 			this.writeLine("self.array = array");
 			this.closeBlock();
@@ -25116,7 +25116,7 @@ export class GenSwift extends GenPySwift
 			this.writeLine("array = [T](repeating: value, count: array.count)");
 			this.closeBlock();
 			this.writeNewLine();
-			this.writeLine("func fill(_ value: T, _ startIndex : Int, _ count : Int)");
+			this.writeLine("func fill(_ value: T, _ startIndex: Int, _ count: Int)");
 			this.openBlock();
 			this.writeLine("array[startIndex ..< startIndex + count] = ArraySlice(repeating: value, count: count)");
 			this.closeBlock();
@@ -25136,7 +25136,7 @@ export class GenSwift extends GenPySwift
 		}
 		if (this.#stringIndexOf) {
 			this.writeNewLine();
-			this.writeLine("fileprivate func fuStringIndexOf<S1 : StringProtocol, S2 : StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+			this.writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
 			this.openBlock();
 			this.writeLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
 			this.writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
