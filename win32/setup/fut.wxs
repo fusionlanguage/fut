@@ -22,7 +22,7 @@
 		<WixVariable Id="WixUIBannerBmp" Value="banner.png" />
 		<UIRef Id="WixUI_Common" />
 		<UI Id="MyWixUI_InstallDir">
-			<!-- customized WixUI_FeatureTree from Wix 6.0.1 - my changes commented -->
+			<!-- customized WixUI_InstallDir from Wix 6.0.2 - my changes commented -->
 			<TextStyle Id="WixUI_Font_Normal" FaceName="Tahoma" Size="8" />
 			<TextStyle Id="WixUI_Font_Bigger" FaceName="Tahoma" Size="12" />
 			<TextStyle Id="WixUI_Font_Title" FaceName="Tahoma" Size="9" Bold="yes" />
@@ -50,7 +50,9 @@
 			<Publish Dialog="MyLicenseAgreementDlg" Control="Next" Event="NewDialog" Value="InstallDirDlg" />
 
 			<Publish Dialog="InstallDirDlg" Control="Back" Event="NewDialog" Value="MyLicenseAgreementDlg" />
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="CheckTargetPath" Value="[WIXUI_INSTALLDIR]" Order="1" />
 			<Publish Dialog="InstallDirDlg" Control="Next" Event="SetTargetPath" Value="[WIXUI_INSTALLDIR]" Order="3" />
+			<Publish Dialog="InstallDirDlg" Control="Next" Event="NewDialog" Value="VerifyReadyDlg" Order="4" />
 			<Publish Dialog="InstallDirDlg" Control="ChangeFolder" Property="_BrowseProperty" Value="[WIXUI_INSTALLDIR]" Order="1" />
 			<Publish Dialog="InstallDirDlg" Control="ChangeFolder" Event="SpawnDialog" Value="BrowseDlg" Order="2" />
 
