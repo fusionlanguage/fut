@@ -1,6 +1,6 @@
 language: cpp
 dist: noble
-env: SWIFT_VERSION=6.1.2
+env: SWIFT_VERSION=6.2
 vm:
   size: large
 jobs:
