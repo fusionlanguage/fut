@@ -14,7 +14,7 @@ public static class Test
 	{
 		Derived() d;
 		Base! b = d;
-		return b is Derived ro && ro.Ok() //FAIL: c py swift cl TODO; java 17
+		return b is Derived ro && ro.Ok() //FAIL: c py swift cl TODO
 			&& b is Derived! rw && rw.Ok();
 	}
 }

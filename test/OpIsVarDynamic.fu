@@ -13,7 +13,7 @@ public static class Test
 	public static bool Run()
 	{
 		Base# p = new Derived();
-		if (p is Derived# d) { //FAIL: c py swift TODO; cl java 17
+		if (p is Derived# d) { //FAIL: c py swift TODO; cl
 			if (p is Derived! r)
 				return r.Ok;
 		}

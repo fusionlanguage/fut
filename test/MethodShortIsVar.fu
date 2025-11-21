@@ -10,7 +10,7 @@ class Derived : Base
 
 public static class Test
 {
-	static bool Bar(Base b) => b is Derived d && d.Yes; //FAIL: c py swift cl TODO; java 17
+	static bool Bar(Base b) => b is Derived d && d.Yes; //FAIL: c py swift cl TODO
 
 	public static bool Run()
 	{
