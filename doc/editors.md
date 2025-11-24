@@ -5,7 +5,7 @@
 Install the [Fusion](https://marketplace.visualstudio.com/items?itemName=fusionlanguage.fusion)
 extension from the VS Code Extension Marketplace.
 
-## Visual Studio 2022/2019/2017
+## Visual Studio 2026/2022/2019/2017
 
 Install the [Fusion](https://marketplace.visualstudio.com/items?itemName=fusionlanguage.fusion-vs)
 extension from the Visual Studio Extension Marketplace.
