@@ -11,6 +11,7 @@ DOTNET_REF_DIR := $(shell realpath '$(DOTNET_BASE_DIR)../../packs/Microsoft.NETC
 CSC := dotnet '$(DOTNET_BASE_DIR)Roslyn/bincore/csc.dll' -nologo $(patsubst %,'-r:$(DOTNET_REF_DIR)/System.%.dll', Collections Collections.Specialized Console Linq Memory Runtime Text.Json Text.RegularExpressions Threading)
 endif
 JAVAC = javac
+JAVA21 := $(findstring javac 21, $(shell $(JAVAC) --version 2>/dev/null))
 TEST_CFLAGS = -Wall -Werror
 TEST_CXXFLAGS = -std=c++20 -Wall -Werror
 SWIFTC = swiftc
@@ -76,12 +77,12 @@ bin/Debug/net6.0/fut.dll: $(addprefix $(srcdir),AssemblyInfo.cs fut.cs libfut.cs
 
 else ifeq ($(FUT_HOST),java)
 
-FUT = java --enable-preview -cp java org.fusionlanguage.Fut
+FUT = java $(if $(JAVA21), --enable-preview) -cp java org.fusionlanguage.Fut
 
 fut: java/org/fusionlanguage/Fut.class
 
 java/org/fusionlanguage/Fut.class: Fut.java java/GenBase.java
-	$(DO)$(JAVAC) -source 21 --enable-preview -d java Fut.java java/*.java
+	$(DO)$(JAVAC) $(if $(JAVA21), -source 21 --enable-preview, --release 22) -d java Fut.java java/*.java
 
 else ifeq ($(FUT_HOST),node)
 
