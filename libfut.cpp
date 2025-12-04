@@ -13161,7 +13161,7 @@ void GenC::writeLibrary()
 		writeNewLine();
 		writeLine("static char *FuString_Substring(const char *str, size_t len)");
 		openBlock();
-		writeLine("char *p = malloc(len + 1);");
+		writeLine("char *p = (char *) malloc(len + 1);");
 		writeLine("memcpy(p, str, len);");
 		writeLine("p[len] = '\\0';");
 		writeLine("return p;");
@@ -13243,7 +13243,7 @@ void GenC::writeLibrary()
 		writeLine("size_t len = vsnprintf(NULL, 0, format, args) + 1;");
 		writeLine("va_end(args);");
 		writeLine("va_start(args, format);");
-		writeLine("char *str = malloc(len);");
+		writeLine("char *str = (char *) malloc(len);");
 		writeLine("vsnprintf(str, len, format, args);");
 		writeLine("va_end(args);");
 		writeLine("return str;");

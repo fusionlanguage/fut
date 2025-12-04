@@ -13869,7 +13869,7 @@ export class GenC extends GenCCpp
 			this.writeNewLine();
 			this.writeLine("static char *FuString_Substring(const char *str, size_t len)");
 			this.openBlock();
-			this.writeLine("char *p = malloc(len + 1);");
+			this.writeLine("char *p = (char *) malloc(len + 1);");
 			this.writeLine("memcpy(p, str, len);");
 			this.writeLine("p[len] = '\\0';");
 			this.writeLine("return p;");
@@ -13951,7 +13951,7 @@ export class GenC extends GenCCpp
 			this.writeLine("size_t len = vsnprintf(NULL, 0, format, args) + 1;");
 			this.writeLine("va_end(args);");
 			this.writeLine("va_start(args, format);");
-			this.writeLine("char *str = malloc(len);");
+			this.writeLine("char *str = (char *) malloc(len);");
 			this.writeLine("vsnprintf(str, len, format, args);");
 			this.writeLine("va_end(args);");
 			this.writeLine("return str;");

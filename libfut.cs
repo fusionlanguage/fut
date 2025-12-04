@@ -13376,7 +13376,7 @@ namespace Fusion
 				WriteNewLine();
 				WriteLine("static char *FuString_Substring(const char *str, size_t len)");
 				OpenBlock();
-				WriteLine("char *p = malloc(len + 1);");
+				WriteLine("char *p = (char *) malloc(len + 1);");
 				WriteLine("memcpy(p, str, len);");
 				WriteLine("p[len] = '\\0';");
 				WriteLine("return p;");
@@ -13458,7 +13458,7 @@ namespace Fusion
 				WriteLine("size_t len = vsnprintf(NULL, 0, format, args) + 1;");
 				WriteLine("va_end(args);");
 				WriteLine("va_start(args, format);");
-				WriteLine("char *str = malloc(len);");
+				WriteLine("char *str = (char *) malloc(len);");
 				WriteLine("vsnprintf(str, len, format, args);");
 				WriteLine("va_end(args);");
 				WriteLine("return str;");
