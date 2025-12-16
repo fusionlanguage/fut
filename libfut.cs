@@ -17048,6 +17048,11 @@ namespace Fusion
 			}
 		}
 
+		protected override void WriteOpAssignRight(FuBinaryExpr expr)
+		{
+			WriteAssignRight(expr);
+		}
+
 		void WriteOrderedDictionaryIndexing(FuBinaryExpr expr)
 		{
 			if (expr.Right.Type.Id == FuId.IntType || expr.Right.Type is FuRangeType) {

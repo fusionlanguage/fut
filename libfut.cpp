@@ -16681,6 +16681,11 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	}
 }
 
+void GenCs::writeOpAssignRight(const FuBinaryExpr * expr)
+{
+	writeAssignRight(expr);
+}
+
 void GenCs::writeOrderedDictionaryIndexing(const FuBinaryExpr * expr)
 {
 	if (expr->right->type->id == FuId::intType || dynamic_cast<const FuRangeType *>(expr->right->type.get())) {

@@ -17597,6 +17597,11 @@ export class GenCs extends GenTyped
 		}
 	}
 
+	writeOpAssignRight(expr)
+	{
+		this.writeAssignRight(expr);
+	}
+
 	#writeOrderedDictionaryIndexing(expr)
 	{
 		if (expr.right.type.id == FuId.INT_TYPE || expr.right.type instanceof FuRangeType) {

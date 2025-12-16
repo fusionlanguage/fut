@@ -3115,6 +3115,7 @@ protected:
 	void writeStringLength(const FuExpr * expr) override;
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
+	void writeOpAssignRight(const FuBinaryExpr * expr) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
 	void defineObjectLiteralTemporary(const FuUnaryExpr * expr) override;
