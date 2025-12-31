@@ -8,8 +8,8 @@ public static class Test
 	public static bool Run()
 	{
 		byte[3] a;
-		a[1] = 203;
-		int i = -3;
+		a[1] = 197;
+		int i = 3;
 		a[1] += i;
 		int[1] ia;
 		ia[0] = a[1] & 0x1ffffffff;
