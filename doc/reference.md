@@ -1417,6 +1417,11 @@ Native blocks are allowed:
 * inside `class` (to add class members or decorations to emitted class members)
 * at the top level (for `import` / `using` declarations).
 
+The contents of the native block is copied verbatim to the output,
+including all whitespace.
+For Python, you should make sure the indentation in the native block matches
+the surrounding code emitted by `fut`, which indents with tabs.
+
 ## Conditional compilation
 
 Conditional compilation in Fusion is modeled after C#.
