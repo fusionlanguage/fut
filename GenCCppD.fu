@@ -1,6 +1,6 @@
 // GenCCppD.fu - base for C/C++/D code generators
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -48,6 +48,14 @@ public abstract class GenCCppD : GenTyped
 		WriteCoerced(coercedType, right, FuPriority.Equality);
 		if (parent > FuPriority.Equality)
 			WriteChar(')');
+	}
+
+	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
+	{
+		if ((type.Id == FuId.IntType || type is FuRangeType) && expr.Type.Id == FuId.NIntType)
+			WriteStaticCast(type, expr);
+		else
+			base.WriteCoercedInternal(type, expr, parent);
 	}
 
 	internal override void VisitConst!(FuConst statement)

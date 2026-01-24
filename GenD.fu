@@ -1,6 +1,6 @@
 // GenD.fu - D code generator
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 // Copyright (C) 2023  Adrian Matoga
 //
 // This file is part of Fusion Transpiler,
@@ -1499,23 +1499,9 @@ public class GenD : GenCCppD
 		CloseBlock();
 	}
 
-	static bool IsLong(FuSymbolReference expr)
-	{
-		switch (expr.Symbol.Id) {
-		case FuId.ArrayLength:
-		case FuId.StringLength:
-		case FuId.ListCount:
-			return true;
-		default:
-			return false;
-		}
-	}
-
 	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
 	{
 		if (type is FuRangeType) // FIXME: had a condition that always holds: && (expr.Type is FuIntegerType || (expr.Type is FuRangeType range && !type.IsAssignableFrom(range)))
-			WriteStaticCast(type, expr);
-		else if (type is FuIntegerType && expr is FuSymbolReference symref && IsLong(symref))
 			WriteStaticCast(type, expr);
 		else if (type is FuFloatingType && !(expr.Type is FuFloatingType))
 			WriteStaticCast(type, expr);

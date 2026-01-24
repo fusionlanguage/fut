@@ -61,7 +61,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	this->nextOffset = 0;
 	this->host->program->sourceFiles.emplace_back();
 	this->host->program->sourceFiles.back().filename = filename;
-	this->host->program->sourceFiles.back().line = std::ssize(this->host->program->lineLocs);
+	this->host->program->sourceFiles.back().line = static_cast<int>(std::ssize(this->host->program->lineLocs));
 	this->host->program->lineLocs.push_back(this->loc);
 	fillNextChar();
 	if (this->nextChar == 65279)
@@ -72,7 +72,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 void FuLexer::reportError(std::string_view message) const
 {
 	const FuSourceFile * file = &static_cast<const FuSourceFile &>(this->host->program->sourceFiles.back());
-	int line = std::ssize(this->host->program->lineLocs) - file->line - 1;
+	int line = static_cast<int>(std::ssize(this->host->program->lineLocs) - file->line - 1);
 	int lineLoc = this->host->program->lineLocs.back();
 	this->host->reportError(file->filename, line, this->tokenLoc - lineLoc, this->loc - lineLoc, message);
 }
@@ -512,7 +512,7 @@ FuToken FuLexer::readPreToken()
 				break;
 			}
 			if (eatChar('*')) {
-				int startLine = std::ssize(this->host->program->lineLocs);
+				int startLine = static_cast<int>(std::ssize(this->host->program->lineLocs));
 				do {
 					c = readChar();
 					if (c < 0) {
@@ -1210,7 +1210,7 @@ void FuExpr::setShared() const
 
 int FuName::getLocLength() const
 {
-	return std::ssize(this->name);
+	return static_cast<int>(std::ssize(this->name));
 }
 
 const FuSymbol * FuSymbol::getSymbol() const
@@ -1225,7 +1225,7 @@ std::string FuSymbol::toString() const
 
 int FuScope::count() const
 {
-	return std::ssize(this->dict);
+	return static_cast<int>(std::ssize(this->dict));
 }
 
 bool FuScope::contains(const FuSymbol * symbol) const
@@ -1419,7 +1419,7 @@ bool FuLiteralString::isDefaultValue() const
 
 int FuLiteralString::getLocLength() const
 {
-	return std::ssize(this->value) + 2;
+	return static_cast<int>(std::ssize(this->value) + 2);
 }
 
 void FuLiteralString::accept(FuVisitor * visitor, FuPriority parent) const
@@ -2037,7 +2037,7 @@ bool FuSwitch::hasWhen() const
 
 int FuSwitch::lengthWithoutTrailingBreak(const std::vector<std::shared_ptr<FuStatement>> * body)
 {
-	int length = std::ssize(*body);
+	int length = static_cast<int>(std::ssize(*body));
 	if (length > 0 && dynamic_cast<const FuBreak *>((*body)[length - 1].get()))
 		length--;
 	return length;
@@ -3106,7 +3106,7 @@ void FuProgram::init(FuScope * parent, const FuSystem * system, FuParserHost * h
 int FuProgram::getLine(int loc) const
 {
 	int l = 0;
-	int r = std::ssize(this->lineLocs) - 1;
+	int r = static_cast<int>(std::ssize(this->lineLocs) - 1);
 	while (l < r) {
 		int m = (l + r + 1) >> 1;
 		if (loc < this->lineLocs[m])
@@ -3120,7 +3120,7 @@ int FuProgram::getLine(int loc) const
 const FuSourceFile * FuProgram::getSourceFile(int line) const
 {
 	int l = 0;
-	int r = std::ssize(this->sourceFiles) - 1;
+	int r = static_cast<int>(std::ssize(this->sourceFiles) - 1);
 	while (l < r) {
 		int m = (l + r + 1) >> 1;
 		if (line < this->sourceFiles[m].line)
@@ -4036,7 +4036,7 @@ std::shared_ptr<FuNative> FuParser::parseNative()
 
 int FuParser::getCurrentLine() const
 {
-	return std::ssize(this->host->program->lineLocs) - this->host->program->sourceFiles.back().line - 1;
+	return static_cast<int>(std::ssize(this->host->program->lineLocs) - this->host->program->sourceFiles.back().line - 1);
 }
 
 int FuParser::getTokenColumn() const
@@ -4275,7 +4275,7 @@ void FuParser::reportFormerError(int line, int column, int length, std::string_v
 void FuParser::reportCallTypeError(int line, int column, std::string_view kind, FuCallType callType) const
 {
 	std::string_view callTypeString = FuMethod::callTypeToString(callType);
-	reportFormerError(line, column, std::ssize(callTypeString), std::format("{} cannot be {}", kind, callTypeString));
+	reportFormerError(line, column, static_cast<int>(std::ssize(callTypeString)), std::format("{} cannot be {}", kind, callTypeString));
 }
 
 void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, bool isPublic, FuCallType callType)
@@ -6761,7 +6761,7 @@ void FuSema::resolveConst(FuConst * konst)
 				std::shared_ptr<FuArrayStorageType> futemp0 = std::make_shared<FuArrayStorageType>();
 				futemp0->class_ = this->host->program->system->arrayStorageClass.get();
 				futemp0->typeArg0 = elementType;
-				futemp0->length = std::ssize(coll->items);
+				futemp0->length = static_cast<int>(std::ssize(coll->items));
 				konst->type = futemp0;
 			}
 			coll->type = konst->type;
@@ -7861,7 +7861,7 @@ void GenBase::writeTemporaryName(int id)
 
 bool GenBase::tryWriteTemporary(const FuExpr * expr)
 {
-	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr);
+	int id = static_cast<int>([](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr));
 	if (id < 0)
 		return false;
 	writeTemporaryName(id);
@@ -8414,9 +8414,9 @@ void GenBase::defineObjectLiteralTemporary(const FuUnaryExpr * expr)
 {
 	if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr->inner.get())) {
 		ensureChildBlock();
-		int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr->type.get());
+		int id = static_cast<int>([](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, expr->type.get()));
 		if (id < 0) {
-			id = std::ssize(this->currentTemporaries);
+			id = static_cast<int>(std::ssize(this->currentTemporaries));
 			startTemporaryVar(expr->type.get());
 			this->currentTemporaries.push_back(expr);
 		}
@@ -8515,7 +8515,7 @@ void GenBase::cleanupTemporary(int i, const FuExpr * temp)
 
 void GenBase::cleanupTemporaries()
 {
-	for (int i = std::ssize(this->currentTemporaries); --i >= 0;) {
+	for (int i = static_cast<int>(std::ssize(this->currentTemporaries)); --i >= 0;) {
 		const FuExpr * temp = this->currentTemporaries[i];
 		if (!dynamic_cast<const FuType *>(temp)) {
 			cleanupTemporary(i, temp);
@@ -8555,7 +8555,7 @@ void GenBase::writeFirstStatements(const std::vector<std::shared_ptr<FuStatement
 
 void GenBase::writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements)
 {
-	writeFirstStatements(statements, std::ssize(*statements));
+	writeFirstStatements(statements, static_cast<int>(std::ssize(*statements)));
 }
 
 void GenBase::cleanupBlock(const FuBlock * statement)
@@ -8576,7 +8576,7 @@ void GenBase::visitBlock(const FuBlock * statement)
 		writeChar(' ');
 	}
 	openBlock();
-	int temporariesCount = std::ssize(this->currentTemporaries);
+	int temporariesCount = static_cast<int>(std::ssize(this->currentTemporaries));
 	writeStatements(&statement->statements);
 	cleanupBlock(statement);
 	trimTemporariesAndCloseBlock(temporariesCount);
@@ -8588,7 +8588,7 @@ void GenBase::writeChild(FuStatement * statement)
 	this->atLineStart = true;
 	this->atChildStart = true;
 	this->inChildBlock = false;
-	int temporariesCount = std::ssize(this->currentTemporaries);
+	int temporariesCount = static_cast<int>(std::ssize(this->currentTemporaries));
 	statement->acceptStatement(this);
 	if (this->inChildBlock)
 		trimTemporariesAndCloseBlock(temporariesCount);
@@ -8605,7 +8605,7 @@ void GenBase::startBreakGoto()
 void GenBase::visitBreak(const FuBreak * statement)
 {
 	if (const FuSwitch *switchStatement = dynamic_cast<const FuSwitch *>(statement->loopOrSwitch)) {
-		int gotoId = [](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement);
+		int gotoId = static_cast<int>([](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement));
 		if (gotoId >= 0) {
 			startBreakGoto();
 			visitLiteralLong(gotoId);
@@ -9373,6 +9373,14 @@ void GenCCppD::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority 
 		writeChar(')');
 }
 
+void GenCCppD::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
+{
+	if ((type->id == FuId::intType || dynamic_cast<const FuRangeType *>(type)) && expr->type->id == FuId::nIntType)
+		writeStaticCast(type, expr);
+	else
+		GenTyped::writeCoercedInternal(type, expr, parent);
+}
+
 void GenCCppD::visitConst(const FuConst * statement)
 {
 	if (dynamic_cast<const FuArrayStorageType *>(statement->type.get()))
@@ -9382,7 +9390,7 @@ void GenCCppD::visitConst(const FuConst * statement)
 void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
 {
 	if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreakAndContinue(&kase.body); }) || FuSwitch::hasEarlyBreakAndContinue(&statement->defaultBody)) {
-		int gotoId = std::ssize(this->switchesWithGoto);
+		int gotoId = static_cast<int>(std::ssize(this->switchesWithGoto));
 		this->switchesWithGoto.push_back(statement);
 		writeSwitchAsIfs(statement, false);
 		write("fuafterswitch");
@@ -9614,7 +9622,7 @@ void GenCCpp::writeClass(const FuClass * klass, const FuProgram * program)
 
 std::string GenCCpp::changeExtension(std::string_view path, std::string_view ext)
 {
-	int extIndex = std::ssize(path);
+	int extIndex = static_cast<int>(std::ssize(path));
 	for (int i = extIndex; --i >= 0 && path[i] != '/' && path[i] != '\\';) {
 		if (path[i] == '.') {
 			extIndex = i;
@@ -9633,7 +9641,7 @@ void GenCCpp::createHeaderFile(std::string_view outputFile, std::string_view hea
 
 std::string GenCCpp::getFilenameWithoutExtension(std::string_view path)
 {
-	int pathLength = std::ssize(path);
+	int pathLength = static_cast<int>(std::ssize(path));
 	int extIndex = pathLength;
 	int i = pathLength;
 	while (--i >= 0 && path[i] != '/' && path[i] != '\\') {
@@ -10602,9 +10610,9 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 	ensureChildBlock();
 	const FuStorageType * storage;
 	bool assign = expr != nullptr || ((storage = dynamic_cast<const FuStorageType *>(type)) && isCollection(storage->class_));
-	int id = [](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, type);
+	int id = static_cast<int>([](const std::vector<const FuExpr *> &v, const FuExpr * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->currentTemporaries, type));
 	if (id < 0) {
-		id = std::ssize(this->currentTemporaries);
+		id = static_cast<int>(std::ssize(this->currentTemporaries));
 		startDefinition(type, false, true);
 		writeTemporaryName(id);
 		endDefinition(type);
@@ -10886,7 +10894,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 
 void GenC::writeDestructAll(const FuVar * exceptVar)
 {
-	for (int i = std::ssize(this->varsToDestruct); --i >= 0;) {
+	for (int i = static_cast<int>(std::ssize(this->varsToDestruct)); --i >= 0;) {
 		const FuVar * def = this->varsToDestruct[i];
 		if (def != exceptVar)
 			writeDestruct(def);
@@ -11076,7 +11084,7 @@ void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPrio
 		else if (dynamic->class_->id != FuId::arrayPtrClass)
 			writeClassPtr(dynamic->class_, expr, parent);
 		else
-			GenTyped::writeCoercedInternal(type, expr, parent);
+			GenCCppD::writeCoercedInternal(type, expr, parent);
 	}
 	else if ((klass = dynamic_cast<const FuClassType *>(type)) && klass->class_->id != FuId::stringClass && klass->class_->id != FuId::arrayPtrClass && !dynamic_cast<const FuStorageType *>(klass)) {
 		if (klass->class_->id == FuId::queueClass && dynamic_cast<const FuStorageType *>(expr->type.get()))
@@ -11090,7 +11098,7 @@ void GenC::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPrio
 		else if (expr->type->id == FuId::stringStorageType)
 			expr->accept(this, parent);
 		else
-			GenTyped::writeCoercedInternal(type, expr, parent);
+			GenCCppD::writeCoercedInternal(type, expr, parent);
 	}
 }
 
@@ -12253,7 +12261,7 @@ void GenC::visitLambdaExpr(const FuLambdaExpr * expr)
 
 void GenC::writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwitch)
 {
-	for (int i = std::ssize(this->varsToDestruct); --i >= 0;) {
+	for (int i = static_cast<int>(std::ssize(this->varsToDestruct)); --i >= 0;) {
 		const FuVar * def = this->varsToDestruct[i];
 		if (!loopOrSwitch->encloses(def))
 			break;
@@ -12268,7 +12276,7 @@ void GenC::trimVarsToDestruct(int i)
 
 void GenC::cleanupBlock(const FuBlock * statement)
 {
-	int i = std::ssize(this->varsToDestruct);
+	int i = static_cast<int>(std::ssize(this->varsToDestruct));
 	for (; i > 0; i--) {
 		const FuVar * def = this->varsToDestruct[i - 1];
 		if (def->parent != statement)
@@ -12549,7 +12557,7 @@ void GenC::writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> *
 	const FuConst * konst;
 	if (dynamic_cast<const FuVar *>((*statements)[0].get()) || ((konst = dynamic_cast<const FuConst *>((*statements)[0].get())) && dynamic_cast<const FuArrayStorageType *>(konst->type.get())))
 		writeCharLine(';');
-	int varsToDestructCount = std::ssize(this->varsToDestruct);
+	int varsToDestructCount = static_cast<int>(std::ssize(this->varsToDestruct));
 	writeStatements(statements);
 	trimVarsToDestruct(varsToDestructCount);
 }
@@ -12613,7 +12621,7 @@ bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>>
 
 void GenC::writeStatements(const std::vector<std::shared_ptr<FuStatement>> * statements)
 {
-	int i = std::ssize(*statements) - 2;
+	int i = static_cast<int>(std::ssize(*statements) - 2);
 	const FuReturn * ret;
 	if (i >= 0 && (ret = dynamic_cast<const FuReturn *>((*statements)[i + 1].get())) && tryWriteCallAndReturn(statements, i, ret->value.get()))
 		return;
@@ -13037,7 +13045,7 @@ void GenC::writeMethod(const FuMethod * method)
 		if (!block->completesNormally())
 			writeStatements(statements);
 		else if (std::ssize(method->throws) > 0 && method->type->id == FuId::voidType) {
-			if (std::ssize(*statements) == 0 || !tryWriteCallAndReturn(statements, std::ssize(*statements) - 1, nullptr)) {
+			if (std::ssize(*statements) == 0 || !tryWriteCallAndReturn(statements, static_cast<int>(std::ssize(*statements) - 1), nullptr)) {
 				writeStatements(statements);
 				writeDestructAll();
 				writeLine("return true;");
@@ -15131,7 +15139,7 @@ void GenCpp::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPr
 			return;
 		}
 	}
-	GenTyped::writeCoercedInternal(type, expr, parent);
+	GenCCppD::writeCoercedInternal(type, expr, parent);
 }
 
 void GenCpp::writeSelectValues(const FuType * type, const FuSelectExpr * expr)
@@ -15509,7 +15517,7 @@ bool GenCpp::hasVariables(const FuStatement * statement) const
 void GenCpp::writeSwitchCaseBody(const std::vector<std::shared_ptr<FuStatement>> * statements)
 {
 	bool block = false;
-	int temporariesCount = std::ssize(this->currentTemporaries);
+	int temporariesCount = static_cast<int>(std::ssize(this->currentTemporaries));
 	for (const std::shared_ptr<FuStatement> &statement : *statements) {
 		if (!block && hasVariables(statement.get())) {
 			openBlock();
@@ -18272,35 +18280,18 @@ void GenD::writeClass(const FuClass * klass, const FuProgram * program)
 	closeBlock();
 }
 
-bool GenD::isLong(const FuSymbolReference * expr)
-{
-	switch (expr->symbol->id) {
-	case FuId::arrayLength:
-	case FuId::stringLength:
-	case FuId::listCount:
-		return true;
-	default:
-		return false;
-	}
-}
-
 void GenD::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
 {
 	if (dynamic_cast<const FuRangeType *>(type))
 		writeStaticCast(type, expr);
-	else {
-		const FuSymbolReference * symref;
-		if (dynamic_cast<const FuIntegerType *>(type) && (symref = dynamic_cast<const FuSymbolReference *>(expr)) && isLong(symref))
-			writeStaticCast(type, expr);
-		else if (dynamic_cast<const FuFloatingType *>(type) && !dynamic_cast<const FuFloatingType *>(expr->type.get()))
-			writeStaticCast(type, expr);
-		else if (dynamic_cast<const FuClassType *>(type) && !dynamic_cast<const FuArrayStorageType *>(type) && dynamic_cast<const FuArrayStorageType *>(expr->type.get())) {
-			GenTyped::writeCoercedInternal(type, expr, FuPriority::primary);
-			write("[]");
-		}
-		else
-			GenTyped::writeCoercedInternal(type, expr, parent);
+	else if (dynamic_cast<const FuFloatingType *>(type) && !dynamic_cast<const FuFloatingType *>(expr->type.get()))
+		writeStaticCast(type, expr);
+	else if (dynamic_cast<const FuClassType *>(type) && !dynamic_cast<const FuArrayStorageType *>(type) && dynamic_cast<const FuArrayStorageType *>(expr->type.get())) {
+		GenCCppD::writeCoercedInternal(type, expr, FuPriority::primary);
+		write("[]");
 	}
+	else
+		GenCCppD::writeCoercedInternal(type, expr, parent);
 }
 
 void GenD::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)

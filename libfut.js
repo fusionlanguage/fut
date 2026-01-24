@@ -9953,6 +9953,14 @@ export class GenCCppD extends GenTyped
 			this.writeChar(41);
 	}
 
+	writeCoercedInternal(type, expr, parent)
+	{
+		if ((type.id == FuId.INT_TYPE || type instanceof FuRangeType) && expr.type.id == FuId.N_INT_TYPE)
+			this.writeStaticCast(type, expr);
+		else
+			super.writeCoercedInternal(type, expr, parent);
+	}
+
 	visitConst(statement)
 	{
 		if (statement.type instanceof FuArrayStorageType)
@@ -19395,35 +19403,18 @@ export class GenD extends GenCCppD
 		this.closeBlock();
 	}
 
-	static #isLong(expr)
-	{
-		switch (expr.symbol.id) {
-		case FuId.ARRAY_LENGTH:
-		case FuId.STRING_LENGTH:
-		case FuId.LIST_COUNT:
-			return true;
-		default:
-			return false;
-		}
-	}
-
 	writeCoercedInternal(type, expr, parent)
 	{
 		if (type instanceof FuRangeType)
 			this.writeStaticCast(type, expr);
-		else {
-			let symref;
-			if (type instanceof FuIntegerType && (symref = expr) instanceof FuSymbolReference && GenD.#isLong(symref))
-				this.writeStaticCast(type, expr);
-			else if (type instanceof FuFloatingType && !(expr.type instanceof FuFloatingType))
-				this.writeStaticCast(type, expr);
-			else if (type instanceof FuClassType && !(type instanceof FuArrayStorageType) && expr.type instanceof FuArrayStorageType) {
-				super.writeCoercedInternal(type, expr, FuPriority.PRIMARY);
-				this.write("[]");
-			}
-			else
-				super.writeCoercedInternal(type, expr, parent);
+		else if (type instanceof FuFloatingType && !(expr.type instanceof FuFloatingType))
+			this.writeStaticCast(type, expr);
+		else if (type instanceof FuClassType && !(type instanceof FuArrayStorageType) && expr.type instanceof FuArrayStorageType) {
+			super.writeCoercedInternal(type, expr, FuPriority.PRIMARY);
+			this.write("[]");
 		}
+		else
+			super.writeCoercedInternal(type, expr, parent);
 	}
 
 	#writeResources(resources)

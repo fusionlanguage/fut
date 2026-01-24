@@ -2696,6 +2696,7 @@ public:
 protected:
 	GenCCppD() = default;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
+	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 private: // internal
 	void visitLiteralLong(int64_t i) override;
@@ -3220,7 +3221,6 @@ private:
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	static bool isIsComparable(const FuExpr * expr);
 	void writeIsVar(const FuExpr * left, const FuExpr * right, FuPriority parent);
-	static bool isLong(const FuSymbolReference * expr);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
 	void writeMain(const FuMethod * main, std::string_view namespace_);
 };

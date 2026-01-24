@@ -9507,6 +9507,14 @@ namespace Fusion
 				WriteChar(')');
 		}
 
+		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
+		{
+			if ((type.Id == FuId.IntType || type is FuRangeType) && expr.Type.Id == FuId.NIntType)
+				WriteStaticCast(type, expr);
+			else
+				base.WriteCoercedInternal(type, expr, parent);
+		}
+
 		internal override void VisitConst(FuConst statement)
 		{
 			if (statement.Type is FuArrayStorageType)
@@ -18811,23 +18819,9 @@ namespace Fusion
 			CloseBlock();
 		}
 
-		static bool IsLong(FuSymbolReference expr)
-		{
-			switch (expr.Symbol.Id) {
-			case FuId.ArrayLength:
-			case FuId.StringLength:
-			case FuId.ListCount:
-				return true;
-			default:
-				return false;
-			}
-		}
-
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
 		{
 			if (type is FuRangeType)
-				WriteStaticCast(type, expr);
-			else if (type is FuIntegerType && expr is FuSymbolReference symref && IsLong(symref))
 				WriteStaticCast(type, expr);
 			else if (type is FuFloatingType && !(expr.Type is FuFloatingType))
 				WriteStaticCast(type, expr);
