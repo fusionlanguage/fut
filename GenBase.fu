@@ -1701,7 +1701,7 @@ public abstract class GenBase : FuVisitor
 		WriteChild(statement.Body);
 	}
 
-	protected static FuCallExpr? IsNotTryParse(FuIf statement)
+	internal static FuCallExpr? IsNotTryParse(FuIf statement)
 	{
 		if (statement.OnFalse == null
 		 && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark

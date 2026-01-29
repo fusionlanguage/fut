@@ -8782,7 +8782,7 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		protected static FuCallExpr IsNotTryParse(FuIf statement)
+		internal static FuCallExpr IsNotTryParse(FuIf statement)
 		{
 			if (statement.OnFalse == null && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark && not.Inner is FuCallExpr call) {
 				switch (call.Method.Symbol.Id) {
