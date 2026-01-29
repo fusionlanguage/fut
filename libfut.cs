@@ -8782,6 +8782,22 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
+		protected static FuCallExpr IsNotTryParse(FuIf statement)
+		{
+			if (statement.OnFalse == null && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark && not.Inner is FuCallExpr call) {
+				switch (call.Method.Symbol.Id) {
+				case FuId.IntTryParse:
+				case FuId.NIntTryParse:
+				case FuId.LongTryParse:
+				case FuId.DoubleTryParse:
+					return call;
+				default:
+					break;
+				}
+			}
+			return null;
+		}
+
 		protected virtual bool EmbedIfWhileIsVar(FuExpr expr, bool write) => false;
 
 		void StartIfWhile(FuExpr expr)
@@ -20100,11 +20116,10 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.NIntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
-
 		internal override void VisitIf(FuIf statement)
 		{
-			if (statement.OnFalse == null && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark && not.Inner is FuCallExpr call && IsTryParse(call.Method.Symbol.Id)) {
+			FuCallExpr call = IsNotTryParse(statement);
+			if (call != null) {
 				Write("try ");
 				OpenBlock();
 				call.Method.Left.Accept(this, FuPriority.Assign);
@@ -20123,13 +20138,8 @@ namespace Fusion
 				default:
 					throw new NotImplementedException();
 				}
-				WriteChar('(');
-				call.Arguments[0].Accept(this, FuPriority.Argument);
-				if (call.Arguments.Count == 2) {
-					Write(", ");
-					call.Arguments[1].Accept(this, FuPriority.Argument);
-				}
-				WriteLine(");");
+				WriteInParentheses(call.Arguments);
+				WriteCharLine(';');
 				CloseBlock();
 				Write("catch (NumberFormatException e) ");
 				OpenBlock();
@@ -25823,6 +25833,27 @@ namespace Fusion
 		}
 
 		protected override string GetIfNot() => "if not ";
+
+		internal override void VisitIf(FuIf statement)
+		{
+			FuCallExpr call = IsNotTryParse(statement);
+			if (call != null) {
+				Write("try");
+				OpenChild();
+				call.Method.Left.Accept(this, FuPriority.Assign);
+				Write(" = ");
+				Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
+				WriteInParentheses(call.Arguments);
+				WriteNewLine();
+				CloseChild();
+				Write("except ValueError");
+				OpenChild();
+				statement.OnTrue.AcceptStatement(this);
+				CloseChild();
+			}
+			else
+				base.VisitIf(statement);
+		}
 
 		void WriteInclusiveLimit(FuExpr limit, int increment, string incrementString)
 		{

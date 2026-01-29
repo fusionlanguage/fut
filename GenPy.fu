@@ -1,6 +1,6 @@
 // GenPy.fu - Python code generator
 //
-// Copyright (C) 2020-2025  Piotr Fusik
+// Copyright (C) 2020-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1305,6 +1305,27 @@ public class GenPy : GenPySwift
 	}
 
 	protected override string GetIfNot() => "if not ";
+
+	internal override void VisitIf!(FuIf statement)
+	{
+		FuCallExpr? call = IsNotTryParse(statement);
+		if (call != null) {
+			Write("try");
+			OpenChild();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			Write(" = ");
+			Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
+			WriteInParentheses(call.Arguments);
+			WriteNewLine();
+			CloseChild();
+			Write("except ValueError");
+			OpenChild();
+			statement.OnTrue.AcceptStatement(this);
+			CloseChild();
+		}
+		else
+			base.VisitIf(statement);
+	}
 
 	void WriteInclusiveLimit!(FuExpr limit, int increment, string incrementString)
 	{

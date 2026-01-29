@@ -9204,6 +9204,24 @@ export class GenBase extends FuVisitor
 		this.writeChild(statement.body);
 	}
 
+	static isNotTryParse(statement)
+	{
+		let not;
+		let call;
+		if (statement.onFalse == null && (not = statement.cond) instanceof FuPrefixExpr && not.op == FuToken.EXCLAMATION_MARK && (call = not.inner) instanceof FuCallExpr) {
+			switch (call.method.symbol.id) {
+			case FuId.INT_TRY_PARSE:
+			case FuId.N_INT_TRY_PARSE:
+			case FuId.LONG_TRY_PARSE:
+			case FuId.DOUBLE_TRY_PARSE:
+				return call;
+			default:
+				break;
+			}
+		}
+		return null;
+	}
+
 	embedIfWhileIsVar(expr, write)
 	{
 		return false;
@@ -20717,16 +20735,10 @@ export class GenJava extends GenTyped
 		this.writeChild(statement.body);
 	}
 
-	static #isTryParse(id)
-	{
-		return id == FuId.INT_TRY_PARSE || id == FuId.N_INT_TRY_PARSE || id == FuId.LONG_TRY_PARSE || id == FuId.DOUBLE_TRY_PARSE;
-	}
-
 	visitIf(statement)
 	{
-		let not;
-		let call;
-		if (statement.onFalse == null && (not = statement.cond) instanceof FuPrefixExpr && not.op == FuToken.EXCLAMATION_MARK && (call = not.inner) instanceof FuCallExpr && GenJava.#isTryParse(call.method.symbol.id)) {
+		let call = GenJava.isNotTryParse(statement);
+		if (call != null) {
 			this.write("try ");
 			this.openBlock();
 			call.method.left.accept(this, FuPriority.ASSIGN);
@@ -20745,13 +20757,8 @@ export class GenJava extends GenTyped
 			default:
 				throw new Error();
 			}
-			this.writeChar(40);
-			call.arguments_[0].accept(this, FuPriority.ARGUMENT);
-			if (call.arguments_.length == 2) {
-				this.write(", ");
-				call.arguments_[1].accept(this, FuPriority.ARGUMENT);
-			}
-			this.writeLine(");");
+			this.writeInParentheses(call.arguments_);
+			this.writeCharLine(59);
 			this.closeBlock();
 			this.write("catch (NumberFormatException e) ");
 			this.openBlock();
@@ -26510,6 +26517,27 @@ export class GenPy extends GenPySwift
 	getIfNot()
 	{
 		return "if not ";
+	}
+
+	visitIf(statement)
+	{
+		let call = GenPy.isNotTryParse(statement);
+		if (call != null) {
+			this.write("try");
+			this.openChild();
+			call.method.left.accept(this, FuPriority.ASSIGN);
+			this.write(" = ");
+			this.write(call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
+			this.writeInParentheses(call.arguments_);
+			this.writeNewLine();
+			this.closeChild();
+			this.write("except ValueError");
+			this.openChild();
+			statement.onTrue.acceptStatement(this);
+			this.closeChild();
+		}
+		else
+			super.visitIf(statement);
 	}
 
 	#writeInclusiveLimit(limit, increment, incrementString)

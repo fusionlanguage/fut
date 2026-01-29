@@ -8651,6 +8651,24 @@ void GenBase::visitFor(const FuFor * statement)
 	writeChild(statement->body.get());
 }
 
+const FuCallExpr * GenBase::isNotTryParse(const FuIf * statement)
+{
+	const FuPrefixExpr * not_;
+	const FuCallExpr * call;
+	if (statement->onFalse == nullptr && (not_ = dynamic_cast<const FuPrefixExpr *>(statement->cond.get())) && not_->op == FuToken::exclamationMark && (call = dynamic_cast<const FuCallExpr *>(not_->inner.get()))) {
+		switch (call->method->symbol->id) {
+		case FuId::intTryParse:
+		case FuId::nIntTryParse:
+		case FuId::longTryParse:
+		case FuId::doubleTryParse:
+			return call;
+		default:
+			break;
+		}
+	}
+	return nullptr;
+}
+
 bool GenBase::embedIfWhileIsVar(const FuExpr * expr, bool write)
 {
 	return false;
@@ -19499,16 +19517,10 @@ void GenJava::visitForeach(const FuForeach * statement)
 	writeChild(statement->body.get());
 }
 
-bool GenJava::isTryParse(FuId id)
-{
-	return id == FuId::intTryParse || id == FuId::nIntTryParse || id == FuId::longTryParse || id == FuId::doubleTryParse;
-}
-
 void GenJava::visitIf(const FuIf * statement)
 {
-	const FuPrefixExpr * not_;
-	const FuCallExpr * call;
-	if (statement->onFalse == nullptr && (not_ = dynamic_cast<const FuPrefixExpr *>(statement->cond.get())) && not_->op == FuToken::exclamationMark && (call = dynamic_cast<const FuCallExpr *>(not_->inner.get())) && isTryParse(call->method->symbol->id)) {
+	const FuCallExpr * call = isNotTryParse(statement);
+	if (call != nullptr) {
 		write("try ");
 		openBlock();
 		call->method->left->accept(this, FuPriority::assign);
@@ -19527,13 +19539,8 @@ void GenJava::visitIf(const FuIf * statement)
 		default:
 			std::abort();
 		}
-		writeChar('(');
-		call->arguments[0]->accept(this, FuPriority::argument);
-		if (std::ssize(call->arguments) == 2) {
-			write(", ");
-			call->arguments[1]->accept(this, FuPriority::argument);
-		}
-		writeLine(");");
+		writeInParentheses(&call->arguments);
+		writeCharLine(';');
 		closeBlock();
 		write("catch (NumberFormatException e) ");
 		openBlock();
@@ -24997,6 +25004,27 @@ void GenPy::visitBreak(const FuBreak * statement)
 std::string_view GenPy::getIfNot() const
 {
 	return "if not ";
+}
+
+void GenPy::visitIf(const FuIf * statement)
+{
+	const FuCallExpr * call = isNotTryParse(statement);
+	if (call != nullptr) {
+		write("try");
+		openChild();
+		call->method->left->accept(this, FuPriority::assign);
+		write(" = ");
+		write(call->method->symbol->id == FuId::doubleTryParse ? "float" : "int");
+		writeInParentheses(&call->arguments);
+		writeNewLine();
+		closeChild();
+		write("except ValueError");
+		openChild();
+		statement->onTrue->acceptStatement(this);
+		closeChild();
+	}
+	else
+		GenPySwift::visitIf(statement);
 }
 
 void GenPy::writeInclusiveLimit(const FuExpr * limit, int increment, std::string_view incrementString)

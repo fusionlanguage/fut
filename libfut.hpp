@@ -1465,6 +1465,7 @@ private: // internal
 	friend GenBase;
 	friend GenCpp;
 	friend GenJava;
+	friend GenPy;
 	friend GenPySwift;
 };
 
@@ -2560,6 +2561,7 @@ protected:
 	void trimTemporariesAndCloseBlock(int temporariesCount);
 	virtual void writeChild(FuStatement * statement);
 	virtual void startBreakGoto();
+	static const FuCallExpr * isNotTryParse(const FuIf * statement);
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
 	virtual void startIf(const FuExpr * expr);
 	void defineVar(const FuExpr * value);
@@ -3299,7 +3301,6 @@ private:
 	void writeCollectionGet(const FuExpr * obj, std::string_view method, FuPriority parent);
 	void writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
-	static bool isTryParse(FuId id);
 	void createJavaFile(std::string_view className);
 	void writeSignature(const FuMethod * method, int paramCount);
 	void writeOverloads(const FuMethod * method, int paramCount);
@@ -3633,6 +3634,7 @@ private: // internal
 	void visitExpr(const FuExpr * statement) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitBreak(const FuBreak * statement) override;
+	void visitIf(const FuIf * statement) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;

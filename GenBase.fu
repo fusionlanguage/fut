@@ -1,6 +1,6 @@
 // GenBase.fu - base class for code generators
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1699,6 +1699,24 @@ public abstract class GenBase : FuVisitor
 		}
 		WriteChar(')');
 		WriteChild(statement.Body);
+	}
+
+	protected static FuCallExpr? IsNotTryParse(FuIf statement)
+	{
+		if (statement.OnFalse == null
+		 && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark
+		 && not.Inner is FuCallExpr call) {
+			switch (call.Method.Symbol.Id) {
+			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
+			case FuId.LongTryParse:
+			case FuId.DoubleTryParse:
+				return call;
+			default:
+				break;
+			}
+		}
+		return null;
 	}
 
 	protected virtual bool EmbedIfWhileIsVar!(FuExpr expr, bool write) => false;

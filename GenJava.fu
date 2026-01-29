@@ -1,6 +1,6 @@
 // GenJava.fu - Java code generator
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1193,13 +1193,10 @@ public class GenJava : GenTyped
 		WriteChild(statement.Body);
 	}
 
-	static bool IsTryParse(FuId id) => id == FuId.IntTryParse || id == FuId.NIntTryParse || id == FuId.LongTryParse || id == FuId.DoubleTryParse;
-
 	internal override void VisitIf!(FuIf statement)
 	{
-		if (statement.OnFalse == null
-		 && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark
-		 && not.Inner is FuCallExpr call && IsTryParse(call.Method.Symbol.Id)) {
+		FuCallExpr? call = IsNotTryParse(statement);
+		if (call != null) {
 			Write("try ");
 			OpenBlock();
 			call.Method.Left.Accept(this, FuPriority.Assign);
@@ -1218,13 +1215,8 @@ public class GenJava : GenTyped
 			default:
 				assert false;
 			}
-			WriteChar('(');
-			call.Arguments[0].Accept(this, FuPriority.Argument);
-			if (call.Arguments.Count == 2) {
-				Write(", ");
-				call.Arguments[1].Accept(this, FuPriority.Argument);
-			}
-			WriteLine(");");
+			WriteInParentheses(call.Arguments);
+			WriteCharLine(';');
 			CloseBlock();
 			Write("catch (NumberFormatException e) ");
 			OpenBlock();
