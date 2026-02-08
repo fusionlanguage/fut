@@ -1194,7 +1194,7 @@ array[2] = 15;
 foreach (int i in array)
     Console.WriteLine(i);
 
-SortedDictionary<string(), int> dict;
+SortedDictionary<string(), int>() dict;
 dict["foo"] = 1;
 dict["bar"] = 2;
 foreach ((string k, int v) in dict)
