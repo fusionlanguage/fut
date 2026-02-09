@@ -10944,8 +10944,17 @@ namespace Fusion
 
 		void WriteGPointerCast(FuType type, FuExpr expr)
 		{
-			if (type is FuNumericType || type is FuEnum)
+			if (type.Id == FuId.NIntType)
+				WriteCall("GSIZE_TO_POINTER", expr);
+			else if ((type is FuIntegerType && type.Id != FuId.LongType) || type is FuEnum)
 				WriteCall("GINT_TO_POINTER", expr);
+			else if (type is FuFloatingType) {
+				Write("(union { ");
+				Write(type.Name);
+				Write(" f; gpointer p; }) { ");
+				expr.Accept(this, FuPriority.Argument);
+				Write(" }.p");
+			}
 			else if (type.Id == FuId.StringPtrType && expr.Type.Id == FuId.StringPtrType) {
 				Write("(gpointer) ");
 				expr.Accept(this, FuPriority.Primary);
@@ -12366,6 +12375,13 @@ namespace Fusion
 				WriteDictionaryLookup(expr.Left, function, expr.Right);
 				WriteChar(')');
 			}
+			else if (valueType is FuFloatingType) {
+				Write("(union { gpointer p; ");
+				Write(valueType.Name);
+				Write(" f; }) { ");
+				WriteDictionaryLookup(expr.Left, function, expr.Right);
+				Write(" }.f");
+			}
 			else {
 				if (parent > FuPriority.Mul)
 					WriteChar('(');
@@ -12585,6 +12601,12 @@ namespace Fusion
 				WriteGPointerToInt(iter.Type);
 				Write(value);
 				WriteChar(')');
+			}
+			else if (iter.Type is FuFloatingType) {
+				Write("*(const ");
+				Write(iter.Type.Name);
+				Write(" *) &");
+				Write(value);
 			}
 			else {
 				WriteStaticCastType(iter.Type);

@@ -7,11 +7,18 @@ public static class Test
 		dict[1] = 5;
 		dict[2] = 10;
 		int keySum = 0;
-		int valueSum = 0;
+		float valueSum = 0;
 		foreach ((int key, int value) in dict) {
 			keySum += key;
 			valueSum += value;
 		}
-		return keySum == 6 && valueSum == 30;
+
+		Dictionary<int, float>() dict2;
+		dict2[7] = 10.5;
+		foreach ((int key, float value) in dict2) {
+			keySum += key;
+			valueSum += value;
+		}
+		return keySum == 6 + 7 && valueSum == 30 + 10.5 && dict2[7] == 10.5;
 	}
 }

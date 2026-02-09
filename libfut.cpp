@@ -10698,8 +10698,17 @@ void GenC::writeVar(const FuNamedValue * def)
 
 void GenC::writeGPointerCast(const FuType * type, const FuExpr * expr)
 {
-	if (dynamic_cast<const FuNumericType *>(type) || dynamic_cast<const FuEnum *>(type))
+	if (type->id == FuId::nIntType)
+		writeCall("GSIZE_TO_POINTER", expr);
+	else if ((dynamic_cast<const FuIntegerType *>(type) && type->id != FuId::longType) || dynamic_cast<const FuEnum *>(type))
 		writeCall("GINT_TO_POINTER", expr);
+	else if (dynamic_cast<const FuFloatingType *>(type)) {
+		write("(union { ");
+		write(type->name);
+		write(" f; gpointer p; }) { ");
+		expr->accept(this, FuPriority::argument);
+		write(" }.p");
+	}
 	else if (type->id == FuId::stringPtrType && expr->type->id == FuId::stringPtrType) {
 		write("(gpointer) ");
 		expr->accept(this, FuPriority::primary);
@@ -12144,6 +12153,13 @@ void GenC::writeDictionaryIndexing(std::string_view function, const FuBinaryExpr
 		writeDictionaryLookup(expr->left.get(), function, expr->right.get());
 		writeChar(')');
 	}
+	else if (dynamic_cast<const FuFloatingType *>(valueType)) {
+		write("(union { gpointer p; ");
+		write(valueType->name);
+		write(" f; }) { ");
+		writeDictionaryLookup(expr->left.get(), function, expr->right.get());
+		write(" }.f");
+	}
 	else {
 		if (parent > FuPriority::mul)
 			writeChar('(');
@@ -12366,6 +12382,12 @@ void GenC::writeDictIterVar(const FuNamedValue * iter, std::string_view value)
 		writeGPointerToInt(iter->type.get());
 		write(value);
 		writeChar(')');
+	}
+	else if (dynamic_cast<const FuFloatingType *>(iter->type.get())) {
+		write("*(const ");
+		write(iter->type->name);
+		write(" *) &");
+		write(value);
 	}
 	else {
 		writeStaticCastType(iter->type.get());
