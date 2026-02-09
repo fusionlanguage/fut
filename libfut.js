@@ -15315,6 +15315,15 @@ export class GenCpp extends GenCCpp
 		this.writeChar(41);
 	}
 
+	#writeWriteArgument(expr)
+	{
+		this.write(" << ");
+		if ((expr.isIndexing() && (expr.type.id == FuId.BYTE_RANGE || expr.type.id == FuId.S_BYTE_RANGE)) || expr instanceof FuLiteralChar)
+			this.writeCall("static_cast<int>", expr);
+		else
+			expr.accept(this, FuPriority.MUL);
+	}
+
 	#writeWrite(args, newLine)
 	{
 		this.include("iostream");
@@ -15382,8 +15391,7 @@ export class GenCpp extends GenCCpp
 						this.write(" << ");
 						this.visitLiteralString(part.prefix);
 					}
-					this.write(" << ");
-					part.argument.accept(this, FuPriority.MUL);
+					this.#writeWriteArgument(part.argument);
 				}
 				if (uppercase)
 					this.write(" << std::nouppercase");
@@ -15401,16 +15409,14 @@ export class GenCpp extends GenCCpp
 				}
 			}
 			else {
-				this.write(" << ");
 				let literal;
 				if (newLine && (literal = args[0]) instanceof FuLiteralString) {
+					this.write(" << ");
 					this.writeStringLiteralWithNewLine(literal.value);
 					return;
 				}
-				else if (args[0] instanceof FuLiteralChar)
-					this.writeCall("static_cast<int>", args[0]);
 				else
-					args[0].accept(this, FuPriority.MUL);
+					this.#writeWriteArgument(args[0]);
 			}
 		}
 		if (newLine)

@@ -13,6 +13,10 @@ public static class Test
 		long l = 5;
 		Console.WriteLine(l);
 		Console.WriteLine($"l={l}");
+		byte[2] ba;
+		ba[0] = 33;
+		Console.WriteLine(ba[0]);
+		Console.WriteLine($"ba[0]={ba[0]}");
 		return true;
 	}
 }

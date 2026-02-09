@@ -14478,6 +14478,15 @@ void GenCpp::writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int a
 	writeChar(')');
 }
 
+void GenCpp::writeWriteArgument(const FuExpr * expr)
+{
+	write(" << ");
+	if ((expr->isIndexing() && (expr->type->id == FuId::byteRange || expr->type->id == FuId::sByteRange)) || dynamic_cast<const FuLiteralChar *>(expr))
+		writeCall("static_cast<int>", expr);
+	else
+		expr->accept(this, FuPriority::mul);
+}
+
 void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	include("iostream");
@@ -14544,8 +14553,7 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 					write(" << ");
 					visitLiteralString(part.prefix);
 				}
-				write(" << ");
-				part.argument->accept(this, FuPriority::mul);
+				writeWriteArgument(part.argument.get());
 			}
 			if (uppercase)
 				write(" << std::nouppercase");
@@ -14563,16 +14571,14 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 			}
 		}
 		else {
-			write(" << ");
 			const FuLiteralString * literal;
 			if (newLine && (literal = dynamic_cast<const FuLiteralString *>((*args)[0].get()))) {
+				write(" << ");
 				writeStringLiteralWithNewLine(literal->value);
 				return;
 			}
-			else if (dynamic_cast<const FuLiteralChar *>((*args)[0].get()))
-				writeCall("static_cast<int>", (*args)[0].get());
 			else
-				(*args)[0]->accept(this, FuPriority::mul);
+				writeWriteArgument((*args)[0].get());
 		}
 	}
 	if (newLine)

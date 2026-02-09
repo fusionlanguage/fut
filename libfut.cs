@@ -14815,6 +14815,15 @@ namespace Fusion
 			WriteChar(')');
 		}
 
+		void WriteWriteArgument(FuExpr expr)
+		{
+			Write(" << ");
+			if ((expr.IsIndexing() && (expr.Type.Id == FuId.ByteRange || expr.Type.Id == FuId.SByteRange)) || expr is FuLiteralChar)
+				WriteCall("static_cast<int>", expr);
+			else
+				expr.Accept(this, FuPriority.Mul);
+		}
+
 		void WriteWrite(List<FuExpr> args, bool newLine)
 		{
 			Include("iostream");
@@ -14881,8 +14890,7 @@ namespace Fusion
 							Write(" << ");
 							VisitLiteralString(part.Prefix);
 						}
-						Write(" << ");
-						part.Argument.Accept(this, FuPriority.Mul);
+						WriteWriteArgument(part.Argument);
 					}
 					if (uppercase)
 						Write(" << std::nouppercase");
@@ -14899,17 +14907,13 @@ namespace Fusion
 						VisitLiteralString(interpolated.Suffix);
 					}
 				}
-				else {
+				else if (newLine && args[0] is FuLiteralString literal) {
 					Write(" << ");
-					if (newLine && args[0] is FuLiteralString literal) {
-						WriteStringLiteralWithNewLine(literal.Value);
-						return;
-					}
-					else if (args[0] is FuLiteralChar)
-						WriteCall("static_cast<int>", args[0]);
-					else
-						args[0].Accept(this, FuPriority.Mul);
+					WriteStringLiteralWithNewLine(literal.Value);
+					return;
 				}
+				else
+					WriteWriteArgument(args[0]);
 			}
 			if (newLine)
 				Write(" << '\\n'");
