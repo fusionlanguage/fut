@@ -15474,6 +15474,10 @@ export class GenCpp extends GenCCpp
 						this.writeMemberOp(obj, null);
 				}
 			}
+			else if (this.currentMethod.id == FuId.MAIN) {
+				this.write(method.parent.name);
+				this.write("::");
+			}
 			this.writeName(method);
 			this.writeCoercedArgsInParentheses(method, args);
 			break;

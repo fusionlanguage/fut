@@ -14636,6 +14636,10 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 					writeMemberOp(obj, nullptr);
 			}
 		}
+		else if (this->currentMethod->id == FuId::main) {
+			write(method->parent->name);
+			write("::");
+		}
 		writeName(method);
 		writeCoercedArgsInParentheses(method, args);
 		break;

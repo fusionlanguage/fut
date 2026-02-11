@@ -1,6 +1,6 @@
 // GenCpp.fu - C++ code generator
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -813,6 +813,10 @@ public class GenCpp : GenCCpp
 					else
 						WriteMemberOp(obj, null);
 				}
+			}
+			else if (this.CurrentMethod.Id == FuId.Main) {
+				Write(method.Parent.Name);
+				Write("::");
 			}
 			WriteName(method);
 			WriteCoercedArgsInParentheses(method, args);

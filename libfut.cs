@@ -14970,6 +14970,10 @@ namespace Fusion
 							WriteMemberOp(obj, null);
 					}
 				}
+				else if (this.CurrentMethod.Id == FuId.Main) {
+					Write(method.Parent.Name);
+					Write("::");
+				}
 				WriteName(method);
 				WriteCoercedArgsInParentheses(method, args);
 				break;

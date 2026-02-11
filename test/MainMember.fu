@@ -1,0 +1,17 @@
+public static class Runner
+{
+	public static bool Ok()
+	{
+		return true;
+	}
+
+	public static int Main() //FAIL: cl
+	{
+		if (Ok()) {
+			Console.WriteLine("PASSED");
+			return 0;
+		}
+		Console.WriteLine("FAILED");
+		return 1;
+	}
+}

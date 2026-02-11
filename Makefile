@@ -41,7 +41,7 @@ endif
 DO_SUMMARY = $(DO)perl test/summary.pl $(filter %.txt, $^)
 TARGET_LANG = $(subst .,,$(suffix $@))
 UC_TARGET_LANG = $(subst a,A,$(subst c,C,$(subst d,D,$(subst f,F,$(subst i,I,$(subst j,J,$(subst l,L,$(subst p,P,$(subst s,S,$(subst t,T,$(subst v,V,$(subst w,W,$(subst y,Y,$(TARGET_LANG))))))))))))))
-DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ $(if $(findstring $*, Namespace), -n Ns) -D $(UC_TARGET_LANG) -I $(<D) $(if $(findstring $*, MainArgs MainVoid), $<, $(filter %.fu, $^)) || grep '//FAIL:.*\<$(TARGET_LANG)\>' $<)
+DO_FUT = $(DO)mkdir -p $(@D) && ($(FUT) -o $@ $(if $(findstring $*, Namespace), -n Ns) -D $(UC_TARGET_LANG) -I $(<D) $(if $(findstring $*, MainArgs MainMember MainVoid), $<, $(filter %.fu, $^)) || grep '//FAIL:.*\<$(TARGET_LANG)\>' $<)
 SOURCE_FU = Lexer.fu AST.fu Parser.fu ConsoleHost.fu Sema.fu GenBase.fu GenTyped.fu GenCCppD.fu GenCCpp.fu GenC.fu GenCl.fu GenCpp.fu GenCs.fu GenD.fu GenJava.fu GenJs.fu GenTs.fu GenPySwift.fu GenSwift.fu GenPy.fu
 TESTS = $(filter-out test/Runner.fu, $(wildcard test/*.fu))
 END_RUN_TEST = $(if $(findstring $*, MainArgs), foo bar) >$@ || grep '//FAIL:.*\<$(basename $(@F))\>' test/$*.fu
