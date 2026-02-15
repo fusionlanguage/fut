@@ -1,6 +1,6 @@
 // fut.js - Fusion transpiler
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -221,7 +221,7 @@ for (let i = 2; i < process.argv.length; i++) {
 		process.exit(0);
 	}
 	else if (arg == "--version") {
-		console.log("Fusion Transpiler 3.2.13 (Node.js)");
+		console.log("Fusion Transpiler 3.2.14 (Node.js)");
 		process.exit(0);
 	}
 	else if (i + 1 < process.argv.length) {
