@@ -89,7 +89,6 @@ enum class FuToken
 	questionMark,
 	colon,
 	fatArrow,
-	range,
 	docRegular,
 	docBullet,
 	docBlank,

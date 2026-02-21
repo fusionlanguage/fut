@@ -1,6 +1,6 @@
 // Parser.fu - Fusion parser
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -479,13 +479,7 @@ public class FuParser : FuLexer
 		return left;
 	}
 
-	FuExpr# ParseType!()
-	{
-		FuExpr# left = ParsePrimaryExpr(true);
-		if (Eat(FuToken.Range))
-			return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = FuToken.Range, Right = ParsePrimaryExpr(true) };
-		return left;
-	}
+	FuExpr# ParseType!() => ParsePrimaryExpr(true);
 
 	FuExpr# ParseConstInitializer!()
 	{

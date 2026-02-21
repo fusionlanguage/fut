@@ -1,6 +1,6 @@
 // Lexer.fu - Fusion lexer
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -91,7 +91,6 @@ public enum FuToken
 	QuestionMark,
 	Colon,
 	FatArrow,
-	Range,
 	DocRegular,
 	DocBullet,
 	DocBlank,
@@ -561,7 +560,8 @@ public abstract class FuLexer
 				}
 			case ';': return FuToken.Semicolon;
 			case '.':
-				if (EatChar('.')) return FuToken.Range;
+				if (PeekChar() == '.')
+					ReportError("Range types have been removed - replace with byte/short/ushort/int/uint");
 				return FuToken.Dot;
 			case ',': return FuToken.Comma;
 			case '(': return FuToken.LeftParenthesis;
@@ -815,7 +815,6 @@ public abstract class FuLexer
 		case FuToken.QuestionMark: return "'?'";
 		case FuToken.Colon: return "':'";
 		case FuToken.FatArrow: return "'=>'";
-		case FuToken.Range: return "'..'";
 		case FuToken.DocRegular:
 		case FuToken.DocBullet:
 		case FuToken.DocBlank:

@@ -82,7 +82,6 @@ namespace Fusion
 		QuestionMark,
 		Colon,
 		FatArrow,
-		Range,
 		DocRegular,
 		DocBullet,
 		DocBlank,
@@ -576,8 +575,8 @@ namespace Fusion
 				case ';':
 					return FuToken.Semicolon;
 				case '.':
-					if (EatChar('.'))
-						return FuToken.Range;
+					if (PeekChar() == '.')
+						ReportError("Range types have been removed - replace with byte/short/ushort/int/uint");
 					return FuToken.Dot;
 				case ',':
 					return FuToken.Comma;
@@ -955,8 +954,6 @@ namespace Fusion
 				return "':'";
 			case FuToken.FatArrow:
 				return "'=>'";
-			case FuToken.Range:
-				return "'..'";
 			case FuToken.DocRegular:
 			case FuToken.DocBullet:
 			case FuToken.DocBlank:
@@ -2112,7 +2109,6 @@ namespace Fusion
 			case FuToken.AndAssign:
 			case FuToken.OrAssign:
 			case FuToken.XorAssign:
-			case FuToken.Range:
 			case FuToken.Is:
 				return 2;
 			case FuToken.ShiftLeftAssign:
@@ -4087,13 +4083,7 @@ namespace Fusion
 			return left;
 		}
 
-		FuExpr ParseType()
-		{
-			FuExpr left = ParsePrimaryExpr(true);
-			if (Eat(FuToken.Range))
-				return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = FuToken.Range, Right = ParsePrimaryExpr(true) };
-			return left;
-		}
+		FuExpr ParseType() => ParsePrimaryExpr(true);
 
 		FuExpr ParseConstInitializer()
 		{
@@ -5877,8 +5867,6 @@ namespace Fusion
 				return expr;
 			case FuToken.Is:
 				return ResolveIs(expr, left, right);
-			case FuToken.Range:
-				return PoisonError(expr, "Range within an expression");
 			default:
 				throw new NotImplementedException();
 			}
@@ -6353,11 +6341,6 @@ namespace Fusion
 
 		FuType ToType(FuExpr expr, bool dynamic)
 		{
-			FuExpr minExpr = null;
-			if (expr is FuBinaryExpr range && range.Op == FuToken.Range) {
-				minExpr = range.Left;
-				expr = range.Right;
-			}
 			bool nullable;
 			FuToken ptrModifier;
 			FuClassType outerArray = null;
@@ -6408,18 +6391,7 @@ namespace Fusion
 				else
 					break;
 			}
-			FuType baseType;
-			if (minExpr != null) {
-				if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
-					return this.Poison;
-				int min = FoldConstInt(minExpr);
-				int max = FoldConstInt(expr);
-				if (min > max)
-					return PoisonError(expr, "Range min greater than max");
-				baseType = FuRangeType.New(min, max);
-			}
-			else
-				baseType = ToBaseType(expr, ptrModifier, nullable);
+			FuType baseType = ToBaseType(expr, ptrModifier, nullable);
 			if (outerArray == null)
 				return baseType;
 			innerArray.TypeArg0 = baseType;

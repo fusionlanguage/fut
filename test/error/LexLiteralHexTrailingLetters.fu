@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		0 .. 0xfoo; //ERROR: Invalid integer
+		int i = 0xfoo; //ERROR: Invalid integer
 		return true;
 	}
 }

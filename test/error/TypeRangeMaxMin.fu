@@ -1,8 +1,0 @@
-public static class Test
-{
-	public static bool Run()
-	{
-		5 .. 3 i = 3; //ERROR: Range min greater than max
-		return true;
-	}
-}

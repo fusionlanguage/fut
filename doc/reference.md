@@ -61,6 +61,17 @@ and the ternary operator `x ? y : z` (if `x` then `y` else `z`).
 
 ### Integers
 
+These are the available integer types:
+
+| Type     | Min value            | Max value           |
+| -------- | -------------------: | ------------------: |
+| `byte`   |                    0 |                 255 |
+| `short`  |               -32768 |               32767 |
+| `ushort` |                    0 |               65535 |
+| `int`    |          -2147483648 |          2147483647 |
+| `uint`   |                    0 |          2147483647 |
+| `long`   | -9223372036854775808 | 9223372036854775807 |
+
 Most of the time, you will use the 32-bit integer type `int`.
 For larger numbers, use the 64-bit `long`.
 
@@ -68,28 +79,11 @@ For larger numbers, use the 64-bit `long`.
 you want to conserve storage space and use smaller types where possible.
 Not only reduces it memory footprint, but it's also cache-friendly,
 which is essential for good performance.
-Small integers are implemented in Fusion in terms of _ranges_ specifying
-the lower and upper bounds, both of which are inclusive.
-For example:
-
-```csharp
-0 .. 100 [1000] arrayOfSmallIntegers;
-```
-
-is a definition of an array of a thousand integers between zero
-and one hundred. `fut` figures out the best data type in the target language
-to represent a range. It is the programmer's responsibility to assign
+It is the programmer's responsibility to assign
 only the values that are in the given range.
 This is _not_ verified during compilation or runtime.
 Also, you should avoid overflows because it is _not_ guaranteed that
 values will be wrapped to the specified range.
-
-There are aliases for commonly used ranges:
-
-* `byte` is `0 .. 255`
-* `short` is `-32768 .. 32767`
-* `ushort` is `0 .. 65535`
-* `uint` is `0 .. 2147483647`.
 
 Note that a `uint` is _not_ a 32-bit unsigned integer, but a 31-bit one.
 As such, it doesn't provide extended range over an `int`.

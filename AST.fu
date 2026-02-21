@@ -1,6 +1,6 @@
 // AST.fu - Fusion abstract syntax tree
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -702,7 +702,6 @@ public class FuBinaryExpr : FuExpr
 		case FuToken.AndAssign:
 		case FuToken.OrAssign:
 		case FuToken.XorAssign:
-		case FuToken.Range:
 		case FuToken.Is:
 			return 2;
 		case FuToken.ShiftLeftAssign:

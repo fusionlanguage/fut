@@ -80,53 +80,52 @@ export const FuToken = {
 	QUESTION_MARK : 51,
 	COLON : 52,
 	FAT_ARROW : 53,
-	RANGE : 54,
-	DOC_REGULAR : 55,
-	DOC_BULLET : 56,
-	DOC_BLANK : 57,
-	ABSTRACT : 58,
-	ASSERT : 59,
-	BREAK : 60,
-	CASE : 61,
-	CLASS : 62,
-	CONST : 63,
-	CONTINUE : 64,
-	DEFAULT : 65,
-	DO : 66,
-	ELSE : 67,
-	ENUM : 68,
-	FALSE : 69,
-	FOR : 70,
-	FOREACH : 71,
-	IF : 72,
-	IN : 73,
-	INTERNAL : 74,
-	IS : 75,
-	LOCK_ : 76,
-	NATIVE : 77,
-	NEW : 78,
-	NULL : 79,
-	OVERRIDE : 80,
-	PROTECTED : 81,
-	PUBLIC : 82,
-	RESOURCE : 83,
-	RETURN : 84,
-	SEALED : 85,
-	STATIC : 86,
-	SWITCH : 87,
-	THROW : 88,
-	THROWS : 89,
-	TRUE : 90,
-	VIRTUAL : 91,
-	VOID : 92,
-	WHEN : 93,
-	WHILE : 94,
-	END_OF_LINE : 95,
-	PRE_UNKNOWN : 96,
-	PRE_IF : 97,
-	PRE_EL_IF : 98,
-	PRE_ELSE : 99,
-	PRE_END_IF : 100
+	DOC_REGULAR : 54,
+	DOC_BULLET : 55,
+	DOC_BLANK : 56,
+	ABSTRACT : 57,
+	ASSERT : 58,
+	BREAK : 59,
+	CASE : 60,
+	CLASS : 61,
+	CONST : 62,
+	CONTINUE : 63,
+	DEFAULT : 64,
+	DO : 65,
+	ELSE : 66,
+	ENUM : 67,
+	FALSE : 68,
+	FOR : 69,
+	FOREACH : 70,
+	IF : 71,
+	IN : 72,
+	INTERNAL : 73,
+	IS : 74,
+	LOCK_ : 75,
+	NATIVE : 76,
+	NEW : 77,
+	NULL : 78,
+	OVERRIDE : 79,
+	PROTECTED : 80,
+	PUBLIC : 81,
+	RESOURCE : 82,
+	RETURN : 83,
+	SEALED : 84,
+	STATIC : 85,
+	SWITCH : 86,
+	THROW : 87,
+	THROWS : 88,
+	TRUE : 89,
+	VIRTUAL : 90,
+	VOID : 91,
+	WHEN : 92,
+	WHILE : 93,
+	END_OF_LINE : 94,
+	PRE_UNKNOWN : 95,
+	PRE_IF : 96,
+	PRE_EL_IF : 97,
+	PRE_ELSE : 98,
+	PRE_END_IF : 99
 }
 
 const FuPreState = {
@@ -562,8 +561,8 @@ export class FuLexer
 			case 59:
 				return FuToken.SEMICOLON;
 			case 46:
-				if (this.#eatChar(46))
-					return FuToken.RANGE;
+				if (this.peekChar() == 46)
+					this.reportError("Range types have been removed - replace with byte/short/ushort/int/uint");
 				return FuToken.DOT;
 			case 44:
 				return FuToken.COMMA;
@@ -944,8 +943,6 @@ export class FuLexer
 			return "':'";
 		case FuToken.FAT_ARROW:
 			return "'=>'";
-		case FuToken.RANGE:
-			return "'..'";
 		case FuToken.DOC_REGULAR:
 		case FuToken.DOC_BULLET:
 		case FuToken.DOC_BLANK:
@@ -2130,7 +2127,6 @@ export class FuBinaryExpr extends FuExpr
 		case FuToken.AND_ASSIGN:
 		case FuToken.OR_ASSIGN:
 		case FuToken.XOR_ASSIGN:
-		case FuToken.RANGE:
 		case FuToken.IS:
 			return 2;
 		case FuToken.SHIFT_LEFT_ASSIGN:
@@ -4305,10 +4301,7 @@ export class FuParser extends FuLexer
 
 	#parseType()
 	{
-		let left = this.#parsePrimaryExpr(true);
-		if (this.eat(FuToken.RANGE))
-			return Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: FuToken.RANGE, right: this.#parsePrimaryExpr(true) });
-		return left;
+		return this.#parsePrimaryExpr(true);
 	}
 
 	#parseConstInitializer()
@@ -6194,8 +6187,6 @@ export class FuSema
 			return expr;
 		case FuToken.IS:
 			return this.#resolveIs(expr, left, right);
-		case FuToken.RANGE:
-			return this.#poisonError(expr, "Range within an expression");
 		default:
 			throw new Error();
 		}
@@ -6730,12 +6721,6 @@ export class FuSema
 
 	#toType(expr, dynamic)
 	{
-		let minExpr = null;
-		let range;
-		if ((range = expr) instanceof FuBinaryExpr && range.op == FuToken.RANGE) {
-			minExpr = range.left;
-			expr = range.right;
-		}
 		let nullable;
 		let ptrModifier;
 		let outerArray = null;
@@ -6790,18 +6775,7 @@ export class FuSema
 			else
 				break;
 		}
-		let baseType;
-		if (minExpr != null) {
-			if (!this.#expectNoPtrModifier(expr, ptrModifier, nullable))
-				return this.#poison;
-			let min = this.#foldConstInt(minExpr);
-			let max = this.#foldConstInt(expr);
-			if (min > max)
-				return this.#poisonError(expr, "Range min greater than max");
-			baseType = FuRangeType.new(min, max);
-		}
-		else
-			baseType = this.#toBaseType(expr, ptrModifier, nullable);
+		let baseType = this.#toBaseType(expr, ptrModifier, nullable);
 		if (outerArray == null)
 			return baseType;
 		innerArray.typeArg0 = baseType;

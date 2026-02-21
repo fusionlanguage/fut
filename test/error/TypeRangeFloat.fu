@@ -1,8 +1,0 @@
-public static class Test
-{
-	public static bool Run()
-	{
-		0 .. 10.5 i = 0; //ERROR: Expected integer
-		return true;
-	}
-}

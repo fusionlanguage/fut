@@ -450,8 +450,8 @@ FuToken FuLexer::readPreToken()
 		case ';':
 			return FuToken::semicolon;
 		case '.':
-			if (eatChar('.'))
-				return FuToken::range;
+			if (peekChar() == '.')
+				reportError("Range types have been removed - replace with byte/short/ushort/int/uint");
 			return FuToken::dot;
 		case ',':
 			return FuToken::comma;
@@ -830,8 +830,6 @@ std::string_view FuLexer::tokenToString(FuToken token)
 		return "':'";
 	case FuToken::fatArrow:
 		return "'=>'";
-	case FuToken::range:
-		return "'..'";
 	case FuToken::docRegular:
 	case FuToken::docBullet:
 	case FuToken::docBlank:
@@ -1642,7 +1640,6 @@ int FuBinaryExpr::getLocLength() const
 	case FuToken::andAssign:
 	case FuToken::orAssign:
 	case FuToken::xorAssign:
-	case FuToken::range:
 	case FuToken::is:
 		return 2;
 	case FuToken::shiftLeftAssign:
@@ -3748,16 +3745,7 @@ std::shared_ptr<FuExpr> FuParser::parseExpr()
 
 std::shared_ptr<FuExpr> FuParser::parseType()
 {
-	std::shared_ptr<FuExpr> left = parsePrimaryExpr(true);
-	if (eat(FuToken::range)) {
-		std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
-		futemp0->loc = this->tokenLoc;
-		futemp0->left = left;
-		futemp0->op = FuToken::range;
-		futemp0->right = parsePrimaryExpr(true);
-		return futemp0;
-	}
-	return left;
+	return parsePrimaryExpr(true);
 }
 
 std::shared_ptr<FuExpr> FuParser::parseConstInitializer()
@@ -5744,8 +5732,6 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 		return expr;
 	case FuToken::is:
 		return resolveIs(expr, left, right.get());
-	case FuToken::range:
-		return poisonError(expr.get(), "Range within an expression");
 	default:
 		std::abort();
 	}
@@ -6268,12 +6254,6 @@ std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, b
 
 std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynamic)
 {
-	std::shared_ptr<FuExpr> minExpr = nullptr;
-	const FuBinaryExpr * range;
-	if ((range = dynamic_cast<const FuBinaryExpr *>(expr.get())) && range->op == FuToken::range) {
-		minExpr = range->left;
-		expr = range->right;
-	}
 	bool nullable;
 	FuToken ptrModifier;
 	std::shared_ptr<FuClassType> outerArray = nullptr;
@@ -6331,18 +6311,7 @@ std::shared_ptr<FuType> FuSema::toType(std::shared_ptr<FuExpr> expr, bool dynami
 		else
 			break;
 	}
-	std::shared_ptr<FuType> baseType;
-	if (minExpr != nullptr) {
-		if (!expectNoPtrModifier(expr.get(), ptrModifier, nullable))
-			return this->poison;
-		int min = foldConstInt(minExpr);
-		int max = foldConstInt(expr);
-		if (min > max)
-			return poisonError(expr.get(), "Range min greater than max");
-		baseType = FuRangeType::new_(min, max);
-	}
-	else
-		baseType = toBaseType(expr.get(), ptrModifier, nullable);
+	std::shared_ptr<FuType> baseType = toBaseType(expr.get(), ptrModifier, nullable);
 	if (outerArray == nullptr)
 		return baseType;
 	innerArray->typeArg0 = baseType;

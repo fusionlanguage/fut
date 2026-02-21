@@ -1,6 +1,6 @@
 // Sema.fu - semantic analysis of Fusion
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1190,8 +1190,6 @@ public class FuSema
 		case FuToken.Is:
 			return ResolveIs(expr, left, right);
 
-		case FuToken.Range:
-			return PoisonError(expr, "Range within an expression");
 		default:
 			assert false;
 		}
@@ -1685,12 +1683,6 @@ public class FuSema
 
 	FuType# ToType!(FuExpr# expr, bool dynamic)
 	{
-		FuExpr#? minExpr = null;
-		if (expr is FuBinaryExpr range && range.Op == FuToken.Range) {
-			minExpr = range.Left;
-			expr = range.Right;
-		}
-
 		bool nullable;
 		FuToken ptrModifier;
 		FuClassType#? outerArray = null; // leftmost in source
@@ -1742,18 +1734,7 @@ public class FuSema
 				break;
 		}
 
-		FuType# baseType;
-		if (minExpr != null) {
-			if (!ExpectNoPtrModifier(expr, ptrModifier, nullable))
-				return this.Poison;
-			int min = FoldConstInt(minExpr);
-			int max = FoldConstInt(expr);
-			if (min > max)
-				return PoisonError(expr, "Range min greater than max");
-			baseType = FuRangeType.New(min, max);
-		}
-		else
-			baseType = ToBaseType(expr, ptrModifier, nullable);
+		FuType# baseType = ToBaseType(expr, ptrModifier, nullable);
 
 		if (outerArray == null)
 			return baseType;
