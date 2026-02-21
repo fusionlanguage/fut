@@ -1544,14 +1544,17 @@ public class GenJava : GenTyped
 	{
 		CreateJavaFile("FuResource");
 		WriteLine("import java.io.DataInputStream;");
+		WriteLine("import java.io.InputStream;");
 		WriteLine("import java.io.IOException;");
 		WriteNewLine();
 		WriteLine("class FuResource");
 		OpenBlock();
 		WriteLine("static byte[] getByteArray(String name, int length)");
 		OpenBlock();
-		Write("DataInputStream dis = new DataInputStream(");
-		WriteLine("FuResource.class.getResourceAsStream(name));");
+		WriteLine("InputStream is = FuResource.class.getResourceAsStream(name);");
+		WriteLine("if (is == null)");
+		WriteLine("\tthrow new RuntimeException(\"Missing resource: \" + name);");
+		WriteLine("DataInputStream dis = new DataInputStream(is);");
 		WriteLine("byte[] result = new byte[length];");
 		Write("try ");
 		OpenBlock();

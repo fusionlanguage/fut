@@ -21093,14 +21093,17 @@ export class GenJava extends GenTyped
 	{
 		this.#createJavaFile("FuResource");
 		this.writeLine("import java.io.DataInputStream;");
+		this.writeLine("import java.io.InputStream;");
 		this.writeLine("import java.io.IOException;");
 		this.writeNewLine();
 		this.writeLine("class FuResource");
 		this.openBlock();
 		this.writeLine("static byte[] getByteArray(String name, int length)");
 		this.openBlock();
-		this.write("DataInputStream dis = new DataInputStream(");
-		this.writeLine("FuResource.class.getResourceAsStream(name));");
+		this.writeLine("InputStream is = FuResource.class.getResourceAsStream(name);");
+		this.writeLine("if (is == null)");
+		this.writeLine("\tthrow new RuntimeException(\"Missing resource: \" + name);");
+		this.writeLine("DataInputStream dis = new DataInputStream(is);");
 		this.writeLine("byte[] result = new byte[length];");
 		this.write("try ");
 		this.openBlock();

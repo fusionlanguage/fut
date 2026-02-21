@@ -19867,14 +19867,17 @@ void GenJava::writeResources()
 {
 	createJavaFile("FuResource");
 	writeLine("import java.io.DataInputStream;");
+	writeLine("import java.io.InputStream;");
 	writeLine("import java.io.IOException;");
 	writeNewLine();
 	writeLine("class FuResource");
 	openBlock();
 	writeLine("static byte[] getByteArray(String name, int length)");
 	openBlock();
-	write("DataInputStream dis = new DataInputStream(");
-	writeLine("FuResource.class.getResourceAsStream(name));");
+	writeLine("InputStream is = FuResource.class.getResourceAsStream(name);");
+	writeLine("if (is == null)");
+	writeLine("\tthrow new RuntimeException(\"Missing resource: \" + name);");
+	writeLine("DataInputStream dis = new DataInputStream(is);");
 	writeLine("byte[] result = new byte[length];");
 	write("try ");
 	openBlock();
