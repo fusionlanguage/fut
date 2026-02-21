@@ -66,6 +66,7 @@ These are the available integer types:
 | Type     | Min value            | Max value           |
 | -------- | -------------------: | ------------------: |
 | `byte`   |                    0 |                 255 |
+| `sbyte`  |                 -128 |                 127 |
 | `short`  |               -32768 |               32767 |
 | `ushort` |                    0 |               65535 |
 | `int`    |          -2147483648 |          2147483647 |

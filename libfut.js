@@ -562,7 +562,7 @@ export class FuLexer
 				return FuToken.SEMICOLON;
 			case 46:
 				if (this.peekChar() == 46)
-					this.reportError("Range types have been removed - replace with byte/short/ushort/int/uint");
+					this.reportError("Range types have been removed - replace with byte/sbyte/short/ushort/int/uint");
 				return FuToken.DOT;
 			case 44:
 				return FuToken.COMMA;
@@ -3481,6 +3481,9 @@ export class FuSystem extends FuScope
 		this.add(this.longType);
 		this.byteType.name = "byte";
 		this.add(this.byteType);
+		let sByteType = FuRangeType.new(-128, 127);
+		sByteType.name = "sbyte";
+		this.add(sByteType);
 		let shortType = FuRangeType.new(-32768, 32767);
 		shortType.name = "short";
 		this.add(shortType);

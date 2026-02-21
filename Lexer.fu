@@ -561,7 +561,7 @@ public abstract class FuLexer
 			case ';': return FuToken.Semicolon;
 			case '.':
 				if (PeekChar() == '.')
-					ReportError("Range types have been removed - replace with byte/short/ushort/int/uint");
+					ReportError("Range types have been removed - replace with byte/sbyte/short/ushort/int/uint");
 				return FuToken.Dot;
 			case ',': return FuToken.Comma;
 			case '(': return FuToken.LeftParenthesis;

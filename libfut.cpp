@@ -451,7 +451,7 @@ FuToken FuLexer::readPreToken()
 			return FuToken::semicolon;
 		case '.':
 			if (peekChar() == '.')
-				reportError("Range types have been removed - replace with byte/short/ushort/int/uint");
+				reportError("Range types have been removed - replace with byte/sbyte/short/ushort/int/uint");
 			return FuToken::dot;
 		case ',':
 			return FuToken::comma;
@@ -2751,6 +2751,9 @@ FuSystem::FuSystem()
 	add(this->longType);
 	this->byteType->name = "byte";
 	add(this->byteType);
+	std::shared_ptr<FuRangeType> sByteType = FuRangeType::new_(-128, 127);
+	sByteType->name = "sbyte";
+	add(sByteType);
 	std::shared_ptr<FuRangeType> shortType = FuRangeType::new_(-32768, 32767);
 	shortType->name = "short";
 	add(shortType);

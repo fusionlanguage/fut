@@ -1348,7 +1348,7 @@
       <key>type-builtin</key>
       <dict>
         <key>match</key>
-        <string>\b(bool|byte|double|float|int|long|nint|short|string|uint|ushort|void)\b</string>
+        <string>\b(bool|byte|double|float|int|long|nint|sbyte|short|string|uint|ushort|void)\b</string>
         <key>captures</key>
         <dict>
           <key>1</key>

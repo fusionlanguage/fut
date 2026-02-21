@@ -576,7 +576,7 @@ namespace Fusion
 					return FuToken.Semicolon;
 				case '.':
 					if (PeekChar() == '.')
-						ReportError("Range types have been removed - replace with byte/short/ushort/int/uint");
+						ReportError("Range types have been removed - replace with byte/sbyte/short/ushort/int/uint");
 					return FuToken.Dot;
 				case ',':
 					return FuToken.Comma;
@@ -3239,6 +3239,9 @@ namespace Fusion
 			Add(this.LongType);
 			this.ByteType.Name = "byte";
 			Add(this.ByteType);
+			FuRangeType sByteType = FuRangeType.New(-128, 127);
+			sByteType.Name = "sbyte";
+			Add(sByteType);
 			FuRangeType shortType = FuRangeType.New(-32768, 32767);
 			shortType.Name = "short";
 			Add(shortType);

@@ -1690,6 +1690,9 @@ public class FuSystem : FuScope
 		Add(LongType);
 		ByteType.Name = "byte";
 		Add(ByteType);
+		FuRangeType# sByteType = FuRangeType.New(-0x80, 0x7f);
+		sByteType.Name = "sbyte";
+		Add(sByteType);
 		FuRangeType# shortType = FuRangeType.New(-0x8000, 0x7fff);
 		shortType.Name = "short";
 		Add(shortType);
