@@ -15989,7 +15989,7 @@ void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile
 
 std::string_view GenCs::getTargetName() const
 {
-	return "C++";
+	return "C#";
 }
 
 void GenCs::startDocLine()
@@ -16394,6 +16394,60 @@ void GenCs::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPrio
 void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
+	case FuId::none:
+	case FuId::classToString:
+	case FuId::enumHasFlag:
+	case FuId::stringContains:
+	case FuId::stringEndsWith:
+	case FuId::stringReplace:
+	case FuId::stringStartsWith:
+	case FuId::stringSubstring:
+	case FuId::stringToLower:
+	case FuId::stringToUpper:
+	case FuId::listAddRange:
+	case FuId::listClear:
+	case FuId::listContains:
+	case FuId::listCopyTo:
+	case FuId::listIndexOf:
+	case FuId::listRemoveAt:
+	case FuId::listRemoveRange:
+	case FuId::listSortAll:
+	case FuId::queueClear:
+	case FuId::queueDequeue:
+	case FuId::queuePeek:
+	case FuId::stackClear:
+	case FuId::stackPeek:
+	case FuId::stackPop:
+	case FuId::priorityQueueClear:
+	case FuId::priorityQueueDequeue:
+	case FuId::priorityQueueEnqueue:
+	case FuId::priorityQueuePeek:
+	case FuId::hashSetClear:
+	case FuId::hashSetContains:
+	case FuId::hashSetRemove:
+	case FuId::sortedSetClear:
+	case FuId::sortedSetContains:
+	case FuId::sortedSetRemove:
+	case FuId::dictionaryClear:
+	case FuId::dictionaryContainsKey:
+	case FuId::dictionaryRemove:
+	case FuId::sortedDictionaryClear:
+	case FuId::sortedDictionaryContainsKey:
+	case FuId::sortedDictionaryRemove:
+	case FuId::orderedDictionaryClear:
+	case FuId::orderedDictionaryRemove:
+	case FuId::stringWriterToString:
+	case FuId::convertToBase64String:
+	case FuId::jsonElementGetString:
+	case FuId::jsonElementGetDouble:
+	case FuId::jsonElementGetBoolean:
+		if (obj != nullptr) {
+			obj->accept(this, FuPriority::primary);
+			writeChar('.');
+		}
+		writeName(method);
+		writeCoercedArgsInParentheses(method, args);
+		break;
 	case FuId::enumFromInt:
 		writeStaticCast(type, (*args)[0].get());
 		break;
@@ -16554,9 +16608,6 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		}
 		writeChar(')');
 		break;
-	case FuId::stringWriterClear:
-		writePostfix(obj, ".GetStringBuilder().Clear()");
-		break;
 	case FuId::textWriterWriteChar:
 		writeCharMethodCall(obj, "Write", (*args)[0].get());
 		break;
@@ -16573,12 +16624,8 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 			writeChar(')');
 			break;
 		}
-	case FuId::environmentGetEnvironmentVariable:
-		include("System");
-		obj->accept(this, FuPriority::primary);
-		writeChar('.');
-		write(method->name);
-		writeInParentheses(args);
+	case FuId::stringWriterClear:
+		writePostfix(obj, ".GetStringBuilder().Clear()");
 		break;
 	case FuId::uTF8GetByteCount:
 		include("System.Text");
@@ -16598,6 +16645,13 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::uTF8GetString:
 		include("System.Text");
 		write("Encoding.UTF8.GetString");
+		writeInParentheses(args);
+		break;
+	case FuId::environmentGetEnvironmentVariable:
+		include("System");
+		obj->accept(this, FuPriority::primary);
+		writeChar('.');
+		write(method->name);
 		writeInParentheses(args);
 		break;
 	case FuId::regexCompile:
@@ -16701,12 +16755,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeCall(method->name, (*args)[0].get());
 		break;
 	default:
-		if (obj != nullptr) {
-			obj->accept(this, FuPriority::primary);
-			writeChar('.');
-		}
-		writeName(method);
-		writeCoercedArgsInParentheses(method, args);
+		notSupported(obj, method->name);
 		break;
 	}
 }
@@ -17585,6 +17634,24 @@ void GenD::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPrior
 void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
+	case FuId::none:
+	case FuId::classToString:
+	case FuId::listClear:
+	case FuId::queueClear:
+	case FuId::stackClear:
+	case FuId::hashSetRemove:
+	case FuId::dictionaryRemove:
+		if (obj != nullptr) {
+			if (isReferenceTo(obj, FuId::basePtr))
+				write("super.");
+			else {
+				writeClassReference(obj);
+				writeChar('.');
+			}
+		}
+		writeName(method);
+		writeCoercedArgsInParentheses(method, args);
+		break;
 	case FuId::enumFromInt:
 		writeStaticCast(type, (*args)[0].get());
 		break;
@@ -17995,16 +18062,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writeCall("trunc", (*args)[0].get());
 		break;
 	default:
-		if (obj != nullptr) {
-			if (isReferenceTo(obj, FuId::basePtr))
-				write("super.");
-			else {
-				writeClassReference(obj);
-				writeChar('.');
-			}
-		}
-		writeName(method);
-		writeCoercedArgsInParentheses(method, args);
+		notSupported(obj, method->name);
 		break;
 	}
 }
@@ -24524,6 +24582,41 @@ void GenPy::writeJsonElementIs(const FuExpr * obj, std::string_view name)
 void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
+	case FuId::none:
+	case FuId::classToString:
+	case FuId::stringReplace:
+	case FuId::queueClear:
+	case FuId::stackPop:
+	case FuId::hashSetAdd:
+	case FuId::hashSetClear:
+	case FuId::hashSetRemove:
+	case FuId::sortedSetAdd:
+	case FuId::sortedSetClear:
+	case FuId::sortedSetRemove:
+	case FuId::dictionaryClear:
+	case FuId::sortedDictionaryClear:
+	case FuId::orderedDictionaryClear:
+		if (obj == nullptr)
+			writeLocalName(method, FuPriority::primary);
+		else if (isReferenceTo(obj, FuId::basePtr)) {
+			writeName(method->parent);
+			writeChar('.');
+			writeName(method);
+			write("(self");
+			if (std::ssize(*args) > 0) {
+				write(", ");
+				writeCoercedArgs(method, args);
+			}
+			writeChar(')');
+			break;
+		}
+		else {
+			obj->accept(this, FuPriority::primary);
+			writeChar('.');
+			writeName(method);
+		}
+		writeCoercedArgsInParentheses(method, args);
+		break;
 	case FuId::enumFromInt:
 		writeName(type);
 		writeInParentheses(args);
@@ -24898,26 +24991,7 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeCall("math.trunc", (*args)[0].get());
 		break;
 	default:
-		if (obj == nullptr)
-			writeLocalName(method, FuPriority::primary);
-		else if (isReferenceTo(obj, FuId::basePtr)) {
-			writeName(method->parent);
-			writeChar('.');
-			writeName(method);
-			write("(self");
-			if (std::ssize(*args) > 0) {
-				write(", ");
-				writeCoercedArgs(method, args);
-			}
-			writeChar(')');
-			break;
-		}
-		else {
-			obj->accept(this, FuPriority::primary);
-			writeChar('.');
-			writeName(method);
-		}
-		writeCoercedArgsInParentheses(method, args);
+		notSupported(obj, method->name);
 		break;
 	}
 }

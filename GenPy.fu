@@ -827,6 +827,41 @@ public class GenPy : GenPySwift
 	protected override void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
+		case FuId.None:
+		case FuId.ClassToString:
+		case FuId.StringReplace:
+		case FuId.QueueClear:
+		case FuId.StackPop:
+		case FuId.HashSetAdd:
+		case FuId.HashSetClear:
+		case FuId.HashSetRemove:
+		case FuId.SortedSetAdd:
+		case FuId.SortedSetClear:
+		case FuId.SortedSetRemove:
+		case FuId.DictionaryClear:
+		case FuId.SortedDictionaryClear:
+		case FuId.OrderedDictionaryClear:
+			if (obj == null)
+				WriteLocalName(method, FuPriority.Primary);
+			else if (IsReferenceTo(obj, FuId.BasePtr)) {
+				WriteName(method.Parent);
+				WriteChar('.');
+				WriteName(method);
+				Write("(self");
+				if (args.Count > 0) {
+					Write(", ");
+					WriteCoercedArgs(method, args);
+				}
+				WriteChar(')');
+				break;
+			}
+			else {
+				obj.Accept(this, FuPriority.Primary);
+				WriteChar('.');
+				WriteName(method);
+			}
+			WriteCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.EnumFromInt:
 			WriteName(type);
 			WriteInParentheses(args);
@@ -1198,26 +1233,7 @@ public class GenPy : GenPySwift
 			WriteCall("math.trunc", args[0]);
 			break;
 		default:
-			if (obj == null)
-				WriteLocalName(method, FuPriority.Primary);
-			else if (IsReferenceTo(obj, FuId.BasePtr)) {
-				WriteName(method.Parent);
-				WriteChar('.');
-				WriteName(method);
-				Write("(self");
-				if (args.Count > 0) {
-					Write(", ");
-					WriteCoercedArgs(method, args);
-				}
-				WriteChar(')');
-				break;
-			}
-			else {
-				obj.Accept(this, FuPriority.Primary);
-				WriteChar('.');
-				WriteName(method);
-			}
-			WriteCoercedArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}

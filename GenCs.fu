@@ -1,6 +1,6 @@
 // GenCs.fu - C# code generator
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -20,7 +20,7 @@
 
 public class GenCs : GenTyped
 {
-	protected override string GetTargetName() => "C++";
+	protected override string GetTargetName() => "C#";
 
 	protected override void StartDocLine!()
 	{
@@ -459,6 +459,60 @@ public class GenCs : GenTyped
 	protected override void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
+		case FuId.None:
+		case FuId.ClassToString:
+		case FuId.EnumHasFlag:
+		case FuId.StringContains:
+		case FuId.StringEndsWith:
+		case FuId.StringReplace:
+		case FuId.StringStartsWith:
+		case FuId.StringSubstring:
+		case FuId.StringToLower:
+		case FuId.StringToUpper:
+		case FuId.ListAddRange:
+		case FuId.ListClear:
+		case FuId.ListContains:
+		case FuId.ListCopyTo:
+		case FuId.ListIndexOf:
+		case FuId.ListRemoveAt:
+		case FuId.ListRemoveRange:
+		case FuId.ListSortAll:
+		case FuId.QueueClear:
+		case FuId.QueueDequeue:
+		case FuId.QueuePeek:
+		case FuId.StackClear:
+		case FuId.StackPeek:
+		case FuId.StackPop:
+		case FuId.PriorityQueueClear:
+		case FuId.PriorityQueueDequeue:
+		case FuId.PriorityQueueEnqueue:
+		case FuId.PriorityQueuePeek:
+		case FuId.HashSetClear:
+		case FuId.HashSetContains:
+		case FuId.HashSetRemove:
+		case FuId.SortedSetClear:
+		case FuId.SortedSetContains:
+		case FuId.SortedSetRemove:
+		case FuId.DictionaryClear:
+		case FuId.DictionaryContainsKey:
+		case FuId.DictionaryRemove:
+		case FuId.SortedDictionaryClear:
+		case FuId.SortedDictionaryContainsKey:
+		case FuId.SortedDictionaryRemove:
+		case FuId.OrderedDictionaryClear:
+		case FuId.OrderedDictionaryRemove:
+		case FuId.StringWriterToString:
+		case FuId.ConvertToBase64String:
+		case FuId.JsonElementGetString:
+		case FuId.JsonElementGetDouble:
+		case FuId.JsonElementGetBoolean:
+			if (obj != null) {
+				obj.Accept(this, FuPriority.Primary);
+				WriteChar('.');
+			}
+			WriteName(method);
+			WriteCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.EnumFromInt:
 			WriteStaticCast(type, args[0]);
 			break;
@@ -614,9 +668,6 @@ public class GenCs : GenTyped
 			}
 			WriteChar(')');
 			break;
-		case FuId.StringWriterClear:
-			WritePostfix(obj, ".GetStringBuilder().Clear()");
-			break;
 		case FuId.TextWriterWriteChar:
 			WriteCharMethodCall(obj, "Write", args[0]);
 			break;
@@ -630,12 +681,8 @@ public class GenCs : GenTyped
 			}
 			WriteChar(')');
 			break;
-		case FuId.EnvironmentGetEnvironmentVariable:
-			Include("System");
-			obj.Accept(this, FuPriority.Primary);
-			WriteChar('.');
-			Write(method.Name);
-			WriteInParentheses(args);
+		case FuId.StringWriterClear:
+			WritePostfix(obj, ".GetStringBuilder().Clear()");
 			break;
 		case FuId.UTF8GetByteCount:
 			Include("System.Text");
@@ -655,6 +702,13 @@ public class GenCs : GenTyped
 		case FuId.UTF8GetString:
 			Include("System.Text");
 			Write("Encoding.UTF8.GetString");
+			WriteInParentheses(args);
+			break;
+		case FuId.EnvironmentGetEnvironmentVariable:
+			Include("System");
+			obj.Accept(this, FuPriority.Primary);
+			WriteChar('.');
+			Write(method.Name);
 			WriteInParentheses(args);
 			break;
 		case FuId.RegexCompile:
@@ -758,12 +812,7 @@ public class GenCs : GenTyped
 			WriteCall(method.Name, args[0]);
 			break;
 		default:
-			if (obj != null) {
-				obj.Accept(this, FuPriority.Primary);
-				WriteChar('.');
-			}
-			WriteName(method);
-			WriteCoercedArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}

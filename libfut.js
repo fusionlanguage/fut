@@ -16868,7 +16868,7 @@ export class GenCs extends GenTyped
 
 	getTargetName()
 	{
-		return "C++";
+		return "C#";
 	}
 
 	startDocLine()
@@ -17321,6 +17321,60 @@ export class GenCs extends GenTyped
 	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
+		case FuId.NONE:
+		case FuId.CLASS_TO_STRING:
+		case FuId.ENUM_HAS_FLAG:
+		case FuId.STRING_CONTAINS:
+		case FuId.STRING_ENDS_WITH:
+		case FuId.STRING_REPLACE:
+		case FuId.STRING_STARTS_WITH:
+		case FuId.STRING_SUBSTRING:
+		case FuId.STRING_TO_LOWER:
+		case FuId.STRING_TO_UPPER:
+		case FuId.LIST_ADD_RANGE:
+		case FuId.LIST_CLEAR:
+		case FuId.LIST_CONTAINS:
+		case FuId.LIST_COPY_TO:
+		case FuId.LIST_INDEX_OF:
+		case FuId.LIST_REMOVE_AT:
+		case FuId.LIST_REMOVE_RANGE:
+		case FuId.LIST_SORT_ALL:
+		case FuId.QUEUE_CLEAR:
+		case FuId.QUEUE_DEQUEUE:
+		case FuId.QUEUE_PEEK:
+		case FuId.STACK_CLEAR:
+		case FuId.STACK_PEEK:
+		case FuId.STACK_POP:
+		case FuId.PRIORITY_QUEUE_CLEAR:
+		case FuId.PRIORITY_QUEUE_DEQUEUE:
+		case FuId.PRIORITY_QUEUE_ENQUEUE:
+		case FuId.PRIORITY_QUEUE_PEEK:
+		case FuId.HASH_SET_CLEAR:
+		case FuId.HASH_SET_CONTAINS:
+		case FuId.HASH_SET_REMOVE:
+		case FuId.SORTED_SET_CLEAR:
+		case FuId.SORTED_SET_CONTAINS:
+		case FuId.SORTED_SET_REMOVE:
+		case FuId.DICTIONARY_CLEAR:
+		case FuId.DICTIONARY_CONTAINS_KEY:
+		case FuId.DICTIONARY_REMOVE:
+		case FuId.SORTED_DICTIONARY_CLEAR:
+		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
+		case FuId.SORTED_DICTIONARY_REMOVE:
+		case FuId.ORDERED_DICTIONARY_CLEAR:
+		case FuId.ORDERED_DICTIONARY_REMOVE:
+		case FuId.STRING_WRITER_TO_STRING:
+		case FuId.CONVERT_TO_BASE64_STRING:
+		case FuId.JSON_ELEMENT_GET_STRING:
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			if (obj != null) {
+				obj.accept(this, FuPriority.PRIMARY);
+				this.writeChar(46);
+			}
+			this.writeName(method);
+			this.writeCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.ENUM_FROM_INT:
 			this.writeStaticCast(type, args[0]);
 			break;
@@ -17477,9 +17531,6 @@ export class GenCs extends GenTyped
 			}
 			this.writeChar(41);
 			break;
-		case FuId.STRING_WRITER_CLEAR:
-			this.writePostfix(obj, ".GetStringBuilder().Clear()");
-			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
 			this.writeCharMethodCall(obj, "Write", args[0]);
 			break;
@@ -17494,12 +17545,8 @@ export class GenCs extends GenTyped
 			}
 			this.writeChar(41);
 			break;
-		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
-			this.include("System");
-			obj.accept(this, FuPriority.PRIMARY);
-			this.writeChar(46);
-			this.write(method.name);
-			this.writeInParentheses(args);
+		case FuId.STRING_WRITER_CLEAR:
+			this.writePostfix(obj, ".GetStringBuilder().Clear()");
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.include("System.Text");
@@ -17519,6 +17566,13 @@ export class GenCs extends GenTyped
 		case FuId.U_T_F8_GET_STRING:
 			this.include("System.Text");
 			this.write("Encoding.UTF8.GetString");
+			this.writeInParentheses(args);
+			break;
+		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
+			this.include("System");
+			obj.accept(this, FuPriority.PRIMARY);
+			this.writeChar(46);
+			this.write(method.name);
 			this.writeInParentheses(args);
 			break;
 		case FuId.REGEX_COMPILE:
@@ -17622,12 +17676,7 @@ export class GenCs extends GenTyped
 			this.writeCall(method.name, args[0]);
 			break;
 		default:
-			if (obj != null) {
-				obj.accept(this, FuPriority.PRIMARY);
-				this.writeChar(46);
-			}
-			this.writeName(method);
-			this.writeCoercedArgsInParentheses(method, args);
+			this.notSupported(obj, method.name);
 			break;
 		}
 	}
@@ -18712,6 +18761,24 @@ export class GenD extends GenCCppD
 	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
+		case FuId.NONE:
+		case FuId.CLASS_TO_STRING:
+		case FuId.LIST_CLEAR:
+		case FuId.QUEUE_CLEAR:
+		case FuId.STACK_CLEAR:
+		case FuId.HASH_SET_REMOVE:
+		case FuId.DICTIONARY_REMOVE:
+			if (obj != null) {
+				if (GenD.isReferenceTo(obj, FuId.BASE_PTR))
+					this.write("super.");
+				else {
+					this.#writeClassReference(obj);
+					this.writeChar(46);
+				}
+			}
+			this.writeName(method);
+			this.writeCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.ENUM_FROM_INT:
 			this.writeStaticCast(type, args[0]);
 			break;
@@ -19122,16 +19189,7 @@ export class GenD extends GenCCppD
 			this.writeCall("trunc", args[0]);
 			break;
 		default:
-			if (obj != null) {
-				if (GenD.isReferenceTo(obj, FuId.BASE_PTR))
-					this.write("super.");
-				else {
-					this.#writeClassReference(obj);
-					this.writeChar(46);
-				}
-			}
-			this.writeName(method);
-			this.writeCoercedArgsInParentheses(method, args);
+			this.notSupported(obj, method.name);
 			break;
 		}
 	}
@@ -26044,6 +26102,41 @@ export class GenPy extends GenPySwift
 	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
+		case FuId.NONE:
+		case FuId.CLASS_TO_STRING:
+		case FuId.STRING_REPLACE:
+		case FuId.QUEUE_CLEAR:
+		case FuId.STACK_POP:
+		case FuId.HASH_SET_ADD:
+		case FuId.HASH_SET_CLEAR:
+		case FuId.HASH_SET_REMOVE:
+		case FuId.SORTED_SET_ADD:
+		case FuId.SORTED_SET_CLEAR:
+		case FuId.SORTED_SET_REMOVE:
+		case FuId.DICTIONARY_CLEAR:
+		case FuId.SORTED_DICTIONARY_CLEAR:
+		case FuId.ORDERED_DICTIONARY_CLEAR:
+			if (obj == null)
+				this.writeLocalName(method, FuPriority.PRIMARY);
+			else if (GenPy.isReferenceTo(obj, FuId.BASE_PTR)) {
+				this.writeName(method.parent);
+				this.writeChar(46);
+				this.writeName(method);
+				this.write("(self");
+				if (args.length > 0) {
+					this.write(", ");
+					this.writeCoercedArgs(method, args);
+				}
+				this.writeChar(41);
+				break;
+			}
+			else {
+				obj.accept(this, FuPriority.PRIMARY);
+				this.writeChar(46);
+				this.writeName(method);
+			}
+			this.writeCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.ENUM_FROM_INT:
 			this.writeName(type);
 			this.writeInParentheses(args);
@@ -26416,26 +26509,7 @@ export class GenPy extends GenPySwift
 			this.writeCall("math.trunc", args[0]);
 			break;
 		default:
-			if (obj == null)
-				this.writeLocalName(method, FuPriority.PRIMARY);
-			else if (GenPy.isReferenceTo(obj, FuId.BASE_PTR)) {
-				this.writeName(method.parent);
-				this.writeChar(46);
-				this.writeName(method);
-				this.write("(self");
-				if (args.length > 0) {
-					this.write(", ");
-					this.writeCoercedArgs(method, args);
-				}
-				this.writeChar(41);
-				break;
-			}
-			else {
-				obj.accept(this, FuPriority.PRIMARY);
-				this.writeChar(46);
-				this.writeName(method);
-			}
-			this.writeCoercedArgsInParentheses(method, args);
+			this.notSupported(obj, method.name);
 			break;
 		}
 	}

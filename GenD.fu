@@ -788,6 +788,24 @@ public class GenD : GenCCppD
 	protected override void WriteCallExpr!(FuType type, FuExpr? obj, FuMethod method, List<FuExpr#> args, FuPriority parent)
 	{
 		switch (method.Id) {
+		case FuId.None:
+		case FuId.ClassToString:
+		case FuId.ListClear:
+		case FuId.QueueClear:
+		case FuId.StackClear:
+		case FuId.HashSetRemove:
+		case FuId.DictionaryRemove:
+			if (obj != null) {
+				if (IsReferenceTo(obj, FuId.BasePtr))
+					Write("super.");
+				else {
+					WriteClassReference(obj);
+					WriteChar('.');
+				}
+			}
+			WriteName(method);
+			WriteCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.EnumFromInt:
 			WriteStaticCast(type, args[0]);
 			break;
@@ -1198,16 +1216,7 @@ public class GenD : GenCCppD
 			WriteCall("trunc", args[0]);
 			break;
 		default:
-			if (obj != null) {
-				if (IsReferenceTo(obj, FuId.BasePtr))
-					Write("super.");
-				else {
-					WriteClassReference(obj);
-					WriteChar('.');
-				}
-			}
-			WriteName(method);
-			WriteCoercedArgsInParentheses(method, args);
+			NotSupported(obj, method.Name);
 			break;
 		}
 	}

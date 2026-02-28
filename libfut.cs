@@ -16332,7 +16332,7 @@ namespace Fusion
 	public class GenCs : GenTyped
 	{
 
-		protected override string GetTargetName() => "C++";
+		protected override string GetTargetName() => "C#";
 
 		protected override void StartDocLine()
 		{
@@ -16769,6 +16769,60 @@ namespace Fusion
 		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
+			case FuId.None:
+			case FuId.ClassToString:
+			case FuId.EnumHasFlag:
+			case FuId.StringContains:
+			case FuId.StringEndsWith:
+			case FuId.StringReplace:
+			case FuId.StringStartsWith:
+			case FuId.StringSubstring:
+			case FuId.StringToLower:
+			case FuId.StringToUpper:
+			case FuId.ListAddRange:
+			case FuId.ListClear:
+			case FuId.ListContains:
+			case FuId.ListCopyTo:
+			case FuId.ListIndexOf:
+			case FuId.ListRemoveAt:
+			case FuId.ListRemoveRange:
+			case FuId.ListSortAll:
+			case FuId.QueueClear:
+			case FuId.QueueDequeue:
+			case FuId.QueuePeek:
+			case FuId.StackClear:
+			case FuId.StackPeek:
+			case FuId.StackPop:
+			case FuId.PriorityQueueClear:
+			case FuId.PriorityQueueDequeue:
+			case FuId.PriorityQueueEnqueue:
+			case FuId.PriorityQueuePeek:
+			case FuId.HashSetClear:
+			case FuId.HashSetContains:
+			case FuId.HashSetRemove:
+			case FuId.SortedSetClear:
+			case FuId.SortedSetContains:
+			case FuId.SortedSetRemove:
+			case FuId.DictionaryClear:
+			case FuId.DictionaryContainsKey:
+			case FuId.DictionaryRemove:
+			case FuId.SortedDictionaryClear:
+			case FuId.SortedDictionaryContainsKey:
+			case FuId.SortedDictionaryRemove:
+			case FuId.OrderedDictionaryClear:
+			case FuId.OrderedDictionaryRemove:
+			case FuId.StringWriterToString:
+			case FuId.ConvertToBase64String:
+			case FuId.JsonElementGetString:
+			case FuId.JsonElementGetDouble:
+			case FuId.JsonElementGetBoolean:
+				if (obj != null) {
+					obj.Accept(this, FuPriority.Primary);
+					WriteChar('.');
+				}
+				WriteName(method);
+				WriteCoercedArgsInParentheses(method, args);
+				break;
 			case FuId.EnumFromInt:
 				WriteStaticCast(type, args[0]);
 				break;
@@ -16923,9 +16977,6 @@ namespace Fusion
 				}
 				WriteChar(')');
 				break;
-			case FuId.StringWriterClear:
-				WritePostfix(obj, ".GetStringBuilder().Clear()");
-				break;
 			case FuId.TextWriterWriteChar:
 				WriteCharMethodCall(obj, "Write", args[0]);
 				break;
@@ -16939,12 +16990,8 @@ namespace Fusion
 				}
 				WriteChar(')');
 				break;
-			case FuId.EnvironmentGetEnvironmentVariable:
-				Include("System");
-				obj.Accept(this, FuPriority.Primary);
-				WriteChar('.');
-				Write(method.Name);
-				WriteInParentheses(args);
+			case FuId.StringWriterClear:
+				WritePostfix(obj, ".GetStringBuilder().Clear()");
 				break;
 			case FuId.UTF8GetByteCount:
 				Include("System.Text");
@@ -16964,6 +17011,13 @@ namespace Fusion
 			case FuId.UTF8GetString:
 				Include("System.Text");
 				Write("Encoding.UTF8.GetString");
+				WriteInParentheses(args);
+				break;
+			case FuId.EnvironmentGetEnvironmentVariable:
+				Include("System");
+				obj.Accept(this, FuPriority.Primary);
+				WriteChar('.');
+				Write(method.Name);
 				WriteInParentheses(args);
 				break;
 			case FuId.RegexCompile:
@@ -17067,12 +17121,7 @@ namespace Fusion
 				WriteCall(method.Name, args[0]);
 				break;
 			default:
-				if (obj != null) {
-					obj.Accept(this, FuPriority.Primary);
-					WriteChar('.');
-				}
-				WriteName(method);
-				WriteCoercedArgsInParentheses(method, args);
+				NotSupported(obj, method.Name);
 				break;
 			}
 		}
@@ -18131,6 +18180,24 @@ namespace Fusion
 		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
+			case FuId.None:
+			case FuId.ClassToString:
+			case FuId.ListClear:
+			case FuId.QueueClear:
+			case FuId.StackClear:
+			case FuId.HashSetRemove:
+			case FuId.DictionaryRemove:
+				if (obj != null) {
+					if (IsReferenceTo(obj, FuId.BasePtr))
+						Write("super.");
+					else {
+						WriteClassReference(obj);
+						WriteChar('.');
+					}
+				}
+				WriteName(method);
+				WriteCoercedArgsInParentheses(method, args);
+				break;
 			case FuId.EnumFromInt:
 				WriteStaticCast(type, args[0]);
 				break;
@@ -18541,16 +18608,7 @@ namespace Fusion
 				WriteCall("trunc", args[0]);
 				break;
 			default:
-				if (obj != null) {
-					if (IsReferenceTo(obj, FuId.BasePtr))
-						Write("super.");
-					else {
-						WriteClassReference(obj);
-						WriteChar('.');
-					}
-				}
-				WriteName(method);
-				WriteCoercedArgsInParentheses(method, args);
+				NotSupported(obj, method.Name);
 				break;
 			}
 		}
@@ -25364,6 +25422,41 @@ namespace Fusion
 		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
+			case FuId.None:
+			case FuId.ClassToString:
+			case FuId.StringReplace:
+			case FuId.QueueClear:
+			case FuId.StackPop:
+			case FuId.HashSetAdd:
+			case FuId.HashSetClear:
+			case FuId.HashSetRemove:
+			case FuId.SortedSetAdd:
+			case FuId.SortedSetClear:
+			case FuId.SortedSetRemove:
+			case FuId.DictionaryClear:
+			case FuId.SortedDictionaryClear:
+			case FuId.OrderedDictionaryClear:
+				if (obj == null)
+					WriteLocalName(method, FuPriority.Primary);
+				else if (IsReferenceTo(obj, FuId.BasePtr)) {
+					WriteName(method.Parent);
+					WriteChar('.');
+					WriteName(method);
+					Write("(self");
+					if (args.Count > 0) {
+						Write(", ");
+						WriteCoercedArgs(method, args);
+					}
+					WriteChar(')');
+					break;
+				}
+				else {
+					obj.Accept(this, FuPriority.Primary);
+					WriteChar('.');
+					WriteName(method);
+				}
+				WriteCoercedArgsInParentheses(method, args);
+				break;
 			case FuId.EnumFromInt:
 				WriteName(type);
 				WriteInParentheses(args);
@@ -25735,26 +25828,7 @@ namespace Fusion
 				WriteCall("math.trunc", args[0]);
 				break;
 			default:
-				if (obj == null)
-					WriteLocalName(method, FuPriority.Primary);
-				else if (IsReferenceTo(obj, FuId.BasePtr)) {
-					WriteName(method.Parent);
-					WriteChar('.');
-					WriteName(method);
-					Write("(self");
-					if (args.Count > 0) {
-						Write(", ");
-						WriteCoercedArgs(method, args);
-					}
-					WriteChar(')');
-					break;
-				}
-				else {
-					obj.Accept(this, FuPriority.Primary);
-					WriteChar('.');
-					WriteName(method);
-				}
-				WriteCoercedArgsInParentheses(method, args);
+				NotSupported(obj, method.Name);
 				break;
 			}
 		}
