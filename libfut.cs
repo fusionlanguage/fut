@@ -16962,7 +16962,8 @@ namespace Fusion
 			case FuId.TextWriterWriteLine:
 			case FuId.ConsoleWrite:
 			case FuId.ConsoleWriteLine:
-				Include("System");
+				if (method.Id == FuId.ConsoleWrite || method.Id == FuId.ConsoleWriteLine)
+					Include("System");
 				obj.Accept(this, FuPriority.Primary);
 				WriteChar('.');
 				Write(method.Name);

@@ -16593,7 +16593,8 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::textWriterWriteLine:
 	case FuId::consoleWrite:
 	case FuId::consoleWriteLine:
-		include("System");
+		if (method->id == FuId::consoleWrite || method->id == FuId::consoleWriteLine)
+			include("System");
 		obj->accept(this, FuPriority::primary);
 		writeChar('.');
 		write(method->name);

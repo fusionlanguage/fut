@@ -17516,7 +17516,8 @@ export class GenCs extends GenTyped
 		case FuId.TEXT_WRITER_WRITE_LINE:
 		case FuId.CONSOLE_WRITE:
 		case FuId.CONSOLE_WRITE_LINE:
-			this.include("System");
+			if (method.id == FuId.CONSOLE_WRITE || method.id == FuId.CONSOLE_WRITE_LINE)
+				this.include("System");
 			obj.accept(this, FuPriority.PRIMARY);
 			this.writeChar(46);
 			this.write(method.name);
