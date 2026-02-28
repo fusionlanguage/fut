@@ -256,7 +256,7 @@ test/$(FUT_HOST)/%/all: test/%.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl $< || true
 
 test/$(FUT_HOST)/fut/all: $(SOURCE_FU) fut
-	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.cpp,cs,d,java,js,d.ts,ts $(SOURCE_FU)
+	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.cpp,cs,java,js,d.ts,ts $(SOURCE_FU)
 
 test/$(FUT_HOST)/Resource/all: test/Resource.fu fut
 	$(DO)mkdir -p $(@D) && $(FUT) -o $(@D)/Test.c,cpp,cs,d,java,js,d.ts,ts,py,swift,cl -I $(<D) $<
