@@ -24292,16 +24292,24 @@ void GenPy::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 		}
 		break;
 	case FuToken::is:
-		if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr->right.get())) {
-			write("isinstance(");
+		write("isinstance(");
+		{
+			const FuSymbol * klass;
+			if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr->right.get()))
+				klass = symbol->symbol;
+			else if (const FuVar *def = dynamic_cast<const FuVar *>(expr->right.get())) {
+				writeName(def);
+				write(" := ");
+				klass = def->type->asClassType()->class_;
+			}
+			else
+				std::abort();
 			expr->left->accept(this, FuPriority::argument);
 			write(", ");
-			writeName(symbol->symbol);
+			writeName(klass);
 			writeChar(')');
+			break;
 		}
-		else
-			notSupported(expr, "'is' with a variable");
-		break;
 	default:
 		GenBase::visitBinaryExpr(expr, parent);
 		break;

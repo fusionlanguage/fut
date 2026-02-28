@@ -25807,16 +25807,24 @@ export class GenPy extends GenPySwift
 			}
 			break;
 		case FuToken.IS:
-			let symbol;
-			if ((symbol = expr.right) instanceof FuSymbolReference) {
-				this.write("isinstance(");
-				expr.left.accept(this, FuPriority.ARGUMENT);
-				this.write(", ");
-				this.writeName(symbol.symbol);
-				this.writeChar(41);
+			this.write("isinstance(");
+			let klass;
+			if (expr.right instanceof FuSymbolReference) {
+				const symbol = expr.right;
+				klass = symbol.symbol;
+			}
+			else if (expr.right instanceof FuVar) {
+				const def = expr.right;
+				this.writeName(def);
+				this.write(" := ");
+				klass = def.type.asClassType().class;
 			}
 			else
-				this.notSupported(expr, "'is' with a variable");
+				throw new Error();
+			expr.left.accept(this, FuPriority.ARGUMENT);
+			this.write(", ");
+			this.writeName(klass);
+			this.writeChar(41);
 			break;
 		default:
 			super.visitBinaryExpr(expr, parent);

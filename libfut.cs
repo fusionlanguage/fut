@@ -25129,15 +25129,24 @@ namespace Fusion
 				}
 				break;
 			case FuToken.Is:
-				if (expr.Right is FuSymbolReference symbol) {
-					Write("isinstance(");
-					expr.Left.Accept(this, FuPriority.Argument);
-					Write(", ");
-					WriteName(symbol.Symbol);
-					WriteChar(')');
+				Write("isinstance(");
+				FuSymbol klass;
+				switch (expr.Right) {
+				case FuSymbolReference symbol:
+					klass = symbol.Symbol;
+					break;
+				case FuVar def:
+					WriteName(def);
+					Write(" := ");
+					klass = def.Type.AsClassType().Class;
+					break;
+				default:
+					throw new NotImplementedException();
 				}
-				else
-					NotSupported(expr, "'is' with a variable");
+				expr.Left.Accept(this, FuPriority.Argument);
+				Write(", ");
+				WriteName(klass);
+				WriteChar(')');
 				break;
 			default:
 				base.VisitBinaryExpr(expr, parent);

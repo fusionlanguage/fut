@@ -591,15 +591,24 @@ public class GenPy : GenPySwift
 			break;
 
 		case FuToken.Is:
-			if (expr.Right is FuSymbolReference symbol) {
-				Write("isinstance(");
-				expr.Left.Accept(this, FuPriority.Argument);
-				Write(", ");
-				WriteName(symbol.Symbol);
-				WriteChar(')');
+			Write("isinstance(");
+			FuSymbol klass;
+			switch (expr.Right) {
+			case FuSymbolReference symbol:
+				klass = symbol.Symbol;
+				break;
+			case FuVar def:
+				WriteName(def);
+				Write(" := ");
+				klass = def.Type.AsClassType().Class;
+				break;
+			default:
+				assert false;
 			}
-			else
-				NotSupported(expr, "'is' with a variable");
+			expr.Left.Accept(this, FuPriority.Argument);
+			Write(", ");
+			WriteName(klass);
+			WriteChar(')');
 			break;
 
 		default:
