@@ -2079,26 +2079,26 @@ namespace Fusion
 		public override int GetLocLength()
 		{
 			switch (this.Op) {
+			case FuToken.LeftBracket:
+			case FuToken.LeftBrace:
 			case FuToken.Plus:
 			case FuToken.Minus:
 			case FuToken.Asterisk:
 			case FuToken.Slash:
 			case FuToken.Mod:
-			case FuToken.Less:
-			case FuToken.Greater:
 			case FuToken.And:
 			case FuToken.Or:
 			case FuToken.Xor:
+			case FuToken.Less:
+			case FuToken.Greater:
 			case FuToken.Assign:
-			case FuToken.LeftBracket:
-			case FuToken.LeftBrace:
 				return 1;
 			case FuToken.ShiftLeft:
 			case FuToken.ShiftRight:
-			case FuToken.LessOrEqual:
-			case FuToken.GreaterOrEqual:
 			case FuToken.Equal:
 			case FuToken.NotEqual:
+			case FuToken.LessOrEqual:
+			case FuToken.GreaterOrEqual:
 			case FuToken.CondAnd:
 			case FuToken.CondOr:
 			case FuToken.AddAssign:
@@ -2180,11 +2180,11 @@ namespace Fusion
 			case FuToken.MulAssign:
 			case FuToken.DivAssign:
 			case FuToken.ModAssign:
-			case FuToken.ShiftLeftAssign:
-			case FuToken.ShiftRightAssign:
 			case FuToken.AndAssign:
 			case FuToken.OrAssign:
 			case FuToken.XorAssign:
+			case FuToken.ShiftLeftAssign:
+			case FuToken.ShiftRightAssign:
 				return true;
 			default:
 				return false;
@@ -4394,9 +4394,9 @@ namespace Fusion
 				while (!See(FuToken.EndOfFile)) {
 					kase.Body.Add(ParseStatement());
 					switch (this.CurrentToken) {
+					case FuToken.RightBrace:
 					case FuToken.Case:
 					case FuToken.Default:
-					case FuToken.RightBrace:
 						break;
 					default:
 						continue;
@@ -4700,9 +4700,9 @@ namespace Fusion
 				case FuToken.Class:
 					ParseClass(doc, line, column, isPublic, FuCallType.Normal);
 					break;
-				case FuToken.Static:
 				case FuToken.Abstract:
 				case FuToken.Sealed:
+				case FuToken.Static:
 					ParseClass(doc, line, column, isPublic, ParseCallType());
 					break;
 				case FuToken.Enum:
@@ -8244,11 +8244,11 @@ namespace Fusion
 			case FuToken.MulAssign:
 			case FuToken.DivAssign:
 			case FuToken.ModAssign:
-			case FuToken.ShiftLeftAssign:
-			case FuToken.ShiftRightAssign:
 			case FuToken.AndAssign:
 			case FuToken.OrAssign:
 			case FuToken.XorAssign:
+			case FuToken.ShiftLeftAssign:
+			case FuToken.ShiftRightAssign:
 				if (parent > FuPriority.Assign)
 					WriteChar('(');
 				expr.Left.Accept(this, FuPriority.Assign);
@@ -9347,8 +9347,8 @@ namespace Fusion
 			if (expr is FuBinaryExpr binary && binary.Op == FuToken.And && binary.Right is FuLiteralLong rightMask && type is FuIntegerType) {
 				long mask;
 				switch (type.Id) {
-				case FuId.ByteRange:
 				case FuId.SByteRange:
+				case FuId.ByteRange:
 					mask = 255;
 					break;
 				case FuId.ShortRange:
@@ -11729,8 +11729,8 @@ namespace Fusion
 			case FuId.None:
 				Write("object((const void * const *) ");
 				break;
-			case FuId.StringStorageType:
 			case FuId.StringPtrType:
+			case FuId.StringStorageType:
 				typeId = FuId.StringPtrType;
 				Include("string.h");
 				Write("string((const char * const *) ");
@@ -12282,8 +12282,8 @@ namespace Fusion
 					IncludeMath();
 					WriteCall("fabsf", args[0]);
 					break;
-				case FuId.FloatIntType:
 				case FuId.DoubleType:
+				case FuId.FloatIntType:
 					IncludeMath();
 					WriteCall("fabs", args[0]);
 					break;
@@ -13650,8 +13650,8 @@ namespace Fusion
 				WriteNumericType(typeId);
 				WriteLine(" *) pb;");
 				switch (typeId) {
-				case FuId.ByteRange:
 				case FuId.SByteRange:
+				case FuId.ByteRange:
 				case FuId.ShortRange:
 				case FuId.UShortRange:
 					WriteLine("return a - b;");
@@ -17815,8 +17815,8 @@ namespace Fusion
 				case FuId.StringClass:
 					Write("string");
 					break;
-				case FuId.ArrayStorageClass:
 				case FuId.ArrayPtrClass:
+				case FuId.ArrayStorageClass:
 					if (promote && IsTransitiveConst(klass)) {
 						Write("const(");
 						WriteElementType(klass.GetElementType());
@@ -17999,10 +17999,10 @@ namespace Fusion
 				if (def.Type is FuReadWriteClassType klass) {
 					switch (klass.Class.Id) {
 					case FuId.StringClass:
-					case FuId.ArrayStorageClass:
 					case FuId.ArrayPtrClass:
-					case FuId.DictionaryClass:
+					case FuId.ArrayStorageClass:
 					case FuId.HashSetClass:
+					case FuId.DictionaryClass:
 					case FuId.SortedDictionaryClass:
 					case FuId.OrderedDictionaryClass:
 					case FuId.RegexClass:
@@ -18083,8 +18083,8 @@ namespace Fusion
 			case FuId.ListCount:
 			case FuId.StackCount:
 			case FuId.HashSetCount:
-			case FuId.DictionaryCount:
 			case FuId.SortedSetCount:
+			case FuId.DictionaryCount:
 			case FuId.SortedDictionaryCount:
 				WriteStringLength(expr.Left);
 				break;
@@ -18621,8 +18621,8 @@ namespace Fusion
 			switch (klass.Class.Id) {
 			case FuId.ArrayPtrClass:
 			case FuId.ArrayStorageClass:
-			case FuId.DictionaryClass:
 			case FuId.ListClass:
+			case FuId.DictionaryClass:
 				WriteChar('[');
 				expr.Right.Accept(this, FuPriority.Argument);
 				WriteChar(']');
@@ -21571,6 +21571,13 @@ namespace Fusion
 				if (parent > FuPriority.Or)
 					WriteChar(')');
 				break;
+			case FuToken.And when expr.Type.Id == FuId.BoolType:
+			case FuToken.Or when expr.Type.Id == FuId.BoolType:
+				WriteBoolAndOr(expr);
+				break;
+			case FuToken.Xor when expr.Type.Id == FuId.BoolType:
+				WriteEqual(expr.Left, expr.Right, parent, true);
+				break;
 			case FuToken.DivAssign when expr.Type is FuIntegerType && expr.Type.Id != FuId.LongType:
 				if (parent > FuPriority.Assign)
 					WriteChar('(');
@@ -21582,13 +21589,6 @@ namespace Fusion
 				Write(" | 0");
 				if (parent > FuPriority.Assign)
 					WriteChar(')');
-				break;
-			case FuToken.And when expr.Type.Id == FuId.BoolType:
-			case FuToken.Or when expr.Type.Id == FuId.BoolType:
-				WriteBoolAndOr(expr);
-				break;
-			case FuToken.Xor when expr.Type.Id == FuId.BoolType:
-				WriteEqual(expr.Left, expr.Right, parent, true);
 				break;
 			case FuToken.AndAssign when expr.Type.Id == FuId.BoolType:
 				Write("if (!");
@@ -25166,11 +25166,11 @@ namespace Fusion
 			case FuToken.MulAssign:
 			case FuToken.DivAssign:
 			case FuToken.ModAssign:
-			case FuToken.ShiftLeftAssign:
-			case FuToken.ShiftRightAssign:
 			case FuToken.AndAssign:
 			case FuToken.OrAssign:
 			case FuToken.XorAssign:
+			case FuToken.ShiftLeftAssign:
+			case FuToken.ShiftRightAssign:
 				{
 					FuExpr right = expr.Right;
 					if (right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {

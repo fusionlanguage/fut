@@ -672,26 +672,26 @@ public class FuBinaryExpr : FuExpr
 	public override int GetLocLength()
 	{
 		switch (this.Op) {
+		case FuToken.LeftBracket:
+		case FuToken.LeftBrace:
 		case FuToken.Plus:
 		case FuToken.Minus:
 		case FuToken.Asterisk:
 		case FuToken.Slash:
 		case FuToken.Mod:
-		case FuToken.Less:
-		case FuToken.Greater:
 		case FuToken.And:
 		case FuToken.Or:
 		case FuToken.Xor:
+		case FuToken.Less:
+		case FuToken.Greater:
 		case FuToken.Assign:
-		case FuToken.LeftBracket:
-		case FuToken.LeftBrace:
 			return 1;
 		case FuToken.ShiftLeft:
 		case FuToken.ShiftRight:
-		case FuToken.LessOrEqual:
-		case FuToken.GreaterOrEqual:
 		case FuToken.Equal:
 		case FuToken.NotEqual:
+		case FuToken.LessOrEqual:
+		case FuToken.GreaterOrEqual:
 		case FuToken.CondAnd:
 		case FuToken.CondOr:
 		case FuToken.AddAssign:
@@ -763,11 +763,11 @@ public class FuBinaryExpr : FuExpr
 		case FuToken.MulAssign:
 		case FuToken.DivAssign:
 		case FuToken.ModAssign:
-		case FuToken.ShiftLeftAssign:
-		case FuToken.ShiftRightAssign:
 		case FuToken.AndAssign:
 		case FuToken.OrAssign:
 		case FuToken.XorAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
 			return true;
 		default:
 			return false;

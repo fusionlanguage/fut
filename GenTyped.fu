@@ -1,6 +1,6 @@
 // GenTyped.fu - C/C++/C#/D/Java code generator
 //
-// Copyright (C) 2011-2024  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -139,8 +139,8 @@ public abstract class GenTyped : GenBase
 		 && type is FuIntegerType) {
 			long mask;
 			switch (type.Id) {
-			case FuId.ByteRange:
 			case FuId.SByteRange:
+			case FuId.ByteRange:
 				mask = 0xff;
 				break;
 			case FuId.ShortRange:

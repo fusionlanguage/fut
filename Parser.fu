@@ -787,9 +787,9 @@ public class FuParser : FuLexer
 			while (!See(FuToken.EndOfFile)) {
 				kase.Body.Add(ParseStatement());
 				switch (this.CurrentToken) {
+				case FuToken.RightBrace:
 				case FuToken.Case:
 				case FuToken.Default:
-				case FuToken.RightBrace:
 					break;
 				default:
 					continue;
@@ -1117,9 +1117,9 @@ public class FuParser : FuLexer
 			case FuToken.Class:
 				ParseClass(doc, line, column, isPublic, FuCallType.Normal);
 				break;
-			case FuToken.Static:
 			case FuToken.Abstract:
 			case FuToken.Sealed:
+			case FuToken.Static:
 				ParseClass(doc, line, column, isPublic, ParseCallType());
 				break;
 

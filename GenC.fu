@@ -1947,8 +1947,8 @@ public class GenC : GenCCpp
 		case FuId.None:
 			Write("object((const void * const *) ");
 			break;
-		case FuId.StringStorageType:
 		case FuId.StringPtrType:
+		case FuId.StringStorageType:
 			typeId = FuId.StringPtrType;
 			Include("string.h");
 			Write("string((const char * const *) ");
@@ -2504,8 +2504,8 @@ public class GenC : GenCCpp
 				IncludeMath();
 				WriteCall("fabsf", args[0]);
 				break;
-			case FuId.FloatIntType:
 			case FuId.DoubleType:
+			case FuId.FloatIntType:
 				IncludeMath();
 				WriteCall("fabs", args[0]);
 				break;
@@ -3885,8 +3885,8 @@ public class GenC : GenCCpp
 			WriteNumericType(typeId);
 			WriteLine(" *) pb;");
 			switch (typeId) {
-			case FuId.ByteRange:
 			case FuId.SByteRange:
+			case FuId.ByteRange:
 			case FuId.ShortRange:
 			case FuId.UShortRange:
 				// subtraction can't overflow int

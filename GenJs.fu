@@ -1,6 +1,6 @@
 // GenJs.fu - JavaScript code generator
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -1023,6 +1023,13 @@ public class GenJsNoModule : GenBase
 			if (parent > FuPriority.Or)
 				WriteChar(')');
 			break;
+		case FuToken.And when expr.Type.Id == FuId.BoolType:
+		case FuToken.Or when expr.Type.Id == FuId.BoolType:
+			WriteBoolAndOr(expr);
+			break;
+		case FuToken.Xor when expr.Type.Id == FuId.BoolType:
+			WriteEqual(expr.Left, expr.Right, parent, true);
+			break;
 		case FuToken.DivAssign when expr.Type is FuIntegerType && expr.Type.Id != FuId.LongType:
 			if (parent > FuPriority.Assign)
 				WriteChar('(');
@@ -1034,13 +1041,6 @@ public class GenJsNoModule : GenBase
 			Write(" | 0");
 			if (parent > FuPriority.Assign)
 				WriteChar(')');
-			break;
-		case FuToken.And when expr.Type.Id == FuId.BoolType:
-		case FuToken.Or when expr.Type.Id == FuId.BoolType:
-			WriteBoolAndOr(expr);
-			break;
-		case FuToken.Xor when expr.Type.Id == FuId.BoolType:
-			WriteEqual(expr.Left, expr.Right, parent, true);
 			break;
 		case FuToken.AndAssign when expr.Type.Id == FuId.BoolType:
 			Write("if (!"); // FIXME: picks up parent "else"

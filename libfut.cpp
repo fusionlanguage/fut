@@ -1610,26 +1610,26 @@ void FuPostfixExpr::accept(FuVisitor * visitor, FuPriority parent) const
 int FuBinaryExpr::getLocLength() const
 {
 	switch (this->op) {
+	case FuToken::leftBracket:
+	case FuToken::leftBrace:
 	case FuToken::plus:
 	case FuToken::minus:
 	case FuToken::asterisk:
 	case FuToken::slash:
 	case FuToken::mod:
-	case FuToken::less:
-	case FuToken::greater:
 	case FuToken::and_:
 	case FuToken::or_:
 	case FuToken::xor_:
+	case FuToken::less:
+	case FuToken::greater:
 	case FuToken::assign:
-	case FuToken::leftBracket:
-	case FuToken::leftBrace:
 		return 1;
 	case FuToken::shiftLeft:
 	case FuToken::shiftRight:
-	case FuToken::lessOrEqual:
-	case FuToken::greaterOrEqual:
 	case FuToken::equal:
 	case FuToken::notEqual:
+	case FuToken::lessOrEqual:
+	case FuToken::greaterOrEqual:
 	case FuToken::condAnd:
 	case FuToken::condOr:
 	case FuToken::addAssign:
@@ -1717,11 +1717,11 @@ bool FuBinaryExpr::isAssign() const
 	case FuToken::mulAssign:
 	case FuToken::divAssign:
 	case FuToken::modAssign:
-	case FuToken::shiftLeftAssign:
-	case FuToken::shiftRightAssign:
 	case FuToken::andAssign:
 	case FuToken::orAssign:
 	case FuToken::xorAssign:
+	case FuToken::shiftLeftAssign:
+	case FuToken::shiftRightAssign:
 		return true;
 	default:
 		return false;
@@ -4101,9 +4101,9 @@ std::shared_ptr<FuSwitch> FuParser::parseSwitch()
 		while (!see(FuToken::endOfFile)) {
 			kase->body.push_back(parseStatement());
 			switch (this->currentToken) {
+			case FuToken::rightBrace:
 			case FuToken::case_:
 			case FuToken::default_:
-			case FuToken::rightBrace:
 				break;
 			default:
 				continue;
@@ -4446,9 +4446,9 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 		case FuToken::class_:
 			parseClass(doc, line, column, isPublic, FuCallType::normal);
 			break;
-		case FuToken::static_:
 		case FuToken::abstract:
 		case FuToken::sealed:
+		case FuToken::static_:
 			parseClass(doc, line, column, isPublic, parseCallType());
 			break;
 		case FuToken::enum_:
@@ -8128,11 +8128,11 @@ void GenBase::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	case FuToken::mulAssign:
 	case FuToken::divAssign:
 	case FuToken::modAssign:
-	case FuToken::shiftLeftAssign:
-	case FuToken::shiftRightAssign:
 	case FuToken::andAssign:
 	case FuToken::orAssign:
 	case FuToken::xorAssign:
+	case FuToken::shiftLeftAssign:
+	case FuToken::shiftRightAssign:
 		if (parent > FuPriority::assign)
 			writeChar('(');
 		expr->left->accept(this, FuPriority::assign);
@@ -9207,8 +9207,8 @@ const FuExpr * GenTyped::getStaticCastInner(const FuType * type, const FuExpr * 
 	if ((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && binary->op == FuToken::and_ && (rightMask = dynamic_cast<const FuLiteralLong *>(binary->right.get())) && dynamic_cast<const FuIntegerType *>(type)) {
 		int64_t mask;
 		switch (type->id) {
-		case FuId::byteRange:
 		case FuId::sByteRange:
+		case FuId::byteRange:
 			mask = 255;
 			break;
 		case FuId::shortRange:
@@ -11484,8 +11484,8 @@ void GenC::startArrayContains(const FuExpr * obj)
 	case FuId::none:
 		write("object((const void * const *) ");
 		break;
-	case FuId::stringStorageType:
 	case FuId::stringPtrType:
+	case FuId::stringStorageType:
 		typeId = FuId::stringPtrType;
 		include("string.h");
 		write("string((const char * const *) ");
@@ -12057,8 +12057,8 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 			includeMath();
 			writeCall("fabsf", (*args)[0].get());
 			break;
-		case FuId::floatIntType:
 		case FuId::doubleType:
+		case FuId::floatIntType:
 			includeMath();
 			writeCall("fabs", (*args)[0].get());
 			break;
@@ -13434,8 +13434,8 @@ void GenC::writeLibrary()
 		writeNumericType(typeId);
 		writeLine(" *) pb;");
 		switch (typeId) {
-		case FuId::byteRange:
 		case FuId::sByteRange:
+		case FuId::byteRange:
 		case FuId::shortRange:
 		case FuId::uShortRange:
 			writeLine("return a - b;");
@@ -17271,8 +17271,8 @@ void GenD::writeType(const FuType * type, bool promote)
 		case FuId::stringClass:
 			write("string");
 			break;
-		case FuId::arrayStorageClass:
 		case FuId::arrayPtrClass:
+		case FuId::arrayStorageClass:
 			if (promote && isTransitiveConst(klass)) {
 				write("const(");
 				writeElementType(klass->getElementType().get());
@@ -17453,10 +17453,10 @@ void GenD::writeInitCode(const FuNamedValue * def)
 		if (const FuReadWriteClassType *klass = dynamic_cast<const FuReadWriteClassType *>(def->type.get())) {
 			switch (klass->class_->id) {
 			case FuId::stringClass:
-			case FuId::arrayStorageClass:
 			case FuId::arrayPtrClass:
-			case FuId::dictionaryClass:
+			case FuId::arrayStorageClass:
 			case FuId::hashSetClass:
+			case FuId::dictionaryClass:
 			case FuId::sortedDictionaryClass:
 			case FuId::orderedDictionaryClass:
 			case FuId::regexClass:
@@ -17537,8 +17537,8 @@ void GenD::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 	case FuId::listCount:
 	case FuId::stackCount:
 	case FuId::hashSetCount:
-	case FuId::dictionaryCount:
 	case FuId::sortedSetCount:
+	case FuId::dictionaryCount:
 	case FuId::sortedDictionaryCount:
 		writeStringLength(expr->left.get());
 		break;
@@ -18075,8 +18075,8 @@ void GenD::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 	switch (klass->class_->id) {
 	case FuId::arrayPtrClass:
 	case FuId::arrayStorageClass:
-	case FuId::dictionaryClass:
 	case FuId::listClass:
+	case FuId::dictionaryClass:
 		writeChar('[');
 		expr->right->accept(this, FuPriority::argument);
 		writeChar(']');
@@ -20954,6 +20954,10 @@ void GenJsNoModule::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent
 		if (parent > FuPriority::or_)
 			writeChar(')');
 	}
+	else if ((expr->op == FuToken::and_ && expr->type->id == FuId::boolType) || (expr->op == FuToken::or_ && expr->type->id == FuId::boolType))
+		writeBoolAndOr(expr);
+	else if (expr->op == FuToken::xor_ && expr->type->id == FuId::boolType)
+		writeEqual(expr->left.get(), expr->right.get(), parent, true);
 	else if (expr->op == FuToken::divAssign && dynamic_cast<const FuIntegerType *>(expr->type.get()) && expr->type->id != FuId::longType) {
 		if (parent > FuPriority::assign)
 			writeChar('(');
@@ -20966,10 +20970,6 @@ void GenJsNoModule::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent
 		if (parent > FuPriority::assign)
 			writeChar(')');
 	}
-	else if ((expr->op == FuToken::and_ && expr->type->id == FuId::boolType) || (expr->op == FuToken::or_ && expr->type->id == FuId::boolType))
-		writeBoolAndOr(expr);
-	else if (expr->op == FuToken::xor_ && expr->type->id == FuId::boolType)
-		writeEqual(expr->left.get(), expr->right.get(), parent, true);
 	else if (expr->op == FuToken::andAssign && expr->type->id == FuId::boolType) {
 		write("if (!");
 		writeBoolAndOrAssign(expr, FuPriority::primary);
@@ -24328,11 +24328,11 @@ void GenPy::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	case FuToken::mulAssign:
 	case FuToken::divAssign:
 	case FuToken::modAssign:
-	case FuToken::shiftLeftAssign:
-	case FuToken::shiftRightAssign:
 	case FuToken::andAssign:
 	case FuToken::orAssign:
 	case FuToken::xorAssign:
+	case FuToken::shiftLeftAssign:
+	case FuToken::shiftRightAssign:
 		{
 			const FuExpr * right = expr->right.get();
 			const FuBinaryExpr * rightBinary;

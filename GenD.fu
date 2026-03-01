@@ -419,8 +419,8 @@ public class GenD : GenCCppD
 			case FuId.StringClass:
 				Write("string");
 				break;
-			case FuId.ArrayStorageClass:
 			case FuId.ArrayPtrClass:
+			case FuId.ArrayStorageClass:
 				if (promote && IsTransitiveConst(klass)) {
 					Write("const(");
 					WriteElementType(klass.GetElementType());
@@ -603,10 +603,10 @@ public class GenD : GenCCppD
 			if (def.Type is FuReadWriteClassType klass) {
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
-				case FuId.ArrayStorageClass:
 				case FuId.ArrayPtrClass:
-				case FuId.DictionaryClass:
+				case FuId.ArrayStorageClass:
 				case FuId.HashSetClass:
+				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
 				case FuId.OrderedDictionaryClass:
 				case FuId.RegexClass:
@@ -687,8 +687,8 @@ public class GenD : GenCCppD
 		case FuId.ListCount:
 		case FuId.StackCount:
 		case FuId.HashSetCount:
-		case FuId.DictionaryCount:
 		case FuId.SortedSetCount:
+		case FuId.DictionaryCount:
 		case FuId.SortedDictionaryCount:
 			WriteStringLength(expr.Left);
 			break;
@@ -1228,8 +1228,8 @@ public class GenD : GenCCppD
 		switch (klass.Class.Id) {
 		case FuId.ArrayPtrClass:
 		case FuId.ArrayStorageClass:
-		case FuId.DictionaryClass:
 		case FuId.ListClass:
+		case FuId.DictionaryClass:
 			WriteChar('[');
 			expr.Right.Accept(this, FuPriority.Argument);
 			WriteChar(']');

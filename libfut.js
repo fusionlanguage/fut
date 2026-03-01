@@ -2097,26 +2097,26 @@ export class FuBinaryExpr extends FuExpr
 	getLocLength()
 	{
 		switch (this.op) {
+		case FuToken.LEFT_BRACKET:
+		case FuToken.LEFT_BRACE:
 		case FuToken.PLUS:
 		case FuToken.MINUS:
 		case FuToken.ASTERISK:
 		case FuToken.SLASH:
 		case FuToken.MOD:
-		case FuToken.LESS:
-		case FuToken.GREATER:
 		case FuToken.AND:
 		case FuToken.OR:
 		case FuToken.XOR:
+		case FuToken.LESS:
+		case FuToken.GREATER:
 		case FuToken.ASSIGN:
-		case FuToken.LEFT_BRACKET:
-		case FuToken.LEFT_BRACE:
 			return 1;
 		case FuToken.SHIFT_LEFT:
 		case FuToken.SHIFT_RIGHT:
-		case FuToken.LESS_OR_EQUAL:
-		case FuToken.GREATER_OR_EQUAL:
 		case FuToken.EQUAL:
 		case FuToken.NOT_EQUAL:
+		case FuToken.LESS_OR_EQUAL:
+		case FuToken.GREATER_OR_EQUAL:
 		case FuToken.COND_AND:
 		case FuToken.COND_OR:
 		case FuToken.ADD_ASSIGN:
@@ -2204,11 +2204,11 @@ export class FuBinaryExpr extends FuExpr
 		case FuToken.MUL_ASSIGN:
 		case FuToken.DIV_ASSIGN:
 		case FuToken.MOD_ASSIGN:
-		case FuToken.SHIFT_LEFT_ASSIGN:
-		case FuToken.SHIFT_RIGHT_ASSIGN:
 		case FuToken.AND_ASSIGN:
 		case FuToken.OR_ASSIGN:
 		case FuToken.XOR_ASSIGN:
+		case FuToken.SHIFT_LEFT_ASSIGN:
+		case FuToken.SHIFT_RIGHT_ASSIGN:
 			return true;
 		default:
 			return false;
@@ -4620,9 +4620,9 @@ export class FuParser extends FuLexer
 			while (!this.see(FuToken.END_OF_FILE)) {
 				kase.body.push(this.#parseStatement());
 				switch (this.currentToken) {
+				case FuToken.RIGHT_BRACE:
 				case FuToken.CASE:
 				case FuToken.DEFAULT:
-				case FuToken.RIGHT_BRACE:
 					break;
 				default:
 					continue;
@@ -4927,9 +4927,9 @@ export class FuParser extends FuLexer
 			case FuToken.CLASS:
 				this.#parseClass(doc, line, column, isPublic, FuCallType.NORMAL);
 				break;
-			case FuToken.STATIC:
 			case FuToken.ABSTRACT:
 			case FuToken.SEALED:
+			case FuToken.STATIC:
 				this.#parseClass(doc, line, column, isPublic, this.#parseCallType());
 				break;
 			case FuToken.ENUM:
@@ -8655,11 +8655,11 @@ export class GenBase extends FuVisitor
 		case FuToken.MUL_ASSIGN:
 		case FuToken.DIV_ASSIGN:
 		case FuToken.MOD_ASSIGN:
-		case FuToken.SHIFT_LEFT_ASSIGN:
-		case FuToken.SHIFT_RIGHT_ASSIGN:
 		case FuToken.AND_ASSIGN:
 		case FuToken.OR_ASSIGN:
 		case FuToken.XOR_ASSIGN:
+		case FuToken.SHIFT_LEFT_ASSIGN:
+		case FuToken.SHIFT_RIGHT_ASSIGN:
 			if (parent > FuPriority.ASSIGN)
 				this.writeChar(40);
 			expr.left.accept(this, FuPriority.ASSIGN);
@@ -9786,8 +9786,8 @@ export class GenTyped extends GenBase
 		if ((binary = expr) instanceof FuBinaryExpr && binary.op == FuToken.AND && (rightMask = binary.right) instanceof FuLiteralLong && type instanceof FuIntegerType) {
 			let mask;
 			switch (type.id) {
-			case FuId.BYTE_RANGE:
 			case FuId.S_BYTE_RANGE:
+			case FuId.BYTE_RANGE:
 				mask = 255n;
 				break;
 			case FuId.SHORT_RANGE:
@@ -12203,8 +12203,8 @@ export class GenC extends GenCCpp
 		case FuId.NONE:
 			this.write("object((const void * const *) ");
 			break;
-		case FuId.STRING_STORAGE_TYPE:
 		case FuId.STRING_PTR_TYPE:
+		case FuId.STRING_STORAGE_TYPE:
 			typeId = FuId.STRING_PTR_TYPE;
 			this.include("string.h");
 			this.write("string((const char * const *) ");
@@ -12758,8 +12758,8 @@ export class GenC extends GenCCpp
 				this.includeMath();
 				this.writeCall("fabsf", args[0]);
 				break;
-			case FuId.FLOAT_INT_TYPE:
 			case FuId.DOUBLE_TYPE:
+			case FuId.FLOAT_INT_TYPE:
 				this.includeMath();
 				this.writeCall("fabs", args[0]);
 				break;
@@ -14147,8 +14147,8 @@ export class GenC extends GenCCpp
 			this.writeNumericType(typeId);
 			this.writeLine(" *) pb;");
 			switch (typeId) {
-			case FuId.BYTE_RANGE:
 			case FuId.S_BYTE_RANGE:
+			case FuId.BYTE_RANGE:
 			case FuId.SHORT_RANGE:
 			case FuId.U_SHORT_RANGE:
 				this.writeLine("return a - b;");
@@ -18388,8 +18388,8 @@ export class GenD extends GenCCppD
 			case FuId.STRING_CLASS:
 				this.write("string");
 				break;
-			case FuId.ARRAY_STORAGE_CLASS:
 			case FuId.ARRAY_PTR_CLASS:
+			case FuId.ARRAY_STORAGE_CLASS:
 				if (promote && GenD.#isTransitiveConst(klass)) {
 					this.write("const(");
 					this.#writeElementType(klass.getElementType());
@@ -18577,10 +18577,10 @@ export class GenD extends GenCCppD
 			if ((klass = def.type) instanceof FuReadWriteClassType) {
 				switch (klass.class.id) {
 				case FuId.STRING_CLASS:
-				case FuId.ARRAY_STORAGE_CLASS:
 				case FuId.ARRAY_PTR_CLASS:
-				case FuId.DICTIONARY_CLASS:
+				case FuId.ARRAY_STORAGE_CLASS:
 				case FuId.HASH_SET_CLASS:
+				case FuId.DICTIONARY_CLASS:
 				case FuId.SORTED_DICTIONARY_CLASS:
 				case FuId.ORDERED_DICTIONARY_CLASS:
 				case FuId.REGEX_CLASS:
@@ -18661,8 +18661,8 @@ export class GenD extends GenCCppD
 		case FuId.LIST_COUNT:
 		case FuId.STACK_COUNT:
 		case FuId.HASH_SET_COUNT:
-		case FuId.DICTIONARY_COUNT:
 		case FuId.SORTED_SET_COUNT:
+		case FuId.DICTIONARY_COUNT:
 		case FuId.SORTED_DICTIONARY_COUNT:
 			this.writeStringLength(expr.left);
 			break;
@@ -19202,8 +19202,8 @@ export class GenD extends GenCCppD
 		switch (klass.class.id) {
 		case FuId.ARRAY_PTR_CLASS:
 		case FuId.ARRAY_STORAGE_CLASS:
-		case FuId.DICTIONARY_CLASS:
 		case FuId.LIST_CLASS:
+		case FuId.DICTIONARY_CLASS:
 			this.writeChar(91);
 			expr.right.accept(this, FuPriority.ARGUMENT);
 			this.writeChar(93);
@@ -22221,6 +22221,10 @@ export class GenJsNoModule extends GenBase
 			if (parent > FuPriority.OR)
 				this.writeChar(41);
 		}
+		else if ((expr.op == FuToken.AND && expr.type.id == FuId.BOOL_TYPE) || (expr.op == FuToken.OR && expr.type.id == FuId.BOOL_TYPE))
+			this.writeBoolAndOr(expr);
+		else if (expr.op == FuToken.XOR && expr.type.id == FuId.BOOL_TYPE)
+			this.writeEqual(expr.left, expr.right, parent, true);
 		else if (expr.op == FuToken.DIV_ASSIGN && expr.type instanceof FuIntegerType && expr.type.id != FuId.LONG_TYPE) {
 			if (parent > FuPriority.ASSIGN)
 				this.writeChar(40);
@@ -22233,10 +22237,6 @@ export class GenJsNoModule extends GenBase
 			if (parent > FuPriority.ASSIGN)
 				this.writeChar(41);
 		}
-		else if ((expr.op == FuToken.AND && expr.type.id == FuId.BOOL_TYPE) || (expr.op == FuToken.OR && expr.type.id == FuId.BOOL_TYPE))
-			this.writeBoolAndOr(expr);
-		else if (expr.op == FuToken.XOR && expr.type.id == FuId.BOOL_TYPE)
-			this.writeEqual(expr.left, expr.right, parent, true);
 		else if (expr.op == FuToken.AND_ASSIGN && expr.type.id == FuId.BOOL_TYPE) {
 			this.write("if (!");
 			this.#writeBoolAndOrAssign(expr, FuPriority.PRIMARY);
@@ -25843,11 +25843,11 @@ export class GenPy extends GenPySwift
 		case FuToken.MUL_ASSIGN:
 		case FuToken.DIV_ASSIGN:
 		case FuToken.MOD_ASSIGN:
-		case FuToken.SHIFT_LEFT_ASSIGN:
-		case FuToken.SHIFT_RIGHT_ASSIGN:
 		case FuToken.AND_ASSIGN:
 		case FuToken.OR_ASSIGN:
 		case FuToken.XOR_ASSIGN:
+		case FuToken.SHIFT_LEFT_ASSIGN:
+		case FuToken.SHIFT_RIGHT_ASSIGN:
 			{
 				let right = expr.right;
 				let rightBinary;

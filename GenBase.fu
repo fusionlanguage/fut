@@ -1185,11 +1185,11 @@ public abstract class GenBase : FuVisitor
 		case FuToken.MulAssign:
 		case FuToken.DivAssign:
 		case FuToken.ModAssign:
-		case FuToken.ShiftLeftAssign:
-		case FuToken.ShiftRightAssign:
 		case FuToken.AndAssign:
 		case FuToken.OrAssign:
 		case FuToken.XorAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
 			if (parent > FuPriority.Assign)
 				WriteChar('(');
 			expr.Left.Accept(this, FuPriority.Assign);

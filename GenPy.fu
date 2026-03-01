@@ -568,11 +568,11 @@ public class GenPy : GenPySwift
 		case FuToken.MulAssign:
 		case FuToken.DivAssign:
 		case FuToken.ModAssign:
-		case FuToken.ShiftLeftAssign:
-		case FuToken.ShiftRightAssign:
 		case FuToken.AndAssign:
 		case FuToken.OrAssign:
 		case FuToken.XorAssign:
+		case FuToken.ShiftLeftAssign:
+		case FuToken.ShiftRightAssign:
 			{
 				FuExpr right = expr.Right;
 				if (right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {
