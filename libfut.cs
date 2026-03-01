@@ -16795,7 +16795,6 @@ namespace Fusion
 			case FuId.StackPop:
 			case FuId.PriorityQueueClear:
 			case FuId.PriorityQueueDequeue:
-			case FuId.PriorityQueueEnqueue:
 			case FuId.PriorityQueuePeek:
 			case FuId.HashSetClear:
 			case FuId.HashSetContains:
@@ -16947,6 +16946,13 @@ namespace Fusion
 				WritePostfix(obj, ".Sort(");
 				WriteCoercedArgs(method, args);
 				Write(", null)");
+				break;
+			case FuId.PriorityQueueEnqueue:
+				WritePostfix(obj, ".Enqueue(");
+				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
+				Write(", ");
+				WriteNotPromoted(obj.Type.AsClassType().GetValueType(), args[1]);
+				WriteChar(')');
 				break;
 			case FuId.DictionaryAdd:
 				WritePostfix(obj, ".Add(");

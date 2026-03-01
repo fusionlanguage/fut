@@ -16420,7 +16420,6 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::stackPop:
 	case FuId::priorityQueueClear:
 	case FuId::priorityQueueDequeue:
-	case FuId::priorityQueueEnqueue:
 	case FuId::priorityQueuePeek:
 	case FuId::hashSetClear:
 	case FuId::hashSetContains:
@@ -16578,6 +16577,13 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writePostfix(obj, ".Sort(");
 		writeCoercedArgs(method, args);
 		write(", null)");
+		break;
+	case FuId::priorityQueueEnqueue:
+		writePostfix(obj, ".Enqueue(");
+		writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
+		write(", ");
+		writeNotPromoted(obj->type->asClassType()->getValueType().get(), (*args)[1].get());
+		writeChar(')');
 		break;
 	case FuId::dictionaryAdd:
 		writePostfix(obj, ".Add(");

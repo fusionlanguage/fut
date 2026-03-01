@@ -13,7 +13,7 @@ public static class Test
 		PriorityQueue<byte, int>() qb;
 		qb.Enqueue(200, 5);
 		int b = 222;
-		qb.Enqueue(b, 7); //FAIL: cs TODO
+		qb.Enqueue(b, 7);
 		return q.Count == 3 && q.Dequeue() == "five" && q.Peek() == "ten"
 			&& qb.Dequeue() == 200 && qb.Peek() == 222;
 	}

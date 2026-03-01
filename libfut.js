@@ -17347,7 +17347,6 @@ export class GenCs extends GenTyped
 		case FuId.STACK_POP:
 		case FuId.PRIORITY_QUEUE_CLEAR:
 		case FuId.PRIORITY_QUEUE_DEQUEUE:
-		case FuId.PRIORITY_QUEUE_ENQUEUE:
 		case FuId.PRIORITY_QUEUE_PEEK:
 		case FuId.HASH_SET_CLEAR:
 		case FuId.HASH_SET_CONTAINS:
@@ -17501,6 +17500,13 @@ export class GenCs extends GenTyped
 			this.writePostfix(obj, ".Sort(");
 			this.writeCoercedArgs(method, args);
 			this.write(", null)");
+			break;
+		case FuId.PRIORITY_QUEUE_ENQUEUE:
+			this.writePostfix(obj, ".Enqueue(");
+			this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
+			this.write(", ");
+			this.writeNotPromoted(obj.type.asClassType().getValueType(), args[1]);
+			this.writeChar(41);
 			break;
 		case FuId.DICTIONARY_ADD:
 			this.writePostfix(obj, ".Add(");
