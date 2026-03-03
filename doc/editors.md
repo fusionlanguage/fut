@@ -10,6 +10,11 @@ extension from the VS Code Extension Marketplace.
 Install the [Fusion](https://marketplace.visualstudio.com/items?itemName=fusionlanguage.fusion-vs)
 extension from the Visual Studio Extension Marketplace.
 
+## Cursor, Windsurf
+
+Install the [Fusion](https://open-vsx.org/extension/fusionlanguage/fusion)
+extension from Open VSX Registry.
+
 ## Vim
 
 Install syntax highlighting in your home directory:
