@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Dictionary<int, int>() dict; //FAIL: swift TODO; cl
+		Dictionary<int, int>() dict; //FAIL: cl
 		Dictionary<int, int>! p;
 		p = dict;
 		p[1] = 10;
