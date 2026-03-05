@@ -1001,11 +1001,15 @@ public class GenPy : GenPySwift
 			WritePostfix(obj, "[-1]");
 			break;
 		case FuId.ListRemoveAt:
+			Write("del ");
+			WriteIndexing(obj, args[0]);
+			break;
 		case FuId.DictionaryRemove:
 		case FuId.SortedDictionaryRemove:
 		case FuId.OrderedDictionaryRemove:
-			Write("del ");
-			WriteIndexing(obj, args[0]);
+			WritePostfix(obj, ".pop(");
+			args[0].Accept(this, FuPriority.Argument);
+			Write(", None)");
 			break;
 		case FuId.ListRemoveRange:
 			Write("del ");

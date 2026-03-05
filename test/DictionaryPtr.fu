@@ -10,7 +10,7 @@ public static class Test
 		p[2] = 12;
 		p[2] = 20;
 		p[3] = 30;
-		p.Remove(1); //FAIL: py
+		p.Remove(1);
 		return p.Count == 2 && p[2] == 20 && p[3] == 30 && p.ContainsKey(2);
 	}
 }

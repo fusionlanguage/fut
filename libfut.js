@@ -26284,11 +26284,15 @@ export class GenPy extends GenPySwift
 			this.writePostfix(obj, "[-1]");
 			break;
 		case FuId.LIST_REMOVE_AT:
+			this.write("del ");
+			this.writeIndexing(obj, args[0]);
+			break;
 		case FuId.DICTIONARY_REMOVE:
 		case FuId.SORTED_DICTIONARY_REMOVE:
 		case FuId.ORDERED_DICTIONARY_REMOVE:
-			this.write("del ");
-			this.writeIndexing(obj, args[0]);
+			this.writePostfix(obj, ".pop(");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write(", None)");
 			break;
 		case FuId.LIST_REMOVE_RANGE:
 			this.write("del ");

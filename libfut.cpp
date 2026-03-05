@@ -24766,11 +24766,15 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writePostfix(obj, "[-1]");
 		break;
 	case FuId::listRemoveAt:
+		write("del ");
+		writeIndexing(obj, (*args)[0].get());
+		break;
 	case FuId::dictionaryRemove:
 	case FuId::sortedDictionaryRemove:
 	case FuId::orderedDictionaryRemove:
-		write("del ");
-		writeIndexing(obj, (*args)[0].get());
+		writePostfix(obj, ".pop(");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write(", None)");
 		break;
 	case FuId::listRemoveRange:
 		write("del ");
