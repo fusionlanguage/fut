@@ -3559,6 +3559,7 @@ private:
 	static bool isIntIndexing(const FuExpr * expr);
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRange(const FuExpr * startIndex, const FuExpr * length);
+	void writeToTextWriter(const FuExpr * obj);
 	bool addVar(std::string_view name);
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	void writeDefaultValue(const FuType * type);

@@ -23549,6 +23549,7 @@ export class GenSwift extends GenPySwift
 	{
 		switch (klass.class.id) {
 		case FuId.STRING_CLASS:
+		case FuId.STRING_WRITER_CLASS:
 			this.write("String");
 			break;
 		case FuId.ARRAY_PTR_CLASS:
@@ -23804,6 +23805,13 @@ export class GenSwift extends GenPySwift
 		}
 		else
 			this.writeCoerced(type, value, FuPriority.ARGUMENT);
+	}
+
+	#writeToTextWriter(obj)
+	{
+		this.write("to: &");
+		obj.accept(this, FuPriority.PRIMARY);
+		this.writeChar(41);
 	}
 
 	#addVar(name)
@@ -24083,6 +24091,35 @@ export class GenSwift extends GenPySwift
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
 			break;
+		case FuId.TEXT_WRITER_WRITE:
+			if (args[0].type instanceof FuStringType) {
+				args[0].accept(this, FuPriority.PRIMARY);
+				this.writeMemberOp(obj, null);
+				this.write("write(");
+			}
+			else {
+				this.write("print(");
+				this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
+				this.write(", terminator: \"\", ");
+			}
+			this.#writeToTextWriter(obj);
+			break;
+		case FuId.TEXT_WRITER_WRITE_CHAR:
+		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
+			this.writeCall("Unicode.Scalar", args[0]);
+			this.write(".write(");
+			this.#writeToTextWriter(obj);
+			break;
+		case FuId.TEXT_WRITER_WRITE_LINE:
+			if (args.length == 0)
+				this.write("\"\\n\".write(");
+			else {
+				this.write("print(");
+				this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
+				this.write(", ");
+			}
+			this.#writeToTextWriter(obj);
+			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("print(");
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
@@ -24093,6 +24130,13 @@ export class GenSwift extends GenPySwift
 			if (args.length == 1)
 				this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
 			this.writeChar(41);
+			break;
+		case FuId.STRING_WRITER_CLEAR:
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = \"\"");
+			break;
+		case FuId.STRING_WRITER_TO_STRING:
+			obj.accept(this, parent);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.write("Data(");
@@ -24593,7 +24637,7 @@ export class GenSwift extends GenPySwift
 			let array;
 			let stg;
 			let local;
-			this.write(((array = def.type) instanceof FuArrayStorageType ? GenSwift.#isArrayRef(array) : (stg = def.type) instanceof FuStorageType ? stg.class.typeParameterCount == 0 && !def.isAssignableStorage() : (local = def) instanceof FuVar && !local.isAssigned) ? "let " : "var ");
+			this.write(((array = def.type) instanceof FuArrayStorageType ? GenSwift.#isArrayRef(array) : (stg = def.type) instanceof FuStorageType ? stg.class.typeParameterCount == 0 && !def.isAssignableStorage() && stg.class.id != FuId.STRING_WRITER_CLASS : (local = def) instanceof FuVar && !local.isAssigned) ? "let " : "var ");
 			super.writeVar(def);
 		}
 		else {

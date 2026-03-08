@@ -2,14 +2,14 @@ public static class Test
 {
 	public static bool Run()
 	{
-		StringWriter() w; //FAIL: d swift TODO; cl
+		StringWriter() w; //FAIL: d TODO; cl
 		w.Write("kill me");
 		w.Clear();
 		w.Write("Hello");
 		string s = "World";
 		w.Write(s);
 		long l = 5;
-#if C
+#if C || SWIFT
 		w.Write(42);
 		w.Write(l);
 		w.Write('c');

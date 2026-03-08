@@ -22140,6 +22140,7 @@ void GenSwift::writeClassName(const FuClassType * klass)
 {
 	switch (klass->class_->id) {
 	case FuId::stringClass:
+	case FuId::stringWriterClass:
 		write("String");
 		break;
 	case FuId::arrayPtrClass:
@@ -22393,6 +22394,13 @@ void GenSwift::writeElementCoerced(const FuType * type, const FuExpr * value)
 	}
 	else
 		writeCoerced(type, value, FuPriority::argument);
+}
+
+void GenSwift::writeToTextWriter(const FuExpr * obj)
+{
+	write("to: &");
+	obj->accept(this, FuPriority::primary);
+	writeChar(')');
 }
 
 bool GenSwift::addVar(std::string_view name)
@@ -22680,6 +22688,35 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
 		break;
+	case FuId::textWriterWrite:
+		if (dynamic_cast<const FuStringType *>((*args)[0]->type.get())) {
+			(*args)[0]->accept(this, FuPriority::primary);
+			writeMemberOp(obj, nullptr);
+			write("write(");
+		}
+		else {
+			write("print(");
+			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
+			write(", terminator: \"\", ");
+		}
+		writeToTextWriter(obj);
+		break;
+	case FuId::textWriterWriteChar:
+	case FuId::textWriterWriteCodePoint:
+		writeCall("Unicode.Scalar", (*args)[0].get());
+		write(".write(");
+		writeToTextWriter(obj);
+		break;
+	case FuId::textWriterWriteLine:
+		if (std::ssize(*args) == 0)
+			write("\"\\n\".write(");
+		else {
+			write("print(");
+			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
+			write(", ");
+		}
+		writeToTextWriter(obj);
+		break;
 	case FuId::consoleWrite:
 		write("print(");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
@@ -22690,6 +22727,13 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		if (std::ssize(*args) == 1)
 			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
 		writeChar(')');
+		break;
+	case FuId::stringWriterClear:
+		obj->accept(this, FuPriority::assign);
+		write(" = \"\"");
+		break;
+	case FuId::stringWriterToString:
+		obj->accept(this, parent);
 		break;
 	case FuId::convertToBase64String:
 		write("Data(");
@@ -23173,7 +23217,7 @@ void GenSwift::writeVar(const FuNamedValue * def)
 		const FuArrayStorageType * array;
 		const FuStorageType * stg;
 		const FuVar * local;
-		write(((array = dynamic_cast<const FuArrayStorageType *>(def->type.get())) ? isArrayRef(array) : (stg = dynamic_cast<const FuStorageType *>(def->type.get())) ? stg->class_->typeParameterCount == 0 && !def->isAssignableStorage() : (local = dynamic_cast<const FuVar *>(def)) && !local->isAssigned) ? "let " : "var ");
+		write(((array = dynamic_cast<const FuArrayStorageType *>(def->type.get())) ? isArrayRef(array) : (stg = dynamic_cast<const FuStorageType *>(def->type.get())) ? stg->class_->typeParameterCount == 0 && !def->isAssignableStorage() && stg->class_->id != FuId::stringWriterClass : (local = dynamic_cast<const FuVar *>(def)) && !local->isAssigned) ? "let " : "var ");
 		GenBase::writeVar(def);
 	}
 	else {

@@ -22903,6 +22903,7 @@ namespace Fusion
 		{
 			switch (klass.Class.Id) {
 			case FuId.StringClass:
+			case FuId.StringWriterClass:
 				Write("String");
 				break;
 			case FuId.ArrayPtrClass:
@@ -23151,6 +23152,13 @@ namespace Fusion
 			}
 			else
 				WriteCoerced(type, value, FuPriority.Argument);
+		}
+
+		void WriteToTextWriter(FuExpr obj)
+		{
+			Write("to: &");
+			obj.Accept(this, FuPriority.Primary);
+			WriteChar(')');
 		}
 
 		bool AddVar(string name)
@@ -23428,6 +23436,35 @@ namespace Fusion
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
 				break;
+			case FuId.TextWriterWrite:
+				if (args[0].Type is FuStringType) {
+					args[0].Accept(this, FuPriority.Primary);
+					WriteMemberOp(obj, null);
+					Write("write(");
+				}
+				else {
+					Write("print(");
+					WriteUnwrapped(args[0], FuPriority.Argument, true);
+					Write(", terminator: \"\", ");
+				}
+				WriteToTextWriter(obj);
+				break;
+			case FuId.TextWriterWriteChar:
+			case FuId.TextWriterWriteCodePoint:
+				WriteCall("Unicode.Scalar", args[0]);
+				Write(".write(");
+				WriteToTextWriter(obj);
+				break;
+			case FuId.TextWriterWriteLine:
+				if (args.Count == 0)
+					Write("\"\\n\".write(");
+				else {
+					Write("print(");
+					WriteUnwrapped(args[0], FuPriority.Argument, true);
+					Write(", ");
+				}
+				WriteToTextWriter(obj);
+				break;
 			case FuId.ConsoleWrite:
 				Write("print(");
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
@@ -23438,6 +23475,13 @@ namespace Fusion
 				if (args.Count == 1)
 					WriteUnwrapped(args[0], FuPriority.Argument, true);
 				WriteChar(')');
+				break;
+			case FuId.StringWriterClear:
+				obj.Accept(this, FuPriority.Assign);
+				Write(" = \"\"");
+				break;
+			case FuId.StringWriterToString:
+				obj.Accept(this, parent);
 				break;
 			case FuId.ConvertToBase64String:
 				Write("Data(");
@@ -23938,7 +23982,7 @@ namespace Fusion
 		protected override void WriteVar(FuNamedValue def)
 		{
 			if (def is FuField || AddVar(def.Name)) {
-				Write((def.Type is FuArrayStorageType array ? IsArrayRef(array) : def.Type is FuStorageType stg ? stg.Class.TypeParameterCount == 0 && !def.IsAssignableStorage() : def is FuVar local && !local.IsAssigned) ? "let " : "var ");
+				Write((def.Type is FuArrayStorageType array ? IsArrayRef(array) : def.Type is FuStorageType stg ? stg.Class.TypeParameterCount == 0 && !def.IsAssignableStorage() && stg.Class.Id != FuId.StringWriterClass : def is FuVar local && !local.IsAssigned) ? "let " : "var ");
 				base.WriteVar(def);
 			}
 			else {
