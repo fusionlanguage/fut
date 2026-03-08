@@ -43,7 +43,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - run: sudo apt install mypy
-      - uses: swift-actions/setup-swift@main
+      - uses: kkebo/setup-swift@fix-ci
       - uses: actions/checkout@main
       - run: make -j4 test-py test-swift
   host-diff:
