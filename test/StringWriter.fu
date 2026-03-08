@@ -9,17 +9,18 @@ public static class Test
 		string s = "World";
 		w.Write(s);
 		long l = 5;
-#if C || SWIFT
+#if C || SWIFT || TS
 		w.Write(42);
 		w.Write(l);
 		w.Write('c');
 #else
-		TextWriter! tw = w; //FAIL: ts
+		TextWriter! tw = w;
 		tw.Write(42);
 		w.Write(l);
 		tw.Write('c');
 #endif
 		w.WriteChar('c');
-		return w.ToString() == "HelloWorld42599c";
+		w.WriteCodePoint('🍺');
+		return w.ToString() == "HelloWorld42599c🍺";
 	}
 }

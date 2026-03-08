@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Console.Error.WriteCodePoint('5'); //FAIL: c swift TODO; cl
+		Console.Error.WriteCodePoint('5'); //FAIL: c TODO; cl
 		Console.Error.WriteCodePoint('🍺');
 		return true;
 	}

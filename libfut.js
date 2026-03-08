@@ -23814,6 +23814,13 @@ export class GenSwift extends GenPySwift
 		this.writeChar(41);
 	}
 
+	#writeUnicodeScalar(expr)
+	{
+		this.writeCall("Unicode.Scalar", expr);
+		if (expr.type.id != FuId.BYTE_RANGE)
+			this.writeChar(33);
+	}
+
 	#addVar(name)
 	{
 		let vars = this.#varsAtIndent[this.indent];
@@ -24092,33 +24099,66 @@ export class GenSwift extends GenPySwift
 			this.writeChar(41);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
-			if (args[0].type instanceof FuStringType) {
-				args[0].accept(this, FuPriority.PRIMARY);
-				this.writeMemberOp(obj, null);
-				this.write("write(");
+			if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
+				this.include("Foundation");
+				this.write("FileHandle.standardError.write(Data(");
+				if (args[0].type instanceof FuStringType)
+					this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
+				else
+					this.writeCall("String", args[0]);
+				this.write(".utf8))");
 			}
 			else {
-				this.write("print(");
-				this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
-				this.write(", terminator: \"\", ");
+				if (args[0].type instanceof FuStringType) {
+					args[0].accept(this, FuPriority.PRIMARY);
+					this.writeMemberOp(obj, null);
+					this.write("write(");
+				}
+				else {
+					this.write("print(");
+					this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
+					this.write(", terminator: \"\", ");
+				}
+				this.#writeToTextWriter(obj);
 			}
-			this.#writeToTextWriter(obj);
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
-			this.writeCall("Unicode.Scalar", args[0]);
-			this.write(".write(");
-			this.#writeToTextWriter(obj);
+			if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
+				this.include("Foundation");
+				this.write("FileHandle.standardError.write(Data(");
+				this.#writeUnicodeScalar(args[0]);
+				this.write(".utf8))");
+			}
+			else {
+				this.#writeUnicodeScalar(args[0]);
+				this.write(".write(");
+				this.#writeToTextWriter(obj);
+			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
-			if (args.length == 0)
-				this.write("\"\\n\".write(");
-			else {
-				this.write("print(");
-				this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
-				this.write(", ");
+			if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
+				this.include("Foundation");
+				this.write("FileHandle.standardError.write(Data(");
+				if (args.length == 0)
+					this.write("[ 10 ]");
+				else {
+					this.write("\"\\(");
+					this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
+					this.write(")\\n\".utf8");
+				}
+				this.write("))");
 			}
-			this.#writeToTextWriter(obj);
+			else {
+				if (args.length == 0)
+					this.write("\"\\n\".write(");
+				else {
+					this.write("print(");
+					this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
+					this.write(", ");
+				}
+				this.#writeToTextWriter(obj);
+			}
 			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("print(");

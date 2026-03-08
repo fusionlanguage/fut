@@ -481,6 +481,13 @@ public class GenSwift : GenPySwift
 		WriteChar(')');
 	}
 
+	void WriteUnicodeScalar!(FuExpr expr)
+	{
+		WriteCall("Unicode.Scalar", expr);
+		if (expr.Type.Id != FuId.ByteRange)
+			WriteChar('!');
+	}
+
 	bool AddVar!(string name)
 	{
 		HashSet<string>! vars = this.VarsAtIndent[this.Indent];
@@ -757,33 +764,66 @@ public class GenSwift : GenPySwift
 			WriteChar(')');
 			break;
 		case FuId.TextWriterWrite:
-			if (args[0].Type is FuStringType) {
-				args[0].Accept(this, FuPriority.Primary);
-				WriteMemberOp(obj, null);
-				Write("write(");
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
+				Include("Foundation");
+				Write("FileHandle.standardError.write(Data(");
+				if (args[0].Type is FuStringType)
+					WriteUnwrapped(args[0], FuPriority.Primary, true);
+				else
+					WriteCall("String", args[0]);
+				Write(".utf8))");
 			}
 			else {
-				Write("print(");
-				WriteUnwrapped(args[0], FuPriority.Argument, true);
-				Write(", terminator: \"\", ");
+				if (args[0].Type is FuStringType) {
+					args[0].Accept(this, FuPriority.Primary);
+					WriteMemberOp(obj, null);
+					Write("write(");
+				}
+				else {
+					Write("print(");
+					WriteUnwrapped(args[0], FuPriority.Argument, true);
+					Write(", terminator: \"\", ");
+				}
+				WriteToTextWriter(obj);
 			}
-			WriteToTextWriter(obj);
 			break;
 		case FuId.TextWriterWriteChar:
 		case FuId.TextWriterWriteCodePoint:
-			WriteCall("Unicode.Scalar", args[0]);
-			Write(".write(");
-			WriteToTextWriter(obj);
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
+				Include("Foundation");
+				Write("FileHandle.standardError.write(Data(");
+				WriteUnicodeScalar(args[0]);
+				Write(".utf8))");
+			}
+			else {
+				WriteUnicodeScalar(args[0]);
+				Write(".write(");
+				WriteToTextWriter(obj);
+			}
 			break;
 		case FuId.TextWriterWriteLine:
-			if (args.Count == 0)
-				Write("\"\\n\".write(");
-			else {
-				Write("print(");
-				WriteUnwrapped(args[0], FuPriority.Argument, true);
-				Write(", ");
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
+				Include("Foundation");
+				Write("FileHandle.standardError.write(Data(");
+				if (args.Count == 0)
+					Write("[ 10 ]");
+				else {
+					Write("\"\\(");
+					WriteUnwrapped(args[0], FuPriority.Primary, true);
+					Write(")\\n\".utf8");
+				}
+				Write("))");
 			}
-			WriteToTextWriter(obj);
+			else {
+				if (args.Count == 0)
+					Write("\"\\n\".write(");
+				else {
+					Write("print(");
+					WriteUnwrapped(args[0], FuPriority.Argument, true);
+					Write(", ");
+				}
+				WriteToTextWriter(obj);
+			}
 			break;
 		case FuId.ConsoleWrite:
 			// TODO: stderr

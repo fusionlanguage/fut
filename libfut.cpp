@@ -22403,6 +22403,13 @@ void GenSwift::writeToTextWriter(const FuExpr * obj)
 	writeChar(')');
 }
 
+void GenSwift::writeUnicodeScalar(const FuExpr * expr)
+{
+	writeCall("Unicode.Scalar", expr);
+	if (expr->type->id != FuId::byteRange)
+		writeChar('!');
+}
+
 bool GenSwift::addVar(std::string_view name)
 {
 	std::unordered_set<std::string_view> * vars = &this->varsAtIndent[this->indent];
@@ -22689,33 +22696,66 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writeChar(')');
 		break;
 	case FuId::textWriterWrite:
-		if (dynamic_cast<const FuStringType *>((*args)[0]->type.get())) {
-			(*args)[0]->accept(this, FuPriority::primary);
-			writeMemberOp(obj, nullptr);
-			write("write(");
+		if (isReferenceTo(obj, FuId::consoleError)) {
+			include("Foundation");
+			write("FileHandle.standardError.write(Data(");
+			if (dynamic_cast<const FuStringType *>((*args)[0]->type.get()))
+				writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
+			else
+				writeCall("String", (*args)[0].get());
+			write(".utf8))");
 		}
 		else {
-			write("print(");
-			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
-			write(", terminator: \"\", ");
+			if (dynamic_cast<const FuStringType *>((*args)[0]->type.get())) {
+				(*args)[0]->accept(this, FuPriority::primary);
+				writeMemberOp(obj, nullptr);
+				write("write(");
+			}
+			else {
+				write("print(");
+				writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
+				write(", terminator: \"\", ");
+			}
+			writeToTextWriter(obj);
 		}
-		writeToTextWriter(obj);
 		break;
 	case FuId::textWriterWriteChar:
 	case FuId::textWriterWriteCodePoint:
-		writeCall("Unicode.Scalar", (*args)[0].get());
-		write(".write(");
-		writeToTextWriter(obj);
+		if (isReferenceTo(obj, FuId::consoleError)) {
+			include("Foundation");
+			write("FileHandle.standardError.write(Data(");
+			writeUnicodeScalar((*args)[0].get());
+			write(".utf8))");
+		}
+		else {
+			writeUnicodeScalar((*args)[0].get());
+			write(".write(");
+			writeToTextWriter(obj);
+		}
 		break;
 	case FuId::textWriterWriteLine:
-		if (std::ssize(*args) == 0)
-			write("\"\\n\".write(");
-		else {
-			write("print(");
-			writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
-			write(", ");
+		if (isReferenceTo(obj, FuId::consoleError)) {
+			include("Foundation");
+			write("FileHandle.standardError.write(Data(");
+			if (std::ssize(*args) == 0)
+				write("[ 10 ]");
+			else {
+				write("\"\\(");
+				writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
+				write(")\\n\".utf8");
+			}
+			write("))");
 		}
-		writeToTextWriter(obj);
+		else {
+			if (std::ssize(*args) == 0)
+				write("\"\\n\".write(");
+			else {
+				write("print(");
+				writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
+				write(", ");
+			}
+			writeToTextWriter(obj);
+		}
 		break;
 	case FuId::consoleWrite:
 		write("print(");
