@@ -20884,37 +20884,25 @@ namespace Fusion
 
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
-			Write("new ");
-			if (elementType is FuNumericType)
-				WriteArrayElementType(elementType);
-			WriteCall("Array", lengthExpr);
+			if (elementType is FuStorageType) {
+				Write("Array.from({ length: ");
+				lengthExpr.Accept(this, FuPriority.Argument);
+				Write(" }, () => ");
+				WriteNewStorage(elementType);
+				WriteChar(')');
+			}
+			else {
+				Write("new ");
+				if (elementType is FuNumericType)
+					WriteArrayElementType(elementType);
+				WriteCall("Array", lengthExpr);
+			}
 		}
 
-		protected override bool HasInitCode(FuNamedValue def) => def.Type is FuArrayStorageType array && array.GetElementType() is FuStorageType;
+		protected override bool HasInitCode(FuNamedValue def) => false;
 
 		protected override void WriteInitCode(FuNamedValue def)
 		{
-			if (!HasInitCode(def))
-				return;
-			FuArrayStorageType array = (FuArrayStorageType) def.Type;
-			int nesting = 0;
-			while (array.GetElementType() is FuArrayStorageType innerArray) {
-				OpenLoop("let", nesting++, array.Length);
-				WriteArrayElement(def, nesting);
-				Write(" = ");
-				WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, FuPriority.Argument);
-				WriteCharLine(';');
-				array = innerArray;
-			}
-			if (array.GetElementType() is FuStorageType klass) {
-				OpenLoop("let", nesting++, array.Length);
-				WriteArrayElement(def, nesting);
-				Write(" = ");
-				WriteNew(klass, FuPriority.Argument);
-				WriteCharLine(';');
-			}
-			while (--nesting >= 0)
-				CloseBlock();
 		}
 
 		protected override void WriteResource(string name, int length)

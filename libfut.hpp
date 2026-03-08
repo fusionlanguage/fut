@@ -2067,7 +2067,6 @@ private: // internal
 	friend GenCs;
 	friend GenD;
 	friend GenJava;
-	friend GenJsNoModule;
 	friend GenPy;
 	friend GenSwift;
 	friend GenTyped;

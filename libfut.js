@@ -21517,43 +21517,28 @@ export class GenJsNoModule extends GenBase
 
 	writeNewArray(elementType, lengthExpr, parent)
 	{
-		this.write("new ");
-		if (elementType instanceof FuNumericType)
-			this.writeArrayElementType(elementType);
-		this.writeCall("Array", lengthExpr);
+		if (elementType instanceof FuStorageType) {
+			this.write("Array.from({ length: ");
+			lengthExpr.accept(this, FuPriority.ARGUMENT);
+			this.write(" }, () => ");
+			this.writeNewStorage(elementType);
+			this.writeChar(41);
+		}
+		else {
+			this.write("new ");
+			if (elementType instanceof FuNumericType)
+				this.writeArrayElementType(elementType);
+			this.writeCall("Array", lengthExpr);
+		}
 	}
 
 	hasInitCode(def)
 	{
-		let array;
-		return (array = def.type) instanceof FuArrayStorageType && array.getElementType() instanceof FuStorageType;
+		return false;
 	}
 
 	writeInitCode(def)
 	{
-		if (!this.hasInitCode(def))
-			return;
-		let array = def.type;
-		let nesting = 0;
-		let innerArray;
-		while ((innerArray = array.getElementType()) instanceof FuArrayStorageType) {
-			this.openLoop("let", nesting++, array.length);
-			this.writeArrayElement(def, nesting);
-			this.write(" = ");
-			this.writeNewArray(innerArray.getElementType(), innerArray.lengthExpr, FuPriority.ARGUMENT);
-			this.writeCharLine(59);
-			array = innerArray;
-		}
-		let klass;
-		if ((klass = array.getElementType()) instanceof FuStorageType) {
-			this.openLoop("let", nesting++, array.length);
-			this.writeArrayElement(def, nesting);
-			this.write(" = ");
-			this.writeNew(klass, FuPriority.ARGUMENT);
-			this.writeCharLine(59);
-		}
-		while (--nesting >= 0)
-			this.closeBlock();
 	}
 
 	writeResource(name, length)

@@ -20251,41 +20251,28 @@ void GenJsNoModule::writeCoercedInternal(const FuType * type, const FuExpr * exp
 
 void GenJsNoModule::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
-	write("new ");
-	if (dynamic_cast<const FuNumericType *>(elementType))
-		writeArrayElementType(elementType);
-	writeCall("Array", lengthExpr);
+	if (dynamic_cast<const FuStorageType *>(elementType)) {
+		write("Array.from({ length: ");
+		lengthExpr->accept(this, FuPriority::argument);
+		write(" }, () => ");
+		writeNewStorage(elementType);
+		writeChar(')');
+	}
+	else {
+		write("new ");
+		if (dynamic_cast<const FuNumericType *>(elementType))
+			writeArrayElementType(elementType);
+		writeCall("Array", lengthExpr);
+	}
 }
 
 bool GenJsNoModule::hasInitCode(const FuNamedValue * def) const
 {
-	const FuArrayStorageType * array;
-	return (array = dynamic_cast<const FuArrayStorageType *>(def->type.get())) && dynamic_cast<const FuStorageType *>(array->getElementType().get());
+	return false;
 }
 
 void GenJsNoModule::writeInitCode(const FuNamedValue * def)
 {
-	if (!hasInitCode(def))
-		return;
-	const FuArrayStorageType * array = static_cast<const FuArrayStorageType *>(def->type.get());
-	int nesting = 0;
-	while (const FuArrayStorageType *innerArray = dynamic_cast<const FuArrayStorageType *>(array->getElementType().get())) {
-		openLoop("let", nesting++, array->length);
-		writeArrayElement(def, nesting);
-		write(" = ");
-		writeNewArray(innerArray->getElementType().get(), innerArray->lengthExpr.get(), FuPriority::argument);
-		writeCharLine(';');
-		array = innerArray;
-	}
-	if (const FuStorageType *klass = dynamic_cast<const FuStorageType *>(array->getElementType().get())) {
-		openLoop("let", nesting++, array->length);
-		writeArrayElement(def, nesting);
-		write(" = ");
-		writeNew(klass, FuPriority::argument);
-		writeCharLine(';');
-	}
-	while (--nesting >= 0)
-		closeBlock();
 }
 
 void GenJsNoModule::writeResource(std::string_view name, int length)
