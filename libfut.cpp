@@ -17030,7 +17030,7 @@ void GenCs::writeLib()
 void GenCs::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
 	writeNewLine();
-	writeLine("internal static class FuResource");
+	writeLine("static class FuResource");
 	openBlock();
 	for (const auto &[name, content] : *resources) {
 		write("internal static readonly byte[] ");

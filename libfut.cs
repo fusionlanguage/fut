@@ -17392,7 +17392,7 @@ namespace Fusion
 		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			WriteNewLine();
-			WriteLine("internal static class FuResource");
+			WriteLine("static class FuResource");
 			OpenBlock();
 			foreach ((string name, List<byte> content) in resources) {
 				Write("internal static readonly byte[] ");

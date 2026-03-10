@@ -17950,7 +17950,7 @@ export class GenCs extends GenTyped
 	#writeResources(resources)
 	{
 		this.writeNewLine();
-		this.writeLine("internal static class FuResource");
+		this.writeLine("static class FuResource");
 		this.openBlock();
 		for (const [name, content] of Object.entries(resources).sort((a, b) => a[0].localeCompare(b[0]))) {
 			this.write("internal static readonly byte[] ");
