@@ -16332,6 +16332,8 @@ namespace Fusion
 	public class GenCs : GenTyped
 	{
 
+		bool NewArray;
+
 		protected override string GetTargetName() => "C#";
 
 		protected override void StartDocLine()
@@ -16647,14 +16649,24 @@ namespace Fusion
 
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
-			Write("new ");
-			WriteType(elementType.GetBaseType(), false);
-			WriteChar('[');
-			lengthExpr.Accept(this, FuPriority.Argument);
-			WriteChar(']');
-			while (elementType is FuClassType array && array.IsArray()) {
-				Write("[]");
-				elementType = array.GetElementType();
+			if (elementType is FuStorageType) {
+				this.NewArray = true;
+				Write("Fu.NewArray(");
+				lengthExpr.Accept(this, FuPriority.Argument);
+				Write(", () => ");
+				WriteNewStorage(elementType);
+				WriteChar(')');
+			}
+			else {
+				Write("new ");
+				WriteType(elementType.GetBaseType(), false);
+				WriteChar('[');
+				lengthExpr.Accept(this, FuPriority.Argument);
+				WriteChar(']');
+				while (elementType is FuClassType array && array.IsArray()) {
+					Write("[]");
+					elementType = array.GetElementType();
+				}
 			}
 		}
 
@@ -16665,31 +16677,10 @@ namespace Fusion
 			Write("()");
 		}
 
-		protected override bool HasInitCode(FuNamedValue def) => def.Type is FuArrayStorageType array && array.GetElementType() is FuStorageType;
+		protected override bool HasInitCode(FuNamedValue def) => false;
 
 		protected override void WriteInitCode(FuNamedValue def)
 		{
-			if (!HasInitCode(def))
-				return;
-			FuArrayStorageType array = (FuArrayStorageType) def.Type;
-			int nesting = 0;
-			while (array.GetElementType() is FuArrayStorageType innerArray) {
-				OpenLoop("int", nesting++, array.Length);
-				WriteArrayElement(def, nesting);
-				Write(" = ");
-				WriteNewArray(innerArray.GetElementType(), innerArray.LengthExpr, FuPriority.Argument);
-				WriteCharLine(';');
-				array = innerArray;
-			}
-			if (array.GetElementType() is FuStorageType klass) {
-				OpenLoop("int", nesting++, array.Length);
-				WriteArrayElement(def, nesting);
-				Write(" = ");
-				WriteNew(klass, FuPriority.Argument);
-				WriteCharLine(';');
-			}
-			while (--nesting >= 0)
-				CloseBlock();
 		}
 
 		protected override void WriteResource(string name, int length)
@@ -17380,6 +17371,24 @@ namespace Fusion
 			CloseBlock();
 		}
 
+		void WriteLib()
+		{
+			if (this.NewArray) {
+				Include("System");
+				WriteNewLine();
+				WriteLine("static class Fu");
+				OpenBlock();
+				WriteLine("public static T[] NewArray<T>(int size, Func<T> f)");
+				OpenBlock();
+				WriteLine("T[] a = new T[size];");
+				WriteLine("for (int i = 0; i < size; i++)");
+				WriteLine("\ta[i] = f();");
+				WriteLine("return a;");
+				CloseBlock();
+				CloseBlock();
+			}
+		}
+
 		void WriteResources(SortedDictionary<string, List<byte>> resources)
 		{
 			WriteNewLine();
@@ -17398,6 +17407,7 @@ namespace Fusion
 
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
+			this.NewArray = false;
 			OpenStringWriter();
 			if (namespace_.Length != 0) {
 				Write("namespace ");
@@ -17406,6 +17416,7 @@ namespace Fusion
 			}
 			WriteTopLevelNatives(program);
 			WriteTypes(program);
+			WriteLib();
 			if (program.Resources.Count > 0)
 				WriteResources(program.Resources);
 			if (namespace_.Length != 0)

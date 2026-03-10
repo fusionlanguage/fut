@@ -16865,6 +16865,7 @@ export class GenCpp extends GenCCpp
 
 export class GenCs extends GenTyped
 {
+	#newArray;
 
 	getTargetName()
 	{
@@ -17190,15 +17191,25 @@ export class GenCs extends GenTyped
 
 	writeNewArray(elementType, lengthExpr, parent)
 	{
-		this.write("new ");
-		this.writeType(elementType.getBaseType(), false);
-		this.writeChar(91);
-		lengthExpr.accept(this, FuPriority.ARGUMENT);
-		this.writeChar(93);
-		let array;
-		while ((array = elementType) instanceof FuClassType && array.isArray()) {
-			this.write("[]");
-			elementType = array.getElementType();
+		if (elementType instanceof FuStorageType) {
+			this.#newArray = true;
+			this.write("Fu.NewArray(");
+			lengthExpr.accept(this, FuPriority.ARGUMENT);
+			this.write(", () => ");
+			this.writeNewStorage(elementType);
+			this.writeChar(41);
+		}
+		else {
+			this.write("new ");
+			this.writeType(elementType.getBaseType(), false);
+			this.writeChar(91);
+			lengthExpr.accept(this, FuPriority.ARGUMENT);
+			this.writeChar(93);
+			let array;
+			while ((array = elementType) instanceof FuClassType && array.isArray()) {
+				this.write("[]");
+				elementType = array.getElementType();
+			}
 		}
 	}
 
@@ -17211,35 +17222,11 @@ export class GenCs extends GenTyped
 
 	hasInitCode(def)
 	{
-		let array;
-		return (array = def.type) instanceof FuArrayStorageType && array.getElementType() instanceof FuStorageType;
+		return false;
 	}
 
 	writeInitCode(def)
 	{
-		if (!this.hasInitCode(def))
-			return;
-		let array = def.type;
-		let nesting = 0;
-		let innerArray;
-		while ((innerArray = array.getElementType()) instanceof FuArrayStorageType) {
-			this.openLoop("int", nesting++, array.length);
-			this.writeArrayElement(def, nesting);
-			this.write(" = ");
-			this.writeNewArray(innerArray.getElementType(), innerArray.lengthExpr, FuPriority.ARGUMENT);
-			this.writeCharLine(59);
-			array = innerArray;
-		}
-		let klass;
-		if ((klass = array.getElementType()) instanceof FuStorageType) {
-			this.openLoop("int", nesting++, array.length);
-			this.writeArrayElement(def, nesting);
-			this.write(" = ");
-			this.writeNew(klass, FuPriority.ARGUMENT);
-			this.writeCharLine(59);
-		}
-		while (--nesting >= 0)
-			this.closeBlock();
 	}
 
 	writeResource(name, length)
@@ -17942,6 +17929,24 @@ export class GenCs extends GenTyped
 		this.closeBlock();
 	}
 
+	#writeLib()
+	{
+		if (this.#newArray) {
+			this.include("System");
+			this.writeNewLine();
+			this.writeLine("static class Fu");
+			this.openBlock();
+			this.writeLine("public static T[] NewArray<T>(int size, Func<T> f)");
+			this.openBlock();
+			this.writeLine("T[] a = new T[size];");
+			this.writeLine("for (int i = 0; i < size; i++)");
+			this.writeLine("\ta[i] = f();");
+			this.writeLine("return a;");
+			this.closeBlock();
+			this.closeBlock();
+		}
+	}
+
 	#writeResources(resources)
 	{
 		this.writeNewLine();
@@ -17960,6 +17965,7 @@ export class GenCs extends GenTyped
 
 	writeProgram(program, outputFile, namespace)
 	{
+		this.#newArray = false;
 		this.openStringWriter();
 		if (namespace.length != 0) {
 			this.write("namespace ");
@@ -17968,6 +17974,7 @@ export class GenCs extends GenTyped
 		}
 		this.writeTopLevelNatives(program);
 		this.writeTypes(program);
+		this.#writeLib();
 		if (Object.keys(program.resources).length > 0)
 			this.#writeResources(program.resources);
 		if (namespace.length != 0)

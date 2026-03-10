@@ -2064,7 +2064,6 @@ private: // internal
 	friend GenC;
 	friend GenCl;
 	friend GenCpp;
-	friend GenCs;
 	friend GenD;
 	friend GenJava;
 	friend GenPy;
@@ -3141,11 +3140,13 @@ private: // internal
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
 private:
+	bool newArray;
 	void writeVisibility(FuVisibility visibility);
 	void writeCallType(FuCallType callType, std::string_view sealedString);
 	void writeElementType(const FuType * elementType);
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	void writeOrderedDictionaryIndexing(const FuBinaryExpr * expr);
+	void writeLib();
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
 };
 

@@ -16263,15 +16263,25 @@ void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 
 void GenCs::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
-	write("new ");
-	writeType(elementType->getBaseType(), false);
-	writeChar('[');
-	lengthExpr->accept(this, FuPriority::argument);
-	writeChar(']');
-	const FuClassType * array;
-	while ((array = dynamic_cast<const FuClassType *>(elementType)) && array->isArray()) {
-		write("[]");
-		elementType = array->getElementType().get();
+	if (dynamic_cast<const FuStorageType *>(elementType)) {
+		this->newArray = true;
+		write("Fu.NewArray(");
+		lengthExpr->accept(this, FuPriority::argument);
+		write(", () => ");
+		writeNewStorage(elementType);
+		writeChar(')');
+	}
+	else {
+		write("new ");
+		writeType(elementType->getBaseType(), false);
+		writeChar('[');
+		lengthExpr->accept(this, FuPriority::argument);
+		writeChar(']');
+		const FuClassType * array;
+		while ((array = dynamic_cast<const FuClassType *>(elementType)) && array->isArray()) {
+			write("[]");
+			elementType = array->getElementType().get();
+		}
 	}
 }
 
@@ -16284,33 +16294,11 @@ void GenCs::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 
 bool GenCs::hasInitCode(const FuNamedValue * def) const
 {
-	const FuArrayStorageType * array;
-	return (array = dynamic_cast<const FuArrayStorageType *>(def->type.get())) && dynamic_cast<const FuStorageType *>(array->getElementType().get());
+	return false;
 }
 
 void GenCs::writeInitCode(const FuNamedValue * def)
 {
-	if (!hasInitCode(def))
-		return;
-	const FuArrayStorageType * array = static_cast<const FuArrayStorageType *>(def->type.get());
-	int nesting = 0;
-	while (const FuArrayStorageType *innerArray = dynamic_cast<const FuArrayStorageType *>(array->getElementType().get())) {
-		openLoop("int", nesting++, array->length);
-		writeArrayElement(def, nesting);
-		write(" = ");
-		writeNewArray(innerArray->getElementType().get(), innerArray->lengthExpr.get(), FuPriority::argument);
-		writeCharLine(';');
-		array = innerArray;
-	}
-	if (const FuStorageType *klass = dynamic_cast<const FuStorageType *>(array->getElementType().get())) {
-		openLoop("int", nesting++, array->length);
-		writeArrayElement(def, nesting);
-		write(" = ");
-		writeNew(klass, FuPriority::argument);
-		writeCharLine(';');
-	}
-	while (--nesting >= 0)
-		closeBlock();
 }
 
 void GenCs::writeResource(std::string_view name, int length)
@@ -17021,6 +17009,24 @@ void GenCs::writeClass(const FuClass * klass, const FuProgram * program)
 	closeBlock();
 }
 
+void GenCs::writeLib()
+{
+	if (this->newArray) {
+		include("System");
+		writeNewLine();
+		writeLine("static class Fu");
+		openBlock();
+		writeLine("public static T[] NewArray<T>(int size, Func<T> f)");
+		openBlock();
+		writeLine("T[] a = new T[size];");
+		writeLine("for (int i = 0; i < size; i++)");
+		writeLine("\ta[i] = f();");
+		writeLine("return a;");
+		closeBlock();
+		closeBlock();
+	}
+}
+
 void GenCs::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
 {
 	writeNewLine();
@@ -17039,6 +17045,7 @@ void GenCs::writeResources(const std::map<std::string, std::vector<uint8_t>> * r
 
 void GenCs::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
+	this->newArray = false;
 	openStringWriter();
 	if (!namespace_.empty()) {
 		write("namespace ");
@@ -17047,6 +17054,7 @@ void GenCs::writeProgram(const FuProgram * program, std::string_view outputFile,
 	}
 	writeTopLevelNatives(program);
 	writeTypes(program);
+	writeLib();
 	if (std::ssize(program->resources) > 0)
 		writeResources(&program->resources);
 	if (!namespace_.empty())
