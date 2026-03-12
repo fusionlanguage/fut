@@ -1,0 +1,19 @@
+public static class Test
+{
+	static List<int>() ReturnStorage() //FAIL: cl
+	{
+		List<int>() l;
+		l.Add(42);
+		return l;
+	}
+
+	static int AcceptPtr(List<int> l)
+	{
+		return l[0];
+	}
+
+	public static bool Run()
+	{
+		return AcceptPtr(ReturnStorage()) == 42;
+	}
+}

@@ -15151,9 +15151,7 @@ void GenCpp::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPr
 			writeChar('&');
 			if (dynamic_cast<const FuCallExpr *>(expr)) {
 				write("static_cast<");
-				if (!dynamic_cast<const FuReadWriteClassType *>(klass))
-					write("const ");
-				writeName(klass->class_);
+				writeClassType(klass);
 				writeCall(" &>", expr);
 			}
 			else

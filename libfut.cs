@@ -15487,9 +15487,7 @@ namespace Fusion
 					WriteChar('&');
 					if (expr is FuCallExpr) {
 						Write("static_cast<");
-						if (!(klass is FuReadWriteClassType))
-							Write("const ");
-						WriteName(klass.Class);
+						WriteClassType(klass);
 						WriteCall(" &>", expr);
 					}
 					else

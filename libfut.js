@@ -15992,9 +15992,7 @@ export class GenCpp extends GenCCpp
 				this.writeChar(38);
 				if (expr instanceof FuCallExpr) {
 					this.write("static_cast<");
-					if (!(klass instanceof FuReadWriteClassType))
-						this.write("const ");
-					this.writeName(klass.class);
+					this.#writeClassType(klass);
 					this.writeCall(" &>", expr);
 				}
 				else
