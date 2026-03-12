@@ -7,7 +7,8 @@ for (@ARGV) {
 	my $n = $1;
 	$t{$n}++;
 	open IN, $_ or die "$_: $!\n";
-	$p{$n} += <IN> =~ /^PASSED/;
+	local $/;
+	$p{$n} += <IN> =~ /^PASSED/m;
 }
 print "PASSED";
 print " $_=$p{$_}/$t{$_}" for sort keys %t;
