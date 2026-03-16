@@ -826,13 +826,11 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case FuId.ConsoleWrite:
-			// TODO: stderr
 			Write("print(");
 			WriteUnwrapped(args[0], FuPriority.Argument, true);
 			Write(", terminator: \"\")");
 			break;
 		case FuId.ConsoleWriteLine:
-			// TODO: stderr
 			Write("print(");
 			if (args.Count == 1)
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
