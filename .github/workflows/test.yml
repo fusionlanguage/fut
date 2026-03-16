@@ -29,9 +29,7 @@ jobs:
   d:
     runs-on: ubuntu-24.04
     steps:
-      - uses: dlang-community/setup-dlang@v1
-        with:
-          compiler: dmd-latest
+      - uses: dlang-community/setup-dlang@v2
       - uses: actions/checkout@main
       - run: make -j4 test-d
   js-ts:
