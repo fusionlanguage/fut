@@ -10893,8 +10893,20 @@ namespace Fusion
 
 		protected override void WriteArgTemporary(FuMethod method, FuVar param, FuExpr arg)
 		{
-			if (method.Id != FuId.ConsoleWrite && method.Id != FuId.ConsoleWriteLine && param.Type.Id != FuId.TypeParam0NotFinal && !(param.Type is FuOwningType))
-				WriteOwningTemporary(arg);
+			if (param.Type is FuOwningType || param.Type.Id == FuId.TypeParam0NotFinal)
+				return;
+			if (arg is FuInterpolatedString) {
+				switch (method.Id) {
+				case FuId.TextWriterWrite:
+				case FuId.TextWriterWriteLine:
+				case FuId.ConsoleWrite:
+				case FuId.ConsoleWriteLine:
+					return;
+				default:
+					break;
+				}
+			}
+			WriteOwningTemporary(arg);
 		}
 
 		bool HasTemporariesToDestruct() => this.CurrentTemporaries.Exists(temp => !(temp is FuType));

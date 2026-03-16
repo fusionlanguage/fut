@@ -11339,8 +11339,20 @@ export class GenC extends GenCCpp
 
 	writeArgTemporary(method, param, arg)
 	{
-		if (method.id != FuId.CONSOLE_WRITE && method.id != FuId.CONSOLE_WRITE_LINE && param.type.id != FuId.TYPE_PARAM0_NOT_FINAL && !(param.type instanceof FuOwningType))
-			this.writeOwningTemporary(arg);
+		if (param.type instanceof FuOwningType || param.type.id == FuId.TYPE_PARAM0_NOT_FINAL)
+			return;
+		if (arg instanceof FuInterpolatedString) {
+			switch (method.id) {
+			case FuId.TEXT_WRITER_WRITE:
+			case FuId.TEXT_WRITER_WRITE_LINE:
+			case FuId.CONSOLE_WRITE:
+			case FuId.CONSOLE_WRITE_LINE:
+				return;
+			default:
+				break;
+			}
+		}
+		this.writeOwningTemporary(arg);
 	}
 
 	#hasTemporariesToDestruct()

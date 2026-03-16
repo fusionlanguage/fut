@@ -10640,8 +10640,20 @@ void GenC::writeTemporariesNotSubstring(const FuExpr * expr)
 
 void GenC::writeArgTemporary(const FuMethod * method, const FuVar * param, const FuExpr * arg)
 {
-	if (method->id != FuId::consoleWrite && method->id != FuId::consoleWriteLine && param->type->id != FuId::typeParam0NotFinal && !dynamic_cast<const FuOwningType *>(param->type.get()))
-		writeOwningTemporary(arg);
+	if (dynamic_cast<const FuOwningType *>(param->type.get()) || param->type->id == FuId::typeParam0NotFinal)
+		return;
+	if (dynamic_cast<const FuInterpolatedString *>(arg)) {
+		switch (method->id) {
+		case FuId::textWriterWrite:
+		case FuId::textWriterWriteLine:
+		case FuId::consoleWrite:
+		case FuId::consoleWriteLine:
+			return;
+		default:
+			break;
+		}
+	}
+	writeOwningTemporary(arg);
 }
 
 bool GenC::hasTemporariesToDestruct() const
