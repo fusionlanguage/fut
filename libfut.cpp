@@ -11947,10 +11947,14 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 			writeCall("putc", (*args)[0].get(), obj);
 		break;
 	case FuId::textWriterWriteCodePoint:
-		if (obj->type->asClassType()->class_->id != FuId::stringWriterClass)
-			notSupported(obj, method->name);
-		else
+		if (obj->type->asClassType()->class_->id == FuId::stringWriterClass)
 			writeCall("g_string_append_unichar", obj, (*args)[0].get());
+		else {
+			include("stdio.h");
+			include("glib.h");
+			this->textWriterWriteCodePoint = true;
+			writeCall("FuTextWriter_WriteCodePoint", obj, (*args)[0].get());
+		}
 		break;
 	case FuId::textWriterWriteLine:
 		writeTextWriterWrite(obj, args, true);
@@ -13281,6 +13285,15 @@ void GenC::writeLibrary()
 		writeLine("return str;");
 		closeBlock();
 	}
+	if (this->textWriterWriteCodePoint) {
+		writeNewLine();
+		writeLine("static void FuTextWriter_WriteCodePoint(FILE *f, int c)");
+		openBlock();
+		writeLine("char buf[6];");
+		writeLine("int len = g_unichar_to_utf8(c, buf);");
+		writeLine("fwrite(buf, 1, len, f);");
+		closeBlock();
+	}
 	if (this->matchFind) {
 		writeNewLine();
 		writeLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -13549,6 +13562,7 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->stringEndsWith = false;
 	this->stringReplace = false;
 	this->stringFormat = false;
+	this->textWriterWriteCodePoint = false;
 	this->matchFind = false;
 	this->matchPos = false;
 	this->ptrConstruct = false;

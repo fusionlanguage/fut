@@ -10261,6 +10261,7 @@ export class GenC extends GenCCpp
 	#stringEndsWith;
 	#stringReplace;
 	#stringFormat;
+	#textWriterWriteCodePoint;
 	#matchFind;
 	#matchPos;
 	#ptrConstruct;
@@ -12648,10 +12649,14 @@ export class GenC extends GenCCpp
 				this.writeCall("putc", args[0], obj);
 			break;
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
-			if (obj.type.asClassType().class.id != FuId.STRING_WRITER_CLASS)
-				this.notSupported(obj, method.name);
-			else
+			if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS)
 				this.writeCall("g_string_append_unichar", obj, args[0]);
+			else {
+				this.include("stdio.h");
+				this.include("glib.h");
+				this.#textWriterWriteCodePoint = true;
+				this.writeCall("FuTextWriter_WriteCodePoint", obj, args[0]);
+			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
 			this.#writeTextWriterWrite(obj, args, true);
@@ -13994,6 +13999,15 @@ export class GenC extends GenCCpp
 			this.writeLine("return str;");
 			this.closeBlock();
 		}
+		if (this.#textWriterWriteCodePoint) {
+			this.writeNewLine();
+			this.writeLine("static void FuTextWriter_WriteCodePoint(FILE *f, int c)");
+			this.openBlock();
+			this.writeLine("char buf[6];");
+			this.writeLine("int len = g_unichar_to_utf8(c, buf);");
+			this.writeLine("fwrite(buf, 1, len, f);");
+			this.closeBlock();
+		}
 		if (this.#matchFind) {
 			this.writeNewLine();
 			this.writeLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -14262,6 +14276,7 @@ export class GenC extends GenCCpp
 		this.#stringEndsWith = false;
 		this.#stringReplace = false;
 		this.#stringFormat = false;
+		this.#textWriterWriteCodePoint = false;
 		this.#matchFind = false;
 		this.#matchPos = false;
 		this.#ptrConstruct = false;

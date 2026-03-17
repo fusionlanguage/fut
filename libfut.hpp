@@ -2851,6 +2851,7 @@ private:
 	bool stringEndsWith;
 	bool stringReplace;
 	bool stringFormat;
+	bool textWriterWriteCodePoint;
 	bool matchFind;
 	bool matchPos;
 	bool ptrConstruct;

@@ -9824,6 +9824,8 @@ namespace Fusion
 
 		bool StringFormat;
 
+		bool TextWriterWriteCodePoint;
+
 		bool MatchFind;
 
 		bool MatchPos;
@@ -12172,10 +12174,14 @@ namespace Fusion
 					WriteCall("putc", args[0], obj);
 				break;
 			case FuId.TextWriterWriteCodePoint:
-				if (obj.Type.AsClassType().Class.Id != FuId.StringWriterClass)
-					NotSupported(obj, method.Name);
-				else
+				if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
 					WriteCall("g_string_append_unichar", obj, args[0]);
+				else {
+					Include("stdio.h");
+					Include("glib.h");
+					this.TextWriterWriteCodePoint = true;
+					WriteCall("FuTextWriter_WriteCodePoint", obj, args[0]);
+				}
 				break;
 			case FuId.TextWriterWriteLine:
 				WriteTextWriterWrite(obj, args, true);
@@ -13497,6 +13503,15 @@ namespace Fusion
 				WriteLine("return str;");
 				CloseBlock();
 			}
+			if (this.TextWriterWriteCodePoint) {
+				WriteNewLine();
+				WriteLine("static void FuTextWriter_WriteCodePoint(FILE *f, int c)");
+				OpenBlock();
+				WriteLine("char buf[6];");
+				WriteLine("int len = g_unichar_to_utf8(c, buf);");
+				WriteLine("fwrite(buf, 1, len, f);");
+				CloseBlock();
+			}
 			if (this.MatchFind) {
 				WriteNewLine();
 				WriteLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -13764,6 +13779,7 @@ namespace Fusion
 			this.StringEndsWith = false;
 			this.StringReplace = false;
 			this.StringFormat = false;
+			this.TextWriterWriteCodePoint = false;
 			this.MatchFind = false;
 			this.MatchPos = false;
 			this.PtrConstruct = false;
