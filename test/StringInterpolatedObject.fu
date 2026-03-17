@@ -2,7 +2,7 @@ public class Simple
 {
 	internal string Trap = "Oh no";
 	string Name = "Simp";
-	public string ToString() => this.Name; //FAIL: swift TODO unwrap
+	public string ToString() => this.Name;
 }
 
 public abstract class Abstract
