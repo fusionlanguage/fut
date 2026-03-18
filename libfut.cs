@@ -12148,9 +12148,7 @@ namespace Fusion
 				break;
 			case FuId.SortedSetClear:
 			case FuId.SortedDictionaryClear:
-				Write("g_tree_destroy(g_tree_ref(");
-				obj.Accept(this, FuPriority.Argument);
-				Write("))");
+				WriteCall("g_tree_remove_all", obj);
 				break;
 			case FuId.SortedSetContains:
 			case FuId.SortedDictionaryContainsKey:

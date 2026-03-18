@@ -12623,9 +12623,7 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.SORTED_SET_CLEAR:
 		case FuId.SORTED_DICTIONARY_CLEAR:
-			this.write("g_tree_destroy(g_tree_ref(");
-			obj.accept(this, FuPriority.ARGUMENT);
-			this.write("))");
+			this.writeCall("g_tree_remove_all", obj);
 			break;
 		case FuId.SORTED_SET_CONTAINS:
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:

@@ -11921,9 +11921,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		}
 	case FuId::sortedSetClear:
 	case FuId::sortedDictionaryClear:
-		write("g_tree_destroy(g_tree_ref(");
-		obj->accept(this, FuPriority::argument);
-		write("))");
+		writeCall("g_tree_remove_all", obj);
 		break;
 	case FuId::sortedSetContains:
 	case FuId::sortedDictionaryContainsKey:

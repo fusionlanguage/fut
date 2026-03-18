@@ -2368,10 +2368,7 @@ public class GenC : GenCCpp
 			break;
 		case FuId.SortedSetClear:
 		case FuId.SortedDictionaryClear:
-			// TODO: since glib-2.70: WriteCall("g_tree_remove_all", obj);
-			Write("g_tree_destroy(g_tree_ref(");
-			obj.Accept(this, FuPriority.Argument);
-			Write("))");
+			WriteCall("g_tree_remove_all", obj);
 			break;
 		case FuId.SortedSetContains:
 		case FuId.SortedDictionaryContainsKey:
