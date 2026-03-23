@@ -4874,6 +4874,9 @@ namespace Fusion
 							if (part.WidthExpr != null && part.Precision >= 0)
 								ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
 							break;
+						case 'U':
+						case 'u':
+							break;
 						default:
 							ReportError(arg, "Invalid format");
 							break;
@@ -7606,14 +7609,22 @@ namespace Fusion
 		{
 			switch (type) {
 			case FuIntegerType:
-				return format == 'x' || format == 'X' ? format : 'd';
+				switch (format) {
+				case 'X':
+				case 'x':
+					return format;
+				case 'U':
+				case 'u':
+					return 'c';
+				default:
+					return 'd';
+				}
 			case FuNumericType:
 				switch (format) {
 				case 'E':
 				case 'e':
 				case 'f':
 				case 'G':
-				case 'g':
 					return format;
 				case 'F':
 					return 'f';
@@ -7657,21 +7668,31 @@ namespace Fusion
 				WriteChar(part.Argument.Type is FuIntegerType ? '0' : '.');
 				VisitLiteralLong(part.Precision);
 			}
-			if (part.Format != ' ' && part.Format != 'D')
+			switch (part.Format) {
+			case ' ':
+			case 'D':
+				break;
+			case 'U':
+			case 'u':
+				WriteChar('c');
+				break;
+			default:
 				WriteChar(part.Format);
+				break;
+			}
 			WriteChar('}');
 		}
 
-		protected virtual void WriteInterpolatedStringArg(FuExpr expr)
+		protected virtual void WriteInterpolatedStringArg(FuInterpolatedPart part)
 		{
-			expr.Accept(this, FuPriority.Argument);
+			part.Argument.Accept(this, FuPriority.Argument);
 		}
 
 		protected void WriteInterpolatedStringArgs(FuInterpolatedString expr)
 		{
 			foreach (FuInterpolatedPart part in expr.Parts) {
 				Write(", ");
-				WriteInterpolatedStringArg(part.Argument);
+				WriteInterpolatedStringArg(part);
 			}
 		}
 
@@ -9922,7 +9943,9 @@ namespace Fusion
 				Debug.Assert(part.Precision < 0);
 				Write(".*");
 			}
-			if (part.Argument.Type.Id == FuId.NIntType)
+			if (part.Format == 'U' || part.Format == 'u')
+				WriteChar('l');
+			else if (part.Argument.Type.Id == FuId.NIntType)
 				WriteChar('t');
 			else if (part.Argument.Type.Id == FuId.LongType)
 				WritePrintfLongPrefix();
@@ -9984,8 +10007,9 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteInterpolatedStringArg(FuExpr expr)
+		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)
 		{
+			FuExpr expr = part.Argument;
 			FuCallExpr call = IsStringSubstring(expr);
 			if (call != null) {
 				GetStringSubstringLength(call).Accept(this, FuPriority.Argument);
@@ -14227,14 +14251,15 @@ namespace Fusion
 			WriteMemberOp(obj, null);
 		}
 
-		protected override void WriteInterpolatedStringArg(FuExpr expr)
+		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)
 		{
+			FuExpr expr = part.Argument;
 			if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 				StartMethodCall(expr);
 				Write("toString()");
 			}
 			else
-				base.WriteInterpolatedStringArg(expr);
+				base.WriteInterpolatedStringArg(part);
 		}
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
@@ -16654,12 +16679,15 @@ namespace Fusion
 			foreach (FuInterpolatedPart part in expr.Parts) {
 				WriteDoubling(part.Prefix, '{');
 				WriteChar('{');
-				part.Argument.Accept(this, FuPriority.SelectCond);
+				if (part.Format == 'U' || part.Format == 'u')
+					WriteCall("char.ConvertFromUtf32", part.Argument);
+				else
+					part.Argument.Accept(this, FuPriority.SelectCond);
 				if (part.WidthExpr != null) {
 					WriteChar(',');
 					VisitLiteralLong(part.Width);
 				}
-				if (part.Format != ' ') {
+				if (part.Format != ' ' && part.Format != 'U' && part.Format != 'u') {
 					WriteChar(':');
 					WriteChar(part.Format);
 					if (part.Precision >= 0)
@@ -17976,6 +18004,16 @@ namespace Fusion
 			Write(")(");
 			GetStaticCastInner(type, expr).Accept(this, FuPriority.Argument);
 			WriteChar(')');
+		}
+
+		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)
+		{
+			if (part.Format == 'U' || part.Format == 'u') {
+				Write("cast(dchar) ");
+				part.Argument.Accept(this, FuPriority.Primary);
+			}
+			else
+				base.WriteInterpolatedStringArg(part);
 		}
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
@@ -20803,56 +20841,60 @@ namespace Fusion
 				WriteInterpolatedLiteral(part.Prefix);
 				Write("${");
 				if (part.Width != 0 || part.Format != ' ') {
-					if (part.Argument is FuLiteralLong || part.Argument is FuPrefixExpr) {
-						WriteChar('(');
-						part.Argument.Accept(this, FuPriority.Primary);
-						WriteChar(')');
-					}
-					else
-						part.Argument.Accept(this, FuPriority.Primary);
-					if (part.Argument.Type is FuNumericType) {
-						switch (part.Format) {
-						case 'E':
-							Write(".toExponential(");
-							if (part.Precision >= 0)
-								VisitLiteralLong(part.Precision);
-							Write(").toUpperCase()");
-							break;
-						case 'e':
-							Write(".toExponential(");
-							if (part.Precision >= 0)
-								VisitLiteralLong(part.Precision);
+					if (part.Format == 'U' || part.Format == 'u')
+						WriteCall("String.fromCodePoint", part.Argument);
+					else {
+						if (part.Argument is FuLiteralLong || part.Argument is FuPrefixExpr) {
+							WriteChar('(');
+							part.Argument.Accept(this, FuPriority.Primary);
 							WriteChar(')');
-							break;
-						case 'F':
-						case 'f':
-							Write(".toFixed(");
-							if (part.Precision >= 0)
-								VisitLiteralLong(part.Precision);
-							WriteChar(')');
-							break;
-						case 'X':
-							Write(".toString(16).toUpperCase()");
-							break;
-						case 'x':
-							Write(".toString(16)");
-							break;
-						default:
-							Write(".toString()");
-							break;
 						}
-						if (part.Precision >= 0) {
+						else
+							part.Argument.Accept(this, FuPriority.Primary);
+						if (part.Argument.Type is FuNumericType) {
 							switch (part.Format) {
-							case 'D':
-							case 'd':
+							case 'E':
+								Write(".toExponential(");
+								if (part.Precision >= 0)
+									VisitLiteralLong(part.Precision);
+								Write(").toUpperCase()");
+								break;
+							case 'e':
+								Write(".toExponential(");
+								if (part.Precision >= 0)
+									VisitLiteralLong(part.Precision);
+								WriteChar(')');
+								break;
+							case 'F':
+							case 'f':
+								Write(".toFixed(");
+								if (part.Precision >= 0)
+									VisitLiteralLong(part.Precision);
+								WriteChar(')');
+								break;
 							case 'X':
+								Write(".toString(16).toUpperCase()");
+								break;
 							case 'x':
-								Write(".padStart(");
-								VisitLiteralLong(part.Precision);
-								Write(", \"0\")");
+								Write(".toString(16)");
 								break;
 							default:
+								Write(".toString()");
 								break;
+							}
+							if (part.Precision >= 0) {
+								switch (part.Format) {
+								case 'D':
+								case 'd':
+								case 'X':
+								case 'x':
+									Write(".padStart(");
+									VisitLiteralLong(part.Precision);
+									Write(", \"0\")");
+									break;
+								default:
+									break;
+								}
 							}
 						}
 					}

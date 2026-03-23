@@ -541,6 +541,16 @@ public class GenD : GenCCppD
 		WriteChar(')');
 	}
 
+	protected override void WriteInterpolatedStringArg!(FuInterpolatedPart part)
+	{
+		if (part.Format == 'U' || part.Format == 'u') {
+			Write("cast(dchar) ");
+			part.Argument.Accept(this, FuPriority.Primary);
+		}
+		else
+			base.WriteInterpolatedStringArg(part);
+	}
+
 	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
 		Include("std.format");

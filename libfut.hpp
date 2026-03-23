@@ -1082,6 +1082,7 @@ private: // internal
 	friend GenC;
 	friend GenCpp;
 	friend GenCs;
+	friend GenD;
 	friend GenJava;
 	friend GenJsNoModule;
 	friend GenPy;
@@ -2469,7 +2470,7 @@ protected:
 	virtual void writePrintfWidth(const FuInterpolatedPart * part);
 	void writePrintfFormat(const FuInterpolatedString * expr);
 	void writePyFormat(const FuInterpolatedPart * part);
-	virtual void writeInterpolatedStringArg(const FuExpr * expr);
+	virtual void writeInterpolatedStringArg(const FuInterpolatedPart * part);
 	void writeInterpolatedStringArgs(const FuInterpolatedString * expr);
 	void writePrintf(const FuInterpolatedString * expr, bool newLine);
 	void writePostfix(const FuExpr * obj, std::string_view s);
@@ -2771,7 +2772,7 @@ protected:
 	void writePrintfWidth(const FuInterpolatedPart * part) override;
 	virtual void writeInterpolatedStringArgBase(const FuExpr * expr);
 	void startTemporaryVar(const FuType * type) override;
-	void writeInterpolatedStringArg(const FuExpr * expr) override;
+	void writeInterpolatedStringArg(const FuInterpolatedPart * part) override;
 	virtual void writeCamelCaseNotKeyword(std::string_view name);
 	void writeName(const FuSymbol * symbol) override;
 	void writeLocalName(const FuSymbol * symbol, FuPriority parent) override;
@@ -3003,7 +3004,7 @@ protected:
 	void includeStdDef() override;
 	void includeAssert() override;
 	void includeMath() override;
-	void writeInterpolatedStringArg(const FuExpr * expr) override;
+	void writeInterpolatedStringArg(const FuInterpolatedPart * part) override;
 	void writeName(const FuSymbol * symbol) override;
 	void writeLocalName(const FuSymbol * symbol, FuPriority parent) override;
 	void writeType(const FuType * type, bool promote) override;
@@ -3169,6 +3170,7 @@ protected:
 	void writeType(const FuType * type, bool promote) override;
 	void writeTypeAndName(const FuNamedValue * value) override;
 	void writeStaticCast(const FuType * type, const FuExpr * expr) override;
+	void writeInterpolatedStringArg(const FuInterpolatedPart * part) override;
 	void writeStorageInit(const FuNamedValue * def) override;
 	void writeVarInit(const FuNamedValue * def) override;
 	bool hasInitCode(const FuNamedValue * def) const override;

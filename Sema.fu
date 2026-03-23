@@ -146,6 +146,9 @@ public class FuSema
 						if (part.WidthExpr != null && part.Precision >= 0)
 							ReportError(part.WidthExpr, "Cannot format an integer with both width and precision");
 						break;
+					case 'U':
+					case 'u':
+						break;
 					default:
 						ReportError(arg, "Invalid format");
 						break;

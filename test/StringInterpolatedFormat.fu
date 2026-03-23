@@ -11,11 +11,14 @@ public static class Test
 		double d = 1.5;
 		string() s5 = $"{d:F2} {d:f2}";
 		string() s6 = $"{d:E2} {d:e2}";
+		int c = 0x43;
+		string() s7 = $"{c:U}";
 		return s1 == " 15  foo"
 			&& s2 == "15 foo  "
 			&& s3 == "F f"
 			&& s4 == "015 015 0F 0f"
 			&& s5 == "1.50 1.50"
-			&& (s6 == "1.50E+000 1.50e+000" /* C, C# */ || s6 == "1.50E+00 1.50e+00" /* Java, Python */ || s6 == "1.50E+0 1.50e+0" /* JavaScript */);
+			&& (s6 == "1.50E+000 1.50e+000" /* C, C# */ || s6 == "1.50E+00 1.50e+00" /* Java, Python */ || s6 == "1.50E+0 1.50e+0" /* JavaScript */)
+			&& s7 == "C";
 	}
 }

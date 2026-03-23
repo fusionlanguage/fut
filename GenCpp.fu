@@ -61,14 +61,15 @@ public class GenCpp : GenCCpp
 		WriteMemberOp(obj, null);
 	}
 
-	protected override void WriteInterpolatedStringArg!(FuExpr expr)
+	protected override void WriteInterpolatedStringArg!(FuInterpolatedPart part)
 	{
+		FuExpr expr = part.Argument;
 		if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 			StartMethodCall(expr);
 			Write("toString()");
 		}
 		else
-			base.WriteInterpolatedStringArg(expr);
+			base.WriteInterpolatedStringArg(part);
 	}
 
 	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)

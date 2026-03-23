@@ -4607,6 +4607,9 @@ std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterp
 					if (part->widthExpr != nullptr && part->precision >= 0)
 						reportError(part->widthExpr.get(), "Cannot format an integer with both width and precision");
 					break;
+				case 'U':
+				case 'u':
+					break;
 				default:
 					reportError(arg.get(), "Invalid format");
 					break;
@@ -7480,15 +7483,24 @@ void GenBase::writePrintfWidth(const FuInterpolatedPart * part)
 
 int GenBase::getPrintfFormat(const FuType * type, int format)
 {
-	if (dynamic_cast<const FuIntegerType *>(type))
-		return format == 'x' || format == 'X' ? format : 'd';
+	if (dynamic_cast<const FuIntegerType *>(type)) {
+		switch (format) {
+		case 'X':
+		case 'x':
+			return format;
+		case 'U':
+		case 'u':
+			return 'c';
+		default:
+			return 'd';
+		}
+	}
 	else if (dynamic_cast<const FuNumericType *>(type)) {
 		switch (format) {
 		case 'E':
 		case 'e':
 		case 'f':
 		case 'G':
-		case 'g':
 			return format;
 		case 'F':
 			return 'f';
@@ -7532,21 +7544,31 @@ void GenBase::writePyFormat(const FuInterpolatedPart * part)
 		writeChar(dynamic_cast<const FuIntegerType *>(part->argument->type.get()) ? '0' : '.');
 		visitLiteralLong(part->precision);
 	}
-	if (part->format != ' ' && part->format != 'D')
+	switch (part->format) {
+	case ' ':
+	case 'D':
+		break;
+	case 'U':
+	case 'u':
+		writeChar('c');
+		break;
+	default:
 		writeChar(part->format);
+		break;
+	}
 	writeChar('}');
 }
 
-void GenBase::writeInterpolatedStringArg(const FuExpr * expr)
+void GenBase::writeInterpolatedStringArg(const FuInterpolatedPart * part)
 {
-	expr->accept(this, FuPriority::argument);
+	part->argument->accept(this, FuPriority::argument);
 }
 
 void GenBase::writeInterpolatedStringArgs(const FuInterpolatedString * expr)
 {
 	for (const FuInterpolatedPart &part : expr->parts) {
 		write(", ");
-		writeInterpolatedStringArg(part.argument.get());
+		writeInterpolatedStringArg(&part);
 	}
 }
 
@@ -9722,7 +9744,9 @@ void GenC::writePrintfWidth(const FuInterpolatedPart * part)
 		assert(part->precision < 0);
 		write(".*");
 	}
-	if (part->argument->type->id == FuId::nIntType)
+	if (part->format == 'U' || part->format == 'u')
+		writeChar('l');
+	else if (part->argument->type->id == FuId::nIntType)
 		writeChar('t');
 	else if (part->argument->type->id == FuId::longType)
 		writePrintfLongPrefix();
@@ -9785,8 +9809,9 @@ void GenC::writeClassPtr(const FuClass * resultClass, const FuExpr * expr, FuPri
 		expr->accept(this, parent);
 }
 
-void GenC::writeInterpolatedStringArg(const FuExpr * expr)
+void GenC::writeInterpolatedStringArg(const FuInterpolatedPart * part)
 {
+	const FuExpr * expr = part->argument.get();
 	const FuCallExpr * call = isStringSubstring(expr);
 	if (call != nullptr) {
 		getStringSubstringLength(call)->accept(this, FuPriority::argument);
@@ -13979,15 +14004,16 @@ void GenCpp::startMethodCall(const FuExpr * obj)
 	writeMemberOp(obj, nullptr);
 }
 
-void GenCpp::writeInterpolatedStringArg(const FuExpr * expr)
+void GenCpp::writeInterpolatedStringArg(const FuInterpolatedPart * part)
 {
+	const FuExpr * expr = part->argument.get();
 	const FuClassType * klass;
 	if ((klass = dynamic_cast<const FuClassType *>(expr->type.get())) && klass->class_->id != FuId::stringClass) {
 		startMethodCall(expr);
 		write("toString()");
 	}
 	else
-		GenBase::writeInterpolatedStringArg(expr);
+		GenBase::writeInterpolatedStringArg(part);
 }
 
 void GenCpp::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
@@ -16266,12 +16292,15 @@ void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 	for (const FuInterpolatedPart &part : expr->parts) {
 		writeDoubling(part.prefix, '{');
 		writeChar('{');
-		part.argument->accept(this, FuPriority::selectCond);
+		if (part.format == 'U' || part.format == 'u')
+			writeCall("char.ConvertFromUtf32", part.argument.get());
+		else
+			part.argument->accept(this, FuPriority::selectCond);
 		if (part.widthExpr != nullptr) {
 			writeChar(',');
 			visitLiteralLong(part.width);
 		}
-		if (part.format != ' ') {
+		if (part.format != ' ' && part.format != 'U' && part.format != 'u') {
 			writeChar(':');
 			writeChar(part.format);
 			if (part.precision >= 0)
@@ -17425,6 +17454,16 @@ void GenD::writeStaticCast(const FuType * type, const FuExpr * expr)
 	write(")(");
 	getStaticCastInner(type, expr)->accept(this, FuPriority::argument);
 	writeChar(')');
+}
+
+void GenD::writeInterpolatedStringArg(const FuInterpolatedPart * part)
+{
+	if (part->format == 'U' || part->format == 'u') {
+		write("cast(dchar) ");
+		part->argument->accept(this, FuPriority::primary);
+	}
+	else
+		GenBase::writeInterpolatedStringArg(part);
 }
 
 void GenD::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
@@ -20164,56 +20203,60 @@ void GenJsNoModule::visitInterpolatedString(const FuInterpolatedString * expr, F
 		writeInterpolatedLiteral(part.prefix);
 		write("${");
 		if (part.width != 0 || part.format != ' ') {
-			if (dynamic_cast<const FuLiteralLong *>(part.argument.get()) || dynamic_cast<const FuPrefixExpr *>(part.argument.get())) {
-				writeChar('(');
-				part.argument->accept(this, FuPriority::primary);
-				writeChar(')');
-			}
-			else
-				part.argument->accept(this, FuPriority::primary);
-			if (dynamic_cast<const FuNumericType *>(part.argument->type.get())) {
-				switch (part.format) {
-				case 'E':
-					write(".toExponential(");
-					if (part.precision >= 0)
-						visitLiteralLong(part.precision);
-					write(").toUpperCase()");
-					break;
-				case 'e':
-					write(".toExponential(");
-					if (part.precision >= 0)
-						visitLiteralLong(part.precision);
+			if (part.format == 'U' || part.format == 'u')
+				writeCall("String.fromCodePoint", part.argument.get());
+			else {
+				if (dynamic_cast<const FuLiteralLong *>(part.argument.get()) || dynamic_cast<const FuPrefixExpr *>(part.argument.get())) {
+					writeChar('(');
+					part.argument->accept(this, FuPriority::primary);
 					writeChar(')');
-					break;
-				case 'F':
-				case 'f':
-					write(".toFixed(");
-					if (part.precision >= 0)
-						visitLiteralLong(part.precision);
-					writeChar(')');
-					break;
-				case 'X':
-					write(".toString(16).toUpperCase()");
-					break;
-				case 'x':
-					write(".toString(16)");
-					break;
-				default:
-					write(".toString()");
-					break;
 				}
-				if (part.precision >= 0) {
+				else
+					part.argument->accept(this, FuPriority::primary);
+				if (dynamic_cast<const FuNumericType *>(part.argument->type.get())) {
 					switch (part.format) {
-					case 'D':
-					case 'd':
+					case 'E':
+						write(".toExponential(");
+						if (part.precision >= 0)
+							visitLiteralLong(part.precision);
+						write(").toUpperCase()");
+						break;
+					case 'e':
+						write(".toExponential(");
+						if (part.precision >= 0)
+							visitLiteralLong(part.precision);
+						writeChar(')');
+						break;
+					case 'F':
+					case 'f':
+						write(".toFixed(");
+						if (part.precision >= 0)
+							visitLiteralLong(part.precision);
+						writeChar(')');
+						break;
 					case 'X':
+						write(".toString(16).toUpperCase()");
+						break;
 					case 'x':
-						write(".padStart(");
-						visitLiteralLong(part.precision);
-						write(", \"0\")");
+						write(".toString(16)");
 						break;
 					default:
+						write(".toString()");
 						break;
+					}
+					if (part.precision >= 0) {
+						switch (part.format) {
+						case 'D':
+						case 'd':
+						case 'X':
+						case 'x':
+							write(".padStart(");
+							visitLiteralLong(part.precision);
+							write(", \"0\")");
+							break;
+						default:
+							break;
+						}
 					}
 				}
 			}

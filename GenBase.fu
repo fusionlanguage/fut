@@ -544,14 +544,22 @@ public abstract class GenBase : FuVisitor
 	{
 		switch (type) {
 		case FuIntegerType:
-			return format == 'x' || format == 'X' ? format : 'd';
+			switch (format) {
+			case 'X':
+			case 'x':
+				return format;
+			case 'U':
+			case 'u':
+				return 'c';
+			default:
+				return 'd';
+			}
 		case FuNumericType:
 			switch (format) {
 			case 'E':
 			case 'e':
 			case 'f':
 			case 'G':
-			case 'g':
 				return format;
 			case 'F':
 				return 'f';
@@ -596,21 +604,31 @@ public abstract class GenBase : FuVisitor
 			WriteChar(part.Argument.Type is FuIntegerType ? '0' : '.');
 			VisitLiteralLong(part.Precision);
 		}
-		if (part.Format != ' ' && part.Format != 'D')
+		switch (part.Format) {
+		case ' ':
+		case 'D':
+			break;
+		case 'U':
+		case 'u':
+			WriteChar('c');
+			break;
+		default:
 			WriteChar(part.Format);
+			break;
+		}
 		WriteChar('}');
 	}
 
-	protected virtual void WriteInterpolatedStringArg!(FuExpr expr)
+	protected virtual void WriteInterpolatedStringArg!(FuInterpolatedPart part)
 	{
-		expr.Accept(this, FuPriority.Argument);
+		part.Argument.Accept(this, FuPriority.Argument);
 	}
 
 	protected void WriteInterpolatedStringArgs!(FuInterpolatedString expr)
 	{
 		foreach (FuInterpolatedPart part in expr.Parts) {
 			Write(", ");
-			WriteInterpolatedStringArg(part.Argument);
+			WriteInterpolatedStringArg(part);
 		}
 	}
 

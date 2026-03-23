@@ -116,7 +116,9 @@ public class GenC : GenCCpp
 			assert part.Precision < 0;
 			Write(".*");
 		}
-		if (part.Argument.Type.Id == FuId.NIntType)
+		if (part.Format == 'U' || part.Format == 'u')
+			WriteChar('l');
+		else if (part.Argument.Type.Id == FuId.NIntType)
 			WriteChar('t');
 		else if (part.Argument.Type.Id == FuId.LongType)
 			WritePrintfLongPrefix();
@@ -183,8 +185,9 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteInterpolatedStringArg!(FuExpr expr)
+	protected override void WriteInterpolatedStringArg!(FuInterpolatedPart part)
 	{
+		FuExpr expr = part.Argument;
 		FuCallExpr? call = IsStringSubstring(expr);
 		if (call != null) {
 			GetStringSubstringLength(call).Accept(this, FuPriority.Argument);

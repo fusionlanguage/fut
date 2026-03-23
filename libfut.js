@@ -5107,6 +5107,9 @@ export class FuSema
 						if (part.widthExpr != null && part.precision >= 0)
 							this.#reportError(part.widthExpr, "Cannot format an integer with both width and precision");
 						break;
+					case 85:
+					case 117:
+						break;
 					default:
 						this.#reportError(arg, "Invalid format");
 						break;
@@ -7999,15 +8002,24 @@ export class GenBase extends FuVisitor
 
 	static #getPrintfFormat(type, format)
 	{
-		if (type instanceof FuIntegerType)
-			return format == 120 || format == 88 ? format : 100;
+		if (type instanceof FuIntegerType) {
+			switch (format) {
+			case 88:
+			case 120:
+				return format;
+			case 85:
+			case 117:
+				return 99;
+			default:
+				return 100;
+			}
+		}
 		else if (type instanceof FuNumericType) {
 			switch (format) {
 			case 69:
 			case 101:
 			case 102:
 			case 71:
-			case 103:
 				return format;
 			case 70:
 				return 102;
@@ -8051,21 +8063,31 @@ export class GenBase extends FuVisitor
 			this.writeChar(part.argument.type instanceof FuIntegerType ? 48 : 46);
 			this.visitLiteralLong(BigInt(part.precision));
 		}
-		if (part.format != 32 && part.format != 68)
+		switch (part.format) {
+		case 32:
+		case 68:
+			break;
+		case 85:
+		case 117:
+			this.writeChar(99);
+			break;
+		default:
 			this.writeChar(part.format);
+			break;
+		}
 		this.writeChar(125);
 	}
 
-	writeInterpolatedStringArg(expr)
+	writeInterpolatedStringArg(part)
 	{
-		expr.accept(this, FuPriority.ARGUMENT);
+		part.argument.accept(this, FuPriority.ARGUMENT);
 	}
 
 	writeInterpolatedStringArgs(expr)
 	{
 		for (const part of expr.parts) {
 			this.write(", ");
-			this.writeInterpolatedStringArg(part.argument);
+			this.writeInterpolatedStringArg(part);
 		}
 	}
 
@@ -10347,7 +10369,9 @@ export class GenC extends GenCCpp
 			console.assert(part.precision < 0);
 			this.write(".*");
 		}
-		if (part.argument.type.id == FuId.N_INT_TYPE)
+		if (part.format == 85 || part.format == 117)
+			this.writeChar(108);
+		else if (part.argument.type.id == FuId.N_INT_TYPE)
 			this.writeChar(116);
 		else if (part.argument.type.id == FuId.LONG_TYPE)
 			this.writePrintfLongPrefix();
@@ -10410,8 +10434,9 @@ export class GenC extends GenCCpp
 			expr.accept(this, parent);
 	}
 
-	writeInterpolatedStringArg(expr)
+	writeInterpolatedStringArg(part)
 	{
+		let expr = part.argument;
 		let call = GenC.isStringSubstring(expr);
 		if (call != null) {
 			GenC.#getStringSubstringLength(call).accept(this, FuPriority.ARGUMENT);
@@ -14725,15 +14750,16 @@ export class GenCpp extends GenCCpp
 		this.writeMemberOp(obj, null);
 	}
 
-	writeInterpolatedStringArg(expr)
+	writeInterpolatedStringArg(part)
 	{
+		let expr = part.argument;
 		let klass;
 		if ((klass = expr.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS) {
 			this.#startMethodCall(expr);
 			this.write("toString()");
 		}
 		else
-			super.writeInterpolatedStringArg(expr);
+			super.writeInterpolatedStringArg(part);
 	}
 
 	visitInterpolatedString(expr, parent)
@@ -17195,12 +17221,15 @@ export class GenCs extends GenTyped
 		for (const part of expr.parts) {
 			this.writeDoubling(part.prefix, 123);
 			this.writeChar(123);
-			part.argument.accept(this, FuPriority.SELECT_COND);
+			if (part.format == 85 || part.format == 117)
+				this.writeCall("char.ConvertFromUtf32", part.argument);
+			else
+				part.argument.accept(this, FuPriority.SELECT_COND);
 			if (part.widthExpr != null) {
 				this.writeChar(44);
 				this.visitLiteralLong(BigInt(part.width));
 			}
-			if (part.format != 32) {
+			if (part.format != 32 && part.format != 85 && part.format != 117) {
 				this.writeChar(58);
 				this.writeChar(part.format);
 				if (part.precision >= 0)
@@ -18543,6 +18572,16 @@ export class GenD extends GenCCppD
 		this.write(")(");
 		this.getStaticCastInner(type, expr).accept(this, FuPriority.ARGUMENT);
 		this.writeChar(41);
+	}
+
+	writeInterpolatedStringArg(part)
+	{
+		if (part.format == 85 || part.format == 117) {
+			this.write("cast(dchar) ");
+			part.argument.accept(this, FuPriority.PRIMARY);
+		}
+		else
+			super.writeInterpolatedStringArg(part);
 	}
 
 	visitInterpolatedString(expr, parent)
@@ -21426,56 +21465,60 @@ export class GenJsNoModule extends GenBase
 			this.#writeInterpolatedLiteral(part.prefix);
 			this.write("${");
 			if (part.width != 0 || part.format != 32) {
-				if (part.argument instanceof FuLiteralLong || part.argument instanceof FuPrefixExpr) {
-					this.writeChar(40);
-					part.argument.accept(this, FuPriority.PRIMARY);
-					this.writeChar(41);
-				}
-				else
-					part.argument.accept(this, FuPriority.PRIMARY);
-				if (part.argument.type instanceof FuNumericType) {
-					switch (part.format) {
-					case 69:
-						this.write(".toExponential(");
-						if (part.precision >= 0)
-							this.visitLiteralLong(BigInt(part.precision));
-						this.write(").toUpperCase()");
-						break;
-					case 101:
-						this.write(".toExponential(");
-						if (part.precision >= 0)
-							this.visitLiteralLong(BigInt(part.precision));
+				if (part.format == 85 || part.format == 117)
+					this.writeCall("String.fromCodePoint", part.argument);
+				else {
+					if (part.argument instanceof FuLiteralLong || part.argument instanceof FuPrefixExpr) {
+						this.writeChar(40);
+						part.argument.accept(this, FuPriority.PRIMARY);
 						this.writeChar(41);
-						break;
-					case 70:
-					case 102:
-						this.write(".toFixed(");
-						if (part.precision >= 0)
-							this.visitLiteralLong(BigInt(part.precision));
-						this.writeChar(41);
-						break;
-					case 88:
-						this.write(".toString(16).toUpperCase()");
-						break;
-					case 120:
-						this.write(".toString(16)");
-						break;
-					default:
-						this.write(".toString()");
-						break;
 					}
-					if (part.precision >= 0) {
+					else
+						part.argument.accept(this, FuPriority.PRIMARY);
+					if (part.argument.type instanceof FuNumericType) {
 						switch (part.format) {
-						case 68:
-						case 100:
+						case 69:
+							this.write(".toExponential(");
+							if (part.precision >= 0)
+								this.visitLiteralLong(BigInt(part.precision));
+							this.write(").toUpperCase()");
+							break;
+						case 101:
+							this.write(".toExponential(");
+							if (part.precision >= 0)
+								this.visitLiteralLong(BigInt(part.precision));
+							this.writeChar(41);
+							break;
+						case 70:
+						case 102:
+							this.write(".toFixed(");
+							if (part.precision >= 0)
+								this.visitLiteralLong(BigInt(part.precision));
+							this.writeChar(41);
+							break;
 						case 88:
+							this.write(".toString(16).toUpperCase()");
+							break;
 						case 120:
-							this.write(".padStart(");
-							this.visitLiteralLong(BigInt(part.precision));
-							this.write(", \"0\")");
+							this.write(".toString(16)");
 							break;
 						default:
+							this.write(".toString()");
 							break;
+						}
+						if (part.precision >= 0) {
+							switch (part.format) {
+							case 68:
+							case 100:
+							case 88:
+							case 120:
+								this.write(".padStart(");
+								this.visitLiteralLong(BigInt(part.precision));
+								this.write(", \"0\")");
+								break;
+							default:
+								break;
+							}
 						}
 					}
 				}

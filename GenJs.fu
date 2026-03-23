@@ -209,57 +209,61 @@ public class GenJsNoModule : GenBase
 			WriteInterpolatedLiteral(part.Prefix);
 			Write("${");
 			if (part.Width != 0 || part.Format != ' ') {
-				if (part.Argument is FuLiteralLong || part.Argument is FuPrefixExpr) {
-					// FIXME: we should rather split FuPriority.Primary into FuPriority.Prefix and FuPriority.Suffix
-					WriteChar('(');
-					part.Argument.Accept(this, FuPriority.Primary);
-					WriteChar(')');
-				}
-				else
-					part.Argument.Accept(this, FuPriority.Primary);
-				if (part.Argument.Type is FuNumericType) {
-					switch (part.Format) {
-					case 'E':
-						Write(".toExponential(");
-						if (part.Precision >= 0)
-							VisitLiteralLong(part.Precision);
-						Write(").toUpperCase()");
-						break;
-					case 'e':
-						Write(".toExponential(");
-						if (part.Precision >= 0)
-							VisitLiteralLong(part.Precision);
+				if (part.Format == 'U' || part.Format == 'u')
+					WriteCall("String.fromCodePoint", part.Argument);
+				else {
+					if (part.Argument is FuLiteralLong || part.Argument is FuPrefixExpr) {
+						// FIXME: we should rather split FuPriority.Primary into FuPriority.Prefix and FuPriority.Suffix
+						WriteChar('(');
+						part.Argument.Accept(this, FuPriority.Primary);
 						WriteChar(')');
-						break;
-					case 'F':
-					case 'f':
-						Write(".toFixed(");
-						if (part.Precision >= 0)
-							VisitLiteralLong(part.Precision);
-						WriteChar(')');
-						break;
-					case 'X':
-						Write(".toString(16).toUpperCase()");
-						break;
-					case 'x':
-						Write(".toString(16)");
-						break;
-					default:
-						Write(".toString()");
-						break;
 					}
-					if (part.Precision >= 0) {
+					else
+						part.Argument.Accept(this, FuPriority.Primary);
+					if (part.Argument.Type is FuNumericType) {
 						switch (part.Format) {
-						case 'D':
-						case 'd':
+						case 'E':
+							Write(".toExponential(");
+							if (part.Precision >= 0)
+								VisitLiteralLong(part.Precision);
+							Write(").toUpperCase()");
+							break;
+						case 'e':
+							Write(".toExponential(");
+							if (part.Precision >= 0)
+								VisitLiteralLong(part.Precision);
+							WriteChar(')');
+							break;
+						case 'F':
+						case 'f':
+							Write(".toFixed(");
+							if (part.Precision >= 0)
+								VisitLiteralLong(part.Precision);
+							WriteChar(')');
+							break;
 						case 'X':
+							Write(".toString(16).toUpperCase()");
+							break;
 						case 'x':
-							Write(".padStart(");
-							VisitLiteralLong(part.Precision);
-							Write(", \"0\")");
+							Write(".toString(16)");
 							break;
 						default:
+							Write(".toString()");
 							break;
+						}
+						if (part.Precision >= 0) {
+							switch (part.Format) {
+							case 'D':
+							case 'd':
+							case 'X':
+							case 'x':
+								Write(".padStart(");
+								VisitLiteralLong(part.Precision);
+								Write(", \"0\")");
+								break;
+							default:
+								break;
+							}
 						}
 					}
 				}

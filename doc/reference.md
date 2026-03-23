@@ -377,6 +377,7 @@ The following format strings are supported:
   padding with leading zeros to `n` digits.
 * `X` or `x` formats an integer in hexadecimal.
   `X` uses uppercase digits, `x` uses lowercase digits.
+* `U` or `u` formats a Unicode code point specified as an integer.
   The optional number specifies padding with leading zeros.
 * `F<n>` or `f<n>` formats a `float` or a `double` with `n` digits
   after the decimal point.
