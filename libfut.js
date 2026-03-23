@@ -18569,9 +18569,8 @@ export class GenD extends GenCCppD
 	{
 		this.write("cast(");
 		this.writeType(type, false);
-		this.write(")(");
-		this.getStaticCastInner(type, expr).accept(this, FuPriority.ARGUMENT);
-		this.writeChar(41);
+		this.write(") ");
+		this.getStaticCastInner(type, expr).accept(this, FuPriority.PRIMARY);
 	}
 
 	writeInterpolatedStringArg(part)

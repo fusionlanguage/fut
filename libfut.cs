@@ -18001,9 +18001,8 @@ namespace Fusion
 		{
 			Write("cast(");
 			WriteType(type, false);
-			Write(")(");
-			GetStaticCastInner(type, expr).Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			Write(") ");
+			GetStaticCastInner(type, expr).Accept(this, FuPriority.Primary);
 		}
 
 		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)

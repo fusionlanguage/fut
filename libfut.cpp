@@ -17451,9 +17451,8 @@ void GenD::writeStaticCast(const FuType * type, const FuExpr * expr)
 {
 	write("cast(");
 	writeType(type, false);
-	write(")(");
-	getStaticCastInner(type, expr)->accept(this, FuPriority::argument);
-	writeChar(')');
+	write(") ");
+	getStaticCastInner(type, expr)->accept(this, FuPriority::primary);
 }
 
 void GenD::writeInterpolatedStringArg(const FuInterpolatedPart * part)
