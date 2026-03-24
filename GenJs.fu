@@ -1368,6 +1368,10 @@ public class GenJsNoModule : GenBase
 		WriteCharLine(')');
 	}
 
+	protected virtual void WriteNamedType!(string name)
+	{
+	}
+
 	protected void WriteLib!(FuProgram program)
 	{
 		if (this.StringWriter) {
@@ -1376,17 +1380,27 @@ public class GenJsNoModule : GenBase
 			OpenBlock();
 			WriteLine("#buf = \"\";");
 			WriteNewLine();
-			WriteLine("write(s)");
+			Write("write(s");
+			WriteNamedType("string");
+			WriteChar(')');
+			WriteNamedType("void");
+			WriteNewLine();
 			OpenBlock();
 			WriteLine("this.#buf += s;");
 			CloseBlock();
+
 			WriteNewLine();
-			WriteLine("clear()");
+			Write("clear()");
+			WriteNamedType("void");
+			WriteNewLine();
 			OpenBlock();
 			WriteLine("this.#buf = \"\";");
 			CloseBlock();
+
 			WriteNewLine();
-			WriteLine("toString()");
+			Write("toString()");
+			WriteNamedType("string");
+			WriteNewLine();
 			OpenBlock();
 			WriteLine("return this.#buf;");
 			CloseBlock();

@@ -21993,6 +21993,10 @@ namespace Fusion
 			WriteCharLine(')');
 		}
 
+		protected virtual void WriteNamedType(string name)
+		{
+		}
+
 		protected void WriteLib(FuProgram program)
 		{
 			if (this.StringWriter) {
@@ -22001,17 +22005,25 @@ namespace Fusion
 				OpenBlock();
 				WriteLine("#buf = \"\";");
 				WriteNewLine();
-				WriteLine("write(s)");
+				Write("write(s");
+				WriteNamedType("string");
+				WriteChar(')');
+				WriteNamedType("void");
+				WriteNewLine();
 				OpenBlock();
 				WriteLine("this.#buf += s;");
 				CloseBlock();
 				WriteNewLine();
-				WriteLine("clear()");
+				Write("clear()");
+				WriteNamedType("void");
+				WriteNewLine();
 				OpenBlock();
 				WriteLine("this.#buf = \"\";");
 				CloseBlock();
 				WriteNewLine();
-				WriteLine("toString()");
+				Write("toString()");
+				WriteNamedType("string");
+				WriteNewLine();
 				OpenBlock();
 				WriteLine("return this.#buf;");
 				CloseBlock();
@@ -22373,6 +22385,12 @@ namespace Fusion
 			}
 			WriteMembers(klass, this.GenFullCode);
 			CloseBlock();
+		}
+
+		protected override void WriteNamedType(string name)
+		{
+			Write(": ");
+			Write(name);
 		}
 
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)

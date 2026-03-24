@@ -22623,6 +22623,10 @@ export class GenJsNoModule extends GenBase
 		this.writeCharLine(41);
 	}
 
+	writeNamedType(name)
+	{
+	}
+
 	writeLib(program)
 	{
 		if (this.#stringWriter) {
@@ -22631,17 +22635,25 @@ export class GenJsNoModule extends GenBase
 			this.openBlock();
 			this.writeLine("#buf = \"\";");
 			this.writeNewLine();
-			this.writeLine("write(s)");
+			this.write("write(s");
+			this.writeNamedType("string");
+			this.writeChar(41);
+			this.writeNamedType("void");
+			this.writeNewLine();
 			this.openBlock();
 			this.writeLine("this.#buf += s;");
 			this.closeBlock();
 			this.writeNewLine();
-			this.writeLine("clear()");
+			this.write("clear()");
+			this.writeNamedType("void");
+			this.writeNewLine();
 			this.openBlock();
 			this.writeLine("this.#buf = \"\";");
 			this.closeBlock();
 			this.writeNewLine();
-			this.writeLine("toString()");
+			this.write("toString()");
+			this.writeNamedType("string");
+			this.writeNewLine();
 			this.openBlock();
 			this.writeLine("return this.#buf;");
 			this.closeBlock();
@@ -22998,6 +23010,12 @@ export class GenTs extends GenJs
 		}
 		this.writeMembers(klass, this.#genFullCode);
 		this.closeBlock();
+	}
+
+	writeNamedType(name)
+	{
+		this.write(": ");
+		this.write(name);
 	}
 
 	writeProgram(program, outputFile, namespace)

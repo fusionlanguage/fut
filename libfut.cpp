@@ -21355,6 +21355,10 @@ void GenJsNoModule::writeMain(const FuMethod * main)
 	writeCharLine(')');
 }
 
+void GenJsNoModule::writeNamedType(std::string_view name)
+{
+}
+
 void GenJsNoModule::writeLib(const FuProgram * program)
 {
 	if (this->stringWriter) {
@@ -21363,17 +21367,25 @@ void GenJsNoModule::writeLib(const FuProgram * program)
 		openBlock();
 		writeLine("#buf = \"\";");
 		writeNewLine();
-		writeLine("write(s)");
+		write("write(s");
+		writeNamedType("string");
+		writeChar(')');
+		writeNamedType("void");
+		writeNewLine();
 		openBlock();
 		writeLine("this.#buf += s;");
 		closeBlock();
 		writeNewLine();
-		writeLine("clear()");
+		write("clear()");
+		writeNamedType("void");
+		writeNewLine();
 		openBlock();
 		writeLine("this.#buf = \"\";");
 		closeBlock();
 		writeNewLine();
-		writeLine("toString()");
+		write("toString()");
+		writeNamedType("string");
+		writeNewLine();
 		openBlock();
 		writeLine("return this.#buf;");
 		closeBlock();
@@ -21714,6 +21726,12 @@ void GenTs::writeClass(const FuClass * klass, const FuProgram * program)
 	}
 	writeMembers(klass, this->genFullCode);
 	closeBlock();
+}
+
+void GenTs::writeNamedType(std::string_view name)
+{
+	write(": ");
+	write(name);
 }
 
 void GenTs::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)

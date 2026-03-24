@@ -337,6 +337,12 @@ public class GenTs : GenJs
 		CloseBlock();
 	}
 
+	protected override void WriteNamedType!(string name)
+	{
+		Write(": ");
+		Write(name);
+	}
+
 	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.System = program.System;

@@ -3358,6 +3358,7 @@ protected:
 	void openJsClass(const FuClass * klass);
 	void writeConstructor(const FuClass * klass);
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
+	virtual void writeNamedType(std::string_view name);
 	void writeLib(const FuProgram * program);
 	virtual void writeUseStrict();
 private: // internal
@@ -3416,6 +3417,7 @@ protected:
 	void writeField(const FuField * field) override;
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
+	void writeNamedType(std::string_view name) override;
 private: // internal
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
