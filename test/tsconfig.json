@@ -3,6 +3,7 @@
     "target": "es2022",
     "noEmit": true,
     "strictNullChecks": false,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "types": [ "node" ]
   }
 }
