@@ -3334,6 +3334,7 @@ protected:
 	void writeStringLength(const FuExpr * expr) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary) override;
+	virtual void writeDictionaryClearCast(const FuExpr * obj);
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeOpAssignRight(const FuBinaryExpr * expr) override;
@@ -3410,6 +3411,7 @@ protected:
 	void writeEqualOperand(const FuExpr * expr, const FuExpr * other) override;
 	void writeBoolAndOr(const FuBinaryExpr * expr) override;
 	void defineIsVar(const FuBinaryExpr * binary) override;
+	void writeDictionaryClearCast(const FuExpr * obj) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
 	void writeMethod(const FuMethod * method) override;

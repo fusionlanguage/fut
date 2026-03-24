@@ -7761,7 +7761,7 @@ export class GenBase extends FuVisitor
 		}
 		if (!this.inHeaderFile)
 			for (const key in this.#includes)
-				delete this.#includes[key];;
+				delete this.#includes[key];
 	}
 
 	startDocLine()
@@ -21701,6 +21701,10 @@ export class GenJsNoModule extends GenBase
 		}
 	}
 
+	writeDictionaryClearCast(obj)
+	{
+	}
+
 	static #isIdentifier(s)
 	{
 		if (s.length == 0 || s.charCodeAt(0) < 65)
@@ -21987,7 +21991,9 @@ export class GenJsNoModule extends GenBase
 			obj.accept(this, FuPriority.ARGUMENT);
 			this.writeCharLine(41);
 			this.write("\tdelete ");
-			this.writePostfix(obj, "[key];");
+			this.writePostfix(obj, "[key");
+			this.writeDictionaryClearCast(obj);
+			this.writeChar(93);
 			break;
 		case FuId.DICTIONARY_CONTAINS_KEY:
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
@@ -22857,6 +22863,15 @@ export class GenTs extends GenJs
 			this.write(": ");
 			this.#writeType(binary.left.type);
 			this.endStatement();
+		}
+	}
+
+	writeDictionaryClearCast(obj)
+	{
+		let enu;
+		if ((enu = obj.type.asClassType().getKeyType()) instanceof FuEnum) {
+			this.write(" as unknown as ");
+			this.write(enu.name);
 		}
 	}
 

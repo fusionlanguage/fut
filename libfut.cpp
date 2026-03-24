@@ -20435,6 +20435,10 @@ void GenJsNoModule::writeSlice(const FuExpr * array, const FuExpr * offset, cons
 	}
 }
 
+void GenJsNoModule::writeDictionaryClearCast(const FuExpr * obj)
+{
+}
+
 bool GenJsNoModule::isIdentifier(std::string_view s)
 {
 	if (s.empty() || s[0] < 'A')
@@ -20720,7 +20724,9 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		obj->accept(this, FuPriority::argument);
 		writeCharLine(')');
 		write("\tdelete ");
-		writePostfix(obj, "[key];");
+		writePostfix(obj, "[key");
+		writeDictionaryClearCast(obj);
+		writeChar(']');
 		break;
 	case FuId::dictionaryContainsKey:
 	case FuId::sortedDictionaryContainsKey:
@@ -21574,6 +21580,14 @@ void GenTs::defineIsVar(const FuBinaryExpr * binary)
 		write(": ");
 		writeType(binary->left->type.get());
 		endStatement();
+	}
+}
+
+void GenTs::writeDictionaryClearCast(const FuExpr * obj)
+{
+	if (const FuEnum *enu = dynamic_cast<const FuEnum *>(obj->type->asClassType()->getKeyType())) {
+		write(" as unknown as ");
+		write(enu->name);
 	}
 }
 

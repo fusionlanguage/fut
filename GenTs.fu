@@ -1,7 +1,7 @@
 // GenTs.fu - TypeScript code generator
 //
 // Copyright (C) 2020-2021  Andy Edwards
-// Copyright (C) 2020-2025  Piotr Fusik
+// Copyright (C) 2020-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -195,6 +195,14 @@ public class GenTs : GenJs
 			Write(": ");
 			WriteType(binary.Left.Type);
 			EndStatement();
+		}
+	}
+
+	protected override void WriteDictionaryClearCast!(FuExpr obj)
+	{
+		if (obj.Type.AsClassType().GetKeyType() is FuEnum enu) {
+			Write(" as unknown as ");
+			Write(enu.Name);
 		}
 	}
 

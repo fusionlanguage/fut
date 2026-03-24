@@ -21069,6 +21069,10 @@ namespace Fusion
 			}
 		}
 
+		protected virtual void WriteDictionaryClearCast(FuExpr obj)
+		{
+		}
+
 		static bool IsIdentifier(string s)
 		{
 			if (s.Length == 0 || s[0] < 'A')
@@ -21351,7 +21355,9 @@ namespace Fusion
 				obj.Accept(this, FuPriority.Argument);
 				WriteCharLine(')');
 				Write("\tdelete ");
-				WritePostfix(obj, "[key];");
+				WritePostfix(obj, "[key");
+				WriteDictionaryClearCast(obj);
+				WriteChar(']');
 				break;
 			case FuId.DictionaryContainsKey:
 			case FuId.SortedDictionaryContainsKey:
@@ -22233,6 +22239,14 @@ namespace Fusion
 				Write(": ");
 				WriteType(binary.Left.Type);
 				EndStatement();
+			}
+		}
+
+		protected override void WriteDictionaryClearCast(FuExpr obj)
+		{
+			if (obj.Type.AsClassType().GetKeyType() is FuEnum enu) {
+				Write(" as unknown as ");
+				Write(enu.Name);
 			}
 		}
 

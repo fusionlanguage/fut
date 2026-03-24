@@ -439,6 +439,10 @@ public class GenJsNoModule : GenBase
 		}
 	}
 
+	protected virtual void WriteDictionaryClearCast!(FuExpr obj)
+	{
+	}
+
 	static bool IsIdentifier(string s)
 	{
 		if (s.Length == 0 || s[0] < 'A')
@@ -721,7 +725,9 @@ public class GenJsNoModule : GenBase
 			obj.Accept(this, FuPriority.Argument);
 			WriteCharLine(')');
 			Write("\tdelete ");
-			WritePostfix(obj, "[key];"); // FIXME: side effect
+			WritePostfix(obj, "[key"); // FIXME: side effect
+			WriteDictionaryClearCast(obj);
+			WriteChar(']');
 			break;
 		case FuId.DictionaryContainsKey:
 		case FuId.SortedDictionaryContainsKey:
