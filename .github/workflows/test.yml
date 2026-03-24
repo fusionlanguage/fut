@@ -8,6 +8,7 @@ jobs:
   c-cl-error:
     runs-on: ubuntu-24.04
     steps:
+      - run: sudo apt update
       - run: sudo apt install libglib2.0-dev
       - uses: actions/checkout@main
       - run: make -j4 test-c test-cl test-error
