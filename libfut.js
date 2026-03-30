@@ -1427,47 +1427,48 @@ export const FuId = {
 	TEXT_WRITER_WRITE_CHAR : 134,
 	TEXT_WRITER_WRITE_CODE_POINT : 135,
 	TEXT_WRITER_WRITE_LINE : 136,
-	CONSOLE_WRITE : 137,
-	CONSOLE_WRITE_LINE : 138,
-	STRING_WRITER_CLEAR : 139,
-	STRING_WRITER_TO_STRING : 140,
-	CONVERT_TO_BASE64_STRING : 141,
-	U_T_F8_GET_BYTE_COUNT : 142,
-	U_T_F8_GET_BYTES : 143,
-	U_T_F8_GET_STRING : 144,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 145,
-	REGEX_COMPILE : 146,
-	REGEX_ESCAPE : 147,
-	REGEX_IS_MATCH_STR : 148,
-	REGEX_IS_MATCH_REGEX : 149,
-	MATCH_FIND_STR : 150,
-	MATCH_FIND_REGEX : 151,
-	MATCH_GET_CAPTURE : 152,
-	JSON_ELEMENT_PARSE : 153,
-	JSON_ELEMENT_IS_OBJECT : 154,
-	JSON_ELEMENT_IS_ARRAY : 155,
-	JSON_ELEMENT_IS_STRING : 156,
-	JSON_ELEMENT_IS_NUMBER : 157,
-	JSON_ELEMENT_IS_BOOLEAN : 158,
-	JSON_ELEMENT_IS_NULL : 159,
-	JSON_ELEMENT_GET_OBJECT : 160,
-	JSON_ELEMENT_GET_ARRAY : 161,
-	JSON_ELEMENT_GET_STRING : 162,
-	JSON_ELEMENT_GET_DOUBLE : 163,
-	JSON_ELEMENT_GET_BOOLEAN : 164,
-	MATH_METHOD : 165,
-	MATH_ABS : 166,
-	MATH_CEILING : 167,
-	MATH_CLAMP : 168,
-	MATH_FUSED_MULTIPLY_ADD : 169,
-	MATH_IS_FINITE : 170,
-	MATH_IS_INFINITY : 171,
-	MATH_IS_NA_N : 172,
-	MATH_LOG2 : 173,
-	MATH_MAX : 174,
-	MATH_MIN : 175,
-	MATH_ROUND : 176,
-	MATH_TRUNCATE : 177
+	CONSOLE_READ_LINE : 137,
+	CONSOLE_WRITE : 138,
+	CONSOLE_WRITE_LINE : 139,
+	STRING_WRITER_CLEAR : 140,
+	STRING_WRITER_TO_STRING : 141,
+	CONVERT_TO_BASE64_STRING : 142,
+	U_T_F8_GET_BYTE_COUNT : 143,
+	U_T_F8_GET_BYTES : 144,
+	U_T_F8_GET_STRING : 145,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 146,
+	REGEX_COMPILE : 147,
+	REGEX_ESCAPE : 148,
+	REGEX_IS_MATCH_STR : 149,
+	REGEX_IS_MATCH_REGEX : 150,
+	MATCH_FIND_STR : 151,
+	MATCH_FIND_REGEX : 152,
+	MATCH_GET_CAPTURE : 153,
+	JSON_ELEMENT_PARSE : 154,
+	JSON_ELEMENT_IS_OBJECT : 155,
+	JSON_ELEMENT_IS_ARRAY : 156,
+	JSON_ELEMENT_IS_STRING : 157,
+	JSON_ELEMENT_IS_NUMBER : 158,
+	JSON_ELEMENT_IS_BOOLEAN : 159,
+	JSON_ELEMENT_IS_NULL : 160,
+	JSON_ELEMENT_GET_OBJECT : 161,
+	JSON_ELEMENT_GET_ARRAY : 162,
+	JSON_ELEMENT_GET_STRING : 163,
+	JSON_ELEMENT_GET_DOUBLE : 164,
+	JSON_ELEMENT_GET_BOOLEAN : 165,
+	MATH_METHOD : 166,
+	MATH_ABS : 167,
+	MATH_CEILING : 168,
+	MATH_CLAMP : 169,
+	MATH_FUSED_MULTIPLY_ADD : 170,
+	MATH_IS_FINITE : 171,
+	MATH_IS_INFINITY : 172,
+	MATH_IS_NA_N : 173,
+	MATH_LOG2 : 174,
+	MATH_MAX : 175,
+	MATH_MIN : 176,
+	MATH_ROUND : 177,
+	MATH_TRUNCATE : 178
 }
 
 export class FuDocInline
@@ -3175,7 +3176,7 @@ export class FuClass extends FuContainerType
 		this.add(FuMethod.new(this, FuVisibility.PUBLIC, FuCallType.NORMAL, type, id, name, isMutator, param0, param1, param2, param3));
 	}
 
-	addStaticMethod(type, id, name, param0, param1 = null, param2 = null)
+	addStaticMethod(type, id, name, param0 = null, param1 = null, param2 = null)
 	{
 		this.add(FuMethod.new(this, FuVisibility.PUBLIC, FuCallType.STATIC, type, id, name, false, param0, param1, param2));
 	}
@@ -3563,6 +3564,7 @@ export class FuSystem extends FuScope
 		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_LINE, "WriteLine", true, FuVar.new(this.printableType, "value", this.newLiteralString("")));
 		this.add(textWriterClass);
 		let consoleClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Console");
+		consoleClass.addStaticMethod(this.stringStorageType, FuId.CONSOLE_READ_LINE, "ReadLine");
 		consoleClass.addStaticMethod(this.voidType, FuId.CONSOLE_WRITE, "Write", FuVar.new(this.printableType, "value"));
 		consoleClass.addStaticMethod(this.voidType, FuId.CONSOLE_WRITE_LINE, "WriteLine", FuVar.new(this.printableType, "value", this.newLiteralString("")));
 		consoleClass.add(FuStaticProperty.new(Object.assign(new FuStorageType(), { class: textWriterClass }), FuId.CONSOLE_ERROR, "Error"));
@@ -10284,6 +10286,7 @@ export class GenC extends GenCCpp
 	#stringReplace;
 	#stringFormat;
 	#textWriterWriteCodePoint;
+	#consoleReadLine;
 	#matchFind;
 	#matchPos;
 	#ptrConstruct;
@@ -12684,6 +12687,11 @@ export class GenC extends GenCCpp
 		case FuId.TEXT_WRITER_WRITE_LINE:
 			this.#writeTextWriterWrite(obj, args, true);
 			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.include("stdio.h");
+			this.#consoleReadLine = true;
+			this.write("FuConsole_ReadLine()");
+			break;
 		case FuId.CONSOLE_WRITE:
 			this.#writeConsoleWrite(args, false);
 			break;
@@ -14031,6 +14039,33 @@ export class GenC extends GenCCpp
 			this.writeLine("fwrite(buf, 1, len, f);");
 			this.closeBlock();
 		}
+		if (this.#consoleReadLine) {
+			this.writeNewLine();
+			this.writeLine("static char *FuConsole_ReadLine(void)");
+			this.openBlock();
+			this.writeLine("char *result = NULL;");
+			this.writeLine("size_t len = 0;");
+			this.write("for (size_t capacity = 0;;) ");
+			this.openBlock();
+			this.writeLine("int c = getchar();");
+			this.writeLine("if (c == EOF)");
+			this.writeLine("\tbreak;");
+			this.write("if (len + 1 >= capacity) ");
+			this.openBlock();
+			this.writeLine("capacity = capacity == 0 ? 16 : capacity << 1;");
+			this.writeLine("result = realloc(result, capacity);");
+			this.writeLine("if (result == NULL)");
+			this.writeLine("\tbreak;");
+			this.closeBlock();
+			this.writeLine("if (c == '\\n')");
+			this.writeLine("\tbreak;");
+			this.writeLine("result[len++] = (char) c;");
+			this.closeBlock();
+			this.writeLine("if (result != NULL)");
+			this.writeLine("\tresult[len] = '\\0';");
+			this.writeLine("return result;");
+			this.closeBlock();
+		}
 		if (this.#matchFind) {
 			this.writeNewLine();
 			this.writeLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -14300,6 +14335,7 @@ export class GenC extends GenCCpp
 		this.#stringReplace = false;
 		this.#stringFormat = false;
 		this.#textWriterWriteCodePoint = false;
+		this.#consoleReadLine = false;
 		this.#matchFind = false;
 		this.#matchPos = false;
 		this.#ptrConstruct = false;
@@ -17401,6 +17437,7 @@ export class GenCs extends GenTyped
 		case FuId.SORTED_DICTIONARY_REMOVE:
 		case FuId.ORDERED_DICTIONARY_CLEAR:
 		case FuId.ORDERED_DICTIONARY_REMOVE:
+		case FuId.CONSOLE_READ_LINE:
 		case FuId.STRING_WRITER_TO_STRING:
 		case FuId.CONVERT_TO_BASE64_STRING:
 		case FuId.JSON_ELEMENT_GET_STRING:
@@ -19110,6 +19147,11 @@ export class GenD extends GenCCppD
 			args[0].accept(this, FuPriority.PRIMARY);
 			this.writeChar(41);
 			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.include("std.stdio");
+			this.include("std.string");
+			this.write("readln.chomp");
+			break;
 		case FuId.CONSOLE_WRITE:
 		case FuId.CONSOLE_WRITE_LINE:
 			this.#writeWrite(args, method.id == FuId.CONSOLE_WRITE_LINE);
@@ -20600,6 +20642,10 @@ export class GenJava extends GenTyped
 			break;
 		case FuId.STRING_WRITER_CLEAR:
 			this.writePostfix(obj, ".getBuffer().setLength(0)");
+			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.include("java.util.Scanner");
+			this.write("new Scanner(System.in).nextLine()");
 			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("System.out");
@@ -24250,6 +24296,9 @@ export class GenSwift extends GenPySwift
 				this.#writeToTextWriter(obj);
 			}
 			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.write("readLine()!");
+			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("print(");
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
@@ -26529,6 +26578,9 @@ export class GenPy extends GenPySwift
 			this.write("file=");
 			obj.accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
+			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.write("input()");
 			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("print(");

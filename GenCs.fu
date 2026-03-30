@@ -494,6 +494,7 @@ public class GenCs : GenTyped
 		case FuId.SortedDictionaryRemove:
 		case FuId.OrderedDictionaryClear:
 		case FuId.OrderedDictionaryRemove:
+		case FuId.ConsoleReadLine:
 		case FuId.StringWriterToString:
 		case FuId.ConvertToBase64String:
 		case FuId.JsonElementGetString:

@@ -324,6 +324,7 @@ enum class FuId
 	textWriterWriteChar,
 	textWriterWriteCodePoint,
 	textWriterWriteLine,
+	consoleReadLine,
 	consoleWrite,
 	consoleWriteLine,
 	stringWriterClear,
@@ -1924,7 +1925,7 @@ public:
 	bool addsVirtualMethods() const;
 	static std::shared_ptr<FuClass> new_(FuCallType callType, FuId id, std::string_view name, int typeParameterCount = 0);
 	void addMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, bool isMutator, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr, std::shared_ptr<FuVar> param3 = nullptr);
-	void addStaticMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr);
+	void addStaticMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr);
 	void addNative(std::shared_ptr<FuNative> nat);
 	bool isSameOrBaseOf(const FuClass * derived) const;
 	bool hasToString() const;
@@ -2853,6 +2854,7 @@ private:
 	bool stringReplace;
 	bool stringFormat;
 	bool textWriterWriteCodePoint;
+	bool consoleReadLine;
 	bool matchFind;
 	bool matchPos;
 	bool ptrConstruct;

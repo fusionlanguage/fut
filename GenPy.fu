@@ -1073,6 +1073,9 @@ public class GenPy : GenPySwift
 			obj.Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
+		case FuId.ConsoleReadLine:
+			Write("input()");
+			break;
 		case FuId.ConsoleWrite:
 			Write("print(");
 			args[0].Accept(this, FuPriority.Argument);

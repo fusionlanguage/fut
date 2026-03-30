@@ -1440,6 +1440,7 @@ namespace Fusion
 		TextWriterWriteChar,
 		TextWriterWriteCodePoint,
 		TextWriterWriteLine,
+		ConsoleReadLine,
 		ConsoleWrite,
 		ConsoleWriteLine,
 		StringWriterClear,
@@ -3028,7 +3029,7 @@ namespace Fusion
 			Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Normal, type, id, name, isMutator, param0, param1, param2, param3));
 		}
 
-		public void AddStaticMethod(FuType type, FuId id, string name, FuVar param0, FuVar param1 = null, FuVar param2 = null)
+		public void AddStaticMethod(FuType type, FuId id, string name, FuVar param0 = null, FuVar param1 = null, FuVar param2 = null)
 		{
 			Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Static, type, id, name, false, param0, param1, param2));
 		}
@@ -3321,6 +3322,7 @@ namespace Fusion
 			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWriteLine, "WriteLine", true, FuVar.New(this.PrintableType, "value", NewLiteralString("")));
 			Add(textWriterClass);
 			FuClass consoleClass = FuClass.New(FuCallType.Static, FuId.None, "Console");
+			consoleClass.AddStaticMethod(this.StringStorageType, FuId.ConsoleReadLine, "ReadLine");
 			consoleClass.AddStaticMethod(this.VoidType, FuId.ConsoleWrite, "Write", FuVar.New(this.PrintableType, "value"));
 			consoleClass.AddStaticMethod(this.VoidType, FuId.ConsoleWriteLine, "WriteLine", FuVar.New(this.PrintableType, "value", NewLiteralString("")));
 			consoleClass.Add(FuStaticProperty.New(new FuStorageType { Class = textWriterClass }, FuId.ConsoleError, "Error"));
@@ -9847,6 +9849,8 @@ namespace Fusion
 
 		bool TextWriterWriteCodePoint;
 
+		bool ConsoleReadLine;
+
 		bool MatchFind;
 
 		bool MatchPos;
@@ -12208,6 +12212,11 @@ namespace Fusion
 			case FuId.TextWriterWriteLine:
 				WriteTextWriterWrite(obj, args, true);
 				break;
+			case FuId.ConsoleReadLine:
+				Include("stdio.h");
+				this.ConsoleReadLine = true;
+				Write("FuConsole_ReadLine()");
+				break;
 			case FuId.ConsoleWrite:
 				WriteConsoleWrite(args, false);
 				break;
@@ -13534,6 +13543,33 @@ namespace Fusion
 				WriteLine("fwrite(buf, 1, len, f);");
 				CloseBlock();
 			}
+			if (this.ConsoleReadLine) {
+				WriteNewLine();
+				WriteLine("static char *FuConsole_ReadLine(void)");
+				OpenBlock();
+				WriteLine("char *result = NULL;");
+				WriteLine("size_t len = 0;");
+				Write("for (size_t capacity = 0;;) ");
+				OpenBlock();
+				WriteLine("int c = getchar();");
+				WriteLine("if (c == EOF)");
+				WriteLine("\tbreak;");
+				Write("if (len + 1 >= capacity) ");
+				OpenBlock();
+				WriteLine("capacity = capacity == 0 ? 16 : capacity << 1;");
+				WriteLine("result = realloc(result, capacity);");
+				WriteLine("if (result == NULL)");
+				WriteLine("\tbreak;");
+				CloseBlock();
+				WriteLine("if (c == '\\n')");
+				WriteLine("\tbreak;");
+				WriteLine("result[len++] = (char) c;");
+				CloseBlock();
+				WriteLine("if (result != NULL)");
+				WriteLine("\tresult[len] = '\\0';");
+				WriteLine("return result;");
+				CloseBlock();
+			}
 			if (this.MatchFind) {
 				WriteNewLine();
 				WriteLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -13802,6 +13838,7 @@ namespace Fusion
 			this.StringReplace = false;
 			this.StringFormat = false;
 			this.TextWriterWriteCodePoint = false;
+			this.ConsoleReadLine = false;
 			this.MatchFind = false;
 			this.MatchPos = false;
 			this.PtrConstruct = false;
@@ -16853,6 +16890,7 @@ namespace Fusion
 			case FuId.SortedDictionaryRemove:
 			case FuId.OrderedDictionaryClear:
 			case FuId.OrderedDictionaryRemove:
+			case FuId.ConsoleReadLine:
 			case FuId.StringWriterToString:
 			case FuId.ConvertToBase64String:
 			case FuId.JsonElementGetString:
@@ -18533,6 +18571,11 @@ namespace Fusion
 				args[0].Accept(this, FuPriority.Primary);
 				WriteChar(')');
 				break;
+			case FuId.ConsoleReadLine:
+				Include("std.stdio");
+				Include("std.string");
+				Write("readln.chomp");
+				break;
 			case FuId.ConsoleWrite:
 			case FuId.ConsoleWriteLine:
 				WriteWrite(args, method.Id == FuId.ConsoleWriteLine);
@@ -19995,6 +20038,10 @@ namespace Fusion
 				break;
 			case FuId.StringWriterClear:
 				WritePostfix(obj, ".getBuffer().setLength(0)");
+				break;
+			case FuId.ConsoleReadLine:
+				Include("java.util.Scanner");
+				Write("new Scanner(System.in).nextLine()");
 				break;
 			case FuId.ConsoleWrite:
 				Write("System.out");
@@ -23601,6 +23648,9 @@ namespace Fusion
 					WriteToTextWriter(obj);
 				}
 				break;
+			case FuId.ConsoleReadLine:
+				Write("readLine()!");
+				break;
 			case FuId.ConsoleWrite:
 				Write("print(");
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
@@ -25854,6 +25904,9 @@ namespace Fusion
 				Write("file=");
 				obj.Accept(this, FuPriority.Argument);
 				WriteChar(')');
+				break;
+			case FuId.ConsoleReadLine:
+				Write("input()");
 				break;
 			case FuId.ConsoleWrite:
 				Write("print(");

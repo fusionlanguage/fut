@@ -2846,6 +2846,7 @@ FuSystem::FuSystem()
 	textWriterClass->addMethod(this->voidType, FuId::textWriterWriteLine, "WriteLine", true, FuVar::new_(this->printableType, "value", newLiteralString("")));
 	add(textWriterClass);
 	std::shared_ptr<FuClass> consoleClass = FuClass::new_(FuCallType::static_, FuId::none, "Console");
+	consoleClass->addStaticMethod(this->stringStorageType, FuId::consoleReadLine, "ReadLine");
 	consoleClass->addStaticMethod(this->voidType, FuId::consoleWrite, "Write", FuVar::new_(this->printableType, "value"));
 	consoleClass->addStaticMethod(this->voidType, FuId::consoleWriteLine, "WriteLine", FuVar::new_(this->printableType, "value", newLiteralString("")));
 	std::shared_ptr<FuStorageType> futemp3 = std::make_shared<FuStorageType>();
@@ -11982,6 +11983,11 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::textWriterWriteLine:
 		writeTextWriterWrite(obj, args, true);
 		break;
+	case FuId::consoleReadLine:
+		include("stdio.h");
+		this->consoleReadLine = true;
+		write("FuConsole_ReadLine()");
+		break;
 	case FuId::consoleWrite:
 		writeConsoleWrite(args, false);
 		break;
@@ -13317,6 +13323,33 @@ void GenC::writeLibrary()
 		writeLine("fwrite(buf, 1, len, f);");
 		closeBlock();
 	}
+	if (this->consoleReadLine) {
+		writeNewLine();
+		writeLine("static char *FuConsole_ReadLine(void)");
+		openBlock();
+		writeLine("char *result = NULL;");
+		writeLine("size_t len = 0;");
+		write("for (size_t capacity = 0;;) ");
+		openBlock();
+		writeLine("int c = getchar();");
+		writeLine("if (c == EOF)");
+		writeLine("\tbreak;");
+		write("if (len + 1 >= capacity) ");
+		openBlock();
+		writeLine("capacity = capacity == 0 ? 16 : capacity << 1;");
+		writeLine("result = realloc(result, capacity);");
+		writeLine("if (result == NULL)");
+		writeLine("\tbreak;");
+		closeBlock();
+		writeLine("if (c == '\\n')");
+		writeLine("\tbreak;");
+		writeLine("result[len++] = (char) c;");
+		closeBlock();
+		writeLine("if (result != NULL)");
+		writeLine("\tresult[len] = '\\0';");
+		writeLine("return result;");
+		closeBlock();
+	}
 	if (this->matchFind) {
 		writeNewLine();
 		writeLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -13586,6 +13619,7 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->stringReplace = false;
 	this->stringFormat = false;
 	this->textWriterWriteCodePoint = false;
+	this->consoleReadLine = false;
 	this->matchFind = false;
 	this->matchPos = false;
 	this->ptrConstruct = false;
@@ -16474,6 +16508,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::sortedDictionaryRemove:
 	case FuId::orderedDictionaryClear:
 	case FuId::orderedDictionaryRemove:
+	case FuId::consoleReadLine:
 	case FuId::stringWriterToString:
 	case FuId::convertToBase64String:
 	case FuId::jsonElementGetString:
@@ -17983,6 +18018,11 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		(*args)[0]->accept(this, FuPriority::primary);
 		writeChar(')');
 		break;
+	case FuId::consoleReadLine:
+		include("std.stdio");
+		include("std.string");
+		write("readln.chomp");
+		break;
 	case FuId::consoleWrite:
 	case FuId::consoleWriteLine:
 		writeWrite(args, method->id == FuId::consoleWriteLine);
@@ -19379,6 +19419,10 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		break;
 	case FuId::stringWriterClear:
 		writePostfix(obj, ".getBuffer().setLength(0)");
+		break;
+	case FuId::consoleReadLine:
+		include("java.util.Scanner");
+		write("new Scanner(System.in).nextLine()");
 		break;
 	case FuId::consoleWrite:
 		write("System.out");
@@ -22848,6 +22892,9 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 			writeToTextWriter(obj);
 		}
 		break;
+	case FuId::consoleReadLine:
+		write("readLine()!");
+		break;
 	case FuId::consoleWrite:
 		write("print(");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
@@ -25012,6 +25059,9 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		write("file=");
 		obj->accept(this, FuPriority::argument);
 		writeChar(')');
+		break;
+	case FuId::consoleReadLine:
+		write("input()");
 		break;
 	case FuId::consoleWrite:
 		write("print(");

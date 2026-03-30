@@ -34,6 +34,7 @@ public class GenC : GenCCpp
 	bool StringReplace;
 	bool StringFormat;
 	bool TextWriterWriteCodePoint;
+	bool ConsoleReadLine;
 	bool MatchFind;
 	bool MatchPos;
 	bool PtrConstruct;
@@ -2407,6 +2408,11 @@ public class GenC : GenCCpp
 		case FuId.TextWriterWriteLine:
 			WriteTextWriterWrite(obj, args, true);
 			break;
+		case FuId.ConsoleReadLine:
+			Include("stdio.h");
+			this.ConsoleReadLine = true;
+			Write("FuConsole_ReadLine()");
+			break;
 		case FuId.ConsoleWrite:
 			WriteConsoleWrite(args, false);
 			break;
@@ -3746,6 +3752,33 @@ public class GenC : GenCCpp
 			WriteLine("fwrite(buf, 1, len, f);");
 			CloseBlock();
 		}
+		if (this.ConsoleReadLine) {
+			WriteNewLine();
+			WriteLine("static char *FuConsole_ReadLine(void)");
+			OpenBlock();
+			WriteLine("char *result = NULL;");
+			WriteLine("size_t len = 0;");
+			Write("for (size_t capacity = 0;;) ");
+			OpenBlock();
+			WriteLine("int c = getchar();");
+			WriteLine("if (c == EOF)");
+			WriteLine("\tbreak;");
+			Write("if (len + 1 >= capacity) ");
+			OpenBlock();
+			WriteLine("capacity = capacity == 0 ? 16 : capacity << 1;");
+			WriteLine("result = realloc(result, capacity);");
+			WriteLine("if (result == NULL)");
+			WriteLine("\tbreak;");
+			CloseBlock();
+			WriteLine("if (c == '\\n')");
+			WriteLine("\tbreak;");
+			WriteLine("result[len++] = (char) c;");
+			CloseBlock();
+			WriteLine("if (result != NULL)");
+			WriteLine("\tresult[len] = '\\0';");
+			WriteLine("return result;");
+			CloseBlock();
+		}
 		if (this.MatchFind) {
 			WriteNewLine();
 			WriteLine("static bool FuMatch_Find(GMatchInfo **match_info, const char *input, const char *pattern, GRegexCompileFlags options)");
@@ -4017,6 +4050,7 @@ public class GenC : GenCCpp
 		this.StringReplace = false;
 		this.StringFormat = false;
 		this.TextWriterWriteCodePoint = false;
+		this.ConsoleReadLine = false;
 		this.MatchFind = false;
 		this.MatchPos = false;
 		this.PtrConstruct = false;

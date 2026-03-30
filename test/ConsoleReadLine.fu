@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		if (false) {
+			string() s = Console.ReadLine(); //FAIL: cpp TODO; js ts cl
+			Console.WriteLine(s);
+		}
+		return true;
+	}
+}

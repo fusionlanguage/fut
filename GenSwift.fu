@@ -825,6 +825,9 @@ public class GenSwift : GenPySwift
 				WriteToTextWriter(obj);
 			}
 			break;
+		case FuId.ConsoleReadLine:
+			Write("readLine()!");
+			break;
 		case FuId.ConsoleWrite:
 			Write("print(");
 			WriteUnwrapped(args[0], FuPriority.Argument, true);

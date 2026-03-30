@@ -197,6 +197,7 @@ public enum FuId
 	TextWriterWriteChar,
 	TextWriterWriteCodePoint,
 	TextWriterWriteLine,
+	ConsoleReadLine,
 	ConsoleWrite,
 	ConsoleWriteLine,
 	StringWriterClear,
@@ -1398,7 +1399,7 @@ public class FuClass : FuContainerType
 		Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Normal, type, id, name, isMutator, param0, param1, param2, param3));
 	}
 
-	public void AddStaticMethod!(FuType# type, FuId id, string name, FuVar#? param0, FuVar#? param1 = null, FuVar#? param2 = null)
+	public void AddStaticMethod!(FuType# type, FuId id, string name, FuVar#? param0 = null, FuVar#? param1 = null, FuVar#? param2 = null)
 	{
 		Add(FuMethod.New(this, FuVisibility.Public, FuCallType.Static, type, id, name, false, param0, param1, param2));
 	}
@@ -1784,6 +1785,7 @@ public class FuSystem : FuScope
 		textWriterClass.AddMethod(VoidType, FuId.TextWriterWriteLine, "WriteLine", true, FuVar.New(PrintableType, "value", NewLiteralString("")));
 		Add(textWriterClass);
 		FuClass# consoleClass = FuClass.New(FuCallType.Static, FuId.None, "Console");
+		consoleClass.AddStaticMethod(StringStorageType, FuId.ConsoleReadLine, "ReadLine");
 		consoleClass.AddStaticMethod(VoidType, FuId.ConsoleWrite, "Write", FuVar.New(PrintableType, "value"));
 		consoleClass.AddStaticMethod(VoidType, FuId.ConsoleWriteLine, "WriteLine", FuVar.New(PrintableType, "value", NewLiteralString("")));
 		consoleClass.Add(FuStaticProperty.New(new FuStorageType { Class = textWriterClass }, FuId.ConsoleError, "Error"));

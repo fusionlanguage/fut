@@ -1071,6 +1071,11 @@ public class GenD : GenCCppD
 			args[0].Accept(this, FuPriority.Primary);
 			WriteChar(')');
 			break;
+		case FuId.ConsoleReadLine:
+			Include("std.stdio");
+			Include("std.string");
+			Write("readln.chomp");
+			break;
 		case FuId.ConsoleWrite:
 		case FuId.ConsoleWriteLine:
 			WriteWrite(args, method.Id == FuId.ConsoleWriteLine);

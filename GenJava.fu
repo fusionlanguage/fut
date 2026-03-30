@@ -926,6 +926,10 @@ public class GenJava : GenTyped
 		case FuId.StringWriterClear:
 			WritePostfix(obj, ".getBuffer().setLength(0)");
 			break;
+		case FuId.ConsoleReadLine:
+			Include("java.util.Scanner");
+			Write("new Scanner(System.in).nextLine()"); // TODO: hasNextLine
+			break;
 		case FuId.ConsoleWrite:
 			Write("System.out");
 			WriteWrite(method, args, false);
