@@ -15367,6 +15367,11 @@ namespace Fusion
 				StartMethodCall(obj);
 				Write("str(std::string())");
 				break;
+			case FuId.ConsoleReadLine:
+				Include("iostream");
+				Include("string");
+				Write("[] { std::string s; std::getline(std::cin, s); return s; }()");
+				break;
 			case FuId.ConsoleWrite:
 				Write("std::cout");
 				WriteWrite(args, false);

@@ -15032,6 +15032,11 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		startMethodCall(obj);
 		write("str(std::string())");
 		break;
+	case FuId::consoleReadLine:
+		include("iostream");
+		include("string");
+		write("[] { std::string s; std::getline(std::cin, s); return s; }()");
+		break;
 	case FuId::consoleWrite:
 		write("std::cout");
 		writeWrite(args, false);

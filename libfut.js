@@ -15874,6 +15874,11 @@ export class GenCpp extends GenCCpp
 			this.#startMethodCall(obj);
 			this.write("str(std::string())");
 			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.include("iostream");
+			this.include("string");
+			this.write("[] { std::string s; std::getline(std::cin, s); return s; }()");
+			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("std::cout");
 			this.#writeWrite(args, false);

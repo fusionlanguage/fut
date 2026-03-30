@@ -1149,6 +1149,11 @@ public class GenCpp : GenCCpp
 			StartMethodCall(obj);
 			Write("str(std::string())");
 			break;
+		case FuId.ConsoleReadLine:
+			Include("iostream");
+			Include("string");
+			Write("[] { std::string s; std::getline(std::cin, s); return s; }()"); // TODO: error
+			break;
 		case FuId.ConsoleWrite:
 			Write("std::cout");
 			WriteWrite(args, false);
