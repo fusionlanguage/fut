@@ -18745,6 +18745,8 @@ export class GenD extends GenCCppD
 		if (GenD.#isCreateWithNew(klass)) {
 			this.write("new ");
 			this.writeType(klass, false);
+			if (parent == FuPriority.PRIMARY)
+				this.write("()");
 		}
 		else
 			this.#writeStaticInitializer(klass);
@@ -18894,9 +18896,6 @@ export class GenD extends GenCCppD
 					this.write("super.");
 				else {
 					this.#writeClassReference(obj);
-					let new_;
-					if ((new_ = obj) instanceof FuPrefixExpr && new_.op == FuToken.NEW)
-						this.write("()");
 					this.writeChar(46);
 				}
 			}

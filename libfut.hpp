@@ -1175,7 +1175,6 @@ private: // internal
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
-	friend GenD;
 	friend GenJava;
 	friend GenPy;
 	friend GenPySwift;

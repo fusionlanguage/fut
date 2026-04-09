@@ -660,6 +660,8 @@ public class GenD : GenCCppD
 		if (IsCreateWithNew(klass)) {
 			Write("new ");
 			WriteType(klass, false);
+			if (parent == FuPriority.Primary)
+				Write("()");
 		}
 		else
 			WriteStaticInitializer(klass);
@@ -809,8 +811,6 @@ public class GenD : GenCCppD
 					Write("super.");
 				else {
 					WriteClassReference(obj);
-					if (obj is FuPrefixExpr new_ && new_.Op == FuToken.New)
-						Write("()");
 					WriteChar('.');
 				}
 			}

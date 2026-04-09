@@ -18171,6 +18171,8 @@ namespace Fusion
 			if (IsCreateWithNew(klass)) {
 				Write("new ");
 				WriteType(klass, false);
+				if (parent == FuPriority.Primary)
+					Write("()");
 			}
 			else
 				WriteStaticInitializer(klass);
@@ -18317,8 +18319,6 @@ namespace Fusion
 						Write("super.");
 					else {
 						WriteClassReference(obj);
-						if (obj is FuPrefixExpr new_ && new_.Op == FuToken.New)
-							Write("()");
 						WriteChar('.');
 					}
 				}

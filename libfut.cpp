@@ -17619,6 +17619,8 @@ void GenD::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 	if (isCreateWithNew(klass)) {
 		write("new ");
 		writeType(klass, false);
+		if (parent == FuPriority::primary)
+			write("()");
 	}
 	else
 		writeStaticInitializer(klass);
@@ -17765,9 +17767,6 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 				write("super.");
 			else {
 				writeClassReference(obj);
-				const FuPrefixExpr * new_;
-				if ((new_ = dynamic_cast<const FuPrefixExpr *>(obj)) && new_->op == FuToken::new_)
-					write("()");
 				writeChar('.');
 			}
 		}
