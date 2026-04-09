@@ -809,6 +809,8 @@ public class GenD : GenCCppD
 					Write("super.");
 				else {
 					WriteClassReference(obj);
+					if (obj is FuPrefixExpr new_ && new_.Op == FuToken.New)
+						Write("()");
 					WriteChar('.');
 				}
 			}

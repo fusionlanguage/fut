@@ -3340,7 +3340,7 @@ void FuParser::parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, Fu
 	expectOrSkip(closing);
 }
 
-std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
+std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type, bool new_)
 {
 	std::shared_ptr<FuExpr> result;
 	switch (this->currentToken) {
@@ -3351,7 +3351,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
 			futemp0->loc = this->tokenLoc;
 			futemp0->op = nextToken();
-			futemp0->inner = parsePrimaryExpr(false);
+			futemp0->inner = parsePrimaryExpr();
 			return futemp0;
 		}
 	case FuToken::minus:
@@ -3361,7 +3361,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
 			futemp0->loc = this->tokenLoc;
 			futemp0->op = nextToken();
-			futemp0->inner = parsePrimaryExpr(false);
+			futemp0->inner = parsePrimaryExpr();
 			return futemp0;
 		}
 	case FuToken::new_:
@@ -3369,7 +3369,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 			std::shared_ptr<FuPrefixExpr> newResult = std::make_shared<FuPrefixExpr>();
 			newResult->loc = this->tokenLoc;
 			newResult->op = nextToken();
-			result = parseType();
+			result = parsePrimaryExpr(true, true);
 			if (eat(FuToken::leftBrace)) {
 				std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
 				futemp0->loc = this->tokenLoc;
@@ -3379,7 +3379,8 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 				result = futemp0;
 			}
 			newResult->inner = result;
-			return newResult;
+			result = newResult;
+			break;
 		}
 	case FuToken::literalLong:
 		result = this->host->program->system->newLiteralLong(this->longValue, this->tokenLoc);
@@ -3480,6 +3481,8 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 	for (;;) {
 		switch (this->currentToken) {
 		case FuToken::dot:
+			if (new_)
+				return result;
 			nextToken();
 			{
 				std::shared_ptr<FuSymbolReference> path = std::make_shared<FuSymbolReference>();
@@ -3551,7 +3554,7 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type)
 
 std::shared_ptr<FuExpr> FuParser::parseMulExpr()
 {
-	std::shared_ptr<FuExpr> left = parsePrimaryExpr(false);
+	std::shared_ptr<FuExpr> left = parsePrimaryExpr();
 	for (;;) {
 		switch (this->currentToken) {
 		case FuToken::asterisk:
@@ -3562,7 +3565,7 @@ std::shared_ptr<FuExpr> FuParser::parseMulExpr()
 				futemp0->loc = this->tokenLoc;
 				futemp0->left = left;
 				futemp0->op = nextToken();
-				futemp0->right = parsePrimaryExpr(false);
+				futemp0->right = parsePrimaryExpr();
 				left = futemp0;
 				break;
 			}
@@ -3624,7 +3627,7 @@ std::shared_ptr<FuExpr> FuParser::parseRelExpr()
 				isExpr->loc = this->tokenLoc;
 				isExpr->left = left;
 				isExpr->op = nextToken();
-				isExpr->right = parsePrimaryExpr(false);
+				isExpr->right = parsePrimaryExpr();
 				if (see(FuToken::id)) {
 					std::shared_ptr<FuVar> def = parseVar(isExpr->right, false);
 					def->isAssigned = true;
@@ -17761,6 +17764,9 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 				write("super.");
 			else {
 				writeClassReference(obj);
+				const FuPrefixExpr * new_;
+				if ((new_ = dynamic_cast<const FuPrefixExpr *>(obj)) && new_->op == FuToken::new_)
+					write("()");
 				writeChar('.');
 			}
 		}

@@ -1175,6 +1175,7 @@ private: // internal
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
+	friend GenD;
 	friend GenJava;
 	friend GenPy;
 	friend GenPySwift;
@@ -2216,7 +2217,7 @@ private:
 	bool isFindName() const;
 	bool parseName(FuName * result);
 	void parseCollection(std::vector<std::shared_ptr<FuExpr>> * result, FuToken closing);
-	std::shared_ptr<FuExpr> parsePrimaryExpr(bool type);
+	std::shared_ptr<FuExpr> parsePrimaryExpr(bool type = false, bool new_ = false);
 	std::shared_ptr<FuExpr> parseMulExpr();
 	std::shared_ptr<FuExpr> parseAddExpr();
 	std::shared_ptr<FuExpr> parseShiftExpr();

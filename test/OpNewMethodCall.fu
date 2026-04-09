@@ -1,0 +1,11 @@
+public class Test
+{
+	int Foo = 42;
+
+	int GetFoo() => Foo;
+
+	public static bool Run()
+	{
+		return new Test().GetFoo() == 42; //FAIL: c TODO memleak; cl
+	}
+}

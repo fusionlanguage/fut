@@ -3827,25 +3827,26 @@ namespace Fusion
 			ExpectOrSkip(closing);
 		}
 
-		FuExpr ParsePrimaryExpr(bool type)
+		FuExpr ParsePrimaryExpr(bool type = false, bool new_ = false)
 		{
 			FuExpr result;
 			switch (this.CurrentToken) {
 			case FuToken.Increment:
 			case FuToken.Decrement:
 				CheckXcrementParent();
-				return new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
+				return new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken(), Inner = ParsePrimaryExpr() };
 			case FuToken.Minus:
 			case FuToken.Tilde:
 			case FuToken.ExclamationMark:
-				return new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken(), Inner = ParsePrimaryExpr(false) };
+				return new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken(), Inner = ParsePrimaryExpr() };
 			case FuToken.New:
 				FuPrefixExpr newResult = new FuPrefixExpr { Loc = this.TokenLoc, Op = NextToken() };
-				result = ParseType();
+				result = ParsePrimaryExpr(true, true);
 				if (Eat(FuToken.LeftBrace))
 					result = new FuBinaryExpr { Loc = this.TokenLoc, Left = result, Op = FuToken.LeftBrace, Right = ParseObjectLiteral() };
 				newResult.Inner = result;
-				return newResult;
+				result = newResult;
+				break;
 			case FuToken.LiteralLong:
 				result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.TokenLoc);
 				NextToken();
@@ -3919,6 +3920,8 @@ namespace Fusion
 			for (;;) {
 				switch (this.CurrentToken) {
 				case FuToken.Dot:
+					if (new_)
+						return result;
 					NextToken();
 					FuSymbolReference path = new FuSymbolReference { Left = result };
 					ParseName(path);
@@ -3960,13 +3963,13 @@ namespace Fusion
 
 		FuExpr ParseMulExpr()
 		{
-			FuExpr left = ParsePrimaryExpr(false);
+			FuExpr left = ParsePrimaryExpr();
 			for (;;) {
 				switch (this.CurrentToken) {
 				case FuToken.Asterisk:
 				case FuToken.Slash:
 				case FuToken.Mod:
-					left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
+					left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
 					break;
 				default:
 					return left;
@@ -4002,7 +4005,7 @@ namespace Fusion
 					left = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseShiftExpr() };
 					break;
 				case FuToken.Is:
-					FuBinaryExpr isExpr = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr(false) };
+					FuBinaryExpr isExpr = new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParsePrimaryExpr() };
 					if (See(FuToken.Id)) {
 						FuVar def = ParseVar(isExpr.Right, false);
 						def.IsAssigned = true;
@@ -18314,6 +18317,8 @@ namespace Fusion
 						Write("super.");
 					else {
 						WriteClassReference(obj);
+						if (obj is FuPrefixExpr new_ && new_.Op == FuToken.New)
+							Write("()");
 						WriteChar('.');
 					}
 				}

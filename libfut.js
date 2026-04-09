@@ -4042,25 +4042,26 @@ export class FuParser extends FuLexer
 		this.expectOrSkip(closing);
 	}
 
-	#parsePrimaryExpr(type)
+	#parsePrimaryExpr(type = false, new_ = false)
 	{
 		let result;
 		switch (this.currentToken) {
 		case FuToken.INCREMENT:
 		case FuToken.DECREMENT:
 			this.#checkXcrementParent();
-			return Object.assign(new FuPrefixExpr(), { loc: this.tokenLoc, op: this.nextToken(), inner: this.#parsePrimaryExpr(false) });
+			return Object.assign(new FuPrefixExpr(), { loc: this.tokenLoc, op: this.nextToken(), inner: this.#parsePrimaryExpr() });
 		case FuToken.MINUS:
 		case FuToken.TILDE:
 		case FuToken.EXCLAMATION_MARK:
-			return Object.assign(new FuPrefixExpr(), { loc: this.tokenLoc, op: this.nextToken(), inner: this.#parsePrimaryExpr(false) });
+			return Object.assign(new FuPrefixExpr(), { loc: this.tokenLoc, op: this.nextToken(), inner: this.#parsePrimaryExpr() });
 		case FuToken.NEW:
 			let newResult = Object.assign(new FuPrefixExpr(), { loc: this.tokenLoc, op: this.nextToken() });
-			result = this.#parseType();
+			result = this.#parsePrimaryExpr(true, true);
 			if (this.eat(FuToken.LEFT_BRACE))
 				result = Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: result, op: FuToken.LEFT_BRACE, right: this.#parseObjectLiteral() });
 			newResult.inner = result;
-			return newResult;
+			result = newResult;
+			break;
 		case FuToken.LITERAL_LONG:
 			result = this.host.program.system.newLiteralLong(this.longValue, this.tokenLoc);
 			this.nextToken();
@@ -4134,6 +4135,8 @@ export class FuParser extends FuLexer
 		for (;;) {
 			switch (this.currentToken) {
 			case FuToken.DOT:
+				if (new_)
+					return result;
 				this.nextToken();
 				let path = Object.assign(new FuSymbolReference(), { left: result });
 				this.#parseName(path);
@@ -4176,13 +4179,13 @@ export class FuParser extends FuLexer
 
 	#parseMulExpr()
 	{
-		let left = this.#parsePrimaryExpr(false);
+		let left = this.#parsePrimaryExpr();
 		for (;;) {
 			switch (this.currentToken) {
 			case FuToken.ASTERISK:
 			case FuToken.SLASH:
 			case FuToken.MOD:
-				left = Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
+				left = Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr() });
 				break;
 			default:
 				return left;
@@ -4218,7 +4221,7 @@ export class FuParser extends FuLexer
 				left = Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parseShiftExpr() });
 				break;
 			case FuToken.IS:
-				let isExpr = Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr(false) });
+				let isExpr = Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parsePrimaryExpr() });
 				if (this.see(FuToken.ID)) {
 					let def = this.#parseVar(isExpr.right, false);
 					def.isAssigned = true;
@@ -18890,6 +18893,9 @@ export class GenD extends GenCCppD
 					this.write("super.");
 				else {
 					this.#writeClassReference(obj);
+					let new_;
+					if ((new_ = obj) instanceof FuPrefixExpr && new_.op == FuToken.NEW)
+						this.write("()");
 					this.writeChar(46);
 				}
 			}
