@@ -8028,12 +8028,12 @@ namespace Fusion
 				break;
 			case FuToken.New:
 				FuDynamicPtrType dynamic = (FuDynamicPtrType) expr.Type;
+				if (TryWriteTemporary(expr))
+					return;
 				if (dynamic.Class.Id == FuId.ArrayPtrClass)
 					WriteNewArray(dynamic.GetElementType(), expr.Inner, parent);
-				else if (expr.Inner is FuAggregateInitializer init) {
-					if (!TryWriteTemporary(expr))
-						WriteNewWithFields(dynamic, init);
-				}
+				else if (expr.Inner is FuAggregateInitializer init)
+					WriteNewWithFields(dynamic, init);
 				else
 					WriteNew(dynamic, parent);
 				return;

@@ -8424,14 +8424,14 @@ export class GenBase extends FuVisitor
 			break;
 		case FuToken.NEW:
 			let dynamic = expr.type;
+			if (this.tryWriteTemporary(expr))
+				return;
 			if (dynamic.class.id == FuId.ARRAY_PTR_CLASS)
 				this.writeNewArray(dynamic.getElementType(), expr.inner, parent);
 			else {
 				let init;
-				if ((init = expr.inner) instanceof FuAggregateInitializer) {
-					if (!this.tryWriteTemporary(expr))
-						this.writeNewWithFields(dynamic, init);
-				}
+				if ((init = expr.inner) instanceof FuAggregateInitializer)
+					this.writeNewWithFields(dynamic, init);
 				else
 					this.writeNew(dynamic, parent);
 			}

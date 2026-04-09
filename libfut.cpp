@@ -7898,12 +7898,12 @@ void GenBase::visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent)
 	case FuToken::new_:
 		{
 			const FuDynamicPtrType * dynamic = static_cast<const FuDynamicPtrType *>(expr->type.get());
+			if (tryWriteTemporary(expr))
+				return;
 			if (dynamic->class_->id == FuId::arrayPtrClass)
 				writeNewArray(dynamic->getElementType().get(), expr->inner.get(), parent);
-			else if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr->inner.get())) {
-				if (!tryWriteTemporary(expr))
-					writeNewWithFields(dynamic, init);
-			}
+			else if (const FuAggregateInitializer *init = dynamic_cast<const FuAggregateInitializer *>(expr->inner.get()))
+				writeNewWithFields(dynamic, init);
 			else
 				writeNew(dynamic, parent);
 			return;
