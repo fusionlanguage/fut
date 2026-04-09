@@ -10651,7 +10651,8 @@ int GenC::writeCTemporary(const FuType * type, const FuExpr * expr)
 
 bool GenC::needsOwningTemporary(const FuExpr * expr)
 {
-	return expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuOwningType *>(expr->type.get()));
+	const FuPrefixExpr * new_;
+	return expr->isNewString(false) || (dynamic_cast<const FuCallExpr *>(expr) && dynamic_cast<const FuOwningType *>(expr->type.get())) || ((new_ = dynamic_cast<const FuPrefixExpr *>(expr)) && new_->op == FuToken::new_);
 }
 
 void GenC::writeOwningTemporary(const FuExpr * expr)

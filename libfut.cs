@@ -10909,7 +10909,7 @@ namespace Fusion
 			return id;
 		}
 
-		static bool NeedsOwningTemporary(FuExpr expr) => expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType);
+		static bool NeedsOwningTemporary(FuExpr expr) => expr.IsNewString(false) || (expr is FuCallExpr && expr.Type is FuOwningType) || (expr is FuPrefixExpr new_ && new_.Op == FuToken.New);
 
 		protected override void WriteOwningTemporary(FuExpr expr)
 		{

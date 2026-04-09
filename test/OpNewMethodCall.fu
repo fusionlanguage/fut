@@ -6,6 +6,6 @@ public class Test
 
 	public static bool Run()
 	{
-		return new Test().GetFoo() == 42; //FAIL: c TODO memleak; cl
+		return new Test().GetFoo() == 42; //FAIL: cl
 	}
 }
