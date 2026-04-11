@@ -3193,6 +3193,8 @@ namespace Fusion
 
 	class FuStringType : FuClassType
 	{
+
+		public override bool EqualsType(FuType right) => this == right;
 	}
 
 	class FuStringStorageType : FuStringType

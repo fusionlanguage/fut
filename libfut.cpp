@@ -2686,6 +2686,11 @@ const FuType * FuArrayStorageType::getStorageType() const
 	return getElementType()->getStorageType();
 }
 
+bool FuStringType::equalsType(const FuType * right) const
+{
+	return this == right;
+}
+
 bool FuStringStorageType::isAssignableFrom(const FuType * right) const
 {
 	return dynamic_cast<const FuStringType *>(right);

@@ -2078,6 +2078,7 @@ class FuStringType : public FuClassType
 public:
 	FuStringType() = default;
 	virtual ~FuStringType() = default;
+	bool equalsType(const FuType * right) const override;
 };
 
 class FuStringStorageType : public FuStringType

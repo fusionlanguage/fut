@@ -1,0 +1,8 @@
+class TestClass
+{
+	public SortedDictionary<string, TestClass#> TestFunction!()
+	{
+		SortedDictionary<string(), TestClass#># MyTypeDict = new SortedDictionary<string, TestClass#>(); //ERROR: Cannot convert 'SortedDictionary<string, TestClass#>#' to 'SortedDictionary<string(), TestClass#>#'
+		return MyTypeDict; //ERROR: Cannot convert 'SortedDictionary<string(), TestClass#>#' to 'SortedDictionary<string, TestClass#>'
+	}
+}

@@ -3429,6 +3429,11 @@ export class FuArrayStorageType extends FuStorageType
 
 class FuStringType extends FuClassType
 {
+
+	equalsType(right)
+	{
+		return this == right;
+	}
 }
 
 class FuStringStorageType extends FuStringType
