@@ -5598,9 +5598,13 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			const FuRangeType * leftShr;
 			const FuRangeType * rightShr;
 			if ((leftShr = dynamic_cast<const FuRangeType *>(left->type.get())) && (rightShr = dynamic_cast<const FuRangeType *>(right->type.get()))) {
-				if (rightShr->min < 0)
-					rightShr = FuRangeType::new_(0, 32).get();
-				type = FuRangeType::new_(saturatedShiftRight(leftShr->min, leftShr->min < 0 ? rightShr->min : rightShr->max), saturatedShiftRight(leftShr->max, leftShr->max < 0 ? rightShr->max : rightShr->min));
+				int shiftMin = rightShr->min;
+				int shiftMax = rightShr->max;
+				if (rightShr->min < 0) {
+					shiftMin = 0;
+					shiftMax = 32;
+				}
+				type = FuRangeType::new_(saturatedShiftRight(leftShr->min, leftShr->min < 0 ? shiftMin : shiftMax), saturatedShiftRight(leftShr->max, leftShr->max < 0 ? shiftMax : shiftMin));
 			}
 			else
 				type = getShiftType(left.get(), right.get());

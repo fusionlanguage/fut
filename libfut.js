@@ -6065,9 +6065,13 @@ export class FuSema
 			let leftShr;
 			let rightShr;
 			if ((leftShr = left.type) instanceof FuRangeType && (rightShr = right.type) instanceof FuRangeType) {
-				if (rightShr.min < 0)
-					rightShr = FuRangeType.new(0, 32);
-				type = FuRangeType.new(FuSema.#saturatedShiftRight(leftShr.min, leftShr.min < 0 ? rightShr.min : rightShr.max), FuSema.#saturatedShiftRight(leftShr.max, leftShr.max < 0 ? rightShr.max : rightShr.min));
+				let shiftMin = rightShr.min;
+				let shiftMax = rightShr.max;
+				if (rightShr.min < 0) {
+					shiftMin = 0;
+					shiftMax = 32;
+				}
+				type = FuRangeType.new(FuSema.#saturatedShiftRight(leftShr.min, leftShr.min < 0 ? shiftMin : shiftMax), FuSema.#saturatedShiftRight(leftShr.max, leftShr.max < 0 ? shiftMax : shiftMin));
 			}
 			else
 				type = this.#getShiftType(left, right);

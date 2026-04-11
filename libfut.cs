@@ -5752,9 +5752,13 @@ namespace Fusion
 				break;
 			case FuToken.ShiftRight:
 				if (left.Type is FuRangeType leftShr && right.Type is FuRangeType rightShr) {
-					if (rightShr.Min < 0)
-						rightShr = FuRangeType.New(0, 32);
-					type = FuRangeType.New(SaturatedShiftRight(leftShr.Min, leftShr.Min < 0 ? rightShr.Min : rightShr.Max), SaturatedShiftRight(leftShr.Max, leftShr.Max < 0 ? rightShr.Max : rightShr.Min));
+					int shiftMin = rightShr.Min;
+					int shiftMax = rightShr.Max;
+					if (rightShr.Min < 0) {
+						shiftMin = 0;
+						shiftMax = 32;
+					}
+					type = FuRangeType.New(SaturatedShiftRight(leftShr.Min, leftShr.Min < 0 ? shiftMin : shiftMax), SaturatedShiftRight(leftShr.Max, leftShr.Max < 0 ? shiftMax : shiftMin));
 				}
 				else
 					type = GetShiftType(left, right);
