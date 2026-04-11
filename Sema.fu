@@ -387,14 +387,8 @@ public class FuSema
 
 	static int SaturatedAdd(int a, int b)
 	{
-		int c = a + b;
-		if (c >= 0) {
-			if (a < 0 && b < 0)
-				return int.MinValue;
-		}
-		else if (a > 0 && b > 0)
-			return int.MaxValue;
-		return c;
+		long c = a;
+		return Math.Clamp(c + b, int.MinValue, int.MaxValue);
 	}
 
 	static int SaturatedSub(int a, int b)

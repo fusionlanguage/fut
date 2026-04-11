@@ -4875,14 +4875,8 @@ int FuSema::saturatedNeg(int a)
 
 int FuSema::saturatedAdd(int a, int b)
 {
-	int c = a + b;
-	if (c >= 0) {
-		if (a < 0 && b < 0)
-			return -2147483648;
-	}
-	else if (a > 0 && b > 0)
-		return 2147483647;
-	return c;
+	int64_t c = a;
+	return static_cast<int>(std::clamp(c + b, static_cast<int64_t>(-2147483648), static_cast<int64_t>(2147483647)));
 }
 
 int FuSema::saturatedSub(int a, int b)

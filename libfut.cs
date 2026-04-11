@@ -5117,14 +5117,8 @@ namespace Fusion
 
 		static int SaturatedAdd(int a, int b)
 		{
-			int c = a + b;
-			if (c >= 0) {
-				if (a < 0 && b < 0)
-					return -2147483648;
-			}
-			else if (a > 0 && b > 0)
-				return 2147483647;
-			return c;
+			long c = a;
+			return (int) Math.Clamp(c + b, -2147483648, 2147483647);
 		}
 
 		static int SaturatedSub(int a, int b)

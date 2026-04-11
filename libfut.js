@@ -5375,14 +5375,8 @@ export class FuSema
 
 	static #saturatedAdd(a, b)
 	{
-		let c = a + b;
-		if (c >= 0) {
-			if (a < 0 && b < 0)
-				return -2147483648;
-		}
-		else if (a > 0 && b > 0)
-			return 2147483647;
-		return c;
+		let c = BigInt(a);
+		return Number(((x, min, max) => x < min ? min : x > max ? max : x)(c + BigInt(b), -2147483648, 2147483647));
 	}
 
 	static #saturatedSub(a, b)
