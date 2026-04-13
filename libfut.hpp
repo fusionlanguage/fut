@@ -2561,8 +2561,6 @@ protected:
 	void trimTemporariesAndCloseBlock(int temporariesCount);
 	virtual void writeChild(FuStatement * statement);
 	virtual void startBreakGoto();
-	static const FuCallExpr * isIfTryParse(const FuIf * statement);
-	void flattenBranch(const FuIf * statement, bool cond);
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
 	virtual void startIf(const FuExpr * expr);
 	void defineVar(const FuExpr * value);
@@ -2625,6 +2623,8 @@ private: // internal
 	void visitContinue(const FuContinue * statement) override;
 	void visitDoWhile(const FuDoWhile * statement) override;
 	void visitFor(const FuFor * statement) override;
+	static const FuCallExpr * isIfTryParse(const FuIf * statement);
+	void flattenBranch(const FuIf * statement, bool cond);
 	void visitIf(const FuIf * statement) override;
 	void visitNative(const FuNative * statement) override;
 	void visitReturn(const FuReturn * statement) override;

@@ -8783,7 +8783,7 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		protected static FuCallExpr IsIfTryParse(FuIf statement)
+		internal static FuCallExpr IsIfTryParse(FuIf statement)
 		{
 			FuExpr cond = statement.Cond;
 			if (cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark)
@@ -8802,7 +8802,7 @@ namespace Fusion
 			return null;
 		}
 
-		protected void FlattenBranch(FuIf statement, bool cond)
+		internal void FlattenBranch(FuIf statement, bool cond)
 		{
 			if (cond)
 				FlattenBlock(statement.OnTrue);
