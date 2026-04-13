@@ -19243,7 +19243,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		obj->accept(this, FuPriority::assign);
 		write(" = ((DoubleSupplier) () -> { try { return Double.parseDouble(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
+		write("); } catch (NumberFormatException _) { return Double.NaN; } }).getAsDouble())");
 		break;
 	case FuId::stringSubstring:
 		writePostfix(obj, ".substring(");
@@ -19752,7 +19752,7 @@ void GenJava::visitIf(const FuIf * statement)
 		writeCharLine(';');
 		flattenBranch(statement, statement->cond.get() == call);
 		closeBlock();
-		write("catch (NumberFormatException e) ");
+		write("catch (NumberFormatException _) ");
 		openBlock();
 		if (dynamic_cast<const FuReturn *>((statement->cond.get() != call ? statement->onTrue : statement->onFalse).get()) || dynamic_cast<const FuThrow *>((statement->cond.get() != call ? statement->onTrue : statement->onFalse).get())) {
 		}

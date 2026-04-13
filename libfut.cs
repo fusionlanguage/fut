@@ -19855,7 +19855,7 @@ namespace Fusion
 				obj.Accept(this, FuPriority.Assign);
 				Write(" = ((DoubleSupplier) () -> { try { return Double.parseDouble(");
 				args[0].Accept(this, FuPriority.Argument);
-				Write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
+				Write("); } catch (NumberFormatException _) { return Double.NaN; } }).getAsDouble())");
 				break;
 			case FuId.StringSubstring:
 				WritePostfix(obj, ".substring(");
@@ -20352,7 +20352,7 @@ namespace Fusion
 				WriteCharLine(';');
 				FlattenBranch(statement, statement.Cond == call);
 				CloseBlock();
-				Write("catch (NumberFormatException e) ");
+				Write("catch (NumberFormatException _) ");
 				OpenBlock();
 				switch (statement.Cond != call ? statement.OnTrue : statement.OnFalse) {
 				case FuReturn:
