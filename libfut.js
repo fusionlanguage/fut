@@ -20458,7 +20458,7 @@ export class GenJava extends GenTyped
 			obj.accept(this, FuPriority.ASSIGN);
 			this.write(" = ((DoubleSupplier) () -> { try { return Double.parseDouble(");
 			args[0].accept(this, FuPriority.ARGUMENT);
-			this.write("); } catch (NumberFormatException _) { return Double.NaN; } }).getAsDouble())");
+			this.write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
 			break;
 		case FuId.STRING_SUBSTRING:
 			this.writePostfix(obj, ".substring(");
@@ -20972,7 +20972,7 @@ export class GenJava extends GenTyped
 			this.writeCharLine(59);
 			this.flattenBranch(statement, statement.cond == call);
 			this.closeBlock();
-			this.write("catch (NumberFormatException _) ");
+			this.write("catch (NumberFormatException e_) ");
 			this.openBlock();
 			if ((statement.cond != call ? statement.onTrue : statement.onFalse) instanceof FuReturn || (statement.cond != call ? statement.onTrue : statement.onFalse) instanceof FuThrow) {
 			}

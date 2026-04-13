@@ -712,7 +712,7 @@ public class GenJava : GenTyped
 			obj.Accept(this, FuPriority.Assign);
 			Write(" = ((DoubleSupplier) () -> { try { return Double.parseDouble(");
 			args[0].Accept(this, FuPriority.Argument);
-			Write("); } catch (NumberFormatException _) { return Double.NaN; } }).getAsDouble())");
+			Write("); } catch (NumberFormatException e) { return Double.NaN; } }).getAsDouble())");
 			break;
 		case FuId.StringSubstring:
 			WritePostfix(obj, ".substring(");
@@ -1223,7 +1223,7 @@ public class GenJava : GenTyped
 			WriteCharLine(';');
 			FlattenBranch(statement, statement.Cond == call);
 			CloseBlock();
-			Write("catch (NumberFormatException _) ");
+			Write("catch (NumberFormatException e_) ");
 			OpenBlock();
 			switch (statement.Cond != call ? statement.OnTrue : statement.OnFalse) {
 			case FuReturn:
