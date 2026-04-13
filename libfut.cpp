@@ -14959,7 +14959,10 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 	case FuId::sortedSetRemove:
 	case FuId::dictionaryRemove:
 	case FuId::sortedDictionaryRemove:
-		writeMethodCall(obj, "erase", (*args)[0].get());
+		startMethodCall(obj);
+		write("erase(");
+		writeStronglyCoerced(obj->type->asClassType()->getKeyType(), (*args)[0].get());
+		writeChar(')');
 		break;
 	case FuId::dictionaryAdd:
 		writeIndexing(obj, (*args)[0].get());

@@ -15800,7 +15800,10 @@ export class GenCpp extends GenCCpp
 		case FuId.SORTED_SET_REMOVE:
 		case FuId.DICTIONARY_REMOVE:
 		case FuId.SORTED_DICTIONARY_REMOVE:
-			this.writeMethodCall(obj, "erase", args[0]);
+			this.#startMethodCall(obj);
+			this.write("erase(");
+			this.writeStronglyCoerced(obj.type.asClassType().getKeyType(), args[0]);
+			this.writeChar(41);
 			break;
 		case FuId.DICTIONARY_ADD:
 			this.writeIndexing(obj, args[0]);

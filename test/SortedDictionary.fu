@@ -2,13 +2,16 @@ public static class Test
 {
 	public static bool Run()
 	{
-		SortedDictionary<int, int>() dict; //FAIL: cl
-		dict[1] = 10;
+		SortedDictionary<string(), int>() dict; //FAIL: cl
+		dict["one"] = 10;
 		dict.Clear();
-		dict[2] = 12;
-		dict[2] = 20;
-		dict[3] = 30;
-		dict.Remove(1);
-		return dict.Count == 2 && dict[2] == 20 && dict[3] == 30 && dict.ContainsKey(2);
+		dict["two"] = 12;
+		string two = "two";
+		dict[two] = 20;
+		dict["three"] = 30;
+		dict.Remove("one");
+		string one = "one";
+		dict.Remove(one);
+		return dict.Count == 2 && dict["two"] == 20 && dict["three"] == 30 && dict.ContainsKey("two");
 	}
 }

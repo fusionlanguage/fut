@@ -15293,7 +15293,10 @@ namespace Fusion
 			case FuId.SortedSetRemove:
 			case FuId.DictionaryRemove:
 			case FuId.SortedDictionaryRemove:
-				WriteMethodCall(obj, "erase", args[0]);
+				StartMethodCall(obj);
+				Write("erase(");
+				WriteStronglyCoerced(obj.Type.AsClassType().GetKeyType(), args[0]);
+				WriteChar(')');
 				break;
 			case FuId.DictionaryAdd:
 				WriteIndexing(obj, args[0]);

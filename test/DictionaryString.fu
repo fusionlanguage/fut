@@ -17,8 +17,9 @@ public static class Test
 		dict2.Clear();
 		dict2[one] = "jeden";
 		dict2[two] = "dwa";
-		dict2["three"] = "trzy";
-		dict2.Remove("three");
+		string three = "three";
+		dict2[three] = "trzy";
+		dict2.Remove(three);
 
 		Dictionary<string, string()>() dict3;
 		dict3["only"] = "test";
