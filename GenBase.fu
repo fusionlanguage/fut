@@ -1719,11 +1719,12 @@ public abstract class GenBase : FuVisitor
 		WriteChild(statement.Body);
 	}
 
-	internal static FuCallExpr? IsNotTryParse(FuIf statement)
+	protected static FuCallExpr? IsIfTryParse(FuIf statement)
 	{
-		if (statement.OnFalse == null
-		 && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark
-		 && not.Inner is FuCallExpr call) {
+		FuExpr cond = statement.Cond;
+		if (cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark)
+			cond = not.Inner;
+		if (cond is FuCallExpr call) {
 			switch (call.Method.Symbol.Id) {
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
@@ -1735,6 +1736,14 @@ public abstract class GenBase : FuVisitor
 			}
 		}
 		return null;
+	}
+
+	protected void FlattenBranch!(FuIf statement, bool cond)
+	{
+		if (cond)
+			FlattenBlock(statement.OnTrue);
+		else if (statement.OnFalse != null)
+			FlattenBlock(statement.OnFalse);
 	}
 
 	protected virtual bool EmbedIfWhileIsVar!(FuExpr expr, bool write) => false;

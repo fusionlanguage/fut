@@ -8783,9 +8783,12 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		internal static FuCallExpr IsNotTryParse(FuIf statement)
+		protected static FuCallExpr IsIfTryParse(FuIf statement)
 		{
-			if (statement.OnFalse == null && statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark && not.Inner is FuCallExpr call) {
+			FuExpr cond = statement.Cond;
+			if (cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark)
+				cond = not.Inner;
+			if (cond is FuCallExpr call) {
 				switch (call.Method.Symbol.Id) {
 				case FuId.IntTryParse:
 				case FuId.NIntTryParse:
@@ -8797,6 +8800,14 @@ namespace Fusion
 				}
 			}
 			return null;
+		}
+
+		protected void FlattenBranch(FuIf statement, bool cond)
+		{
+			if (cond)
+				FlattenBlock(statement.OnTrue);
+			else if (statement.OnFalse != null)
+				FlattenBlock(statement.OnFalse);
 		}
 
 		protected virtual bool EmbedIfWhileIsVar(FuExpr expr, bool write) => false;
@@ -20317,7 +20328,7 @@ namespace Fusion
 
 		internal override void VisitIf(FuIf statement)
 		{
-			FuCallExpr call = IsNotTryParse(statement);
+			FuCallExpr call = IsIfTryParse(statement);
 			if (call != null) {
 				Write("try ");
 				OpenBlock();
@@ -20339,14 +20350,20 @@ namespace Fusion
 				}
 				WriteInParentheses(call.Arguments);
 				WriteCharLine(';');
+				FlattenBranch(statement, statement.Cond == call);
 				CloseBlock();
 				Write("catch (NumberFormatException e) ");
 				OpenBlock();
-				if (!(statement.OnTrue is FuReturn) && !(statement.OnTrue is FuThrow)) {
+				switch (statement.Cond != call ? statement.OnTrue : statement.OnFalse) {
+				case FuReturn:
+				case FuThrow:
+					break;
+				default:
 					call.Method.Left.Accept(this, FuPriority.Assign);
 					WriteLine(" = 0;");
+					break;
 				}
-				statement.OnTrue.AcceptStatement(this);
+				FlattenBranch(statement, statement.Cond != call);
 				CloseBlock();
 			}
 			else
@@ -26181,7 +26198,7 @@ namespace Fusion
 
 		internal override void VisitIf(FuIf statement)
 		{
-			FuCallExpr call = IsNotTryParse(statement);
+			FuCallExpr call = IsIfTryParse(statement);
 			if (call != null) {
 				Write("try");
 				OpenChild();
@@ -26190,10 +26207,11 @@ namespace Fusion
 				Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
 				WriteInParentheses(call.Arguments);
 				WriteNewLine();
+				FlattenBranch(statement, statement.Cond == call);
 				CloseChild();
 				Write("except ValueError");
 				OpenChild();
-				statement.OnTrue.AcceptStatement(this);
+				FlattenBranch(statement, statement.Cond != call);
 				CloseChild();
 			}
 			else

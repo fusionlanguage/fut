@@ -9211,11 +9211,14 @@ export class GenBase extends FuVisitor
 		this.writeChild(statement.body);
 	}
 
-	static isNotTryParse(statement)
+	static isIfTryParse(statement)
 	{
+		let cond = statement.cond;
 		let not;
+		if ((not = cond) instanceof FuPrefixExpr && not.op == FuToken.EXCLAMATION_MARK)
+			cond = not.inner;
 		let call;
-		if (statement.onFalse == null && (not = statement.cond) instanceof FuPrefixExpr && not.op == FuToken.EXCLAMATION_MARK && (call = not.inner) instanceof FuCallExpr) {
+		if ((call = cond) instanceof FuCallExpr) {
 			switch (call.method.symbol.id) {
 			case FuId.INT_TRY_PARSE:
 			case FuId.N_INT_TRY_PARSE:
@@ -9227,6 +9230,14 @@ export class GenBase extends FuVisitor
 			}
 		}
 		return null;
+	}
+
+	flattenBranch(statement, cond)
+	{
+		if (cond)
+			this.flattenBlock(statement.onTrue);
+		else if (statement.onFalse != null)
+			this.flattenBlock(statement.onFalse);
 	}
 
 	embedIfWhileIsVar(expr, write)
@@ -20937,7 +20948,7 @@ export class GenJava extends GenTyped
 
 	visitIf(statement)
 	{
-		let call = GenJava.isNotTryParse(statement);
+		let call = GenJava.isIfTryParse(statement);
 		if (call != null) {
 			this.write("try ");
 			this.openBlock();
@@ -20959,14 +20970,17 @@ export class GenJava extends GenTyped
 			}
 			this.writeInParentheses(call.arguments_);
 			this.writeCharLine(59);
+			this.flattenBranch(statement, statement.cond == call);
 			this.closeBlock();
 			this.write("catch (NumberFormatException e) ");
 			this.openBlock();
-			if (!(statement.onTrue instanceof FuReturn) && !(statement.onTrue instanceof FuThrow)) {
+			if ((statement.cond != call ? statement.onTrue : statement.onFalse) instanceof FuReturn || (statement.cond != call ? statement.onTrue : statement.onFalse) instanceof FuThrow) {
+			}
+			else {
 				call.method.left.accept(this, FuPriority.ASSIGN);
 				this.writeLine(" = 0;");
 			}
-			statement.onTrue.acceptStatement(this);
+			this.flattenBranch(statement, statement.cond != call);
 			this.closeBlock();
 		}
 		else
@@ -26864,7 +26878,7 @@ export class GenPy extends GenPySwift
 
 	visitIf(statement)
 	{
-		let call = GenPy.isNotTryParse(statement);
+		let call = GenPy.isIfTryParse(statement);
 		if (call != null) {
 			this.write("try");
 			this.openChild();
@@ -26873,10 +26887,11 @@ export class GenPy extends GenPySwift
 			this.write(call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
 			this.writeInParentheses(call.arguments_);
 			this.writeNewLine();
+			this.flattenBranch(statement, statement.cond == call);
 			this.closeChild();
 			this.write("except ValueError");
 			this.openChild();
-			statement.onTrue.acceptStatement(this);
+			this.flattenBranch(statement, statement.cond != call);
 			this.closeChild();
 		}
 		else
