@@ -36,9 +36,8 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.VSSDK.VsixSignTool" Version="17.10.34916.79" />
   </ItemGroup>
   <Target Name="VsixSign" AfterTargets="CreateVsixContainer" Condition="'$(Configuration)' == 'Release'">
-    <Exec Command="$(NuGetPackageRoot)microsoft.vssdk.vsixsigntool\17.10.34916.79\tools\vssdk\vsixsigntool.exe sign /f ..\..\..\pfusik-2024.p7b /csp &quot;Microsoft Base Smart Card Crypto Provider&quot; /k 5807C5CCB8A61E78BBE7AC797A738AA8658E47B $(TargetVsixContainer)" />
+    <Exec Command="sign code certificate-store -cfp b52b77a370cf4a0f79beaef55d8d436d4c47aaba236fc6e7f21efeb75384f224 -csp &quot;Microsoft Smart Card Key Storage Provider&quot; -k 787187EFEE81C777958D6909A793C28131739BF -i -t http://time.certum.pl $(TargetVsixContainer)" />
   </Target>
 </Project>
