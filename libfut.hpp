@@ -1628,6 +1628,7 @@ private: // internal
 	friend FuSema;
 	friend FuSystem;
 	friend GenC;
+	friend GenCCpp;
 	friend GenPy;
 	friend GenSwift;
 	friend GenTs;
@@ -1928,6 +1929,7 @@ public:
 	void addStaticMethod(std::shared_ptr<FuType> type, FuId id, std::string_view name, std::shared_ptr<FuVar> param0 = nullptr, std::shared_ptr<FuVar> param1 = nullptr, std::shared_ptr<FuVar> param2 = nullptr);
 	void addNative(std::shared_ptr<FuNative> nat);
 	bool isSameOrBaseOf(const FuClass * derived) const;
+	const FuClass * getLowestCommonAncestor(const FuClass * other) const;
 	bool hasToString() const;
 	bool addsToString() const;
 private: // internal
@@ -1987,7 +1989,6 @@ private: // internal
 	friend GenBase;
 	friend GenC;
 	friend GenCCpp;
-	friend GenCCppD;
 	friend GenCl;
 	friend GenCpp;
 	friend GenCs;
@@ -2360,7 +2361,6 @@ private:
 	std::shared_ptr<FuExpr> resolveIs(std::shared_ptr<FuBinaryExpr> expr, std::shared_ptr<FuExpr> left, const FuExpr * right) const;
 	std::shared_ptr<FuExpr> visitBinaryExpr(std::shared_ptr<FuBinaryExpr> expr);
 	std::shared_ptr<FuType> tryGetPtr(std::shared_ptr<FuType> type, bool nullable) const;
-	static const FuClass * getLowestCommonAncestor(const FuClass * left, const FuClass * right);
 	std::shared_ptr<FuType> getCommonType(const FuExpr * left, const FuExpr * right) const;
 	std::shared_ptr<FuExpr> visitSelectExpr(const FuSelectExpr * expr);
 	std::shared_ptr<FuType> evalType(const FuClassType * generic, std::shared_ptr<FuType> type) const;
@@ -2697,7 +2697,6 @@ public:
 	virtual ~GenCCppD() = default;
 protected:
 	GenCCppD() = default;
-	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 private: // internal
@@ -2707,8 +2706,6 @@ private: // internal
 	friend GenCCpp;
 	friend GenCpp;
 	friend GenD;
-private:
-	static bool isPtrTo(const FuExpr * ptr, const FuExpr * other);
 };
 
 class GenCCpp : public GenCCppD
@@ -2727,6 +2724,7 @@ protected:
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeArgsIndexing(const FuExpr * index);
 	static const FuExpr * isStringEmpty(const FuBinaryExpr * expr);
+	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	virtual void writeArrayPtr(const FuExpr * expr, FuPriority parent) = 0;
 	void writeArrayPtrAdd(const FuExpr * array, const FuExpr * index);
 	static const FuCallExpr * isStringSubstring(const FuExpr * expr);

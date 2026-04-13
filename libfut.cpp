@@ -2490,6 +2490,18 @@ bool FuClass::isSameOrBaseOf(const FuClass * derived) const
 	return true;
 }
 
+const FuClass * FuClass::getLowestCommonAncestor(const FuClass * other) const
+{
+	for (;;) {
+		if (other->isSameOrBaseOf(this))
+			return other;
+		if (const FuClass *parent = dynamic_cast<const FuClass *>(other->parent))
+			other = parent;
+		else
+			return nullptr;
+	}
+}
+
 bool FuClass::hasToString() const
 {
 	const FuMethod * method;
@@ -5790,18 +5802,6 @@ std::shared_ptr<FuType> FuSema::tryGetPtr(std::shared_ptr<FuType> type, bool nul
 	return type;
 }
 
-const FuClass * FuSema::getLowestCommonAncestor(const FuClass * left, const FuClass * right)
-{
-	for (;;) {
-		if (left->isSameOrBaseOf(right))
-			return left;
-		if (const FuClass *parent = dynamic_cast<const FuClass *>(left->parent))
-			left = parent;
-		else
-			return nullptr;
-	}
-}
-
 std::shared_ptr<FuType> FuSema::getCommonType(const FuExpr * left, const FuExpr * right) const
 {
 	std::shared_ptr<FuRangeType> leftRange;
@@ -5818,7 +5818,7 @@ std::shared_ptr<FuType> FuSema::getCommonType(const FuExpr * left, const FuExpr 
 	const FuClassType * leftClass;
 	const FuClassType * rightClass;
 	if ((leftClass = dynamic_cast<const FuClassType *>(left->type.get())) && (rightClass = dynamic_cast<const FuClassType *>(right->type.get())) && leftClass->equalTypeArguments(rightClass)) {
-		const FuClass * klass = getLowestCommonAncestor(leftClass->class_, rightClass->class_);
+		const FuClass * klass = leftClass->class_->getLowestCommonAncestor(rightClass->class_);
 		if (klass != nullptr) {
 			std::shared_ptr<FuClassType> result;
 			if (!dynamic_cast<const FuReadWriteClassType *>(leftClass) || !dynamic_cast<const FuReadWriteClassType *>(rightClass))
@@ -9366,32 +9366,6 @@ void GenCCppD::visitLiteralLong(int64_t i)
 		GenBase::visitLiteralLong(i);
 }
 
-bool GenCCppD::isPtrTo(const FuExpr * ptr, const FuExpr * other)
-{
-	const FuClassType * klass;
-	return (klass = dynamic_cast<const FuClassType *>(ptr->type.get())) && klass->class_->id != FuId::stringClass && klass->isAssignableFrom(other->type.get());
-}
-
-void GenCCppD::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_)
-{
-	const FuType * coercedType;
-	if (isPtrTo(left, right))
-		coercedType = left->type.get();
-	else if (isPtrTo(right, left))
-		coercedType = right->type.get();
-	else {
-		GenBase::writeEqual(left, right, parent, not_);
-		return;
-	}
-	if (parent > FuPriority::equality)
-		writeChar('(');
-	writeCoerced(coercedType, left, FuPriority::equality);
-	write(getEqOp(not_));
-	writeCoerced(coercedType, right, FuPriority::equality);
-	if (parent > FuPriority::equality)
-		writeChar(')');
-}
-
 void GenCCppD::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
 {
 	if ((type->id == FuId::intType || dynamic_cast<const FuRangeType *>(type)) && expr->type->id == FuId::nIntType)
@@ -9527,6 +9501,36 @@ const FuExpr * GenCCpp::isStringEmpty(const FuBinaryExpr * expr)
 	if ((symbol = dynamic_cast<const FuSymbolReference *>(expr->left.get())) && symbol->symbol->id == FuId::stringLength && expr->right->isLiteralZero())
 		return symbol->left.get();
 	return nullptr;
+}
+
+void GenCCpp::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_)
+{
+	const FuClassType * leftClass;
+	const FuClassType * rightClass;
+	if ((leftClass = dynamic_cast<const FuClassType *>(left->type.get())) && (rightClass = dynamic_cast<const FuClassType *>(right->type.get())) && leftClass->class_->id != FuId::stringClass) {
+		std::shared_ptr<FuType> coercedType;
+		if (leftClass->isAssignableFrom(rightClass))
+			coercedType = left->type;
+		else if (rightClass->isAssignableFrom(leftClass))
+			coercedType = right->type;
+		else {
+			std::shared_ptr<FuClassType> futemp0 = std::make_shared<FuClassType>();
+			futemp0->class_ = leftClass->class_->getLowestCommonAncestor(rightClass->class_);
+			futemp0->nullable = true;
+			futemp0->typeArg0 = leftClass->typeArg0;
+			futemp0->typeArg1 = leftClass->typeArg1;
+			coercedType = futemp0;
+		}
+		if (parent > FuPriority::equality)
+			writeChar('(');
+		writeCoerced(coercedType.get(), left, FuPriority::equality);
+		write(getEqOp(not_));
+		writeCoerced(coercedType.get(), right, FuPriority::equality);
+		if (parent > FuPriority::equality)
+			writeChar(')');
+	}
+	else
+		GenBase::writeEqual(left, right, parent, not_);
 }
 
 void GenCCpp::writeArrayPtrAdd(const FuExpr * array, const FuExpr * index)
@@ -11223,7 +11227,7 @@ void GenC::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pare
 		writeEqualStringInternal(left, right, parent, not_);
 	}
 	else
-		GenCCppD::writeEqual(left, right, parent, not_);
+		GenCCpp::writeEqual(left, right, parent, not_);
 }
 
 void GenC::writeStringLength(const FuExpr * expr)
@@ -14342,7 +14346,7 @@ void GenCpp::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pa
 		writePostfix(right, ".data()");
 	}
 	else
-		GenCCppD::writeEqual(left, right, parent, not_);
+		GenCCpp::writeEqual(left, right, parent, not_);
 }
 
 bool GenCpp::isClassPtr(const FuType * type)
@@ -18237,7 +18241,7 @@ void GenD::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pare
 	if (isIsComparable(left) || isIsComparable(right))
 		writeEqualExpr(left, right, parent, not_ ? " !is " : " is ");
 	else
-		GenCCppD::writeEqual(left, right, parent, not_);
+		GenBase::writeEqual(left, right, parent, not_);
 }
 
 void GenD::writeAssign(const FuBinaryExpr * expr, FuPriority parent)

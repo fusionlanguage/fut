@@ -1,6 +1,6 @@
 // GenCCpp.fu - C/C++ code generator
 //
-// Copyright (C) 2011-2025  Piotr Fusik
+// Copyright (C) 2011-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -132,6 +132,28 @@ public abstract class GenCCpp : GenCCppD
 			&& expr.Right.IsLiteralZero())
 			return symbol.Left;
 		return null;
+	}
+
+	protected override void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
+	{
+		if (left.Type is FuClassType leftClass && right.Type is FuClassType rightClass && leftClass.Class.Id != FuId.StringClass) {
+			FuType# coercedType;
+			if (leftClass.IsAssignableFrom(rightClass))
+				coercedType = left.Type;
+			else if (rightClass.IsAssignableFrom(leftClass))
+				coercedType = right.Type;
+			else
+				coercedType = new FuClassType { Class = leftClass.Class.GetLowestCommonAncestor(rightClass.Class), Nullable = true, TypeArg0 = leftClass.TypeArg0, TypeArg1 = leftClass.TypeArg1 };
+			if (parent > FuPriority.Equality)
+				WriteChar('(');
+			WriteCoerced(coercedType, left, FuPriority.Equality);
+			Write(GetEqOp(not));
+			WriteCoerced(coercedType, right, FuPriority.Equality);
+			if (parent > FuPriority.Equality)
+				WriteChar(')');
+		}
+		else
+			base.WriteEqual(left, right, parent, not);
 	}
 
 	protected abstract void WriteArrayPtr!(FuExpr expr, FuPriority parent);

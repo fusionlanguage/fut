@@ -3199,6 +3199,19 @@ export class FuClass extends FuContainerType
 		return true;
 	}
 
+	getLowestCommonAncestor(other)
+	{
+		for (;;) {
+			if (other.isSameOrBaseOf(this))
+				return other;
+			let parent;
+			if ((parent = other.parent) instanceof FuClass)
+				other = parent;
+			else
+				return null;
+		}
+	}
+
 	hasToString()
 	{
 		let method;
@@ -6235,19 +6248,6 @@ export class FuSema
 		return type;
 	}
 
-	static #getLowestCommonAncestor(left, right)
-	{
-		for (;;) {
-			if (left.isSameOrBaseOf(right))
-				return left;
-			let parent;
-			if ((parent = left.parent) instanceof FuClass)
-				left = parent;
-			else
-				return null;
-		}
-	}
-
 	#getCommonType(left, right)
 	{
 		let leftRange;
@@ -6264,7 +6264,7 @@ export class FuSema
 		let leftClass;
 		let rightClass;
 		if ((leftClass = left.type) instanceof FuClassType && (rightClass = right.type) instanceof FuClassType && leftClass.equalTypeArguments(rightClass)) {
-			let klass = FuSema.#getLowestCommonAncestor(leftClass.class, rightClass.class);
+			let klass = leftClass.class.getLowestCommonAncestor(rightClass.class);
 			if (klass != null) {
 				let result;
 				if (!(leftClass instanceof FuReadWriteClassType) || !(rightClass instanceof FuReadWriteClassType))
@@ -9952,32 +9952,6 @@ export class GenCCppD extends GenTyped
 			super.visitLiteralLong(i);
 	}
 
-	static #isPtrTo(ptr, other)
-	{
-		let klass;
-		return (klass = ptr.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && klass.isAssignableFrom(other.type);
-	}
-
-	writeEqual(left, right, parent, not)
-	{
-		let coercedType;
-		if (GenCCppD.#isPtrTo(left, right))
-			coercedType = left.type;
-		else if (GenCCppD.#isPtrTo(right, left))
-			coercedType = right.type;
-		else {
-			super.writeEqual(left, right, parent, not);
-			return;
-		}
-		if (parent > FuPriority.EQUALITY)
-			this.writeChar(40);
-		this.writeCoerced(coercedType, left, FuPriority.EQUALITY);
-		this.write(GenCCppD.getEqOp(not));
-		this.writeCoerced(coercedType, right, FuPriority.EQUALITY);
-		if (parent > FuPriority.EQUALITY)
-			this.writeChar(41);
-	}
-
 	writeCoercedInternal(type, expr, parent)
 	{
 		if ((type.id == FuId.INT_TYPE || type instanceof FuRangeType) && expr.type.id == FuId.N_INT_TYPE)
@@ -10118,6 +10092,30 @@ export class GenCCpp extends GenCCppD
 		if ((symbol = expr.left) instanceof FuSymbolReference && symbol.symbol.id == FuId.STRING_LENGTH && expr.right.isLiteralZero())
 			return symbol.left;
 		return null;
+	}
+
+	writeEqual(left, right, parent, not)
+	{
+		let leftClass;
+		let rightClass;
+		if ((leftClass = left.type) instanceof FuClassType && (rightClass = right.type) instanceof FuClassType && leftClass.class.id != FuId.STRING_CLASS) {
+			let coercedType;
+			if (leftClass.isAssignableFrom(rightClass))
+				coercedType = left.type;
+			else if (rightClass.isAssignableFrom(leftClass))
+				coercedType = right.type;
+			else
+				coercedType = Object.assign(new FuClassType(), { class: leftClass.class.getLowestCommonAncestor(rightClass.class), nullable: true, typeArg0: leftClass.typeArg0, typeArg1: leftClass.typeArg1 });
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(40);
+			this.writeCoerced(coercedType, left, FuPriority.EQUALITY);
+			this.write(GenCCpp.getEqOp(not));
+			this.writeCoerced(coercedType, right, FuPriority.EQUALITY);
+			if (parent > FuPriority.EQUALITY)
+				this.writeChar(41);
+		}
+		else
+			super.writeEqual(left, right, parent, not);
 	}
 
 	writeArrayPtrAdd(array, index)

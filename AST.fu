@@ -1421,6 +1421,18 @@ public class FuClass : FuContainerType
 		return true;
 	}
 
+	public FuClass? GetLowestCommonAncestor(FuClass other)
+	{
+		for (;;) {
+			if (other.IsSameOrBaseOf(this))
+				return other;
+			if (other.Parent is FuClass parent)
+				other = parent;
+			else
+				return null;
+		}
+	}
+
 	public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.Id == FuId.ClassToString;
 
 	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.Id == FuId.ClassToString

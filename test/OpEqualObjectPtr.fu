@@ -32,6 +32,6 @@ public class Test
 		return o.IsNull(true) && !o.IsNull(false)
 			&& o.IsThis(o)
 			&& o.IsArrayNull(true) && !o.IsArrayNull(false)
-			&& b == d && r == d;
+			&& b == d && r == d && b == r;
 	}
 }

@@ -1223,18 +1223,6 @@ public class FuSema
 		return type;
 	}
 
-	static FuClass? GetLowestCommonAncestor(FuClass left, FuClass right)
-	{
-		for (;;) {
-			if (left.IsSameOrBaseOf(right))
-				return left;
-			if (left.Parent is FuClass parent)
-				left = parent;
-			else
-				return null;
-		}
-	}
-
 	FuType# GetCommonType(FuExpr left, FuExpr right)
 	{
 		if (left.Type is FuRangeType# leftRange && right.Type is FuRangeType# rightRange)
@@ -1247,7 +1235,7 @@ public class FuSema
 		if (ptr.IsAssignableFrom(left.Type))
 			return ptr;
 		if (left.Type is FuClassType leftClass && right.Type is FuClassType rightClass && leftClass.EqualTypeArguments(rightClass)) {
-			FuClass? klass = GetLowestCommonAncestor(leftClass.Class, rightClass.Class);
+			FuClass? klass = leftClass.Class.GetLowestCommonAncestor(rightClass.Class);
 			if (klass != null) {
 				FuClassType# result;
 				if (!(leftClass is FuReadWriteClassType) || !(rightClass is FuReadWriteClassType))

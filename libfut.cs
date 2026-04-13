@@ -3051,6 +3051,18 @@ namespace Fusion
 			return true;
 		}
 
+		public FuClass GetLowestCommonAncestor(FuClass other)
+		{
+			for (;;) {
+				if (other.IsSameOrBaseOf(this))
+					return other;
+				if (other.Parent is FuClass parent)
+					other = parent;
+				else
+					return null;
+			}
+		}
+
 		public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.Id == FuId.ClassToString;
 
 		public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.Id == FuId.ClassToString && method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
@@ -5909,18 +5921,6 @@ namespace Fusion
 			return type;
 		}
 
-		static FuClass GetLowestCommonAncestor(FuClass left, FuClass right)
-		{
-			for (;;) {
-				if (left.IsSameOrBaseOf(right))
-					return left;
-				if (left.Parent is FuClass parent)
-					left = parent;
-				else
-					return null;
-			}
-		}
-
 		FuType GetCommonType(FuExpr left, FuExpr right)
 		{
 			if (left.Type is FuRangeType leftRange && right.Type is FuRangeType rightRange)
@@ -5933,7 +5933,7 @@ namespace Fusion
 			if (ptr.IsAssignableFrom(left.Type))
 				return ptr;
 			if (left.Type is FuClassType leftClass && right.Type is FuClassType rightClass && leftClass.EqualTypeArguments(rightClass)) {
-				FuClass klass = GetLowestCommonAncestor(leftClass.Class, rightClass.Class);
+				FuClass klass = leftClass.Class.GetLowestCommonAncestor(rightClass.Class);
 				if (klass != null) {
 					FuClassType result;
 					if (!(leftClass is FuReadWriteClassType) || !(rightClass is FuReadWriteClassType))
@@ -9502,28 +9502,6 @@ namespace Fusion
 				base.VisitLiteralLong(i);
 		}
 
-		static bool IsPtrTo(FuExpr ptr, FuExpr other) => ptr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && klass.IsAssignableFrom(other.Type);
-
-		protected override void WriteEqual(FuExpr left, FuExpr right, FuPriority parent, bool not)
-		{
-			FuType coercedType;
-			if (IsPtrTo(left, right))
-				coercedType = left.Type;
-			else if (IsPtrTo(right, left))
-				coercedType = right.Type;
-			else {
-				base.WriteEqual(left, right, parent, not);
-				return;
-			}
-			if (parent > FuPriority.Equality)
-				WriteChar('(');
-			WriteCoerced(coercedType, left, FuPriority.Equality);
-			Write(GetEqOp(not));
-			WriteCoerced(coercedType, right, FuPriority.Equality);
-			if (parent > FuPriority.Equality)
-				WriteChar(')');
-		}
-
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
 		{
 			if ((type.Id == FuId.IntType || type is FuRangeType) && expr.Type.Id == FuId.NIntType)
@@ -9667,6 +9645,28 @@ namespace Fusion
 			if (expr.Left is FuSymbolReference symbol && symbol.Symbol.Id == FuId.StringLength && expr.Right.IsLiteralZero())
 				return symbol.Left;
 			return null;
+		}
+
+		protected override void WriteEqual(FuExpr left, FuExpr right, FuPriority parent, bool not)
+		{
+			if (left.Type is FuClassType leftClass && right.Type is FuClassType rightClass && leftClass.Class.Id != FuId.StringClass) {
+				FuType coercedType;
+				if (leftClass.IsAssignableFrom(rightClass))
+					coercedType = left.Type;
+				else if (rightClass.IsAssignableFrom(leftClass))
+					coercedType = right.Type;
+				else
+					coercedType = new FuClassType { Class = leftClass.Class.GetLowestCommonAncestor(rightClass.Class), Nullable = true, TypeArg0 = leftClass.TypeArg0, TypeArg1 = leftClass.TypeArg1 };
+				if (parent > FuPriority.Equality)
+					WriteChar('(');
+				WriteCoerced(coercedType, left, FuPriority.Equality);
+				Write(GetEqOp(not));
+				WriteCoerced(coercedType, right, FuPriority.Equality);
+				if (parent > FuPriority.Equality)
+					WriteChar(')');
+			}
+			else
+				base.WriteEqual(left, right, parent, not);
 		}
 
 		protected abstract void WriteArrayPtr(FuExpr expr, FuPriority parent);

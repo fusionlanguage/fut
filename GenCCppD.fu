@@ -28,28 +28,6 @@ public abstract class GenCCppD : GenTyped
 			base.VisitLiteralLong(i);
 	}
 
-	static bool IsPtrTo(FuExpr ptr, FuExpr other) => ptr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && klass.IsAssignableFrom(other.Type);
-
-	protected override void WriteEqual!(FuExpr left, FuExpr right, FuPriority parent, bool not)
-	{
-		FuType coercedType;
-		if (IsPtrTo(left, right))
-			coercedType = left.Type;
-		else if (IsPtrTo(right, left))
-			coercedType = right.Type;
-		else {
-			base.WriteEqual(left, right, parent, not);
-			return;
-		}
-		if (parent > FuPriority.Equality)
-			WriteChar('(');
-		WriteCoerced(coercedType, left, FuPriority.Equality);
-		Write(GetEqOp(not));
-		WriteCoerced(coercedType, right, FuPriority.Equality);
-		if (parent > FuPriority.Equality)
-			WriteChar(')');
-	}
-
 	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
 	{
 		if ((type.Id == FuId.IntType || type is FuRangeType) && expr.Type.Id == FuId.NIntType)
