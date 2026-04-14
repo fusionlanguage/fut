@@ -19753,17 +19753,18 @@ void GenJava::visitIf(const FuIf * statement)
 		}
 		writeInParentheses(&call->arguments);
 		writeCharLine(';');
-		flattenBranch(statement, statement->cond.get() == call);
+		bool not_ = statement->cond.get() != call;
+		flattenBranch(statement, !not_);
 		closeBlock();
 		write("catch (NumberFormatException e_) ");
 		openBlock();
-		if (dynamic_cast<const FuReturn *>((statement->cond.get() != call ? statement->onTrue : statement->onFalse).get()) || dynamic_cast<const FuThrow *>((statement->cond.get() != call ? statement->onTrue : statement->onFalse).get())) {
+		if (dynamic_cast<const FuReturn *>((not_ ? statement->onTrue : statement->onFalse).get()) || dynamic_cast<const FuThrow *>((not_ ? statement->onTrue : statement->onFalse).get())) {
 		}
 		else {
 			call->method->left->accept(this, FuPriority::assign);
 			writeLine(" = 0;");
 		}
-		flattenBranch(statement, statement->cond.get() != call);
+		flattenBranch(statement, not_);
 		closeBlock();
 	}
 	else
@@ -25376,11 +25377,12 @@ void GenPy::visitIf(const FuIf * statement)
 		write(call->method->symbol->id == FuId::doubleTryParse ? "float" : "int");
 		writeInParentheses(&call->arguments);
 		writeNewLine();
-		flattenBranch(statement, statement->cond.get() == call);
+		bool not_ = statement->cond.get() != call;
+		flattenBranch(statement, !not_);
 		closeChild();
 		write("except ValueError");
 		openChild();
-		flattenBranch(statement, statement->cond.get() != call);
+		flattenBranch(statement, not_);
 		closeChild();
 	}
 	else

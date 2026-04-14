@@ -1221,11 +1221,12 @@ public class GenJava : GenTyped
 			}
 			WriteInParentheses(call.Arguments);
 			WriteCharLine(';');
-			FlattenBranch(statement, statement.Cond == call);
+			bool not = statement.Cond != call;
+			FlattenBranch(statement, !not);
 			CloseBlock();
 			Write("catch (NumberFormatException e_) ");
 			OpenBlock();
-			switch (statement.Cond != call ? statement.OnTrue : statement.OnFalse) {
+			switch (not ? statement.OnTrue : statement.OnFalse) {
 			case FuReturn:
 			case FuThrow:
 				break;
@@ -1234,7 +1235,7 @@ public class GenJava : GenTyped
 				WriteLine(" = 0;");
 				break;
 			}
-			FlattenBranch(statement, statement.Cond != call);
+			FlattenBranch(statement, not);
 			CloseBlock();
 		}
 		else

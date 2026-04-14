@@ -20353,11 +20353,12 @@ namespace Fusion
 				}
 				WriteInParentheses(call.Arguments);
 				WriteCharLine(';');
-				FlattenBranch(statement, statement.Cond == call);
+				bool not = statement.Cond != call;
+				FlattenBranch(statement, !not);
 				CloseBlock();
 				Write("catch (NumberFormatException e_) ");
 				OpenBlock();
-				switch (statement.Cond != call ? statement.OnTrue : statement.OnFalse) {
+				switch (not ? statement.OnTrue : statement.OnFalse) {
 				case FuReturn:
 				case FuThrow:
 					break;
@@ -20366,7 +20367,7 @@ namespace Fusion
 					WriteLine(" = 0;");
 					break;
 				}
-				FlattenBranch(statement, statement.Cond != call);
+				FlattenBranch(statement, not);
 				CloseBlock();
 			}
 			else
@@ -26210,11 +26211,12 @@ namespace Fusion
 				Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
 				WriteInParentheses(call.Arguments);
 				WriteNewLine();
-				FlattenBranch(statement, statement.Cond == call);
+				bool not = statement.Cond != call;
+				FlattenBranch(statement, !not);
 				CloseChild();
 				Write("except ValueError");
 				OpenChild();
-				FlattenBranch(statement, statement.Cond != call);
+				FlattenBranch(statement, not);
 				CloseChild();
 			}
 			else

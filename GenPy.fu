@@ -1349,11 +1349,12 @@ public class GenPy : GenPySwift
 			Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
 			WriteInParentheses(call.Arguments);
 			WriteNewLine();
-			FlattenBranch(statement, statement.Cond == call);
+			bool not = statement.Cond != call;
+			FlattenBranch(statement, !not);
 			CloseChild();
 			Write("except ValueError");
 			OpenChild();
-			FlattenBranch(statement, statement.Cond != call);
+			FlattenBranch(statement, not);
 			CloseChild();
 		}
 		else

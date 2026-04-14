@@ -20973,17 +20973,18 @@ export class GenJava extends GenTyped
 			}
 			this.writeInParentheses(call.arguments_);
 			this.writeCharLine(59);
-			this.flattenBranch(statement, statement.cond == call);
+			let not = statement.cond != call;
+			this.flattenBranch(statement, !not);
 			this.closeBlock();
 			this.write("catch (NumberFormatException e_) ");
 			this.openBlock();
-			if ((statement.cond != call ? statement.onTrue : statement.onFalse) instanceof FuReturn || (statement.cond != call ? statement.onTrue : statement.onFalse) instanceof FuThrow) {
+			if ((not ? statement.onTrue : statement.onFalse) instanceof FuReturn || (not ? statement.onTrue : statement.onFalse) instanceof FuThrow) {
 			}
 			else {
 				call.method.left.accept(this, FuPriority.ASSIGN);
 				this.writeLine(" = 0;");
 			}
-			this.flattenBranch(statement, statement.cond != call);
+			this.flattenBranch(statement, not);
 			this.closeBlock();
 		}
 		else
@@ -26890,11 +26891,12 @@ export class GenPy extends GenPySwift
 			this.write(call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
 			this.writeInParentheses(call.arguments_);
 			this.writeNewLine();
-			this.flattenBranch(statement, statement.cond == call);
+			let not = statement.cond != call;
+			this.flattenBranch(statement, !not);
 			this.closeChild();
 			this.write("except ValueError");
 			this.openChild();
-			this.flattenBranch(statement, statement.cond != call);
+			this.flattenBranch(statement, not);
 			this.closeChild();
 		}
 		else
