@@ -5715,6 +5715,8 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 		checkLValue(left.get());
 		if (left->type->id == FuId::stringStorageType)
 			coerce(right.get(), this->host->program->system->stringPtrType.get());
+		else if (left->type->id == FuId::stringPtrType)
+			reportError(left.get(), std::format("'{}' is 'string', concatenation requires 'string()'", left->toString()));
 		else {
 			coerce(left.get(), this->host->program->system->doubleType.get());
 			coerce(right.get(), left->type.get());

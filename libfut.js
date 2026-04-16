@@ -6172,6 +6172,8 @@ export class FuSema
 			this.#checkLValue(left);
 			if (left.type.id == FuId.STRING_STORAGE_TYPE)
 				this.#coerce(right, this.#host.program.system.stringPtrType);
+			else if (left.type.id == FuId.STRING_PTR_TYPE)
+				this.#reportError(left, `'${left}' is 'string', concatenation requires 'string()'`);
 			else {
 				this.#coerce(left, this.#host.program.system.doubleType);
 				this.#coerce(right, left.type);

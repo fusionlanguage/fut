@@ -1,0 +1,9 @@
+public class Test
+{
+	public static bool Run()
+	{
+		string s = "";
+		s += "foo"; //ERROR: 's' is 'string', concatenation requires 'string()'
+		return true;
+	}
+}

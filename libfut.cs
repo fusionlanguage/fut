@@ -5848,6 +5848,8 @@ namespace Fusion
 				CheckLValue(left);
 				if (left.Type.Id == FuId.StringStorageType)
 					Coerce(right, this.Host.Program.System.StringPtrType);
+				else if (left.Type.Id == FuId.StringPtrType)
+					ReportError(left, $"'{left}' is 'string', concatenation requires 'string()'");
 				else {
 					Coerce(left, this.Host.Program.System.DoubleType);
 					Coerce(right, left.Type);
