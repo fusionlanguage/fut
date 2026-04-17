@@ -24062,11 +24062,11 @@ export class GenSwift extends GenPySwift
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
 			break;
-		case FuId.ENUM_TO_INT:
-			this.writePostfix(obj, ".rawValue");
-			break;
 		case FuId.ENUM_HAS_FLAG:
 			this.writeMethodCall(obj, "contains", args[0]);
+			break;
+		case FuId.ENUM_TO_INT:
+			this.writePostfix(obj, ".rawValue");
 			break;
 		case FuId.STRING_CONTAINS:
 			this.#writeStringContains(obj, "contains", args);
@@ -25054,6 +25054,36 @@ export class GenSwift extends GenPySwift
 			break;
 		}
 		this.writeChild(statement.body);
+	}
+
+	visitIf(statement)
+	{
+		let call = GenSwift.isIfTryParse(statement);
+		if (call != null) {
+			this.write("if let fuparsed = ");
+			this.#writePromotedType(call.method.left.type);
+			this.writeChar(40);
+			this.#writeUnwrapped(call.arguments_[0], FuPriority.ARGUMENT, true);
+			if (call.arguments_.length == 2) {
+				this.write(", radix: ");
+				call.arguments_[1].accept(this, FuPriority.ARGUMENT);
+			}
+			this.write(") ");
+			this.openBlock();
+			call.method.left.accept(this, FuPriority.ASSIGN);
+			this.writeLine(" = fuparsed");
+			let not = statement.cond != call;
+			this.flattenBranch(statement, !not);
+			this.closeBlock();
+			if (not || statement.onFalse != null) {
+				this.write("else ");
+				this.openBlock();
+				this.flattenBranch(statement, not);
+				this.closeBlock();
+			}
+		}
+		else
+			super.visitIf(statement);
 	}
 
 	visitLock(statement)

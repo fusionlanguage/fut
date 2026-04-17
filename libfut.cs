@@ -23418,11 +23418,11 @@ namespace Fusion
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
 				break;
-			case FuId.EnumToInt:
-				WritePostfix(obj, ".rawValue");
-				break;
 			case FuId.EnumHasFlag:
 				WriteMethodCall(obj, "contains", args[0]);
+				break;
+			case FuId.EnumToInt:
+				WritePostfix(obj, ".rawValue");
 				break;
 			case FuId.StringContains:
 				WriteStringContains(obj, "contains", args);
@@ -24401,6 +24401,36 @@ namespace Fusion
 				break;
 			}
 			WriteChild(statement.Body);
+		}
+
+		internal override void VisitIf(FuIf statement)
+		{
+			FuCallExpr call = IsIfTryParse(statement);
+			if (call != null) {
+				Write("if let fuparsed = ");
+				WritePromotedType(call.Method.Left.Type);
+				WriteChar('(');
+				WriteUnwrapped(call.Arguments[0], FuPriority.Argument, true);
+				if (call.Arguments.Count == 2) {
+					Write(", radix: ");
+					call.Arguments[1].Accept(this, FuPriority.Argument);
+				}
+				Write(") ");
+				OpenBlock();
+				call.Method.Left.Accept(this, FuPriority.Assign);
+				WriteLine(" = fuparsed");
+				bool not = statement.Cond != call;
+				FlattenBranch(statement, !not);
+				CloseBlock();
+				if (not || statement.OnFalse != null) {
+					Write("else ");
+					OpenBlock();
+					FlattenBranch(statement, not);
+					CloseBlock();
+				}
+			}
+			else
+				base.VisitIf(statement);
 		}
 
 		internal override void VisitLock(FuLock statement)

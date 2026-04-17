@@ -1468,6 +1468,7 @@ private: // internal
 	friend GenJava;
 	friend GenPy;
 	friend GenPySwift;
+	friend GenSwift;
 };
 
 class FuLock : public FuStatement
@@ -3543,6 +3544,7 @@ private: // internal
 	void visitBreak(const FuBreak * statement) override;
 	void visitDoWhile(const FuDoWhile * statement) override;
 	void visitForeach(const FuForeach * statement) override;
+	void visitIf(const FuIf * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;

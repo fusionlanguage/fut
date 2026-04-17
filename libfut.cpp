@@ -22657,11 +22657,11 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
 		break;
-	case FuId::enumToInt:
-		writePostfix(obj, ".rawValue");
-		break;
 	case FuId::enumHasFlag:
 		writeMethodCall(obj, "contains", (*args)[0].get());
+		break;
+	case FuId::enumToInt:
+		writePostfix(obj, ".rawValue");
 		break;
 	case FuId::stringContains:
 		writeStringContains(obj, "contains", args);
@@ -23640,6 +23640,36 @@ void GenSwift::visitForeach(const FuForeach * statement)
 		break;
 	}
 	writeChild(statement->body.get());
+}
+
+void GenSwift::visitIf(const FuIf * statement)
+{
+	const FuCallExpr * call = isIfTryParse(statement);
+	if (call != nullptr) {
+		write("if let fuparsed = ");
+		writePromotedType(call->method->left->type.get());
+		writeChar('(');
+		writeUnwrapped(call->arguments[0].get(), FuPriority::argument, true);
+		if (std::ssize(call->arguments) == 2) {
+			write(", radix: ");
+			call->arguments[1]->accept(this, FuPriority::argument);
+		}
+		write(") ");
+		openBlock();
+		call->method->left->accept(this, FuPriority::assign);
+		writeLine(" = fuparsed");
+		bool not_ = statement->cond.get() != call;
+		flattenBranch(statement, !not_);
+		closeBlock();
+		if (not_ || statement->onFalse != nullptr) {
+			write("else ");
+			openBlock();
+			flattenBranch(statement, not_);
+			closeBlock();
+		}
+	}
+	else
+		GenPySwift::visitIf(statement);
 }
 
 void GenSwift::visitLock(const FuLock * statement)
