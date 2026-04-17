@@ -3248,7 +3248,6 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
-	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op) override;
 	void writeAnd(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;

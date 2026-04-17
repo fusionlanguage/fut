@@ -20227,15 +20227,6 @@ export class GenJava extends GenTyped
 			super.writeCoercedLiteral(type, expr);
 	}
 
-	writeCoercedInternal(type, expr, parent)
-	{
-		let call;
-		if (type.id == FuId.FLOAT_TYPE && (call = expr) instanceof FuCallExpr && call.method.symbol.type.id == FuId.FLOATING_TYPE)
-			this.writeStaticCast(type, expr);
-		else
-			super.writeCoercedInternal(type, expr, parent);
-	}
-
 	writeRel(expr, parent, op)
 	{
 		let enu;
@@ -20430,7 +20421,6 @@ export class GenJava extends GenTyped
 		case FuId.ORDERED_DICTIONARY_CONTAINS_KEY:
 		case FuId.ORDERED_DICTIONARY_REMOVE:
 		case FuId.STRING_WRITER_TO_STRING:
-		case FuId.MATH_METHOD:
 		case FuId.MATH_ABS:
 		case FuId.MATH_MAX:
 		case FuId.MATH_MIN:
@@ -20755,6 +20745,13 @@ export class GenJava extends GenTyped
 		case FuId.MATCH_GET_CAPTURE:
 			this.writeMethodCall(obj, "group", args[0]);
 			break;
+		case FuId.MATH_METHOD:
+			if (type.id == FuId.FLOAT_TYPE)
+				this.write("(float) ");
+			this.write("Math.");
+			this.writeName(method);
+			this.writeCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.MATH_CEILING:
 			this.writeCall("Math.ceil", args[0]);
 			break;
@@ -20775,6 +20772,10 @@ export class GenJava extends GenTyped
 			this.writeCall("Double.isNaN", args[0]);
 			break;
 		case FuId.MATH_LOG2:
+			if (type.id == FuId.FLOAT_TYPE) {
+				this.write("(float) ");
+				parent = FuPriority.PRIMARY;
+			}
 			if (parent > FuPriority.MUL)
 				this.writeChar(40);
 			this.writeCall("Math.log", args[0]);

@@ -19629,14 +19629,6 @@ namespace Fusion
 				base.WriteCoercedLiteral(type, expr);
 		}
 
-		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
-		{
-			if (type.Id == FuId.FloatType && expr is FuCallExpr call && call.Method.Symbol.Type.Id == FuId.FloatingType)
-				WriteStaticCast(type, expr);
-			else
-				base.WriteCoercedInternal(type, expr, parent);
-		}
-
 		protected override void WriteRel(FuBinaryExpr expr, FuPriority parent, string op)
 		{
 			if (expr.Left.Type is FuEnum enu && IsJavaEnum(enu)) {
@@ -19827,7 +19819,6 @@ namespace Fusion
 			case FuId.OrderedDictionaryContainsKey:
 			case FuId.OrderedDictionaryRemove:
 			case FuId.StringWriterToString:
-			case FuId.MathMethod:
 			case FuId.MathAbs:
 			case FuId.MathMax:
 			case FuId.MathMin:
@@ -20149,6 +20140,13 @@ namespace Fusion
 			case FuId.MatchGetCapture:
 				WriteMethodCall(obj, "group", args[0]);
 				break;
+			case FuId.MathMethod:
+				if (type.Id == FuId.FloatType)
+					Write("(float) ");
+				Write("Math.");
+				WriteName(method);
+				WriteCoercedArgsInParentheses(method, args);
+				break;
 			case FuId.MathCeiling:
 				WriteCall("Math.ceil", args[0]);
 				break;
@@ -20169,6 +20167,10 @@ namespace Fusion
 				WriteCall("Double.isNaN", args[0]);
 				break;
 			case FuId.MathLog2:
+				if (type.Id == FuId.FloatType) {
+					Write("(float) ");
+					parent = FuPriority.Primary;
+				}
 				if (parent > FuPriority.Mul)
 					WriteChar('(');
 				WriteCall("Math.log", args[0]);

@@ -19011,15 +19011,6 @@ void GenJava::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 		GenTyped::writeCoercedLiteral(type, expr);
 }
 
-void GenJava::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
-{
-	const FuCallExpr * call;
-	if (type->id == FuId::floatType && (call = dynamic_cast<const FuCallExpr *>(expr)) && call->method->symbol->type->id == FuId::floatingType)
-		writeStaticCast(type, expr);
-	else
-		GenTyped::writeCoercedInternal(type, expr, parent);
-}
-
 void GenJava::writeRel(const FuBinaryExpr * expr, FuPriority parent, std::string_view op)
 {
 	const FuEnum * enu;
@@ -19213,7 +19204,6 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::orderedDictionaryContainsKey:
 	case FuId::orderedDictionaryRemove:
 	case FuId::stringWriterToString:
-	case FuId::mathMethod:
 	case FuId::mathAbs:
 	case FuId::mathMax:
 	case FuId::mathMin:
@@ -19537,6 +19527,13 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::matchGetCapture:
 		writeMethodCall(obj, "group", (*args)[0].get());
 		break;
+	case FuId::mathMethod:
+		if (type->id == FuId::floatType)
+			write("(float) ");
+		write("Math.");
+		writeName(method);
+		writeCoercedArgsInParentheses(method, args);
+		break;
 	case FuId::mathCeiling:
 		writeCall("Math.ceil", (*args)[0].get());
 		break;
@@ -19557,6 +19554,10 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		writeCall("Double.isNaN", (*args)[0].get());
 		break;
 	case FuId::mathLog2:
+		if (type->id == FuId::floatType) {
+			write("(float) ");
+			parent = FuPriority::primary;
+		}
 		if (parent > FuPriority::mul)
 			writeChar('(');
 		writeCall("Math.log", (*args)[0].get());
