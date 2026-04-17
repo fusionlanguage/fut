@@ -18734,7 +18734,22 @@ namespace Fusion
 			case FuId.MathRound:
 				Include("std.math");
 				WriteCamelCase(method.Name);
-				WriteInParentheses(args);
+				WriteChar('(');
+				FuVar param = method.FirstParameter();
+				bool first = true;
+				foreach (FuExpr arg in args) {
+					if (!first)
+						Write(", ");
+					first = false;
+					if (type.Id == FuId.FloatType && arg.Type is FuIntegerType) {
+						Write("cast(float) ");
+						arg.Accept(this, FuPriority.Primary);
+					}
+					else
+						arg.Accept(this, FuPriority.Argument);
+					param = param.NextVar();
+				}
+				WriteChar(')');
 				break;
 			case FuId.MathCeiling:
 				Include("std.math");

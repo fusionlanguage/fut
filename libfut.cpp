@@ -18188,8 +18188,25 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::mathRound:
 		include("std.math");
 		writeCamelCase(method->name);
-		writeInParentheses(args);
-		break;
+		writeChar('(');
+		{
+			const FuVar * param = method->firstParameter();
+			bool first = true;
+			for (const std::shared_ptr<FuExpr> &arg : *args) {
+				if (!first)
+					write(", ");
+				first = false;
+				if (type->id == FuId::floatType && dynamic_cast<const FuIntegerType *>(arg->type.get())) {
+					write("cast(float) ");
+					arg->accept(this, FuPriority::primary);
+				}
+				else
+					arg->accept(this, FuPriority::argument);
+				param = param->nextVar();
+			}
+			writeChar(')');
+			break;
+		}
 	case FuId::mathCeiling:
 		include("std.math");
 		writeCall("ceil", (*args)[0].get());

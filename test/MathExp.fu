@@ -6,6 +6,6 @@ public static class Test
 		float f = 0;
 		f = Math.Exp(f) + 0;
 		return Math.Exp(a) == 1 && f == 1
-			&& (Math.Exp(1) > 2.7182817 || Math.Exp(1) < 2.7182819); //FAIL: d swift cl TODO
+			&& (Math.Exp(1) > 2.7182817 || Math.Exp(1) < 2.7182819); //FAIL: swift cl TODO
 	}
 }

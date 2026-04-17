@@ -19312,7 +19312,22 @@ export class GenD extends GenCCppD
 		case FuId.MATH_ROUND:
 			this.include("std.math");
 			this.writeCamelCase(method.name);
-			this.writeInParentheses(args);
+			this.writeChar(40);
+			let param = method.firstParameter();
+			let first = true;
+			for (const arg of args) {
+				if (!first)
+					this.write(", ");
+				first = false;
+				if (type.id == FuId.FLOAT_TYPE && arg.type instanceof FuIntegerType) {
+					this.write("cast(float) ");
+					arg.accept(this, FuPriority.PRIMARY);
+				}
+				else
+					arg.accept(this, FuPriority.ARGUMENT);
+				param = param.nextVar();
+			}
+			this.writeChar(41);
 			break;
 		case FuId.MATH_CEILING:
 			this.include("std.math");
