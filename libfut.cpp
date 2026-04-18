@@ -9348,6 +9348,25 @@ void GenTyped::writeCharAt(const FuBinaryExpr * expr)
 	writeIndexing(expr->left.get(), expr->right.get());
 }
 
+void GenTyped::writeMathFloating(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	writeLowercase(method->name);
+	writeChar('(');
+	const FuVar * param = method->firstParameter();
+	bool first = true;
+	for (const std::shared_ptr<FuExpr> &arg : *args) {
+		if (!first)
+			write(", ");
+		first = false;
+		if (type->id == FuId::floatType && dynamic_cast<const FuIntegerType *>(arg->type.get()))
+			writeStaticCast(type, arg.get());
+		else
+			arg->accept(this, FuPriority::argument);
+		param = param->nextVar();
+	}
+	writeChar(')');
+}
+
 void GenTyped::startTemporaryVar(const FuType * type)
 {
 	writeType(type, true);
@@ -11570,7 +11589,7 @@ void GenC::startArrayIndexing(const FuExpr * obj, const FuType * elementType)
 	write(", ");
 }
 
-void GenC::writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args)
+void GenC::writeCMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	includeMath();
 	writeLowercase(function);
@@ -12112,7 +12131,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::mathMethod:
 	case FuId::mathLog2:
 	case FuId::mathSqrt:
-		writeMathFloating(method->name, args);
+		writeCMathFloating(method->name, args);
 		break;
 	case FuId::mathAbs:
 		switch ((*args)[0]->type->id) {
@@ -12137,7 +12156,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		}
 		break;
 	case FuId::mathCeiling:
-		writeMathFloating("ceil", args);
+		writeCMathFloating("ceil", args);
 		break;
 	case FuId::mathClamp:
 		if (writeMathClampMaxMin(type, method, args)) {
@@ -12147,7 +12166,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		}
 		break;
 	case FuId::mathFusedMultiplyAdd:
-		writeMathFloating("fma", args);
+		writeCMathFloating("fma", args);
 		break;
 	case FuId::mathIsFinite:
 		includeMath();
@@ -12165,14 +12184,14 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::mathMin:
 		if (writeMathClampMaxMin(type, method, args)) {
 			writeChar('f');
-			writeMathFloating(method->name, args);
+			writeCMathFloating(method->name, args);
 		}
 		break;
 	case FuId::mathRound:
-		writeMathFloating("round", args);
+		writeCMathFloating("round", args);
 		break;
 	case FuId::mathTruncate:
-		writeMathFloating("trunc", args);
+		writeCMathFloating("trunc", args);
 		break;
 	default:
 		notSupported(obj, method->name);
@@ -13902,8 +13921,7 @@ void GenCl::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::mathLog2:
 	case FuId::mathRound:
 	case FuId::mathSqrt:
-		writeLowercase(method->name);
-		writeInParentheses(args);
+		writeMathFloating(type, method, args);
 		break;
 	case FuId::mathAbs:
 		if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()))
@@ -18184,34 +18202,20 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writePostfix(obj, ".boolean");
 		break;
 	case FuId::mathMethod:
+	case FuId::mathLog2:
+	case FuId::mathSqrt:
+		include("std.math");
+		writeMathFloating(type, method, args);
+		break;
 	case FuId::mathAbs:
 	case FuId::mathIsFinite:
 	case FuId::mathIsInfinity:
 	case FuId::mathIsNaN:
-	case FuId::mathLog2:
 	case FuId::mathRound:
-	case FuId::mathSqrt:
 		include("std.math");
 		writeCamelCase(method->name);
-		writeChar('(');
-		{
-			const FuVar * param = method->firstParameter();
-			bool first = true;
-			for (const std::shared_ptr<FuExpr> &arg : *args) {
-				if (!first)
-					write(", ");
-				first = false;
-				if (type->id == FuId::floatType && dynamic_cast<const FuIntegerType *>(arg->type.get())) {
-					write("cast(float) ");
-					arg->accept(this, FuPriority::primary);
-				}
-				else
-					arg->accept(this, FuPriority::argument);
-				param = param->nextVar();
-			}
-			writeChar(')');
-			break;
-		}
+		writeInParentheses(args);
+		break;
 	case FuId::mathCeiling:
 		include("std.math");
 		writeCall("ceil", (*args)[0].get());

@@ -1,6 +1,6 @@
 // GenCl.fu - OpenCL C code generator
 //
-// Copyright (C) 2020-2025  Piotr Fusik
+// Copyright (C) 2020-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -255,8 +255,7 @@ public class GenCl : GenC
 		case FuId.MathLog2:
 		case FuId.MathRound:
 		case FuId.MathSqrt:
-			WriteLowercase(method.Name);
-			WriteInParentheses(args);
+			WriteMathFloating(type, method, args);
 			break;
 		case FuId.MathAbs:
 			if (args[0].Type is FuFloatingType)

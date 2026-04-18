@@ -9482,6 +9482,25 @@ namespace Fusion
 			WriteIndexing(expr.Left, expr.Right);
 		}
 
+		protected void WriteMathFloating(FuType type, FuMethod method, List<FuExpr> args)
+		{
+			WriteLowercase(method.Name);
+			WriteChar('(');
+			FuVar param = method.FirstParameter();
+			bool first = true;
+			foreach (FuExpr arg in args) {
+				if (!first)
+					Write(", ");
+				first = false;
+				if (type.Id == FuId.FloatType && arg.Type is FuIntegerType)
+					WriteStaticCast(type, arg);
+				else
+					arg.Accept(this, FuPriority.Argument);
+				param = param.NextVar();
+			}
+			WriteChar(')');
+		}
+
 		protected override void StartTemporaryVar(FuType type)
 		{
 			WriteType(type, true);
@@ -11813,7 +11832,7 @@ namespace Fusion
 			Write(", ");
 		}
 
-		void WriteMathFloating(string function, List<FuExpr> args)
+		void WriteCMathFloating(string function, List<FuExpr> args)
 		{
 			IncludeMath();
 			WriteLowercase(function);
@@ -12335,7 +12354,7 @@ namespace Fusion
 			case FuId.MathMethod:
 			case FuId.MathLog2:
 			case FuId.MathSqrt:
-				WriteMathFloating(method.Name, args);
+				WriteCMathFloating(method.Name, args);
 				break;
 			case FuId.MathAbs:
 				switch (args[0].Type.Id) {
@@ -12360,7 +12379,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.MathCeiling:
-				WriteMathFloating("ceil", args);
+				WriteCMathFloating("ceil", args);
 				break;
 			case FuId.MathClamp:
 				if (WriteMathClampMaxMin(type, method, args)) {
@@ -12370,7 +12389,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.MathFusedMultiplyAdd:
-				WriteMathFloating("fma", args);
+				WriteCMathFloating("fma", args);
 				break;
 			case FuId.MathIsFinite:
 				IncludeMath();
@@ -12388,14 +12407,14 @@ namespace Fusion
 			case FuId.MathMin:
 				if (WriteMathClampMaxMin(type, method, args)) {
 					WriteChar('f');
-					WriteMathFloating(method.Name, args);
+					WriteCMathFloating(method.Name, args);
 				}
 				break;
 			case FuId.MathRound:
-				WriteMathFloating("round", args);
+				WriteCMathFloating("round", args);
 				break;
 			case FuId.MathTruncate:
-				WriteMathFloating("trunc", args);
+				WriteCMathFloating("trunc", args);
 				break;
 			default:
 				NotSupported(obj, method.Name);
@@ -14131,8 +14150,7 @@ namespace Fusion
 			case FuId.MathLog2:
 			case FuId.MathRound:
 			case FuId.MathSqrt:
-				WriteLowercase(method.Name);
-				WriteInParentheses(args);
+				WriteMathFloating(type, method, args);
 				break;
 			case FuId.MathAbs:
 				if (args[0].Type is FuFloatingType)
@@ -18731,31 +18749,19 @@ namespace Fusion
 				WritePostfix(obj, ".boolean");
 				break;
 			case FuId.MathMethod:
+			case FuId.MathLog2:
+			case FuId.MathSqrt:
+				Include("std.math");
+				WriteMathFloating(type, method, args);
+				break;
 			case FuId.MathAbs:
 			case FuId.MathIsFinite:
 			case FuId.MathIsInfinity:
 			case FuId.MathIsNaN:
-			case FuId.MathLog2:
 			case FuId.MathRound:
-			case FuId.MathSqrt:
 				Include("std.math");
 				WriteCamelCase(method.Name);
-				WriteChar('(');
-				FuVar param = method.FirstParameter();
-				bool first = true;
-				foreach (FuExpr arg in args) {
-					if (!first)
-						Write(", ");
-					first = false;
-					if (type.Id == FuId.FloatType && arg.Type is FuIntegerType) {
-						Write("cast(float) ");
-						arg.Accept(this, FuPriority.Primary);
-					}
-					else
-						arg.Accept(this, FuPriority.Argument);
-					param = param.NextVar();
-				}
-				WriteChar(')');
+				WriteInParentheses(args);
 				break;
 			case FuId.MathCeiling:
 				Include("std.math");

@@ -9932,6 +9932,25 @@ export class GenTyped extends GenBase
 		this.writeIndexing(expr.left, expr.right);
 	}
 
+	writeMathFloating(type, method, args)
+	{
+		this.writeLowercase(method.name);
+		this.writeChar(40);
+		let param = method.firstParameter();
+		let first = true;
+		for (const arg of args) {
+			if (!first)
+				this.write(", ");
+			first = false;
+			if (type.id == FuId.FLOAT_TYPE && arg.type instanceof FuIntegerType)
+				this.writeStaticCast(type, arg);
+			else
+				arg.accept(this, FuPriority.ARGUMENT);
+			param = param.nextVar();
+		}
+		this.writeChar(41);
+	}
+
 	startTemporaryVar(type)
 	{
 		this.writeType(type, true);
@@ -12288,7 +12307,7 @@ export class GenC extends GenCCpp
 		this.write(", ");
 	}
 
-	#writeMathFloating(function_, args)
+	#writeCMathFloating(function_, args)
 	{
 		this.includeMath();
 		this.writeLowercase(function_);
@@ -12812,7 +12831,7 @@ export class GenC extends GenCCpp
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_SQRT:
-			this.#writeMathFloating(method.name, args);
+			this.#writeCMathFloating(method.name, args);
 			break;
 		case FuId.MATH_ABS:
 			switch (args[0].type.id) {
@@ -12837,7 +12856,7 @@ export class GenC extends GenCCpp
 			}
 			break;
 		case FuId.MATH_CEILING:
-			this.#writeMathFloating("ceil", args);
+			this.#writeCMathFloating("ceil", args);
 			break;
 		case FuId.MATH_CLAMP:
 			if (this.#writeMathClampMaxMin(type, method, args)) {
@@ -12847,7 +12866,7 @@ export class GenC extends GenCCpp
 			}
 			break;
 		case FuId.MATH_FUSED_MULTIPLY_ADD:
-			this.#writeMathFloating("fma", args);
+			this.#writeCMathFloating("fma", args);
 			break;
 		case FuId.MATH_IS_FINITE:
 			this.includeMath();
@@ -12865,14 +12884,14 @@ export class GenC extends GenCCpp
 		case FuId.MATH_MIN:
 			if (this.#writeMathClampMaxMin(type, method, args)) {
 				this.writeChar(102);
-				this.#writeMathFloating(method.name, args);
+				this.#writeCMathFloating(method.name, args);
 			}
 			break;
 		case FuId.MATH_ROUND:
-			this.#writeMathFloating("round", args);
+			this.#writeCMathFloating("round", args);
 			break;
 		case FuId.MATH_TRUNCATE:
-			this.#writeMathFloating("trunc", args);
+			this.#writeCMathFloating("trunc", args);
 			break;
 		default:
 			this.notSupported(obj, method.name);
@@ -14635,8 +14654,7 @@ export class GenCl extends GenC
 		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
 		case FuId.MATH_SQRT:
-			this.writeLowercase(method.name);
-			this.writeInParentheses(args);
+			this.writeMathFloating(type, method, args);
 			break;
 		case FuId.MATH_ABS:
 			if (args[0].type instanceof FuFloatingType)
@@ -19309,31 +19327,19 @@ export class GenD extends GenCCppD
 			this.writePostfix(obj, ".boolean");
 			break;
 		case FuId.MATH_METHOD:
+		case FuId.MATH_LOG2:
+		case FuId.MATH_SQRT:
+			this.include("std.math");
+			this.writeMathFloating(type, method, args);
+			break;
 		case FuId.MATH_ABS:
 		case FuId.MATH_IS_FINITE:
 		case FuId.MATH_IS_INFINITY:
 		case FuId.MATH_IS_NA_N:
-		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
-		case FuId.MATH_SQRT:
 			this.include("std.math");
 			this.writeCamelCase(method.name);
-			this.writeChar(40);
-			let param = method.firstParameter();
-			let first = true;
-			for (const arg of args) {
-				if (!first)
-					this.write(", ");
-				first = false;
-				if (type.id == FuId.FLOAT_TYPE && arg.type instanceof FuIntegerType) {
-					this.write("cast(float) ");
-					arg.accept(this, FuPriority.PRIMARY);
-				}
-				else
-					arg.accept(this, FuPriority.ARGUMENT);
-				param = param.nextVar();
-			}
-			this.writeChar(41);
+			this.writeInParentheses(args);
 			break;
 		case FuId.MATH_CEILING:
 			this.include("std.math");

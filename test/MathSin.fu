@@ -5,6 +5,7 @@ public static class Test
 		double a = 0; //FAIL: cl if no double support
 		float f = 0;
 		f = Math.Sin(f);
-		return Math.Sin(a) == 0 && f == 0;
+		int i = 0;
+		return Math.Sin(a) == 0 && f == 0 && Math.Sin(i) == 0; //FAIL: swift TODO
 	}
 }

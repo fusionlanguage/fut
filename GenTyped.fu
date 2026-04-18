@@ -235,6 +235,25 @@ public abstract class GenTyped : GenBase
 		WriteIndexing(expr.Left, expr.Right);
 	}
 
+	protected void WriteMathFloating!(FuType type, FuMethod method, List<FuExpr#> args)
+	{
+		WriteLowercase(method.Name);
+		WriteChar('(');
+		FuVar param = method.FirstParameter();
+		bool first = true;
+		foreach (FuExpr arg in args) {
+			if (!first)
+				Write(", ");
+			first = false;
+			if (type.Id == FuId.FloatType && arg.Type is FuIntegerType)
+				WriteStaticCast(type, arg);
+			else
+				arg.Accept(this, FuPriority.Argument);
+			param = param.NextVar();
+		}
+		WriteChar(')');
+	}
+
 	protected override void StartTemporaryVar!(FuType type)
 	{
 		WriteType(type, true);

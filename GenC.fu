@@ -1990,7 +1990,7 @@ public class GenC : GenCCpp
 		Write(", ");
 	}
 
-	void WriteMathFloating!(string function, List<FuExpr#> args)
+	void WriteCMathFloating!(string function, List<FuExpr#> args)
 	{
 		IncludeMath();
 		WriteLowercase(function);
@@ -2515,7 +2515,7 @@ public class GenC : GenCCpp
 		case FuId.MathMethod:
 		case FuId.MathLog2:
 		case FuId.MathSqrt:
-			WriteMathFloating(method.Name, args);
+			WriteCMathFloating(method.Name, args);
 			break;
 		case FuId.MathAbs:
 			switch (args[0].Type.Id) {
@@ -2540,7 +2540,7 @@ public class GenC : GenCCpp
 			}
 			break;
 		case FuId.MathCeiling:
-			WriteMathFloating("ceil", args);
+			WriteCMathFloating("ceil", args);
 			break;
 		case FuId.MathClamp:
 			if (WriteMathClampMaxMin(type, method, args)) {
@@ -2550,7 +2550,7 @@ public class GenC : GenCCpp
 			}
 			break;
 		case FuId.MathFusedMultiplyAdd:
-			WriteMathFloating("fma", args);
+			WriteCMathFloating("fma", args);
 			break;
 		case FuId.MathIsFinite:
 			IncludeMath();
@@ -2568,14 +2568,14 @@ public class GenC : GenCCpp
 		case FuId.MathMin:
 			if (WriteMathClampMaxMin(type, method, args)) {
 				WriteChar('f');
-				WriteMathFloating(method.Name, args);
+				WriteCMathFloating(method.Name, args);
 			}
 			break;
 		case FuId.MathRound:
-			WriteMathFloating("round", args);
+			WriteCMathFloating("round", args);
 			break;
 		case FuId.MathTruncate:
-			WriteMathFloating("trunc", args);
+			WriteCMathFloating("trunc", args);
 			break;
 		default:
 			NotSupported(obj, method.Name);

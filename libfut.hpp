@@ -2687,6 +2687,7 @@ protected:
 	void writeAssignRight(const FuBinaryExpr * expr) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
+	void writeMathFloating(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startTemporaryVar(const FuType * type) override;
 	void writeAssertCast(const FuBinaryExpr * expr) override;
 	void writeExceptionConstructor(const FuClass * klass, std::string_view s);
@@ -2938,7 +2939,7 @@ private:
 	void writeTryParse(std::string_view prefix, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
-	void writeMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeCMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
 	bool writeMathClampMaxMin(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent);
 	void writeDestructLoopOrSwitch(const FuCondCompletionStatement * loopOrSwitch);
