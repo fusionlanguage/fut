@@ -1260,6 +1260,7 @@ public class GenCpp : GenCCpp
 		case FuId.MathIsNaN:
 		case FuId.MathLog2:
 		case FuId.MathRound:
+		case FuId.MathSqrt:
 			IncludeMath();
 			Write("std::");
 			WriteLowercase(method.Name);

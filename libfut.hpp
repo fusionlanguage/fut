@@ -365,6 +365,7 @@ enum class FuId
 	mathMax,
 	mathMin,
 	mathRound,
+	mathSqrt,
 	mathTruncate
 };
 class FuDocInline;

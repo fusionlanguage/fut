@@ -1002,6 +1002,7 @@ public class GenJava : GenTyped
 			WriteMethodCall(obj, "group", args[0]);
 			break;
 		case FuId.MathMethod:
+		case FuId.MathSqrt:
 			if (type.Id == FuId.FloatType)
 				Write("(float) ");
 			Write("Math.");

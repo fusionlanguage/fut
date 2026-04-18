@@ -2514,6 +2514,7 @@ public class GenC : GenCCpp
 			break;
 		case FuId.MathMethod:
 		case FuId.MathLog2:
+		case FuId.MathSqrt:
 			WriteMathFloating(method.Name, args);
 			break;
 		case FuId.MathAbs:

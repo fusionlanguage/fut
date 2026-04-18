@@ -1468,7 +1468,8 @@ export const FuId = {
 	MATH_MAX : 175,
 	MATH_MIN : 176,
 	MATH_ROUND : 177,
-	MATH_TRUNCATE : 178
+	MATH_SQRT : 178,
+	MATH_TRUNCATE : 179
 }
 
 export class FuDocInline
@@ -3677,7 +3678,7 @@ export class FuSystem extends FuScope
 		mathClass.addStaticMethod(floatIntType, FuId.MATH_ROUND, "Round", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Sin", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Sinh", FuVar.new(this.doubleType, "a"));
-		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Sqrt", FuVar.new(this.doubleType, "a"));
+		mathClass.addStaticMethod(floatingType, FuId.MATH_SQRT, "Sqrt", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Tan", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatingType, FuId.MATH_METHOD, "Tanh", FuVar.new(this.doubleType, "a"));
 		mathClass.addStaticMethod(floatIntType, FuId.MATH_TRUNCATE, "Truncate", FuVar.new(this.doubleType, "a"));
@@ -12810,6 +12811,7 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:
+		case FuId.MATH_SQRT:
 			this.#writeMathFloating(method.name, args);
 			break;
 		case FuId.MATH_ABS:
@@ -14632,6 +14634,7 @@ export class GenCl extends GenC
 		case FuId.MATH_IS_NA_N:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
+		case FuId.MATH_SQRT:
 			this.writeLowercase(method.name);
 			this.writeInParentheses(args);
 			break;
@@ -16003,6 +16006,7 @@ export class GenCpp extends GenCCpp
 		case FuId.MATH_IS_NA_N:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
+		case FuId.MATH_SQRT:
 			this.includeMath();
 			this.write("std::");
 			this.writeLowercase(method.name);
@@ -17760,6 +17764,7 @@ export class GenCs extends GenTyped
 		case FuId.MATH_FUSED_MULTIPLY_ADD:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
+		case FuId.MATH_SQRT:
 		case FuId.MATH_TRUNCATE:
 			this.include("System");
 			this.write("Math");
@@ -19310,6 +19315,7 @@ export class GenD extends GenCCppD
 		case FuId.MATH_IS_NA_N:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
+		case FuId.MATH_SQRT:
 			this.include("std.math");
 			this.writeCamelCase(method.name);
 			this.writeChar(40);
@@ -20761,6 +20767,7 @@ export class GenJava extends GenTyped
 			this.writeMethodCall(obj, "group", args[0]);
 			break;
 		case FuId.MATH_METHOD:
+		case FuId.MATH_SQRT:
 			if (type.id == FuId.FLOAT_TYPE)
 				this.write("(float) ");
 			this.write("Math.");
@@ -21906,6 +21913,7 @@ export class GenJsNoModule extends GenBase
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_ROUND:
+		case FuId.MATH_SQRT:
 			if (obj == null)
 				this.writeLocalName(method, FuPriority.PRIMARY);
 			else {
@@ -24476,6 +24484,13 @@ export class GenSwift extends GenPySwift
 		case FuId.MATH_ROUND:
 			this.writePostfix(args[0], ".rounded()");
 			break;
+		case FuId.MATH_SQRT:
+			if (args[0].type instanceof FuIntegerType)
+				this.writeCall("Float", args[0]);
+			else
+				args[0].accept(this, FuPriority.PRIMARY);
+			this.write(".squareRoot()");
+			break;
 		case FuId.MATH_TRUNCATE:
 			this.include("Foundation");
 			this.writeCall("trunc", args[0]);
@@ -26786,6 +26801,7 @@ export class GenPy extends GenPySwift
 		case FuId.MATH_IS_FINITE:
 		case FuId.MATH_IS_NA_N:
 		case FuId.MATH_LOG2:
+		case FuId.MATH_SQRT:
 			this.include("math");
 			this.write("math.");
 			this.writeLowercase(method.name);

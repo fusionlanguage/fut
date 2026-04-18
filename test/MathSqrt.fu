@@ -5,6 +5,7 @@ public static class Test
 		double a = 4; //FAIL: cl if no double support
 		float f = 9;
 		f = Math.Sqrt(f);
-		return Math.Sqrt(a) == 2 && f == 3;
+		int i = 16;
+		return Math.Sqrt(a) == 2 && f == 3 && Math.Sqrt(i) == 4; //FAIL: cl TODO
 	}
 }

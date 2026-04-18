@@ -2987,7 +2987,7 @@ FuSystem::FuSystem()
 	mathClass->addStaticMethod(floatIntType, FuId::mathRound, "Round", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Sin", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Sinh", FuVar::new_(this->doubleType, "a"));
-	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Sqrt", FuVar::new_(this->doubleType, "a"));
+	mathClass->addStaticMethod(floatingType, FuId::mathSqrt, "Sqrt", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Tan", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatingType, FuId::mathMethod, "Tanh", FuVar::new_(this->doubleType, "a"));
 	mathClass->addStaticMethod(floatIntType, FuId::mathTruncate, "Truncate", FuVar::new_(this->doubleType, "a"));
@@ -12111,6 +12111,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::mathMethod:
 	case FuId::mathLog2:
+	case FuId::mathSqrt:
 		writeMathFloating(method->name, args);
 		break;
 	case FuId::mathAbs:
@@ -13900,6 +13901,7 @@ void GenCl::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::mathIsNaN:
 	case FuId::mathLog2:
 	case FuId::mathRound:
+	case FuId::mathSqrt:
 		writeLowercase(method->name);
 		writeInParentheses(args);
 		break;
@@ -15166,6 +15168,7 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 	case FuId::mathIsNaN:
 	case FuId::mathLog2:
 	case FuId::mathRound:
+	case FuId::mathSqrt:
 		includeMath();
 		write("std::");
 		writeLowercase(method->name);
@@ -16842,6 +16845,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::mathFusedMultiplyAdd:
 	case FuId::mathLog2:
 	case FuId::mathRound:
+	case FuId::mathSqrt:
 	case FuId::mathTruncate:
 		include("System");
 		write("Math");
@@ -18186,6 +18190,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::mathIsNaN:
 	case FuId::mathLog2:
 	case FuId::mathRound:
+	case FuId::mathSqrt:
 		include("std.math");
 		writeCamelCase(method->name);
 		writeChar('(');
@@ -19545,6 +19550,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		writeMethodCall(obj, "group", (*args)[0].get());
 		break;
 	case FuId::mathMethod:
+	case FuId::mathSqrt:
 		if (type->id == FuId::floatType)
 			write("(float) ");
 		write("Math.");
@@ -20644,6 +20650,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 	case FuId::mathMethod:
 	case FuId::mathLog2:
 	case FuId::mathRound:
+	case FuId::mathSqrt:
 		if (obj == nullptr)
 			writeLocalName(method, FuPriority::primary);
 		else {
@@ -23079,6 +23086,13 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 	case FuId::mathRound:
 		writePostfix((*args)[0].get(), ".rounded()");
 		break;
+	case FuId::mathSqrt:
+		if (dynamic_cast<const FuIntegerType *>((*args)[0]->type.get()))
+			writeCall("Float", (*args)[0].get());
+		else
+			(*args)[0]->accept(this, FuPriority::primary);
+		write(".squareRoot()");
+		break;
 	case FuId::mathTruncate:
 		include("Foundation");
 		writeCall("trunc", (*args)[0].get());
@@ -25274,6 +25288,7 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::mathIsFinite:
 	case FuId::mathIsNaN:
 	case FuId::mathLog2:
+	case FuId::mathSqrt:
 		include("math");
 		write("math.");
 		writeLowercase(method->name);

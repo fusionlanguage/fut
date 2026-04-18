@@ -1481,6 +1481,7 @@ namespace Fusion
 		MathMax,
 		MathMin,
 		MathRound,
+		MathSqrt,
 		MathTruncate
 	}
 
@@ -3431,7 +3432,7 @@ namespace Fusion
 			mathClass.AddStaticMethod(floatIntType, FuId.MathRound, "Round", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sin", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sinh", FuVar.New(this.DoubleType, "a"));
-			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sqrt", FuVar.New(this.DoubleType, "a"));
+			mathClass.AddStaticMethod(floatingType, FuId.MathSqrt, "Sqrt", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Tan", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Tanh", FuVar.New(this.DoubleType, "a"));
 			mathClass.AddStaticMethod(floatIntType, FuId.MathTruncate, "Truncate", FuVar.New(this.DoubleType, "a"));
@@ -12333,6 +12334,7 @@ namespace Fusion
 				break;
 			case FuId.MathMethod:
 			case FuId.MathLog2:
+			case FuId.MathSqrt:
 				WriteMathFloating(method.Name, args);
 				break;
 			case FuId.MathAbs:
@@ -14128,6 +14130,7 @@ namespace Fusion
 			case FuId.MathIsNaN:
 			case FuId.MathLog2:
 			case FuId.MathRound:
+			case FuId.MathSqrt:
 				WriteLowercase(method.Name);
 				WriteInParentheses(args);
 				break;
@@ -15494,6 +15497,7 @@ namespace Fusion
 			case FuId.MathIsNaN:
 			case FuId.MathLog2:
 			case FuId.MathRound:
+			case FuId.MathSqrt:
 				IncludeMath();
 				Write("std::");
 				WriteLowercase(method.Name);
@@ -17208,6 +17212,7 @@ namespace Fusion
 			case FuId.MathFusedMultiplyAdd:
 			case FuId.MathLog2:
 			case FuId.MathRound:
+			case FuId.MathSqrt:
 			case FuId.MathTruncate:
 				Include("System");
 				Write("Math");
@@ -18732,6 +18737,7 @@ namespace Fusion
 			case FuId.MathIsNaN:
 			case FuId.MathLog2:
 			case FuId.MathRound:
+			case FuId.MathSqrt:
 				Include("std.math");
 				WriteCamelCase(method.Name);
 				WriteChar('(');
@@ -20156,6 +20162,7 @@ namespace Fusion
 				WriteMethodCall(obj, "group", args[0]);
 				break;
 			case FuId.MathMethod:
+			case FuId.MathSqrt:
 				if (type.Id == FuId.FloatType)
 					Write("(float) ");
 				Write("Math.");
@@ -21273,6 +21280,7 @@ namespace Fusion
 			case FuId.MathMethod:
 			case FuId.MathLog2:
 			case FuId.MathRound:
+			case FuId.MathSqrt:
 				if (obj == null)
 					WriteLocalName(method, FuPriority.Primary);
 				else {
@@ -23830,6 +23838,13 @@ namespace Fusion
 			case FuId.MathRound:
 				WritePostfix(args[0], ".rounded()");
 				break;
+			case FuId.MathSqrt:
+				if (args[0].Type is FuIntegerType)
+					WriteCall("Float", args[0]);
+				else
+					args[0].Accept(this, FuPriority.Primary);
+				Write(".squareRoot()");
+				break;
 			case FuId.MathTruncate:
 				Include("Foundation");
 				WriteCall("trunc", args[0]);
@@ -26114,6 +26129,7 @@ namespace Fusion
 			case FuId.MathIsFinite:
 			case FuId.MathIsNaN:
 			case FuId.MathLog2:
+			case FuId.MathSqrt:
 				Include("math");
 				Write("math.");
 				WriteLowercase(method.Name);

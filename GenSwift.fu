@@ -957,6 +957,13 @@ public class GenSwift : GenPySwift
 		case FuId.MathRound:
 			WritePostfix(args[0], ".rounded()");
 			break;
+		case FuId.MathSqrt:
+			if (args[0].Type is FuIntegerType)
+				WriteCall("Float", args[0]);
+			else
+				args[0].Accept(this, FuPriority.Primary);
+			Write(".squareRoot()");
+			break;
 		case FuId.MathTruncate:
 			Include("Foundation");
 			WriteCall("trunc", args[0]);

@@ -254,6 +254,7 @@ public class GenCl : GenC
 		case FuId.MathIsNaN:
 		case FuId.MathLog2:
 		case FuId.MathRound:
+		case FuId.MathSqrt:
 			WriteLowercase(method.Name);
 			WriteInParentheses(args);
 			break;

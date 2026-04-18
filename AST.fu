@@ -238,6 +238,7 @@ public enum FuId
 	MathMax,
 	MathMin,
 	MathRound,
+	MathSqrt,
 	MathTruncate
 }
 
@@ -1901,7 +1902,7 @@ public class FuSystem : FuScope
 		mathClass.AddStaticMethod(floatIntType, FuId.MathRound, "Round", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sin", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sinh", FuVar.New(DoubleType, "a"));
-		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Sqrt", FuVar.New(DoubleType, "a"));
+		mathClass.AddStaticMethod(floatingType, FuId.MathSqrt, "Sqrt", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Tan", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatingType, FuId.MathMethod, "Tanh", FuVar.New(DoubleType, "a"));
 		mathClass.AddStaticMethod(floatIntType, FuId.MathTruncate, "Truncate", FuVar.New(DoubleType, "a"));

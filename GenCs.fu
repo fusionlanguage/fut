@@ -789,6 +789,7 @@ public class GenCs : GenTyped
 		case FuId.MathFusedMultiplyAdd:
 		case FuId.MathLog2:
 		case FuId.MathRound:
+		case FuId.MathSqrt:
 		case FuId.MathTruncate:
 			Include("System");
 			Write("Math");

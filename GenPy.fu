@@ -1202,6 +1202,7 @@ public class GenPy : GenPySwift
 		case FuId.MathIsFinite:
 		case FuId.MathIsNaN:
 		case FuId.MathLog2:
+		case FuId.MathSqrt:
 			Include("math");
 			Write("math.");
 			WriteLowercase(method.Name);

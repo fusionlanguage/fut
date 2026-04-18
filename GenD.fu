@@ -1208,6 +1208,7 @@ public class GenD : GenCCppD
 		case FuId.MathIsNaN:
 		case FuId.MathLog2:
 		case FuId.MathRound:
+		case FuId.MathSqrt:
 			Include("std.math");
 			WriteCamelCase(method.Name);
 			WriteChar('(');

@@ -546,6 +546,7 @@ public class GenJsNoModule : GenBase
 		case FuId.MathMethod:
 		case FuId.MathLog2:
 		case FuId.MathRound:
+		case FuId.MathSqrt:
 			if (obj == null)
 				WriteLocalName(method, FuPriority.Primary);
 			else {
