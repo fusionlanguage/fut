@@ -19199,6 +19199,13 @@ void GenJava::writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * arg
 	writeChar(')');
 }
 
+void GenJava::writeMathIs(std::string_view name, const FuExpr * arg)
+{
+	writeJavaType(arg->type.get(), true, true);
+	write(".is");
+	writeCall(name, arg);
+}
+
 void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent)
 {
 	switch (method->id) {
@@ -19572,13 +19579,13 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		writeCall("Math.fma", (*args)[0].get(), (*args)[1].get(), (*args)[2].get());
 		break;
 	case FuId::mathIsFinite:
-		writeCall("Double.isFinite", (*args)[0].get());
+		writeMathIs("Finite", (*args)[0].get());
 		break;
 	case FuId::mathIsInfinity:
-		writeCall("Double.isInfinite", (*args)[0].get());
+		writeMathIs("Infinite", (*args)[0].get());
 		break;
 	case FuId::mathIsNaN:
-		writeCall("Double.isNaN", (*args)[0].get());
+		writeMathIs("NaN", (*args)[0].get());
 		break;
 	case FuId::mathLog2:
 		if (type->id == FuId::floatType) {

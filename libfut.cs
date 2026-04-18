@@ -19815,6 +19815,13 @@ namespace Fusion
 			WriteChar(')');
 		}
 
+		void WriteMathIs(string name, FuExpr arg)
+		{
+			WriteJavaType(arg.Type, true, true);
+			Write(".is");
+			WriteCall(name, arg);
+		}
+
 		protected override void WriteCallExpr(FuType type, FuExpr obj, FuMethod method, List<FuExpr> args, FuPriority parent)
 		{
 			switch (method.Id) {
@@ -20186,13 +20193,13 @@ namespace Fusion
 				WriteCall("Math.fma", args[0], args[1], args[2]);
 				break;
 			case FuId.MathIsFinite:
-				WriteCall("Double.isFinite", args[0]);
+				WriteMathIs("Finite", args[0]);
 				break;
 			case FuId.MathIsInfinity:
-				WriteCall("Double.isInfinite", args[0]);
+				WriteMathIs("Infinite", args[0]);
 				break;
 			case FuId.MathIsNaN:
-				WriteCall("Double.isNaN", args[0]);
+				WriteMathIs("NaN", args[0]);
 				break;
 			case FuId.MathLog2:
 				if (type.Id == FuId.FloatType) {

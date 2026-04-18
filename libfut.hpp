@@ -3308,6 +3308,7 @@ private:
 	void writeCollectionGet(const FuExpr * obj, std::string_view method, FuPriority parent);
 	void writeWrite(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeCompileRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
+	void writeMathIs(std::string_view name, const FuExpr * arg);
 	void createJavaFile(std::string_view className);
 	void writeSignature(const FuMethod * method, int paramCount);
 	void writeOverloads(const FuMethod * method, int paramCount);

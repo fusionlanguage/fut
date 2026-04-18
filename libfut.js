@@ -20417,6 +20417,13 @@ export class GenJava extends GenTyped
 		this.writeChar(41);
 	}
 
+	#writeMathIs(name, arg)
+	{
+		this.#writeJavaType(arg.type, true, true);
+		this.write(".is");
+		this.writeCall(name, arg);
+	}
+
 	writeCallExpr(type, obj, method, args, parent)
 	{
 		switch (method.id) {
@@ -20791,13 +20798,13 @@ export class GenJava extends GenTyped
 			this.writeCall("Math.fma", args[0], args[1], args[2]);
 			break;
 		case FuId.MATH_IS_FINITE:
-			this.writeCall("Double.isFinite", args[0]);
+			this.#writeMathIs("Finite", args[0]);
 			break;
 		case FuId.MATH_IS_INFINITY:
-			this.writeCall("Double.isInfinite", args[0]);
+			this.#writeMathIs("Infinite", args[0]);
 			break;
 		case FuId.MATH_IS_NA_N:
-			this.writeCall("Double.isNaN", args[0]);
+			this.#writeMathIs("NaN", args[0]);
 			break;
 		case FuId.MATH_LOG2:
 			if (type.id == FuId.FLOAT_TYPE) {
