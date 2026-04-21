@@ -1223,6 +1223,9 @@ public class GenJava : GenTyped
 			case FuId.LongTryParse:
 				Write("Long.parseLong");
 				break;
+			case FuId.FloatTryParse:
+				Write("Float.parseFloat");
+				break;
 			case FuId.DoubleTryParse:
 				Write("Double.parseDouble");
 				break;

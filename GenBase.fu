@@ -1729,6 +1729,7 @@ public abstract class GenBase : FuVisitor
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
+			case FuId.FloatTryParse:
 			case FuId.DoubleTryParse:
 				return call;
 			default:

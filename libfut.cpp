@@ -2777,6 +2777,7 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuRangeType> ushortType = FuRangeType::new_(0, 65535);
 	ushortType->name = "ushort";
 	add(ushortType);
+	this->floatType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::floatTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
 	add(this->floatType);
 	this->doubleType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::doubleTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
 	add(this->doubleType);
@@ -5940,6 +5941,7 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 				case FuId::intTryParse:
 				case FuId::nIntTryParse:
 				case FuId::longTryParse:
+				case FuId::floatTryParse:
 				case FuId::doubleTryParse:
 					{
 						const FuSymbolReference * varRef;
@@ -8665,6 +8667,7 @@ const FuCallExpr * GenBase::isIfTryParse(const FuIf * statement)
 		case FuId::intTryParse:
 		case FuId::nIntTryParse:
 		case FuId::longTryParse:
+		case FuId::floatTryParse:
 		case FuId::doubleTryParse:
 			return call;
 		default:
@@ -11651,6 +11654,10 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		this->longFunctions.insert(FuId::intTryParse);
 		writeTryParse("FuLong", obj, args);
 		break;
+	case FuId::floatTryParse:
+		this->floatTryParse = true;
+		writeTryParse("FuFloat", obj, args);
+		break;
 	case FuId::doubleTryParse:
 		this->doubleTryParse = true;
 		writeTryParse("FuDouble", obj, args);
@@ -13251,6 +13258,12 @@ void GenC::writeLibrary()
 	writeIntLibrary("Int", "int", &this->intFunctions);
 	writeIntLibrary("NInt", "ptrdiff_t", &this->nIntFunctions);
 	writeIntLibrary("Long", "int64_t", &this->longFunctions);
+	if (this->floatTryParse) {
+		startTryParseLibrary("Float", "float", "");
+		writeLine("*result = strtof(str, &end);");
+		writeLine("return *end == '\\0' && errno == 0;");
+		closeBlock();
+	}
 	if (this->doubleTryParse) {
 		startTryParseLibrary("Double", "double", "");
 		writeLine("*result = strtod(str, &end);");
@@ -13652,6 +13665,7 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->intFunctions.clear();
 	this->nIntFunctions.clear();
 	this->longFunctions.clear();
+	this->floatTryParse = false;
 	this->doubleTryParse = false;
 	this->stringAssign = false;
 	this->stringSubstring = false;
@@ -14754,6 +14768,7 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
 	case FuId::longTryParse:
+	case FuId::floatTryParse:
 	case FuId::doubleTryParse:
 		include("charconv");
 		include("string_view");
@@ -16583,6 +16598,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
 	case FuId::longTryParse:
+	case FuId::floatTryParse:
 	case FuId::doubleTryParse:
 		writeType(obj->type.get(), false);
 		write(".TryParse(");
@@ -17829,6 +17845,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
 	case FuId::longTryParse:
+	case FuId::floatTryParse:
 	case FuId::doubleTryParse:
 		include("std.conv");
 		write("() { try { ");
@@ -19782,6 +19799,9 @@ void GenJava::visitIf(const FuIf * statement)
 		case FuId::longTryParse:
 			write("Long.parseLong");
 			break;
+		case FuId::floatTryParse:
+			write("Float.parseFloat");
+			break;
 		case FuId::doubleTryParse:
 			write("Double.parseDouble");
 			break;
@@ -20701,6 +20721,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		(*args)[0]->accept(this, FuPriority::argument);
 		write("); return true; } catch { return false; }})()");
 		break;
+	case FuId::floatTryParse:
 	case FuId::doubleTryParse:
 		write("!isNaN(");
 		obj->accept(this, FuPriority::assign);
@@ -25450,7 +25471,7 @@ void GenPy::visitIf(const FuIf * statement)
 		openChild();
 		call->method->left->accept(this, FuPriority::assign);
 		write(" = ");
-		write(call->method->symbol->id == FuId::doubleTryParse ? "float" : "int");
+		write(call->method->symbol->id == FuId::floatTryParse || call->method->symbol->id == FuId::doubleTryParse ? "float" : "int");
 		writeInParentheses(&call->arguments);
 		writeNewLine();
 		bool not_ = statement->cond.get() != call;

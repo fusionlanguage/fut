@@ -1347,7 +1347,7 @@ public class GenPy : GenPySwift
 			OpenChild();
 			call.Method.Left.Accept(this, FuPriority.Assign);
 			Write(" = ");
-			Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
+			Write(call.Method.Symbol.Id == FuId.FloatTryParse || call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
 			WriteInParentheses(call.Arguments);
 			WriteNewLine();
 			bool not = statement.Cond != call;

@@ -829,6 +829,7 @@ public class GenD : GenCCppD
 		case FuId.IntTryParse:
 		case FuId.NIntTryParse:
 		case FuId.LongTryParse:
+		case FuId.FloatTryParse:
 		case FuId.DoubleTryParse:
 			Include("std.conv");
 			Write("() { try { ");

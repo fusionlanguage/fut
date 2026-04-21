@@ -122,6 +122,7 @@ public enum FuId
 	IntTryParse,
 	NIntTryParse,
 	LongTryParse,
+	FloatTryParse,
 	DoubleTryParse,
 	StringContains,
 	StringEndsWith,
@@ -1714,6 +1715,7 @@ public class FuSystem : FuScope
 		FuRangeType# ushortType = FuRangeType.New(0, 0xffff);
 		ushortType.Name = "ushort";
 		Add(ushortType);
+		FloatType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.FloatTryParse, "TryParse", true, FuVar.New(StringPtrType, "value")));
 		Add(FloatType);
 		DoubleType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, BoolType, FuId.DoubleTryParse, "TryParse", true, FuVar.New(StringPtrType, "value")));
 		Add(DoubleType);

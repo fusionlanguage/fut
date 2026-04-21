@@ -249,6 +249,7 @@ enum class FuId
 	intTryParse,
 	nIntTryParse,
 	longTryParse,
+	floatTryParse,
 	doubleTryParse,
 	stringContains,
 	stringEndsWith,
@@ -2847,6 +2848,7 @@ private:
 	std::set<FuId> intFunctions;
 	std::set<FuId> nIntFunctions;
 	std::set<FuId> longFunctions;
+	bool floatTryParse;
 	bool doubleTryParse;
 	bool stringAssign;
 	bool stringSubstring;

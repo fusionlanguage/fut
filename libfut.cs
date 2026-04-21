@@ -1365,6 +1365,7 @@ namespace Fusion
 		IntTryParse,
 		NIntTryParse,
 		LongTryParse,
+		FloatTryParse,
 		DoubleTryParse,
 		StringContains,
 		StringEndsWith,
@@ -3264,6 +3265,7 @@ namespace Fusion
 			FuRangeType ushortType = FuRangeType.New(0, 65535);
 			ushortType.Name = "ushort";
 			Add(ushortType);
+			this.FloatType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.FloatTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
 			Add(this.FloatType);
 			this.DoubleType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.DoubleTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
 			Add(this.DoubleType);
@@ -6044,6 +6046,7 @@ namespace Fusion
 					case FuId.IntTryParse:
 					case FuId.NIntTryParse:
 					case FuId.LongTryParse:
+					case FuId.FloatTryParse:
 					case FuId.DoubleTryParse:
 						if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar def)
 							def.IsAssigned = true;
@@ -8796,6 +8799,7 @@ namespace Fusion
 				case FuId.IntTryParse:
 				case FuId.NIntTryParse:
 				case FuId.LongTryParse:
+				case FuId.FloatTryParse:
 				case FuId.DoubleTryParse:
 					return call;
 				default:
@@ -9864,6 +9868,8 @@ namespace Fusion
 		readonly SortedSet<FuId> NIntFunctions = new SortedSet<FuId>();
 
 		readonly SortedSet<FuId> LongFunctions = new SortedSet<FuId>();
+
+		bool FloatTryParse;
 
 		bool DoubleTryParse;
 
@@ -11894,6 +11900,10 @@ namespace Fusion
 				this.LongFunctions.Add(FuId.IntTryParse);
 				WriteTryParse("FuLong", obj, args);
 				break;
+			case FuId.FloatTryParse:
+				this.FloatTryParse = true;
+				WriteTryParse("FuFloat", obj, args);
+				break;
 			case FuId.DoubleTryParse:
 				this.DoubleTryParse = true;
 				WriteTryParse("FuDouble", obj, args);
@@ -13465,6 +13475,12 @@ namespace Fusion
 			WriteIntLibrary("Int", "int", this.IntFunctions);
 			WriteIntLibrary("NInt", "ptrdiff_t", this.NIntFunctions);
 			WriteIntLibrary("Long", "int64_t", this.LongFunctions);
+			if (this.FloatTryParse) {
+				StartTryParseLibrary("Float", "float", "");
+				WriteLine("*result = strtof(str, &end);");
+				WriteLine("return *end == '\\0' && errno == 0;");
+				CloseBlock();
+			}
 			if (this.DoubleTryParse) {
 				StartTryParseLibrary("Double", "double", "");
 				WriteLine("*result = strtod(str, &end);");
@@ -13865,6 +13881,7 @@ namespace Fusion
 			this.IntFunctions.Clear();
 			this.NIntFunctions.Clear();
 			this.LongFunctions.Clear();
+			this.FloatTryParse = false;
 			this.DoubleTryParse = false;
 			this.StringAssign = false;
 			this.StringSubstring = false;
@@ -15089,6 +15106,7 @@ namespace Fusion
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
+			case FuId.FloatTryParse:
 			case FuId.DoubleTryParse:
 				Include("charconv");
 				Include("string_view");
@@ -16959,6 +16977,7 @@ namespace Fusion
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
+			case FuId.FloatTryParse:
 			case FuId.DoubleTryParse:
 				WriteType(obj.Type, false);
 				Write(".TryParse(");
@@ -18376,6 +18395,7 @@ namespace Fusion
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
 			case FuId.LongTryParse:
+			case FuId.FloatTryParse:
 			case FuId.DoubleTryParse:
 				Include("std.conv");
 				Write("() { try { ");
@@ -20384,6 +20404,9 @@ namespace Fusion
 				case FuId.LongTryParse:
 					Write("Long.parseLong");
 					break;
+				case FuId.FloatTryParse:
+					Write("Float.parseFloat");
+					break;
 				case FuId.DoubleTryParse:
 					Write("Double.parseDouble");
 					break;
@@ -21333,6 +21356,7 @@ namespace Fusion
 				args[0].Accept(this, FuPriority.Argument);
 				Write("); return true; } catch { return false; }})()");
 				break;
+			case FuId.FloatTryParse:
 			case FuId.DoubleTryParse:
 				Write("!isNaN(");
 				obj.Accept(this, FuPriority.Assign);
@@ -26286,7 +26310,7 @@ namespace Fusion
 				OpenChild();
 				call.Method.Left.Accept(this, FuPriority.Assign);
 				Write(" = ");
-				Write(call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
+				Write(call.Method.Symbol.Id == FuId.FloatTryParse || call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
 				WriteInParentheses(call.Arguments);
 				WriteNewLine();
 				bool not = statement.Cond != call;

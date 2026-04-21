@@ -1352,124 +1352,125 @@ export const FuId = {
 	INT_TRY_PARSE : 59,
 	N_INT_TRY_PARSE : 60,
 	LONG_TRY_PARSE : 61,
-	DOUBLE_TRY_PARSE : 62,
-	STRING_CONTAINS : 63,
-	STRING_ENDS_WITH : 64,
-	STRING_INDEX_OF : 65,
-	STRING_LAST_INDEX_OF : 66,
-	STRING_REPLACE : 67,
-	STRING_STARTS_WITH : 68,
-	STRING_SUBSTRING : 69,
-	STRING_TO_LOWER : 70,
-	STRING_TO_UPPER : 71,
-	ARRAY_BINARY_SEARCH_ALL : 72,
-	ARRAY_BINARY_SEARCH_PART : 73,
-	ARRAY_CONTAINS : 74,
-	ARRAY_COPY_TO : 75,
-	ARRAY_FILL_ALL : 76,
-	ARRAY_FILL_PART : 77,
-	ARRAY_SORT_ALL : 78,
-	ARRAY_SORT_PART : 79,
-	LIST_ADD : 80,
-	LIST_ADD_RANGE : 81,
-	LIST_ALL : 82,
-	LIST_ANY : 83,
-	LIST_CLEAR : 84,
-	LIST_CONTAINS : 85,
-	LIST_COPY_TO : 86,
-	LIST_COUNT : 87,
-	LIST_INDEX_OF : 88,
-	LIST_INSERT : 89,
-	LIST_LAST : 90,
-	LIST_REMOVE_AT : 91,
-	LIST_REMOVE_RANGE : 92,
-	LIST_SORT_ALL : 93,
-	LIST_SORT_PART : 94,
-	QUEUE_CLEAR : 95,
-	QUEUE_COUNT : 96,
-	QUEUE_DEQUEUE : 97,
-	QUEUE_ENQUEUE : 98,
-	QUEUE_PEEK : 99,
-	STACK_CLEAR : 100,
-	STACK_COUNT : 101,
-	STACK_PEEK : 102,
-	STACK_PUSH : 103,
-	STACK_POP : 104,
-	PRIORITY_QUEUE_CLEAR : 105,
-	PRIORITY_QUEUE_COUNT : 106,
-	PRIORITY_QUEUE_DEQUEUE : 107,
-	PRIORITY_QUEUE_ENQUEUE : 108,
-	PRIORITY_QUEUE_PEEK : 109,
-	HASH_SET_ADD : 110,
-	HASH_SET_CLEAR : 111,
-	HASH_SET_CONTAINS : 112,
-	HASH_SET_COUNT : 113,
-	HASH_SET_REMOVE : 114,
-	SORTED_SET_ADD : 115,
-	SORTED_SET_CLEAR : 116,
-	SORTED_SET_CONTAINS : 117,
-	SORTED_SET_COUNT : 118,
-	SORTED_SET_REMOVE : 119,
-	DICTIONARY_ADD : 120,
-	DICTIONARY_CLEAR : 121,
-	DICTIONARY_CONTAINS_KEY : 122,
-	DICTIONARY_COUNT : 123,
-	DICTIONARY_REMOVE : 124,
-	SORTED_DICTIONARY_CLEAR : 125,
-	SORTED_DICTIONARY_CONTAINS_KEY : 126,
-	SORTED_DICTIONARY_COUNT : 127,
-	SORTED_DICTIONARY_REMOVE : 128,
-	ORDERED_DICTIONARY_CLEAR : 129,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 130,
-	ORDERED_DICTIONARY_COUNT : 131,
-	ORDERED_DICTIONARY_REMOVE : 132,
-	TEXT_WRITER_WRITE : 133,
-	TEXT_WRITER_WRITE_CHAR : 134,
-	TEXT_WRITER_WRITE_CODE_POINT : 135,
-	TEXT_WRITER_WRITE_LINE : 136,
-	CONSOLE_READ_LINE : 137,
-	CONSOLE_WRITE : 138,
-	CONSOLE_WRITE_LINE : 139,
-	STRING_WRITER_CLEAR : 140,
-	STRING_WRITER_TO_STRING : 141,
-	CONVERT_TO_BASE64_STRING : 142,
-	U_T_F8_GET_BYTE_COUNT : 143,
-	U_T_F8_GET_BYTES : 144,
-	U_T_F8_GET_STRING : 145,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 146,
-	REGEX_COMPILE : 147,
-	REGEX_ESCAPE : 148,
-	REGEX_IS_MATCH_STR : 149,
-	REGEX_IS_MATCH_REGEX : 150,
-	MATCH_FIND_STR : 151,
-	MATCH_FIND_REGEX : 152,
-	MATCH_GET_CAPTURE : 153,
-	JSON_ELEMENT_PARSE : 154,
-	JSON_ELEMENT_IS_OBJECT : 155,
-	JSON_ELEMENT_IS_ARRAY : 156,
-	JSON_ELEMENT_IS_STRING : 157,
-	JSON_ELEMENT_IS_NUMBER : 158,
-	JSON_ELEMENT_IS_BOOLEAN : 159,
-	JSON_ELEMENT_IS_NULL : 160,
-	JSON_ELEMENT_GET_OBJECT : 161,
-	JSON_ELEMENT_GET_ARRAY : 162,
-	JSON_ELEMENT_GET_STRING : 163,
-	JSON_ELEMENT_GET_DOUBLE : 164,
-	JSON_ELEMENT_GET_BOOLEAN : 165,
-	MATH_METHOD : 166,
-	MATH_ABS : 167,
-	MATH_CEILING : 168,
-	MATH_CLAMP : 169,
-	MATH_FUSED_MULTIPLY_ADD : 170,
-	MATH_IS_FINITE : 171,
-	MATH_IS_INFINITY : 172,
-	MATH_IS_NA_N : 173,
-	MATH_LOG2 : 174,
-	MATH_MAX : 175,
-	MATH_MIN : 176,
-	MATH_ROUND : 177,
-	MATH_SQRT : 178,
-	MATH_TRUNCATE : 179
+	FLOAT_TRY_PARSE : 62,
+	DOUBLE_TRY_PARSE : 63,
+	STRING_CONTAINS : 64,
+	STRING_ENDS_WITH : 65,
+	STRING_INDEX_OF : 66,
+	STRING_LAST_INDEX_OF : 67,
+	STRING_REPLACE : 68,
+	STRING_STARTS_WITH : 69,
+	STRING_SUBSTRING : 70,
+	STRING_TO_LOWER : 71,
+	STRING_TO_UPPER : 72,
+	ARRAY_BINARY_SEARCH_ALL : 73,
+	ARRAY_BINARY_SEARCH_PART : 74,
+	ARRAY_CONTAINS : 75,
+	ARRAY_COPY_TO : 76,
+	ARRAY_FILL_ALL : 77,
+	ARRAY_FILL_PART : 78,
+	ARRAY_SORT_ALL : 79,
+	ARRAY_SORT_PART : 80,
+	LIST_ADD : 81,
+	LIST_ADD_RANGE : 82,
+	LIST_ALL : 83,
+	LIST_ANY : 84,
+	LIST_CLEAR : 85,
+	LIST_CONTAINS : 86,
+	LIST_COPY_TO : 87,
+	LIST_COUNT : 88,
+	LIST_INDEX_OF : 89,
+	LIST_INSERT : 90,
+	LIST_LAST : 91,
+	LIST_REMOVE_AT : 92,
+	LIST_REMOVE_RANGE : 93,
+	LIST_SORT_ALL : 94,
+	LIST_SORT_PART : 95,
+	QUEUE_CLEAR : 96,
+	QUEUE_COUNT : 97,
+	QUEUE_DEQUEUE : 98,
+	QUEUE_ENQUEUE : 99,
+	QUEUE_PEEK : 100,
+	STACK_CLEAR : 101,
+	STACK_COUNT : 102,
+	STACK_PEEK : 103,
+	STACK_PUSH : 104,
+	STACK_POP : 105,
+	PRIORITY_QUEUE_CLEAR : 106,
+	PRIORITY_QUEUE_COUNT : 107,
+	PRIORITY_QUEUE_DEQUEUE : 108,
+	PRIORITY_QUEUE_ENQUEUE : 109,
+	PRIORITY_QUEUE_PEEK : 110,
+	HASH_SET_ADD : 111,
+	HASH_SET_CLEAR : 112,
+	HASH_SET_CONTAINS : 113,
+	HASH_SET_COUNT : 114,
+	HASH_SET_REMOVE : 115,
+	SORTED_SET_ADD : 116,
+	SORTED_SET_CLEAR : 117,
+	SORTED_SET_CONTAINS : 118,
+	SORTED_SET_COUNT : 119,
+	SORTED_SET_REMOVE : 120,
+	DICTIONARY_ADD : 121,
+	DICTIONARY_CLEAR : 122,
+	DICTIONARY_CONTAINS_KEY : 123,
+	DICTIONARY_COUNT : 124,
+	DICTIONARY_REMOVE : 125,
+	SORTED_DICTIONARY_CLEAR : 126,
+	SORTED_DICTIONARY_CONTAINS_KEY : 127,
+	SORTED_DICTIONARY_COUNT : 128,
+	SORTED_DICTIONARY_REMOVE : 129,
+	ORDERED_DICTIONARY_CLEAR : 130,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 131,
+	ORDERED_DICTIONARY_COUNT : 132,
+	ORDERED_DICTIONARY_REMOVE : 133,
+	TEXT_WRITER_WRITE : 134,
+	TEXT_WRITER_WRITE_CHAR : 135,
+	TEXT_WRITER_WRITE_CODE_POINT : 136,
+	TEXT_WRITER_WRITE_LINE : 137,
+	CONSOLE_READ_LINE : 138,
+	CONSOLE_WRITE : 139,
+	CONSOLE_WRITE_LINE : 140,
+	STRING_WRITER_CLEAR : 141,
+	STRING_WRITER_TO_STRING : 142,
+	CONVERT_TO_BASE64_STRING : 143,
+	U_T_F8_GET_BYTE_COUNT : 144,
+	U_T_F8_GET_BYTES : 145,
+	U_T_F8_GET_STRING : 146,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 147,
+	REGEX_COMPILE : 148,
+	REGEX_ESCAPE : 149,
+	REGEX_IS_MATCH_STR : 150,
+	REGEX_IS_MATCH_REGEX : 151,
+	MATCH_FIND_STR : 152,
+	MATCH_FIND_REGEX : 153,
+	MATCH_GET_CAPTURE : 154,
+	JSON_ELEMENT_PARSE : 155,
+	JSON_ELEMENT_IS_OBJECT : 156,
+	JSON_ELEMENT_IS_ARRAY : 157,
+	JSON_ELEMENT_IS_STRING : 158,
+	JSON_ELEMENT_IS_NUMBER : 159,
+	JSON_ELEMENT_IS_BOOLEAN : 160,
+	JSON_ELEMENT_IS_NULL : 161,
+	JSON_ELEMENT_GET_OBJECT : 162,
+	JSON_ELEMENT_GET_ARRAY : 163,
+	JSON_ELEMENT_GET_STRING : 164,
+	JSON_ELEMENT_GET_DOUBLE : 165,
+	JSON_ELEMENT_GET_BOOLEAN : 166,
+	MATH_METHOD : 167,
+	MATH_ABS : 168,
+	MATH_CEILING : 169,
+	MATH_CLAMP : 170,
+	MATH_FUSED_MULTIPLY_ADD : 171,
+	MATH_IS_FINITE : 172,
+	MATH_IS_INFINITY : 173,
+	MATH_IS_NA_N : 174,
+	MATH_LOG2 : 175,
+	MATH_MAX : 176,
+	MATH_MIN : 177,
+	MATH_ROUND : 178,
+	MATH_SQRT : 179,
+	MATH_TRUNCATE : 180
 }
 
 export class FuDocInline
@@ -3510,6 +3511,7 @@ export class FuSystem extends FuScope
 		let ushortType = FuRangeType.new(0, 65535);
 		ushortType.name = "ushort";
 		this.add(ushortType);
+		this.floatType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.FLOAT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
 		this.add(this.floatType);
 		this.doubleType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.DOUBLE_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
 		this.add(this.doubleType);
@@ -6387,6 +6389,7 @@ export class FuSema
 					case FuId.INT_TRY_PARSE:
 					case FuId.N_INT_TRY_PARSE:
 					case FuId.LONG_TRY_PARSE:
+					case FuId.FLOAT_TRY_PARSE:
 					case FuId.DOUBLE_TRY_PARSE:
 						let varRef;
 						let def;
@@ -9226,6 +9229,7 @@ export class GenBase extends FuVisitor
 			case FuId.INT_TRY_PARSE:
 			case FuId.N_INT_TRY_PARSE:
 			case FuId.LONG_TRY_PARSE:
+			case FuId.FLOAT_TRY_PARSE:
 			case FuId.DOUBLE_TRY_PARSE:
 				return call;
 			default:
@@ -10313,6 +10317,7 @@ export class GenC extends GenCCpp
 	#intFunctions = new Set();
 	#nIntFunctions = new Set();
 	#longFunctions = new Set();
+	#floatTryParse;
 	#doubleTryParse;
 	#stringAssign;
 	#stringSubstring;
@@ -12369,6 +12374,10 @@ export class GenC extends GenCCpp
 			this.#longFunctions.add(FuId.INT_TRY_PARSE);
 			this.#writeTryParse("FuLong", obj, args);
 			break;
+		case FuId.FLOAT_TRY_PARSE:
+			this.#floatTryParse = true;
+			this.#writeTryParse("FuFloat", obj, args);
+			break;
 		case FuId.DOUBLE_TRY_PARSE:
 			this.#doubleTryParse = true;
 			this.#writeTryParse("FuDouble", obj, args);
@@ -13963,6 +13972,12 @@ export class GenC extends GenCCpp
 		this.#writeIntLibrary("Int", "int", this.#intFunctions);
 		this.#writeIntLibrary("NInt", "ptrdiff_t", this.#nIntFunctions);
 		this.#writeIntLibrary("Long", "int64_t", this.#longFunctions);
+		if (this.#floatTryParse) {
+			this.#startTryParseLibrary("Float", "float", "");
+			this.writeLine("*result = strtof(str, &end);");
+			this.writeLine("return *end == '\\0' && errno == 0;");
+			this.closeBlock();
+		}
 		if (this.#doubleTryParse) {
 			this.#startTryParseLibrary("Double", "double", "");
 			this.writeLine("*result = strtod(str, &end);");
@@ -14364,6 +14379,7 @@ export class GenC extends GenCCpp
 		this.#intFunctions.clear();
 		this.#nIntFunctions.clear();
 		this.#longFunctions.clear();
+		this.#floatTryParse = false;
 		this.#doubleTryParse = false;
 		this.#stringAssign = false;
 		this.#stringSubstring = false;
@@ -15596,6 +15612,7 @@ export class GenCpp extends GenCCpp
 		case FuId.INT_TRY_PARSE:
 		case FuId.N_INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
+		case FuId.FLOAT_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
 			this.include("charconv");
 			this.include("string_view");
@@ -17508,6 +17525,7 @@ export class GenCs extends GenTyped
 		case FuId.INT_TRY_PARSE:
 		case FuId.N_INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
+		case FuId.FLOAT_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
 			this.writeType(obj.type, false);
 			this.write(".TryParse(");
@@ -18954,6 +18972,7 @@ export class GenD extends GenCCppD
 		case FuId.INT_TRY_PARSE:
 		case FuId.N_INT_TRY_PARSE:
 		case FuId.LONG_TRY_PARSE:
+		case FuId.FLOAT_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
 			this.include("std.conv");
 			this.write("() { try { ");
@@ -21003,6 +21022,9 @@ export class GenJava extends GenTyped
 			case FuId.LONG_TRY_PARSE:
 				this.write("Long.parseLong");
 				break;
+			case FuId.FLOAT_TRY_PARSE:
+				this.write("Float.parseFloat");
+				break;
 			case FuId.DOUBLE_TRY_PARSE:
 				this.write("Double.parseDouble");
 				break;
@@ -21966,6 +21988,7 @@ export class GenJsNoModule extends GenBase
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write("); return true; } catch { return false; }})()");
 			break;
+		case FuId.FLOAT_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
 			this.write("!isNaN(");
 			obj.accept(this, FuPriority.ASSIGN);
@@ -26965,7 +26988,7 @@ export class GenPy extends GenPySwift
 			this.openChild();
 			call.method.left.accept(this, FuPriority.ASSIGN);
 			this.write(" = ");
-			this.write(call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
+			this.write(call.method.symbol.id == FuId.FLOAT_TRY_PARSE || call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
 			this.writeInParentheses(call.arguments_);
 			this.writeNewLine();
 			let not = statement.cond != call;

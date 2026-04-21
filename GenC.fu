@@ -24,6 +24,7 @@ public class GenC : GenCCpp
 	SortedSet<FuId>() IntFunctions;
 	SortedSet<FuId>() NIntFunctions;
 	SortedSet<FuId>() LongFunctions;
+	bool FloatTryParse;
 	bool DoubleTryParse;
 	bool StringAssign;
 	bool StringSubstring;
@@ -2052,6 +2053,10 @@ public class GenC : GenCCpp
 			this.LongFunctions.Add(FuId.IntTryParse);
 			WriteTryParse("FuLong", obj, args);
 			break;
+		case FuId.FloatTryParse:
+			this.FloatTryParse = true;
+			WriteTryParse("FuFloat", obj, args);
+			break;
 		case FuId.DoubleTryParse:
 			this.DoubleTryParse = true;
 			WriteTryParse("FuDouble", obj, args);
@@ -3639,6 +3644,12 @@ public class GenC : GenCCpp
 		WriteIntLibrary("Int", "int", this.IntFunctions);
 		WriteIntLibrary("NInt", "ptrdiff_t", this.NIntFunctions);
 		WriteIntLibrary("Long", "int64_t", this.LongFunctions);
+		if (this.FloatTryParse) {
+			StartTryParseLibrary("Float", "float", "");
+			WriteLine("*result = strtof(str, &end);");
+			WriteLine("return *end == '\\0' && errno == 0;");
+			CloseBlock();
+		}
 		if (this.DoubleTryParse) {
 			StartTryParseLibrary("Double", "double", "");
 			WriteLine("*result = strtod(str, &end);");
@@ -4042,6 +4053,7 @@ public class GenC : GenCCpp
 		this.IntFunctions.Clear();
 		this.NIntFunctions.Clear();
 		this.LongFunctions.Clear();
+		this.FloatTryParse = false;
 		this.DoubleTryParse = false;
 		this.StringAssign = false;
 		this.StringSubstring = false;

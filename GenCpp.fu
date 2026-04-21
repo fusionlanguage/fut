@@ -834,6 +834,7 @@ public class GenCpp : GenCCpp
 		case FuId.IntTryParse:
 		case FuId.NIntTryParse:
 		case FuId.LongTryParse:
+		case FuId.FloatTryParse:
 		case FuId.DoubleTryParse:
 			Include("charconv");
 			Include("string_view");

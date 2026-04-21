@@ -517,6 +517,7 @@ public class GenCs : GenTyped
 		case FuId.IntTryParse:
 		case FuId.NIntTryParse:
 		case FuId.LongTryParse:
+		case FuId.FloatTryParse:
 		case FuId.DoubleTryParse:
 			WriteType(obj.Type, false);
 			Write(".TryParse(");

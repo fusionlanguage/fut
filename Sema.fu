@@ -1347,6 +1347,7 @@ public class FuSema
 				case FuId.IntTryParse:
 				case FuId.NIntTryParse:
 				case FuId.LongTryParse:
+				case FuId.FloatTryParse:
 				case FuId.DoubleTryParse:
 					if (symbol.Left is FuSymbolReference varRef && varRef.Symbol is FuVar! def)
 						def.IsAssigned = true;

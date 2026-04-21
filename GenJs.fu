@@ -586,6 +586,7 @@ public class GenJsNoModule : GenBase
 			args[0].Accept(this, FuPriority.Argument);
 			Write("); return true; } catch { return false; }})()");
 			break;
+		case FuId.FloatTryParse:
 		case FuId.DoubleTryParse:
 			Write("!isNaN(");
 			obj.Accept(this, FuPriority.Assign);
