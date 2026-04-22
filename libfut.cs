@@ -21270,6 +21270,8 @@ namespace Fusion
 			WriteChar('(');
 			if (args.Count == 0)
 				Write("\"\"");
+			else if (args[0].Type.Id == FuId.LongType)
+				WriteCall("String", args[0]);
 			else
 				args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');

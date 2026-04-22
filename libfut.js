@@ -21897,6 +21897,8 @@ export class GenJsNoModule extends GenBase
 		this.writeChar(40);
 		if (args.length == 0)
 			this.write("\"\"");
+		else if (args[0].type.id == FuId.LONG_TYPE)
+			this.writeCall("String", args[0]);
 		else
 			args[0].accept(this, FuPriority.ARGUMENT);
 		this.writeChar(41);

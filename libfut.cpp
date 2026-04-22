@@ -20631,6 +20631,8 @@ void GenJsNoModule::writeWriteLine(std::string_view method, const std::vector<st
 	writeChar('(');
 	if (std::ssize(*args) == 0)
 		write("\"\"");
+	else if ((*args)[0]->type->id == FuId::longType)
+		writeCall("String", (*args)[0].get());
 	else
 		(*args)[0]->accept(this, FuPriority::argument);
 	writeChar(')');
