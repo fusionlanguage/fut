@@ -20616,6 +20616,26 @@ void GenJsNoModule::writeDictionaryClearCast(const FuExpr * obj)
 {
 }
 
+void GenJsNoModule::endWrite(const FuExpr * arg)
+{
+	if (dynamic_cast<const FuStringType *>(arg->type.get()))
+		arg->accept(this, FuPriority::argument);
+	else
+		writeCall("String", arg);
+	writeChar(')');
+}
+
+void GenJsNoModule::writeWriteLine(std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	write(method);
+	writeChar('(');
+	if (std::ssize(*args) == 0)
+		write("\"\"");
+	else
+		(*args)[0]->accept(this, FuPriority::argument);
+	writeChar(')');
+}
+
 bool GenJsNoModule::isIdentifier(std::string_view s)
 {
 	if (s.empty() || s[0] < 'A')
@@ -20918,11 +20938,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		break;
 	case FuId::textWriterWrite:
 		writePostfix(obj, ".write(");
-		if (dynamic_cast<const FuStringType *>((*args)[0]->type.get()))
-			(*args)[0]->accept(this, FuPriority::argument);
-		else
-			writeCall("String", (*args)[0].get());
-		writeChar(')');
+		endWrite((*args)[0].get());
 		break;
 	case FuId::textWriterWriteChar:
 		writeMethodCall(obj, "write(String.fromCharCode", (*args)[0].get());
@@ -20933,14 +20949,8 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeChar(')');
 		break;
 	case FuId::textWriterWriteLine:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			write("console.error(");
-			if (std::ssize(*args) == 0)
-				write("\"\"");
-			else
-				(*args)[0]->accept(this, FuPriority::argument);
-			writeChar(')');
-		}
+		if (isReferenceTo(obj, FuId::consoleError))
+			writeWriteLine("console.error", args);
 		else {
 			writePostfix(obj, ".write(");
 			if (std::ssize(*args) != 0) {
@@ -20952,19 +20962,10 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		break;
 	case FuId::consoleWrite:
 		write("process.stdout.write(");
-		if (dynamic_cast<const FuStringType *>((*args)[0]->type.get()))
-			(*args)[0]->accept(this, FuPriority::argument);
-		else
-			writeCall("String", (*args)[0].get());
-		writeChar(')');
+		endWrite((*args)[0].get());
 		break;
 	case FuId::consoleWriteLine:
-		write("console.log(");
-		if (std::ssize(*args) == 0)
-			write("\"\"");
-		else
-			(*args)[0]->accept(this, FuPriority::argument);
-		writeChar(')');
+		writeWriteLine("console.log", args);
 		break;
 	case FuId::convertToBase64String:
 		write("btoa(String.fromCodePoint(...");

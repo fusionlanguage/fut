@@ -3385,6 +3385,8 @@ private:
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeInterpolatedLiteral(std::string_view s);
 	void writeSlice(const FuExpr * array, const FuExpr * offset, const FuExpr * length, FuPriority parent, std::string_view method);
+	void endWrite(const FuExpr * arg);
+	void writeWriteLine(std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	static bool isIdentifier(std::string_view s);
 	void writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	void writeTypeofEquals(const FuExpr * obj, std::string_view name, FuPriority parent);

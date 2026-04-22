@@ -21882,6 +21882,26 @@ export class GenJsNoModule extends GenBase
 	{
 	}
 
+	#endWrite(arg)
+	{
+		if (arg.type instanceof FuStringType)
+			arg.accept(this, FuPriority.ARGUMENT);
+		else
+			this.writeCall("String", arg);
+		this.writeChar(41);
+	}
+
+	#writeWriteLine(method, args)
+	{
+		this.write(method);
+		this.writeChar(40);
+		if (args.length == 0)
+			this.write("\"\"");
+		else
+			args[0].accept(this, FuPriority.ARGUMENT);
+		this.writeChar(41);
+	}
+
 	static #isIdentifier(s)
 	{
 		if (s.length == 0 || s.charCodeAt(0) < 65)
@@ -22185,11 +22205,7 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.TEXT_WRITER_WRITE:
 			this.writePostfix(obj, ".write(");
-			if (args[0].type instanceof FuStringType)
-				args[0].accept(this, FuPriority.ARGUMENT);
-			else
-				this.writeCall("String", args[0]);
-			this.writeChar(41);
+			this.#endWrite(args[0]);
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
 			this.writeMethodCall(obj, "write(String.fromCharCode", args[0]);
@@ -22200,14 +22216,8 @@ export class GenJsNoModule extends GenBase
 			this.writeChar(41);
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
-			if (GenJsNoModule.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.write("console.error(");
-				if (args.length == 0)
-					this.write("\"\"");
-				else
-					args[0].accept(this, FuPriority.ARGUMENT);
-				this.writeChar(41);
-			}
+			if (GenJsNoModule.isReferenceTo(obj, FuId.CONSOLE_ERROR))
+				this.#writeWriteLine("console.error", args);
 			else {
 				this.writePostfix(obj, ".write(");
 				if (args.length != 0) {
@@ -22219,19 +22229,10 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("process.stdout.write(");
-			if (args[0].type instanceof FuStringType)
-				args[0].accept(this, FuPriority.ARGUMENT);
-			else
-				this.writeCall("String", args[0]);
-			this.writeChar(41);
+			this.#endWrite(args[0]);
 			break;
 		case FuId.CONSOLE_WRITE_LINE:
-			this.write("console.log(");
-			if (args.length == 0)
-				this.write("\"\"");
-			else
-				args[0].accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.#writeWriteLine("console.log", args);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.write("btoa(String.fromCodePoint(...");

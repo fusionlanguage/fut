@@ -21255,6 +21255,26 @@ namespace Fusion
 		{
 		}
 
+		void EndWrite(FuExpr arg)
+		{
+			if (arg.Type is FuStringType)
+				arg.Accept(this, FuPriority.Argument);
+			else
+				WriteCall("String", arg);
+			WriteChar(')');
+		}
+
+		void WriteWriteLine(string method, List<FuExpr> args)
+		{
+			Write(method);
+			WriteChar('(');
+			if (args.Count == 0)
+				Write("\"\"");
+			else
+				args[0].Accept(this, FuPriority.Argument);
+			WriteChar(')');
+		}
+
 		static bool IsIdentifier(string s)
 		{
 			if (s.Length == 0 || s[0] < 'A')
@@ -21554,11 +21574,7 @@ namespace Fusion
 				break;
 			case FuId.TextWriterWrite:
 				WritePostfix(obj, ".write(");
-				if (args[0].Type is FuStringType)
-					args[0].Accept(this, FuPriority.Argument);
-				else
-					WriteCall("String", args[0]);
-				WriteChar(')');
+				EndWrite(args[0]);
 				break;
 			case FuId.TextWriterWriteChar:
 				WriteMethodCall(obj, "write(String.fromCharCode", args[0]);
@@ -21569,14 +21585,8 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.TextWriterWriteLine:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					Write("console.error(");
-					if (args.Count == 0)
-						Write("\"\"");
-					else
-						args[0].Accept(this, FuPriority.Argument);
-					WriteChar(')');
-				}
+				if (IsReferenceTo(obj, FuId.ConsoleError))
+					WriteWriteLine("console.error", args);
 				else {
 					WritePostfix(obj, ".write(");
 					if (args.Count != 0) {
@@ -21588,19 +21598,10 @@ namespace Fusion
 				break;
 			case FuId.ConsoleWrite:
 				Write("process.stdout.write(");
-				if (args[0].Type is FuStringType)
-					args[0].Accept(this, FuPriority.Argument);
-				else
-					WriteCall("String", args[0]);
-				WriteChar(')');
+				EndWrite(args[0]);
 				break;
 			case FuId.ConsoleWriteLine:
-				Write("console.log(");
-				if (args.Count == 0)
-					Write("\"\"");
-				else
-					args[0].Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteWriteLine("console.log", args);
 				break;
 			case FuId.ConvertToBase64String:
 				Write("btoa(String.fromCodePoint(...");
