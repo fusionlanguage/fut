@@ -977,6 +977,9 @@ public class GenJava : GenTyped
 		case FuId.EnvironmentGetEnvironmentVariable:
 			WriteCall("System.getenv", args[0]);
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			Write("System.currentTimeMillis()");
+			break;
 		case FuId.RegexCompile:
 			WriteCompileRegex(args, 0);
 			break;

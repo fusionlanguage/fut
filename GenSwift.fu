@@ -885,6 +885,10 @@ public class GenSwift : GenPySwift
 			WriteUnwrapped(args[0], FuPriority.Argument, false);
 			WriteChar(']');
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			Include("Foundation");
+			Write("Int64(Date.now.timeIntervalSince1970 * 1000)");
+			break;
 		case FuId.JsonElementParse:
 			Include("Foundation");
 			Write("try! JSONSerialization.jsonObject(with: ");

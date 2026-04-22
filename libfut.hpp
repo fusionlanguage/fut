@@ -335,6 +335,7 @@ enum class FuId
 	uTF8GetBytes,
 	uTF8GetString,
 	environmentGetEnvironmentVariable,
+	dateTimeOffsetUtcNowToUnixTimeMilliseconds,
 	regexCompile,
 	regexEscape,
 	regexIsMatchStr,
@@ -2872,6 +2873,7 @@ private:
 	bool treeCompareString;
 	std::set<FuId> compares;
 	std::set<FuId> contains;
+	bool dateTimeOffsetUtcNowToUnixTimeMilliseconds;
 	std::vector<const FuVar *> varsToDestruct;
 	bool conditionVarInScope;
 	void writeStringPtrAdd(const FuCallExpr * call, bool cast);
@@ -3659,6 +3661,7 @@ private: // internal
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	bool childPass;
+	bool timeNs;
 	bool switchBreak;
 	void startDoc(const FuCodeDoc * doc);
 	void writePyDoc(const FuMethod * method);

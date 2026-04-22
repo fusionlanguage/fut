@@ -1438,39 +1438,40 @@ export const FuId = {
 	U_T_F8_GET_BYTES : 145,
 	U_T_F8_GET_STRING : 146,
 	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 147,
-	REGEX_COMPILE : 148,
-	REGEX_ESCAPE : 149,
-	REGEX_IS_MATCH_STR : 150,
-	REGEX_IS_MATCH_REGEX : 151,
-	MATCH_FIND_STR : 152,
-	MATCH_FIND_REGEX : 153,
-	MATCH_GET_CAPTURE : 154,
-	JSON_ELEMENT_PARSE : 155,
-	JSON_ELEMENT_IS_OBJECT : 156,
-	JSON_ELEMENT_IS_ARRAY : 157,
-	JSON_ELEMENT_IS_STRING : 158,
-	JSON_ELEMENT_IS_NUMBER : 159,
-	JSON_ELEMENT_IS_BOOLEAN : 160,
-	JSON_ELEMENT_IS_NULL : 161,
-	JSON_ELEMENT_GET_OBJECT : 162,
-	JSON_ELEMENT_GET_ARRAY : 163,
-	JSON_ELEMENT_GET_STRING : 164,
-	JSON_ELEMENT_GET_DOUBLE : 165,
-	JSON_ELEMENT_GET_BOOLEAN : 166,
-	MATH_METHOD : 167,
-	MATH_ABS : 168,
-	MATH_CEILING : 169,
-	MATH_CLAMP : 170,
-	MATH_FUSED_MULTIPLY_ADD : 171,
-	MATH_IS_FINITE : 172,
-	MATH_IS_INFINITY : 173,
-	MATH_IS_NA_N : 174,
-	MATH_LOG2 : 175,
-	MATH_MAX : 176,
-	MATH_MIN : 177,
-	MATH_ROUND : 178,
-	MATH_SQRT : 179,
-	MATH_TRUNCATE : 180
+	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 148,
+	REGEX_COMPILE : 149,
+	REGEX_ESCAPE : 150,
+	REGEX_IS_MATCH_STR : 151,
+	REGEX_IS_MATCH_REGEX : 152,
+	MATCH_FIND_STR : 153,
+	MATCH_FIND_REGEX : 154,
+	MATCH_GET_CAPTURE : 155,
+	JSON_ELEMENT_PARSE : 156,
+	JSON_ELEMENT_IS_OBJECT : 157,
+	JSON_ELEMENT_IS_ARRAY : 158,
+	JSON_ELEMENT_IS_STRING : 159,
+	JSON_ELEMENT_IS_NUMBER : 160,
+	JSON_ELEMENT_IS_BOOLEAN : 161,
+	JSON_ELEMENT_IS_NULL : 162,
+	JSON_ELEMENT_GET_OBJECT : 163,
+	JSON_ELEMENT_GET_ARRAY : 164,
+	JSON_ELEMENT_GET_STRING : 165,
+	JSON_ELEMENT_GET_DOUBLE : 166,
+	JSON_ELEMENT_GET_BOOLEAN : 167,
+	MATH_METHOD : 168,
+	MATH_ABS : 169,
+	MATH_CEILING : 170,
+	MATH_CLAMP : 171,
+	MATH_FUSED_MULTIPLY_ADD : 172,
+	MATH_IS_FINITE : 173,
+	MATH_IS_INFINITY : 174,
+	MATH_IS_NA_N : 175,
+	MATH_LOG2 : 176,
+	MATH_MAX : 177,
+	MATH_MIN : 178,
+	MATH_ROUND : 179,
+	MATH_SQRT : 180,
+	MATH_TRUNCATE : 181
 }
 
 export class FuDocInline
@@ -3608,6 +3609,10 @@ export class FuSystem extends FuScope
 		let environmentClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Environment");
 		environmentClass.addStaticMethod(this.stringNullablePtrType, FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE, "GetEnvironmentVariable", FuVar.new(this.stringPtrType, "name"));
 		this.add(environmentClass);
+		let dateTimeOffsetClass = FuClass.new(FuCallType.ABSTRACT, FuId.NONE, "DateTimeOffset");
+		dateTimeOffsetClass.add(FuStaticProperty.new(Object.assign(new FuClassType(), { class: dateTimeOffsetClass }), FuId.NONE, "UtcNow"));
+		dateTimeOffsetClass.addMethod(this.longType, FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS, "ToUnixTimeMilliseconds", false);
+		this.add(dateTimeOffsetClass);
 		this.regexOptionsEnum = this.newEnum(true);
 		this.regexOptionsEnum.isPublic = true;
 		this.regexOptionsEnum.id = FuId.REGEX_OPTIONS_ENUM;
@@ -10341,6 +10346,7 @@ export class GenC extends GenCCpp
 	#treeCompareString;
 	#compares = new Set();
 	#contains = new Set();
+	#dateTimeOffsetUtcNowToUnixTimeMilliseconds;
 	#varsToDestruct = [];
 	#conditionVarInScope;
 	currentClass;
@@ -12785,6 +12791,12 @@ export class GenC extends GenCCpp
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			this.writeCall("getenv", args[0]);
 			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.includeStdInt();
+			this.include("sys/time.h");
+			this.#dateTimeOffsetUtcNowToUnixTimeMilliseconds = true;
+			this.write("FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+			break;
 		case FuId.REGEX_COMPILE:
 			this.#writeGlib("g_regex_new(");
 			args[0].accept(this, FuPriority.ARGUMENT);
@@ -14322,6 +14334,15 @@ export class GenC extends GenCCpp
 			this.writeLine("return false;");
 			this.closeBlock();
 		}
+		if (this.#dateTimeOffsetUtcNowToUnixTimeMilliseconds) {
+			this.writeNewLine();
+			this.writeLine("static int64_t FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+			this.openBlock();
+			this.writeLine("struct timeval tv;");
+			this.writeLine("gettimeofday(&tv, NULL);");
+			this.writeLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
+			this.closeBlock();
+		}
 	}
 
 	writeResources(resources)
@@ -14401,6 +14422,7 @@ export class GenC extends GenCCpp
 		this.#listFrees.clear();
 		this.#treeCompareInteger = false;
 		this.#treeCompareString = false;
+		this.#dateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
 		this.#compares.clear();
 		this.#contains.clear();
 		this.openStringWriter();
@@ -16003,6 +16025,14 @@ export class GenCpp extends GenCCpp
 				this.write(").c_str()");
 			}
 			this.writeChar(41);
+			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.include("chrono");
+			if (parent > FuPriority.MUL)
+				this.writeChar(40);
+			this.write("std::chrono::system_clock::now().time_since_epoch() / std::chrono::milliseconds(1)");
+			if (parent > FuPriority.MUL)
+				this.writeChar(41);
 			break;
 		case FuId.REGEX_COMPILE:
 			this.#writeRegex(args, 0);
@@ -17724,6 +17754,10 @@ export class GenCs extends GenTyped
 			this.write(method.name);
 			this.writeInParentheses(args);
 			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.include("System");
+			this.write("DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()");
+			break;
 		case FuId.REGEX_COMPILE:
 			this.include("System.Text.RegularExpressions");
 			this.write("new Regex");
@@ -19229,6 +19263,10 @@ export class GenD extends GenCCppD
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			this.include("std.process");
 			this.writeCall("environment.get", args[0]);
+			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.include("std.datetime");
+			this.write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("std.base64");
@@ -20767,6 +20805,9 @@ export class GenJava extends GenTyped
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			this.writeCall("System.getenv", args[0]);
 			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.write("System.currentTimeMillis()");
+			break;
 		case FuId.REGEX_COMPILE:
 			this.#writeCompileRegex(args, 0);
 			break;
@@ -22228,6 +22269,9 @@ export class GenJsNoModule extends GenBase
 				args[0].accept(this, FuPriority.ARGUMENT);
 				this.writeChar(93);
 			}
+			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.write("BigInt(Date.now())");
 			break;
 		case FuId.REGEX_COMPILE:
 			this.#writeNewRegex(args, 0);
@@ -24448,6 +24492,10 @@ export class GenSwift extends GenPySwift
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, false);
 			this.writeChar(93);
 			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.include("Foundation");
+			this.write("Int64(Date.now.timeIntervalSince1970 * 1000)");
+			break;
 		case FuId.JSON_ELEMENT_PARSE:
 			this.include("Foundation");
 			this.write("try! JSONSerialization.jsonObject(with: ");
@@ -25643,6 +25691,7 @@ export class GenSwift extends GenPySwift
 export class GenPy extends GenPySwift
 {
 	#childPass;
+	#timeNs;
 	#switchBreak;
 
 	getTargetName()
@@ -26761,6 +26810,14 @@ export class GenPy extends GenPySwift
 			this.include("os");
 			this.writeCall("os.getenv", args[0]);
 			break;
+		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
+			this.#timeNs = true;
+			if (parent > FuPriority.MUL)
+				this.writeChar(40);
+			this.write("time_ns() // 1000000");
+			if (parent > FuPriority.MUL)
+				this.writeChar(41);
+			break;
 		case FuId.REGEX_COMPILE:
 			this.write("re.compile(");
 			args[0].accept(this, FuPriority.ARGUMENT);
@@ -27355,6 +27412,7 @@ export class GenPy extends GenPySwift
 	writeProgram(program, outputFile, namespace)
 	{
 		this.writtenTypes.clear();
+		this.#timeNs = false;
 		this.#switchBreak = false;
 		this.openStringWriter();
 		this.writeTypes(program);
@@ -27363,6 +27421,8 @@ export class GenPy extends GenPySwift
 		if (program.main != null && (program.main.type.id == FuId.INT_TYPE || program.main.parameters.count() == 1))
 			this.include("sys");
 		this.writeIncludes("import ", "");
+		if (this.#timeNs)
+			this.writeLine("from time import time_ns");
 		if (this.#switchBreak) {
 			this.writeNewLine();
 			this.writeLine("class _CiBreak(Exception): pass");

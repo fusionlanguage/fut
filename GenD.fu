@@ -1087,6 +1087,10 @@ public class GenD : GenCCppD
 			Include("std.process");
 			WriteCall("environment.get", args[0]);
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			Include("std.datetime");
+			Write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
+			break;
 		case FuId.ConvertToBase64String:
 			Include("std.base64");
 			Write("Base64.encode(");

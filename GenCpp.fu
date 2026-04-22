@@ -1224,6 +1224,14 @@ public class GenCpp : GenCCpp
 			}
 			WriteChar(')');
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			Include("chrono");
+			if (parent > FuPriority.Mul)
+				WriteChar('(');
+			Write("std::chrono::system_clock::now().time_since_epoch() / std::chrono::milliseconds(1)");
+			if (parent > FuPriority.Mul)
+				WriteChar(')');
+			break;
 		case FuId.RegexCompile:
 			WriteRegex(args, 0);
 			break;

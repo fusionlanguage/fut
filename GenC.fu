@@ -48,6 +48,7 @@ public class GenC : GenCCpp
 	bool TreeCompareString;
 	SortedSet<FuId>() Compares;
 	SortedSet<FuId>() Contains;
+	bool DateTimeOffsetUtcNowToUnixTimeMilliseconds;
 	List<FuVar>() VarsToDestruct;
 	bool ConditionVarInScope;
 	protected FuClass CurrentClass;
@@ -2465,6 +2466,12 @@ public class GenC : GenCCpp
 		case FuId.EnvironmentGetEnvironmentVariable:
 			WriteCall("getenv", args[0]);
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			IncludeStdInt();
+			Include("sys/time.h");
+			this.DateTimeOffsetUtcNowToUnixTimeMilliseconds = true;
+			Write("FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+			break;
 		case FuId.RegexCompile:
 			WriteGlib("g_regex_new(");
 			args[0].Accept(this, FuPriority.Argument);
@@ -3995,6 +4002,15 @@ public class GenC : GenCCpp
 			WriteLine("return false;");
 			CloseBlock();
 		}
+		if (this.DateTimeOffsetUtcNowToUnixTimeMilliseconds) {
+			WriteNewLine();
+			WriteLine("static int64_t FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+			OpenBlock();
+			WriteLine("struct timeval tv;");
+			WriteLine("gettimeofday(&tv, NULL);");
+			WriteLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
+			CloseBlock();
+		}
 	}
 
 	protected void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
@@ -4075,6 +4091,7 @@ public class GenC : GenCCpp
 		this.ListFrees.Clear();
 		this.TreeCompareInteger = false;
 		this.TreeCompareString = false;
+		this.DateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
 		this.Compares.Clear();
 		this.Contains.Clear();
 		OpenStringWriter();

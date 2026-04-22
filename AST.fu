@@ -208,6 +208,7 @@ public enum FuId
 	UTF8GetBytes,
 	UTF8GetString,
 	EnvironmentGetEnvironmentVariable,
+	DateTimeOffsetUtcNowToUnixTimeMilliseconds,
 	RegexCompile,
 	RegexEscape,
 	RegexIsMatchStr,
@@ -1827,6 +1828,10 @@ public class FuSystem : FuScope
 		FuClass# environmentClass = FuClass.New(FuCallType.Static, FuId.None, "Environment");
 		environmentClass.AddStaticMethod(StringNullablePtrType, FuId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", FuVar.New(StringPtrType, "name"));
 		Add(environmentClass);
+		FuClass# dateTimeOffsetClass = FuClass.New(FuCallType.Abstract, FuId.None, "DateTimeOffset");
+		dateTimeOffsetClass.Add(FuStaticProperty.New(new FuClassType { Class = dateTimeOffsetClass }, FuId.None, "UtcNow"));
+		dateTimeOffsetClass.AddMethod(LongType, FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds, "ToUnixTimeMilliseconds", false);
+		Add(dateTimeOffsetClass);
 		RegexOptionsEnum = NewEnum(true);
 		RegexOptionsEnum.IsPublic = true;
 		RegexOptionsEnum.Id = FuId.RegexOptionsEnum;

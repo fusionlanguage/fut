@@ -827,6 +827,9 @@ public class GenJsNoModule : GenBase
 				WriteChar(']');
 			}
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			Write("BigInt(Date.now())");
+			break;
 		case FuId.RegexCompile:
 			WriteNewRegex(args, 0);
 			break;

@@ -1451,6 +1451,7 @@ namespace Fusion
 		UTF8GetBytes,
 		UTF8GetString,
 		EnvironmentGetEnvironmentVariable,
+		DateTimeOffsetUtcNowToUnixTimeMilliseconds,
 		RegexCompile,
 		RegexEscape,
 		RegexIsMatchStr,
@@ -3362,6 +3363,10 @@ namespace Fusion
 			FuClass environmentClass = FuClass.New(FuCallType.Static, FuId.None, "Environment");
 			environmentClass.AddStaticMethod(this.StringNullablePtrType, FuId.EnvironmentGetEnvironmentVariable, "GetEnvironmentVariable", FuVar.New(this.StringPtrType, "name"));
 			Add(environmentClass);
+			FuClass dateTimeOffsetClass = FuClass.New(FuCallType.Abstract, FuId.None, "DateTimeOffset");
+			dateTimeOffsetClass.Add(FuStaticProperty.New(new FuClassType { Class = dateTimeOffsetClass }, FuId.None, "UtcNow"));
+			dateTimeOffsetClass.AddMethod(this.LongType, FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds, "ToUnixTimeMilliseconds", false);
+			Add(dateTimeOffsetClass);
 			this.RegexOptionsEnum = NewEnum(true);
 			this.RegexOptionsEnum.IsPublic = true;
 			this.RegexOptionsEnum.Id = FuId.RegexOptionsEnum;
@@ -9917,6 +9922,8 @@ namespace Fusion
 
 		readonly SortedSet<FuId> Contains = new SortedSet<FuId>();
 
+		bool DateTimeOffsetUtcNowToUnixTimeMilliseconds;
+
 		readonly List<FuVar> VarsToDestruct = new List<FuVar>();
 
 		bool ConditionVarInScope;
@@ -12309,6 +12316,12 @@ namespace Fusion
 			case FuId.EnvironmentGetEnvironmentVariable:
 				WriteCall("getenv", args[0]);
 				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				IncludeStdInt();
+				Include("sys/time.h");
+				this.DateTimeOffsetUtcNowToUnixTimeMilliseconds = true;
+				Write("FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+				break;
 			case FuId.RegexCompile:
 				WriteGlib("g_regex_new(");
 				args[0].Accept(this, FuPriority.Argument);
@@ -13825,6 +13838,15 @@ namespace Fusion
 				WriteLine("return false;");
 				CloseBlock();
 			}
+			if (this.DateTimeOffsetUtcNowToUnixTimeMilliseconds) {
+				WriteNewLine();
+				WriteLine("static int64_t FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+				OpenBlock();
+				WriteLine("struct timeval tv;");
+				WriteLine("gettimeofday(&tv, NULL);");
+				WriteLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
+				CloseBlock();
+			}
 		}
 
 		protected void WriteResources(SortedDictionary<string, List<byte>> resources)
@@ -13903,6 +13925,7 @@ namespace Fusion
 			this.ListFrees.Clear();
 			this.TreeCompareInteger = false;
 			this.TreeCompareString = false;
+			this.DateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
 			this.Compares.Clear();
 			this.Contains.Clear();
 			OpenStringWriter();
@@ -15495,6 +15518,14 @@ namespace Fusion
 					Write(").c_str()");
 				}
 				WriteChar(')');
+				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				Include("chrono");
+				if (parent > FuPriority.Mul)
+					WriteChar('(');
+				Write("std::chrono::system_clock::now().time_since_epoch() / std::chrono::milliseconds(1)");
+				if (parent > FuPriority.Mul)
+					WriteChar(')');
 				break;
 			case FuId.RegexCompile:
 				WriteRegex(args, 0);
@@ -17173,6 +17204,10 @@ namespace Fusion
 				Write(method.Name);
 				WriteInParentheses(args);
 				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				Include("System");
+				Write("DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()");
+				break;
 			case FuId.RegexCompile:
 				Include("System.Text.RegularExpressions");
 				Write("new Regex");
@@ -18652,6 +18687,10 @@ namespace Fusion
 			case FuId.EnvironmentGetEnvironmentVariable:
 				Include("std.process");
 				WriteCall("environment.get", args[0]);
+				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				Include("std.datetime");
+				Write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
 				break;
 			case FuId.ConvertToBase64String:
 				Include("std.base64");
@@ -20163,6 +20202,9 @@ namespace Fusion
 			case FuId.EnvironmentGetEnvironmentVariable:
 				WriteCall("System.getenv", args[0]);
 				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				Write("System.currentTimeMillis()");
+				break;
 			case FuId.RegexCompile:
 				WriteCompileRegex(args, 0);
 				break;
@@ -21595,6 +21637,9 @@ namespace Fusion
 					args[0].Accept(this, FuPriority.Argument);
 					WriteChar(']');
 				}
+				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				Write("BigInt(Date.now())");
 				break;
 			case FuId.RegexCompile:
 				WriteNewRegex(args, 0);
@@ -23803,6 +23848,10 @@ namespace Fusion
 				WriteUnwrapped(args[0], FuPriority.Argument, false);
 				WriteChar(']');
 				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				Include("Foundation");
+				Write("Int64(Date.now.timeIntervalSince1970 * 1000)");
+				break;
 			case FuId.JsonElementParse:
 				Include("Foundation");
 				Write("try! JSONSerialization.jsonObject(with: ");
@@ -24990,6 +25039,8 @@ namespace Fusion
 
 		bool ChildPass;
 
+		bool TimeNs;
+
 		bool SwitchBreak;
 
 		protected override string GetTargetName() => "Python";
@@ -26090,6 +26141,14 @@ namespace Fusion
 				Include("os");
 				WriteCall("os.getenv", args[0]);
 				break;
+			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+				this.TimeNs = true;
+				if (parent > FuPriority.Mul)
+					WriteChar('(');
+				Write("time_ns() // 1000000");
+				if (parent > FuPriority.Mul)
+					WriteChar(')');
+				break;
 			case FuId.RegexCompile:
 				Write("re.compile(");
 				args[0].Accept(this, FuPriority.Argument);
@@ -26673,6 +26732,7 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.WrittenTypes.Clear();
+			this.TimeNs = false;
 			this.SwitchBreak = false;
 			OpenStringWriter();
 			WriteTypes(program);
@@ -26681,6 +26741,8 @@ namespace Fusion
 			if (program.Main != null && (program.Main.Type.Id == FuId.IntType || program.Main.Parameters.Count() == 1))
 				Include("sys");
 			WriteIncludes("import ", "");
+			if (this.TimeNs)
+				WriteLine("from time import time_ns");
 			if (this.SwitchBreak) {
 				WriteNewLine();
 				WriteLine("class _CiBreak(Exception): pass");

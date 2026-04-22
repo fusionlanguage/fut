@@ -21,6 +21,7 @@
 public class GenPy : GenPySwift
 {
 	bool ChildPass;
+	bool TimeNs;
 	bool SwitchBreak;
 
 	protected override string GetTargetName() => "Python";
@@ -1126,6 +1127,14 @@ public class GenPy : GenPySwift
 			Include("os");
 			WriteCall("os.getenv", args[0]);
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			this.TimeNs = true;
+			if (parent > FuPriority.Mul)
+				WriteChar('(');
+			Write("time_ns() // 1000000");
+			if (parent > FuPriority.Mul)
+				WriteChar(')');
+			break;
 		case FuId.RegexCompile:
 			Write("re.compile(");
 			args[0].Accept(this, FuPriority.Argument);
@@ -1715,6 +1724,7 @@ public class GenPy : GenPySwift
 	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.WrittenTypes.Clear();
+		this.TimeNs = false;
 		this.SwitchBreak = false;
 		OpenStringWriter();
 		WriteTypes(program);
@@ -1723,6 +1733,8 @@ public class GenPy : GenPySwift
 		if (program.Main != null && (program.Main.Type.Id == FuId.IntType || program.Main.Parameters.Count() == 1))
 			Include("sys");
 		WriteIncludes("import ", "");
+		if (this.TimeNs)
+			WriteLine("from time import time_ns");
 		if (this.SwitchBreak) {
 			WriteNewLine();
 			WriteLine("class _CiBreak(Exception): pass");

@@ -714,6 +714,10 @@ public class GenCs : GenTyped
 			Write(method.Name);
 			WriteInParentheses(args);
 			break;
+		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
+			Include("System");
+			Write("DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()");
+			break;
 		case FuId.RegexCompile:
 			Include("System.Text.RegularExpressions");
 			Write("new Regex");

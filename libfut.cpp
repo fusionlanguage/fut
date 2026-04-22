@@ -2898,6 +2898,12 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClass> environmentClass = FuClass::new_(FuCallType::static_, FuId::none, "Environment");
 	environmentClass->addStaticMethod(this->stringNullablePtrType, FuId::environmentGetEnvironmentVariable, "GetEnvironmentVariable", FuVar::new_(this->stringPtrType, "name"));
 	add(environmentClass);
+	std::shared_ptr<FuClass> dateTimeOffsetClass = FuClass::new_(FuCallType::abstract, FuId::none, "DateTimeOffset");
+	std::shared_ptr<FuClassType> futemp7 = std::make_shared<FuClassType>();
+	futemp7->class_ = dateTimeOffsetClass.get();
+	dateTimeOffsetClass->add(FuStaticProperty::new_(futemp7, FuId::none, "UtcNow"));
+	dateTimeOffsetClass->addMethod(this->longType, FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds, "ToUnixTimeMilliseconds", false);
+	add(dateTimeOffsetClass);
 	this->regexOptionsEnum = newEnum(true);
 	this->regexOptionsEnum->isPublic = true;
 	this->regexOptionsEnum->id = FuId::regexOptionsEnum;
@@ -2911,14 +2917,14 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClass> regexClass = FuClass::new_(FuCallType::sealed, FuId::regexClass, "Regex");
 	regexClass->addStaticMethod(this->stringStorageType, FuId::regexEscape, "Escape", FuVar::new_(this->stringPtrType, "str"));
 	regexClass->add(FuMethodGroup::new_(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->boolType, FuId::regexIsMatchStr, "IsMatch", false, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::regexIsMatchRegex, "IsMatch", false, FuVar::new_(this->stringPtrType, "input"))));
-	std::shared_ptr<FuDynamicPtrType> futemp7 = std::make_shared<FuDynamicPtrType>();
-	futemp7->class_ = regexClass.get();
-	regexClass->addStaticMethod(futemp7, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone));
+	std::shared_ptr<FuDynamicPtrType> futemp8 = std::make_shared<FuDynamicPtrType>();
+	futemp8->class_ = regexClass.get();
+	regexClass->addStaticMethod(futemp8, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone));
 	add(regexClass);
 	std::shared_ptr<FuClass> matchClass = FuClass::new_(FuCallType::sealed, FuId::matchClass, "Match");
-	std::shared_ptr<FuClassType> futemp8 = std::make_shared<FuClassType>();
-	futemp8->class_ = regexClass.get();
-	matchClass->add(FuMethodGroup::new_(FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindStr, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindRegex, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp8, "pattern"))));
+	std::shared_ptr<FuClassType> futemp9 = std::make_shared<FuClassType>();
+	futemp9->class_ = regexClass.get();
+	matchClass->add(FuMethodGroup::new_(FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindStr, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindRegex, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp9, "pattern"))));
 	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchStart, "Start"));
 	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchEnd, "End"));
 	matchClass->addMethod(this->stringStorageType, FuId::matchGetCapture, "GetCapture", false, FuVar::new_(this->uIntType, "group"));
@@ -2935,15 +2941,15 @@ FuSystem::FuSystem()
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNumber, "IsNumber", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsBoolean, "IsBoolean", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNull, "IsNull", false));
-	std::shared_ptr<FuClassType> futemp9 = std::make_shared<FuClassType>();
-	futemp9->class_ = dictionaryClass;
-	futemp9->typeArg0 = this->stringStorageType;
-	futemp9->typeArg1 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp9, FuId::jsonElementGetObject, "GetObject", false));
 	std::shared_ptr<FuClassType> futemp10 = std::make_shared<FuClassType>();
-	futemp10->class_ = listClass;
-	futemp10->typeArg0 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp10, FuId::jsonElementGetArray, "GetArray", false));
+	futemp10->class_ = dictionaryClass;
+	futemp10->typeArg0 = this->stringStorageType;
+	futemp10->typeArg1 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp10, FuId::jsonElementGetObject, "GetObject", false));
+	std::shared_ptr<FuClassType> futemp11 = std::make_shared<FuClassType>();
+	futemp11->class_ = listClass;
+	futemp11->typeArg0 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp11, FuId::jsonElementGetArray, "GetArray", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->stringPtrType, FuId::jsonElementGetString, "GetString", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->doubleType, FuId::jsonElementGetDouble, "GetDouble", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementGetBoolean, "GetBoolean", false));
@@ -12083,6 +12089,12 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::environmentGetEnvironmentVariable:
 		writeCall("getenv", (*args)[0].get());
 		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		includeStdInt();
+		include("sys/time.h");
+		this->dateTimeOffsetUtcNowToUnixTimeMilliseconds = true;
+		write("FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+		break;
 	case FuId::regexCompile:
 		writeGlib("g_regex_new(");
 		(*args)[0]->accept(this, FuPriority::argument);
@@ -13608,6 +13620,15 @@ void GenC::writeLibrary()
 		writeLine("return false;");
 		closeBlock();
 	}
+	if (this->dateTimeOffsetUtcNowToUnixTimeMilliseconds) {
+		writeNewLine();
+		writeLine("static int64_t FuDateTimeOffset_UtcNow_ToUnixTimeMilliseconds()");
+		openBlock();
+		writeLine("struct timeval tv;");
+		writeLine("gettimeofday(&tv, NULL);");
+		writeLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
+		closeBlock();
+	}
 }
 
 void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
@@ -13687,6 +13708,7 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->listFrees.clear();
 	this->treeCompareInteger = false;
 	this->treeCompareString = false;
+	this->dateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
 	this->compares.clear();
 	this->contains.clear();
 	openStringWriter();
@@ -15163,6 +15185,14 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 			write(").c_str()");
 		}
 		writeChar(')');
+		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		include("chrono");
+		if (parent > FuPriority::mul)
+			writeChar('(');
+		write("std::chrono::system_clock::now().time_since_epoch() / std::chrono::milliseconds(1)");
+		if (parent > FuPriority::mul)
+			writeChar(')');
 		break;
 	case FuId::regexCompile:
 		writeRegex(args, 0);
@@ -16803,6 +16833,10 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		write(method->name);
 		writeInParentheses(args);
 		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		include("System");
+		write("DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()");
+		break;
 	case FuId::regexCompile:
 		include("System.Text.RegularExpressions");
 		write("new Regex");
@@ -18102,6 +18136,10 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::environmentGetEnvironmentVariable:
 		include("std.process");
 		writeCall("environment.get", (*args)[0].get());
+		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		include("std.datetime");
+		write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
 		break;
 	case FuId::convertToBase64String:
 		include("std.base64");
@@ -19546,6 +19584,9 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::environmentGetEnvironmentVariable:
 		writeCall("System.getenv", (*args)[0].get());
 		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		write("System.currentTimeMillis()");
+		break;
 	case FuId::regexCompile:
 		writeCompileRegex(args, 0);
 		break;
@@ -20964,6 +21005,9 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 			}
 			break;
 		}
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		write("BigInt(Date.now())");
+		break;
 	case FuId::regexCompile:
 		writeNewRegex(args, 0);
 		break;
@@ -23045,6 +23089,10 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		write("ProcessInfo.processInfo.environment[");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, false);
 		writeChar(']');
+		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		include("Foundation");
+		write("Int64(Date.now.timeIntervalSince1970 * 1000)");
 		break;
 	case FuId::jsonElementParse:
 		include("Foundation");
@@ -25244,6 +25292,14 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		include("os");
 		writeCall("os.getenv", (*args)[0].get());
 		break;
+	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
+		this->timeNs = true;
+		if (parent > FuPriority::mul)
+			writeChar('(');
+		write("time_ns() // 1000000");
+		if (parent > FuPriority::mul)
+			writeChar(')');
+		break;
 	case FuId::regexCompile:
 		write("re.compile(");
 		(*args)[0]->accept(this, FuPriority::argument);
@@ -25834,6 +25890,7 @@ void GenPy::writeMain(const FuMethod * main)
 void GenPy::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->writtenTypes.clear();
+	this->timeNs = false;
 	this->switchBreak = false;
 	openStringWriter();
 	writeTypes(program);
@@ -25842,6 +25899,8 @@ void GenPy::writeProgram(const FuProgram * program, std::string_view outputFile,
 	if (program->main != nullptr && (program->main->type->id == FuId::intType || program->main->parameters.count() == 1))
 		include("sys");
 	writeIncludes("import ", "");
+	if (this->timeNs)
+		writeLine("from time import time_ns");
 	if (this->switchBreak) {
 		writeNewLine();
 		writeLine("class _CiBreak(Exception): pass");

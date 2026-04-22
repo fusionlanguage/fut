@@ -1351,6 +1351,11 @@ if (homeDir == null)
 
 For JavaScript, this is only available in Node.js, not the web browsers.
 
+### Current time
+
+`DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()` returns the number
+of milliseconds passed since 1970-01-01 00:00:00 UTC, as a `long`.
+
 ### Main method
 
 Fusion is a language designed specifically for implementing libraries.
