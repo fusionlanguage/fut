@@ -6102,17 +6102,21 @@ void FuSema::visitVar(std::shared_ptr<FuVar> expr)
 			resolveObjectLiteral(storage, init);
 		else {
 			expr->value = visitExpr(expr->value);
-			if (!expr->isAssignableStorage()) {
+			if (dynamic_cast<const FuStorageType *>(type)) {
 				if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type)) {
 					type = array->getElementType().get();
 					const FuLiteral * literal;
 					if (!(literal = dynamic_cast<const FuLiteral *>(expr->value.get())) || !literal->isDefaultValue())
 						reportError(expr->value.get(), "Only null, zero and false supported as an array initializer");
 				}
-				else if (dynamic_cast<const FuStorageType *>(type) && dynamic_cast<const FuSymbolReference *>(expr->value.get()))
+				else if (dynamic_cast<const FuLiteralNull *>(expr->value.get())) {
+					this->currentScope->add(expr);
+					return;
+				}
+				else if (dynamic_cast<const FuSymbolReference *>(expr->value.get()))
 					reportError(expr->value.get(), "Cannot copy object storage");
-				coercePermanent(expr->value.get(), type);
 			}
+			coercePermanent(expr->value.get(), type);
 		}
 	}
 	initUnique(expr.get());

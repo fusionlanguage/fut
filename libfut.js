@@ -6549,7 +6549,7 @@ export class FuSema
 				this.#resolveObjectLiteral(storage, init);
 			else {
 				expr.value = this.#visitExpr(expr.value);
-				if (!expr.isAssignableStorage()) {
+				if (type instanceof FuStorageType) {
 					let array;
 					if ((array = type) instanceof FuArrayStorageType) {
 						type = array.getElementType();
@@ -6557,10 +6557,14 @@ export class FuSema
 						if (!((literal = expr.value) instanceof FuLiteral) || !literal.isDefaultValue())
 							this.#reportError(expr.value, "Only null, zero and false supported as an array initializer");
 					}
-					else if (type instanceof FuStorageType && expr.value instanceof FuSymbolReference)
+					else if (expr.value instanceof FuLiteralNull) {
+						this.#currentScope.add(expr);
+						return;
+					}
+					else if (expr.value instanceof FuSymbolReference)
 						this.#reportError(expr.value, "Cannot copy object storage");
-					this.#coercePermanent(expr.value, type);
 				}
+				this.#coercePermanent(expr.value, type);
 			}
 		}
 		FuSema.#initUnique(expr);

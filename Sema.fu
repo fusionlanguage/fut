@@ -1502,16 +1502,21 @@ public class FuSema
 				ResolveObjectLiteral(storage, init);
 			else {
 				expr.Value = VisitExpr(expr.Value);
-				if (!expr.IsAssignableStorage()) {
+				if (type is FuStorageType) {
 					if (type is FuArrayStorageType array) {
 						type = array.GetElementType();
 						if (!(expr.Value is FuLiteral literal) || !literal.IsDefaultValue())
 							ReportError(expr.Value, "Only null, zero and false supported as an array initializer");
 					}
-					else if (type is FuStorageType && expr.Value is FuSymbolReference)
+					else if (expr.Value is FuLiteralNull) {
+						// assignable storage
+						this.CurrentScope.Add(expr);
+						return;
+					}
+					else if (expr.Value is FuSymbolReference)
 						ReportError(expr.Value, "Cannot copy object storage");
-					CoercePermanent(expr.Value, type);
 				}
+				CoercePermanent(expr.Value, type);
 			}
 		}
 		InitUnique(expr);

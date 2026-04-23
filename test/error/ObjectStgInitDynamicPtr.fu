@@ -1,0 +1,8 @@
+public class Test
+{
+	public static bool Run()
+	{
+		List<string>() list= new List<string>(); //ERROR: Cannot convert 'List<string>#' to 'List<string>()'
+		return true;
+	}
+}
