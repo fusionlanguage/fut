@@ -465,11 +465,8 @@ public class GenSwift : GenPySwift
 
 	protected override void WriteElementCoerced!(FuType type, FuExpr value)
 	{
-		if (type.Id == FuId.IntType && !IsIntIndexing(value)) {
-			Write("Int32(");
-			value.Accept(this, FuPriority.Argument);
-			WriteChar(')');
-		}
+		if (type.Id == FuId.IntType && !IsIntIndexing(value))
+			WriteCall("Int32", value);
 		else
 			WriteCoerced(type, value, FuPriority.Argument);
 	}
@@ -845,6 +842,29 @@ public class GenSwift : GenPySwift
 			break;
 		case FuId.StringWriterToString:
 			obj.Accept(this, parent);
+			break;
+		case FuId.BitConverterInt32BitsToSingle:
+			Write("Float(bitPattern: UInt32(bitPattern: ");
+			if (IsIntIndexing(args[0]))
+				args[0].Accept(this, FuPriority.Argument);
+			else
+				WriteCall("Int32", args[0]);
+			Write("))");
+			break;
+		case FuId.BitConverterInt64BitsToDouble:
+			Write("Double(bitPattern: UInt64(bitPattern: ");
+			args[0].Accept(this, FuPriority.Argument);
+			Write("))");
+			break;
+		case FuId.BitConverterSingleToInt32Bits:
+			Write("Int(Int32(bitPattern: (");
+			args[0].Accept(this, FuPriority.Argument);
+			Write(").bitPattern))");
+			break;
+		case FuId.BitConverterDoubleToInt64Bits:
+			Write("Int64(bitPattern: (");
+			args[0].Accept(this, FuPriority.Argument);
+			Write(").bitPattern)");
 			break;
 		case FuId.ConvertToBase64String:
 			Write("Data(");

@@ -214,6 +214,12 @@ int k = Math.Floor(d);
 int n = Math.Round(d);
 ```
 
+If you need to interpret the bit patterns of integers as floats or vice-versa, use:
+* `BitConverter.Int32BitsToSingle(int value)`
+* `BitConverter.Int64BitsToDouble(long value)`
+* `BitConverter.SingleToInt32Bits(float value)`
+* `BitConverter.DoubleToInt64Bits(double value)`
+
 ### Enumerations
 
 Enumerations have user-defined values. Example:

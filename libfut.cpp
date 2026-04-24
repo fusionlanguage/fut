@@ -2876,6 +2876,12 @@ FuSystem::FuSystem()
 	stringWriterClass->addMethod(this->stringPtrType, FuId::stringWriterToString, "ToString", false);
 	add(stringWriterClass);
 	stringWriterClass->parent = textWriterClass.get();
+	std::shared_ptr<FuClass> bitConverterClass = FuClass::new_(FuCallType::static_, FuId::none, "BitConverter");
+	bitConverterClass->addStaticMethod(this->floatType, FuId::bitConverterInt32BitsToSingle, "Int32BitsToSingle", FuVar::new_(this->intType, "value"));
+	bitConverterClass->addStaticMethod(this->doubleType, FuId::bitConverterInt64BitsToDouble, "Int64BitsToDouble", FuVar::new_(this->longType, "value"));
+	bitConverterClass->addStaticMethod(this->intType, FuId::bitConverterSingleToInt32Bits, "SingleToInt32Bits", FuVar::new_(this->floatType, "value"));
+	bitConverterClass->addStaticMethod(this->longType, FuId::bitConverterDoubleToInt64Bits, "DoubleToInt64Bits", FuVar::new_(this->doubleType, "value"));
+	add(bitConverterClass);
 	std::shared_ptr<FuClass> convertClass = FuClass::new_(FuCallType::static_, FuId::none, "Convert");
 	std::shared_ptr<FuClassType> futemp4 = std::make_shared<FuClassType>();
 	futemp4->class_ = this->arrayPtrClass.get();
@@ -11602,6 +11608,16 @@ void GenC::startArrayIndexing(const FuExpr * obj, const FuType * elementType)
 	write(", ");
 }
 
+void GenC::writeBitConverterIntFloat(std::string_view members, const FuExpr * arg)
+{
+	write("(union { ");
+	write(members);
+	write("; }){ ");
+	arg->accept(this, FuPriority::argument);
+	write(" }.");
+	writeChar(members[std::ssize(members) - 1]);
+}
+
 void GenC::writeCMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	includeMath();
@@ -12060,6 +12076,20 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::stringWriterToString:
 		writePostfix(obj, "->str");
+		break;
+	case FuId::bitConverterInt32BitsToSingle:
+		writeBitConverterIntFloat("int i; float f", (*args)[0].get());
+		break;
+	case FuId::bitConverterInt64BitsToDouble:
+		includeStdInt();
+		writeBitConverterIntFloat("int64_t l; double d", (*args)[0].get());
+		break;
+	case FuId::bitConverterSingleToInt32Bits:
+		writeBitConverterIntFloat("float f; int i", (*args)[0].get());
+		break;
+	case FuId::bitConverterDoubleToInt64Bits:
+		includeStdInt();
+		writeBitConverterIntFloat("double d; int64_t l", (*args)[0].get());
 		break;
 	case FuId::convertToBase64String:
 		writeGlib("g_base64_encode(");
@@ -13940,6 +13970,18 @@ void GenCl::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::consoleWriteLine:
 		writeConsoleWrite(args, true);
 		break;
+	case FuId::bitConverterInt32BitsToSingle:
+		writeCall("as_float", (*args)[0].get());
+		break;
+	case FuId::bitConverterInt64BitsToDouble:
+		writeCall("as_double", (*args)[0].get());
+		break;
+	case FuId::bitConverterSingleToInt32Bits:
+		writeCall("as_int", (*args)[0].get());
+		break;
+	case FuId::bitConverterDoubleToInt64Bits:
+		writeCall("as_long", (*args)[0].get());
+		break;
 	case FuId::uTF8GetByteCount:
 		writeStringLength((*args)[0].get());
 		break;
@@ -15135,6 +15177,17 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 	case FuId::stringWriterToString:
 		startMethodCall(obj);
 		write("str()");
+		break;
+	case FuId::bitConverterInt32BitsToSingle:
+	case FuId::bitConverterInt64BitsToDouble:
+	case FuId::bitConverterSingleToInt32Bits:
+	case FuId::bitConverterDoubleToInt64Bits:
+		include("bit");
+		write("std::bit_cast<");
+		writeType(type, false);
+		write(">(");
+		(*args)[0]->accept(this, FuPriority::argument);
+		writeChar(')');
 		break;
 	case FuId::uTF8GetByteCount:
 		if (dynamic_cast<const FuLiteral *>((*args)[0].get())) {
@@ -16611,6 +16664,10 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::orderedDictionaryRemove:
 	case FuId::consoleReadLine:
 	case FuId::stringWriterToString:
+	case FuId::bitConverterInt32BitsToSingle:
+	case FuId::bitConverterInt64BitsToDouble:
+	case FuId::bitConverterSingleToInt32Bits:
+	case FuId::bitConverterDoubleToInt64Bits:
 	case FuId::convertToBase64String:
 	case FuId::jsonElementGetString:
 	case FuId::jsonElementGetDouble:
@@ -19547,6 +19604,18 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		write("System.out");
 		writeWrite(method, args, true);
 		break;
+	case FuId::bitConverterInt32BitsToSingle:
+		writeCall("Float.intBitsToFloat", (*args)[0].get());
+		break;
+	case FuId::bitConverterInt64BitsToDouble:
+		writeCall("Double.longBitsToDouble", (*args)[0].get());
+		break;
+	case FuId::bitConverterSingleToInt32Bits:
+		writeCall("Float.floatToIntBits", (*args)[0].get());
+		break;
+	case FuId::bitConverterDoubleToInt64Bits:
+		writeCall("Double.doubleToLongBits", (*args)[0].get());
+		break;
 	case FuId::convertToBase64String:
 		include("java.util.Base64");
 		if (isWholeArray((*args)[0].get(), (*args)[1].get(), (*args)[2].get()))
@@ -20972,6 +21041,18 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		break;
 	case FuId::consoleWriteLine:
 		writeWriteLine("console.log", args);
+		break;
+	case FuId::bitConverterInt32BitsToSingle:
+	case FuId::bitConverterInt64BitsToDouble:
+	case FuId::bitConverterSingleToInt32Bits:
+	case FuId::bitConverterDoubleToInt64Bits:
+		write("new ");
+		writeArrayElementType(type);
+		write("Array(new ");
+		writeArrayElementType(method->firstParameter()->type.get());
+		write("Array([ ");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write(" ]).buffer)[0]");
 		break;
 	case FuId::convertToBase64String:
 		write("btoa(String.fromCodePoint(...");
@@ -22667,11 +22748,8 @@ void GenSwift::writeRange(const FuExpr * startIndex, const FuExpr * length)
 
 void GenSwift::writeElementCoerced(const FuType * type, const FuExpr * value)
 {
-	if (type->id == FuId::intType && !isIntIndexing(value)) {
-		write("Int32(");
-		value->accept(this, FuPriority::argument);
-		writeChar(')');
-	}
+	if (type->id == FuId::intType && !isIntIndexing(value))
+		writeCall("Int32", value);
 	else
 		writeCoerced(type, value, FuPriority::argument);
 }
@@ -23057,6 +23135,29 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		break;
 	case FuId::stringWriterToString:
 		obj->accept(this, parent);
+		break;
+	case FuId::bitConverterInt32BitsToSingle:
+		write("Float(bitPattern: UInt32(bitPattern: ");
+		if (isIntIndexing((*args)[0].get()))
+			(*args)[0]->accept(this, FuPriority::argument);
+		else
+			writeCall("Int32", (*args)[0].get());
+		write("))");
+		break;
+	case FuId::bitConverterInt64BitsToDouble:
+		write("Double(bitPattern: UInt64(bitPattern: ");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write("))");
+		break;
+	case FuId::bitConverterSingleToInt32Bits:
+		write("Int(Int32(bitPattern: (");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write(").bitPattern))");
+		break;
+	case FuId::bitConverterDoubleToInt64Bits:
+		write("Int64(bitPattern: (");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write(").bitPattern)");
 		break;
 	case FuId::convertToBase64String:
 		write("Data(");
@@ -24969,6 +25070,18 @@ void GenPy::writeAllAny(std::string_view function, const FuExpr * obj, const std
 	writeChar(')');
 }
 
+void GenPy::writeBitConverterIntFloat(int from, int to, const FuExpr * arg)
+{
+	include("struct");
+	write("struct.unpack(\"");
+	writeChar(to);
+	write("\", struct.pack(\"");
+	writeChar(from);
+	write("\", ");
+	arg->accept(this, FuPriority::argument);
+	write("))[0]");
+}
+
 void GenPy::writePyRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	include("re");
@@ -25267,6 +25380,18 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		break;
 	case FuId::stringWriterToString:
 		writePostfix(obj, ".getvalue()");
+		break;
+	case FuId::bitConverterInt32BitsToSingle:
+		writeBitConverterIntFloat('i', 'f', (*args)[0].get());
+		break;
+	case FuId::bitConverterInt64BitsToDouble:
+		writeBitConverterIntFloat('q', 'd', (*args)[0].get());
+		break;
+	case FuId::bitConverterSingleToInt32Bits:
+		writeBitConverterIntFloat('f', 'i', (*args)[0].get());
+		break;
+	case FuId::bitConverterDoubleToInt64Bits:
+		writeBitConverterIntFloat('d', 'q', (*args)[0].get());
 		break;
 	case FuId::convertToBase64String:
 		include("base64");

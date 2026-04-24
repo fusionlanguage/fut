@@ -1433,45 +1433,49 @@ export const FuId = {
 	CONSOLE_WRITE_LINE : 140,
 	STRING_WRITER_CLEAR : 141,
 	STRING_WRITER_TO_STRING : 142,
-	CONVERT_TO_BASE64_STRING : 143,
-	U_T_F8_GET_BYTE_COUNT : 144,
-	U_T_F8_GET_BYTES : 145,
-	U_T_F8_GET_STRING : 146,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 147,
-	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 148,
-	REGEX_COMPILE : 149,
-	REGEX_ESCAPE : 150,
-	REGEX_IS_MATCH_STR : 151,
-	REGEX_IS_MATCH_REGEX : 152,
-	MATCH_FIND_STR : 153,
-	MATCH_FIND_REGEX : 154,
-	MATCH_GET_CAPTURE : 155,
-	JSON_ELEMENT_PARSE : 156,
-	JSON_ELEMENT_IS_OBJECT : 157,
-	JSON_ELEMENT_IS_ARRAY : 158,
-	JSON_ELEMENT_IS_STRING : 159,
-	JSON_ELEMENT_IS_NUMBER : 160,
-	JSON_ELEMENT_IS_BOOLEAN : 161,
-	JSON_ELEMENT_IS_NULL : 162,
-	JSON_ELEMENT_GET_OBJECT : 163,
-	JSON_ELEMENT_GET_ARRAY : 164,
-	JSON_ELEMENT_GET_STRING : 165,
-	JSON_ELEMENT_GET_DOUBLE : 166,
-	JSON_ELEMENT_GET_BOOLEAN : 167,
-	MATH_METHOD : 168,
-	MATH_ABS : 169,
-	MATH_CEILING : 170,
-	MATH_CLAMP : 171,
-	MATH_FUSED_MULTIPLY_ADD : 172,
-	MATH_IS_FINITE : 173,
-	MATH_IS_INFINITY : 174,
-	MATH_IS_NA_N : 175,
-	MATH_LOG2 : 176,
-	MATH_MAX : 177,
-	MATH_MIN : 178,
-	MATH_ROUND : 179,
-	MATH_SQRT : 180,
-	MATH_TRUNCATE : 181
+	BIT_CONVERTER_INT32_BITS_TO_SINGLE : 143,
+	BIT_CONVERTER_INT64_BITS_TO_DOUBLE : 144,
+	BIT_CONVERTER_SINGLE_TO_INT32_BITS : 145,
+	BIT_CONVERTER_DOUBLE_TO_INT64_BITS : 146,
+	CONVERT_TO_BASE64_STRING : 147,
+	U_T_F8_GET_BYTE_COUNT : 148,
+	U_T_F8_GET_BYTES : 149,
+	U_T_F8_GET_STRING : 150,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 151,
+	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 152,
+	REGEX_COMPILE : 153,
+	REGEX_ESCAPE : 154,
+	REGEX_IS_MATCH_STR : 155,
+	REGEX_IS_MATCH_REGEX : 156,
+	MATCH_FIND_STR : 157,
+	MATCH_FIND_REGEX : 158,
+	MATCH_GET_CAPTURE : 159,
+	JSON_ELEMENT_PARSE : 160,
+	JSON_ELEMENT_IS_OBJECT : 161,
+	JSON_ELEMENT_IS_ARRAY : 162,
+	JSON_ELEMENT_IS_STRING : 163,
+	JSON_ELEMENT_IS_NUMBER : 164,
+	JSON_ELEMENT_IS_BOOLEAN : 165,
+	JSON_ELEMENT_IS_NULL : 166,
+	JSON_ELEMENT_GET_OBJECT : 167,
+	JSON_ELEMENT_GET_ARRAY : 168,
+	JSON_ELEMENT_GET_STRING : 169,
+	JSON_ELEMENT_GET_DOUBLE : 170,
+	JSON_ELEMENT_GET_BOOLEAN : 171,
+	MATH_METHOD : 172,
+	MATH_ABS : 173,
+	MATH_CEILING : 174,
+	MATH_CLAMP : 175,
+	MATH_FUSED_MULTIPLY_ADD : 176,
+	MATH_IS_FINITE : 177,
+	MATH_IS_INFINITY : 178,
+	MATH_IS_NA_N : 179,
+	MATH_LOG2 : 180,
+	MATH_MAX : 181,
+	MATH_MIN : 182,
+	MATH_ROUND : 183,
+	MATH_SQRT : 184,
+	MATH_TRUNCATE : 185
 }
 
 export class FuDocInline
@@ -3596,6 +3600,12 @@ export class FuSystem extends FuScope
 		stringWriterClass.addMethod(this.stringPtrType, FuId.STRING_WRITER_TO_STRING, "ToString", false);
 		this.add(stringWriterClass);
 		stringWriterClass.parent = textWriterClass;
+		let bitConverterClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "BitConverter");
+		bitConverterClass.addStaticMethod(this.floatType, FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE, "Int32BitsToSingle", FuVar.new(this.intType, "value"));
+		bitConverterClass.addStaticMethod(this.doubleType, FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE, "Int64BitsToDouble", FuVar.new(this.longType, "value"));
+		bitConverterClass.addStaticMethod(this.intType, FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS, "SingleToInt32Bits", FuVar.new(this.floatType, "value"));
+		bitConverterClass.addStaticMethod(this.longType, FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS, "DoubleToInt64Bits", FuVar.new(this.doubleType, "value"));
+		this.add(bitConverterClass);
 		let convertClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Convert");
 		convertClass.addStaticMethod(this.stringStorageType, FuId.CONVERT_TO_BASE64_STRING, "ToBase64String", FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.nIntType, "offset"), FuVar.new(this.nIntType, "length"));
 		this.add(convertClass);
@@ -12322,6 +12332,16 @@ export class GenC extends GenCCpp
 		this.write(", ");
 	}
 
+	#writeBitConverterIntFloat(members, arg)
+	{
+		this.write("(union { ");
+		this.write(members);
+		this.write("; }){ ");
+		arg.accept(this, FuPriority.ARGUMENT);
+		this.write(" }.");
+		this.writeChar(members.charCodeAt(members.length - 1));
+	}
+
 	#writeCMathFloating(function_, args)
 	{
 		this.includeMath();
@@ -12762,6 +12782,20 @@ export class GenC extends GenCCpp
 			break;
 		case FuId.STRING_WRITER_TO_STRING:
 			this.writePostfix(obj, "->str");
+			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+			this.#writeBitConverterIntFloat("int i; float f", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+			this.includeStdInt();
+			this.#writeBitConverterIntFloat("int64_t l; double d", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+			this.#writeBitConverterIntFloat("float f; int i", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.includeStdInt();
+			this.#writeBitConverterIntFloat("double d; int64_t l", args[0]);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.#writeGlib("g_base64_encode(");
@@ -14675,6 +14709,18 @@ export class GenCl extends GenC
 		case FuId.CONSOLE_WRITE_LINE:
 			this.#writeConsoleWrite(args, true);
 			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+			this.writeCall("as_float", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+			this.writeCall("as_double", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+			this.writeCall("as_int", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.writeCall("as_long", args[0]);
+			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writeStringLength(args[0]);
 			break;
@@ -15975,6 +16021,17 @@ export class GenCpp extends GenCCpp
 		case FuId.STRING_WRITER_TO_STRING:
 			this.#startMethodCall(obj);
 			this.write("str()");
+			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.include("bit");
+			this.write("std::bit_cast<");
+			this.writeType(type, false);
+			this.write(">(");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.writeChar(41);
 			break;
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			if (args[0] instanceof FuLiteral) {
@@ -17538,6 +17595,10 @@ export class GenCs extends GenTyped
 		case FuId.ORDERED_DICTIONARY_REMOVE:
 		case FuId.CONSOLE_READ_LINE:
 		case FuId.STRING_WRITER_TO_STRING:
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
 		case FuId.CONVERT_TO_BASE64_STRING:
 		case FuId.JSON_ELEMENT_GET_STRING:
 		case FuId.JSON_ELEMENT_GET_DOUBLE:
@@ -20768,6 +20829,18 @@ export class GenJava extends GenTyped
 			this.write("System.out");
 			this.#writeWrite(method, args, true);
 			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+			this.writeCall("Float.intBitsToFloat", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+			this.writeCall("Double.longBitsToDouble", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+			this.writeCall("Float.floatToIntBits", args[0]);
+			break;
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.writeCall("Double.doubleToLongBits", args[0]);
+			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("java.util.Base64");
 			if (this.isWholeArray(args[0], args[1], args[2]))
@@ -22239,6 +22312,18 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.CONSOLE_WRITE_LINE:
 			this.#writeWriteLine("console.log", args);
+			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.write("new ");
+			this.writeArrayElementType(type);
+			this.write("Array(new ");
+			this.writeArrayElementType(method.firstParameter().type);
+			this.write("Array([ ");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write(" ]).buffer)[0]");
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.write("btoa(String.fromCodePoint(...");
@@ -24077,11 +24162,8 @@ export class GenSwift extends GenPySwift
 
 	writeElementCoerced(type, value)
 	{
-		if (type.id == FuId.INT_TYPE && !GenSwift.#isIntIndexing(value)) {
-			this.write("Int32(");
-			value.accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
-		}
+		if (type.id == FuId.INT_TYPE && !GenSwift.#isIntIndexing(value))
+			this.writeCall("Int32", value);
 		else
 			this.writeCoerced(type, value, FuPriority.ARGUMENT);
 	}
@@ -24459,6 +24541,29 @@ export class GenSwift extends GenPySwift
 			break;
 		case FuId.STRING_WRITER_TO_STRING:
 			obj.accept(this, parent);
+			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+			this.write("Float(bitPattern: UInt32(bitPattern: ");
+			if (GenSwift.#isIntIndexing(args[0]))
+				args[0].accept(this, FuPriority.ARGUMENT);
+			else
+				this.writeCall("Int32", args[0]);
+			this.write("))");
+			break;
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+			this.write("Double(bitPattern: UInt64(bitPattern: ");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write("))");
+			break;
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+			this.write("Int(Int32(bitPattern: (");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write(").bitPattern))");
+			break;
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.write("Int64(bitPattern: (");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write(").bitPattern)");
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.write("Data(");
@@ -26489,6 +26594,18 @@ export class GenPy extends GenPySwift
 		this.writeChar(41);
 	}
 
+	#writeBitConverterIntFloat(from, to, arg)
+	{
+		this.include("struct");
+		this.write("struct.unpack(\"");
+		this.writeChar(to);
+		this.write("\", struct.pack(\"");
+		this.writeChar(from);
+		this.write("\", ");
+		arg.accept(this, FuPriority.ARGUMENT);
+		this.write("))[0]");
+	}
+
 	#writePyRegexOptions(args)
 	{
 		this.include("re");
@@ -26785,6 +26902,18 @@ export class GenPy extends GenPySwift
 			break;
 		case FuId.STRING_WRITER_TO_STRING:
 			this.writePostfix(obj, ".getvalue()");
+			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+			this.#writeBitConverterIntFloat(105, 102, args[0]);
+			break;
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+			this.#writeBitConverterIntFloat(113, 100, args[0]);
+			break;
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+			this.#writeBitConverterIntFloat(102, 105, args[0]);
+			break;
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.#writeBitConverterIntFloat(100, 113, args[0]);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("base64");

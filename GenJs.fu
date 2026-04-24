@@ -794,6 +794,18 @@ public class GenJsNoModule : GenBase
 		case FuId.ConsoleWriteLine:
 			WriteWriteLine("console.log", args);
 			break;
+		case FuId.BitConverterInt32BitsToSingle:
+		case FuId.BitConverterInt64BitsToDouble:
+		case FuId.BitConverterSingleToInt32Bits:
+		case FuId.BitConverterDoubleToInt64Bits:
+			Write("new ");
+			WriteArrayElementType(type);
+			Write("Array(new ");
+			WriteArrayElementType(method.FirstParameter().Type);
+			Write("Array([ ");
+			args[0].Accept(this, FuPriority.Argument);
+			Write(" ]).buffer)[0]");
+			break;
 		case FuId.ConvertToBase64String:
 			Write("btoa(String.fromCodePoint(...");
 			WriteSlice(args[0], args[1], args[2], FuPriority.Primary, "subarray");

@@ -1992,6 +1992,16 @@ public class GenC : GenCCpp
 		Write(", ");
 	}
 
+	void WriteBitConverterIntFloat!(string members, FuExpr arg)
+	{
+		Write("(union { ");
+		Write(members);
+		Write("; }){ ");
+		arg.Accept(this, FuPriority.Argument);
+		Write(" }.");
+		WriteChar(members[members.Length - 1]);
+	}
+
 	void WriteCMathFloating!(string function, List<FuExpr#> args)
 	{
 		IncludeMath();
@@ -2433,6 +2443,20 @@ public class GenC : GenCCpp
 			break;
 		case FuId.StringWriterToString:
 			WritePostfix(obj, "->str");
+			break;
+		case FuId.BitConverterInt32BitsToSingle:
+			WriteBitConverterIntFloat("int i; float f", args[0]);
+			break;
+		case FuId.BitConverterInt64BitsToDouble:
+			IncludeStdInt();
+			WriteBitConverterIntFloat("int64_t l; double d", args[0]);
+			break;
+		case FuId.BitConverterSingleToInt32Bits:
+			WriteBitConverterIntFloat("float f; int i", args[0]);
+			break;
+		case FuId.BitConverterDoubleToInt64Bits:
+			IncludeStdInt();
+			WriteBitConverterIntFloat("double d; int64_t l", args[0]);
 			break;
 		case FuId.ConvertToBase64String:
 			WriteGlib("g_base64_encode(");

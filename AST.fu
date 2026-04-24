@@ -203,6 +203,10 @@ public enum FuId
 	ConsoleWriteLine,
 	StringWriterClear,
 	StringWriterToString,
+	BitConverterInt32BitsToSingle,
+	BitConverterInt64BitsToDouble,
+	BitConverterSingleToInt32Bits,
+	BitConverterDoubleToInt64Bits,
 	ConvertToBase64String,
 	UTF8GetByteCount,
 	UTF8GetBytes,
@@ -1812,6 +1816,12 @@ public class FuSystem : FuScope
 		stringWriterClass.AddMethod(StringPtrType, FuId.StringWriterToString, "ToString", false);
 		Add(stringWriterClass);
 		stringWriterClass.Parent = textWriterClass;
+		FuClass# bitConverterClass = FuClass.New(FuCallType.Static, FuId.None, "BitConverter");
+		bitConverterClass.AddStaticMethod(FloatType, FuId.BitConverterInt32BitsToSingle, "Int32BitsToSingle", FuVar.New(IntType, "value"));
+		bitConverterClass.AddStaticMethod(DoubleType, FuId.BitConverterInt64BitsToDouble, "Int64BitsToDouble", FuVar.New(LongType, "value"));
+		bitConverterClass.AddStaticMethod(IntType, FuId.BitConverterSingleToInt32Bits, "SingleToInt32Bits", FuVar.New(FloatType, "value"));
+		bitConverterClass.AddStaticMethod(LongType, FuId.BitConverterDoubleToInt64Bits, "DoubleToInt64Bits", FuVar.New(DoubleType, "value"));
+		Add(bitConverterClass);
 		FuClass# convertClass = FuClass.New(FuCallType.Static, FuId.None, "Convert");
 		convertClass.AddStaticMethod(StringStorageType, FuId.ConvertToBase64String, "ToBase64String",
 			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "offset"), FuVar.New(NIntType, "length"));

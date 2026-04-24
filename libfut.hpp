@@ -330,6 +330,10 @@ enum class FuId
 	consoleWriteLine,
 	stringWriterClear,
 	stringWriterToString,
+	bitConverterInt32BitsToSingle,
+	bitConverterInt64BitsToDouble,
+	bitConverterSingleToInt32Bits,
+	bitConverterDoubleToInt64Bits,
 	convertToBase64String,
 	uTF8GetByteCount,
 	uTF8GetBytes,
@@ -2943,6 +2947,7 @@ private:
 	void writeTryParse(std::string_view prefix, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
+	void writeBitConverterIntFloat(std::string_view members, const FuExpr * arg);
 	void writeCMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
 	bool writeMathClampMaxMin(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent);
@@ -3678,6 +3683,7 @@ private:
 	void writeSlice(const FuExpr * startIndex, const FuExpr * length);
 	void writeAssignSorted(const FuExpr * obj, std::string_view byteArray);
 	void writeAllAny(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeBitConverterIntFloat(int from, int to, const FuExpr * arg);
 	void writePyRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRegexSearch(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name);

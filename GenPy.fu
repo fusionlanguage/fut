@@ -800,6 +800,18 @@ public class GenPy : GenPySwift
 		WriteChar(')');
 	}
 
+	void WriteBitConverterIntFloat!(int from, int to, FuExpr arg)
+	{
+		Include("struct");
+		Write("struct.unpack(\"");
+		WriteChar(to);
+		Write("\", struct.pack(\"");
+		WriteChar(from);
+		Write("\", ");
+		arg.Accept(this, FuPriority.Argument);
+		Write("))[0]");
+	}
+
 	void WritePyRegexOptions!(List<FuExpr#> args)
 	{
 		Include("re");
@@ -1095,6 +1107,18 @@ public class GenPy : GenPySwift
 			break;
 		case FuId.StringWriterToString:
 			WritePostfix(obj, ".getvalue()");
+			break;
+		case FuId.BitConverterInt32BitsToSingle:
+			WriteBitConverterIntFloat('i', 'f', args[0]);
+			break;
+		case FuId.BitConverterInt64BitsToDouble:
+			WriteBitConverterIntFloat('q', 'd', args[0]);
+			break;
+		case FuId.BitConverterSingleToInt32Bits:
+			WriteBitConverterIntFloat('f', 'i', args[0]);
+			break;
+		case FuId.BitConverterDoubleToInt64Bits:
+			WriteBitConverterIntFloat('d', 'q', args[0]);
 			break;
 		case FuId.ConvertToBase64String:
 			Include("base64");

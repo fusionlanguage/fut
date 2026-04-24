@@ -1361,7 +1361,7 @@
       <key>class-builtin</key>
       <dict>
         <key>match</key>
-        <string>\b(Console|Convert|DateTimeOffset|Dictionary|Encoding|Environment|Exception|HashSet|JsonElement|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|SortedSet|Stack|StringWriter|TextWriter)\b</string>
+        <string>\b(BitConverter|Console|Convert|DateTimeOffset|Dictionary|Encoding|Environment|Exception|HashSet|JsonElement|List|Lock|Match|Math|Regex|RegexOptions|SortedDictionary|SortedSet|Stack|StringWriter|TextWriter)\b</string>
         <key>captures</key>
         <dict>
           <key>1</key>

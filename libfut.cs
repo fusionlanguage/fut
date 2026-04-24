@@ -1446,6 +1446,10 @@ namespace Fusion
 		ConsoleWriteLine,
 		StringWriterClear,
 		StringWriterToString,
+		BitConverterInt32BitsToSingle,
+		BitConverterInt64BitsToDouble,
+		BitConverterSingleToInt32Bits,
+		BitConverterDoubleToInt64Bits,
 		ConvertToBase64String,
 		UTF8GetByteCount,
 		UTF8GetBytes,
@@ -3350,6 +3354,12 @@ namespace Fusion
 			stringWriterClass.AddMethod(this.StringPtrType, FuId.StringWriterToString, "ToString", false);
 			Add(stringWriterClass);
 			stringWriterClass.Parent = textWriterClass;
+			FuClass bitConverterClass = FuClass.New(FuCallType.Static, FuId.None, "BitConverter");
+			bitConverterClass.AddStaticMethod(this.FloatType, FuId.BitConverterInt32BitsToSingle, "Int32BitsToSingle", FuVar.New(this.IntType, "value"));
+			bitConverterClass.AddStaticMethod(this.DoubleType, FuId.BitConverterInt64BitsToDouble, "Int64BitsToDouble", FuVar.New(this.LongType, "value"));
+			bitConverterClass.AddStaticMethod(this.IntType, FuId.BitConverterSingleToInt32Bits, "SingleToInt32Bits", FuVar.New(this.FloatType, "value"));
+			bitConverterClass.AddStaticMethod(this.LongType, FuId.BitConverterDoubleToInt64Bits, "DoubleToInt64Bits", FuVar.New(this.DoubleType, "value"));
+			Add(bitConverterClass);
 			FuClass convertClass = FuClass.New(FuCallType.Static, FuId.None, "Convert");
 			convertClass.AddStaticMethod(this.StringStorageType, FuId.ConvertToBase64String, "ToBase64String", FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length"));
 			Add(convertClass);
@@ -11849,6 +11859,16 @@ namespace Fusion
 			Write(", ");
 		}
 
+		void WriteBitConverterIntFloat(string members, FuExpr arg)
+		{
+			Write("(union { ");
+			Write(members);
+			Write("; }){ ");
+			arg.Accept(this, FuPriority.Argument);
+			Write(" }.");
+			WriteChar(members[members.Length - 1]);
+		}
+
 		void WriteCMathFloating(string function, List<FuExpr> args)
 		{
 			IncludeMath();
@@ -12287,6 +12307,20 @@ namespace Fusion
 				break;
 			case FuId.StringWriterToString:
 				WritePostfix(obj, "->str");
+				break;
+			case FuId.BitConverterInt32BitsToSingle:
+				WriteBitConverterIntFloat("int i; float f", args[0]);
+				break;
+			case FuId.BitConverterInt64BitsToDouble:
+				IncludeStdInt();
+				WriteBitConverterIntFloat("int64_t l; double d", args[0]);
+				break;
+			case FuId.BitConverterSingleToInt32Bits:
+				WriteBitConverterIntFloat("float f; int i", args[0]);
+				break;
+			case FuId.BitConverterDoubleToInt64Bits:
+				IncludeStdInt();
+				WriteBitConverterIntFloat("double d; int64_t l", args[0]);
 				break;
 			case FuId.ConvertToBase64String:
 				WriteGlib("g_base64_encode(");
@@ -14173,6 +14207,18 @@ namespace Fusion
 			case FuId.ConsoleWriteLine:
 				WriteConsoleWrite(args, true);
 				break;
+			case FuId.BitConverterInt32BitsToSingle:
+				WriteCall("as_float", args[0]);
+				break;
+			case FuId.BitConverterInt64BitsToDouble:
+				WriteCall("as_double", args[0]);
+				break;
+			case FuId.BitConverterSingleToInt32Bits:
+				WriteCall("as_int", args[0]);
+				break;
+			case FuId.BitConverterDoubleToInt64Bits:
+				WriteCall("as_long", args[0]);
+				break;
 			case FuId.UTF8GetByteCount:
 				WriteStringLength(args[0]);
 				break;
@@ -15468,6 +15514,17 @@ namespace Fusion
 			case FuId.StringWriterToString:
 				StartMethodCall(obj);
 				Write("str()");
+				break;
+			case FuId.BitConverterInt32BitsToSingle:
+			case FuId.BitConverterInt64BitsToDouble:
+			case FuId.BitConverterSingleToInt32Bits:
+			case FuId.BitConverterDoubleToInt64Bits:
+				Include("bit");
+				Write("std::bit_cast<");
+				WriteType(type, false);
+				Write(">(");
+				args[0].Accept(this, FuPriority.Argument);
+				WriteChar(')');
 				break;
 			case FuId.UTF8GetByteCount:
 				if (args[0] is FuLiteral) {
@@ -16991,6 +17048,10 @@ namespace Fusion
 			case FuId.OrderedDictionaryRemove:
 			case FuId.ConsoleReadLine:
 			case FuId.StringWriterToString:
+			case FuId.BitConverterInt32BitsToSingle:
+			case FuId.BitConverterInt64BitsToDouble:
+			case FuId.BitConverterSingleToInt32Bits:
+			case FuId.BitConverterDoubleToInt64Bits:
 			case FuId.ConvertToBase64String:
 			case FuId.JsonElementGetString:
 			case FuId.JsonElementGetDouble:
@@ -20165,6 +20226,18 @@ namespace Fusion
 				Write("System.out");
 				WriteWrite(method, args, true);
 				break;
+			case FuId.BitConverterInt32BitsToSingle:
+				WriteCall("Float.intBitsToFloat", args[0]);
+				break;
+			case FuId.BitConverterInt64BitsToDouble:
+				WriteCall("Double.longBitsToDouble", args[0]);
+				break;
+			case FuId.BitConverterSingleToInt32Bits:
+				WriteCall("Float.floatToIntBits", args[0]);
+				break;
+			case FuId.BitConverterDoubleToInt64Bits:
+				WriteCall("Double.doubleToLongBits", args[0]);
+				break;
 			case FuId.ConvertToBase64String:
 				Include("java.util.Base64");
 				if (IsWholeArray(args[0], args[1], args[2]))
@@ -21608,6 +21681,18 @@ namespace Fusion
 				break;
 			case FuId.ConsoleWriteLine:
 				WriteWriteLine("console.log", args);
+				break;
+			case FuId.BitConverterInt32BitsToSingle:
+			case FuId.BitConverterInt64BitsToDouble:
+			case FuId.BitConverterSingleToInt32Bits:
+			case FuId.BitConverterDoubleToInt64Bits:
+				Write("new ");
+				WriteArrayElementType(type);
+				Write("Array(new ");
+				WriteArrayElementType(method.FirstParameter().Type);
+				Write("Array([ ");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(" ]).buffer)[0]");
 				break;
 			case FuId.ConvertToBase64String:
 				Write("btoa(String.fromCodePoint(...");
@@ -23435,11 +23520,8 @@ namespace Fusion
 
 		protected override void WriteElementCoerced(FuType type, FuExpr value)
 		{
-			if (type.Id == FuId.IntType && !IsIntIndexing(value)) {
-				Write("Int32(");
-				value.Accept(this, FuPriority.Argument);
-				WriteChar(')');
-			}
+			if (type.Id == FuId.IntType && !IsIntIndexing(value))
+				WriteCall("Int32", value);
 			else
 				WriteCoerced(type, value, FuPriority.Argument);
 		}
@@ -23815,6 +23897,29 @@ namespace Fusion
 				break;
 			case FuId.StringWriterToString:
 				obj.Accept(this, parent);
+				break;
+			case FuId.BitConverterInt32BitsToSingle:
+				Write("Float(bitPattern: UInt32(bitPattern: ");
+				if (IsIntIndexing(args[0]))
+					args[0].Accept(this, FuPriority.Argument);
+				else
+					WriteCall("Int32", args[0]);
+				Write("))");
+				break;
+			case FuId.BitConverterInt64BitsToDouble:
+				Write("Double(bitPattern: UInt64(bitPattern: ");
+				args[0].Accept(this, FuPriority.Argument);
+				Write("))");
+				break;
+			case FuId.BitConverterSingleToInt32Bits:
+				Write("Int(Int32(bitPattern: (");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(").bitPattern))");
+				break;
+			case FuId.BitConverterDoubleToInt64Bits:
+				Write("Int64(bitPattern: (");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(").bitPattern)");
 				break;
 			case FuId.ConvertToBase64String:
 				Write("Data(");
@@ -25821,6 +25926,18 @@ namespace Fusion
 			WriteChar(')');
 		}
 
+		void WriteBitConverterIntFloat(int from, int to, FuExpr arg)
+		{
+			Include("struct");
+			Write("struct.unpack(\"");
+			WriteChar(to);
+			Write("\", struct.pack(\"");
+			WriteChar(from);
+			Write("\", ");
+			arg.Accept(this, FuPriority.Argument);
+			Write("))[0]");
+		}
+
 		void WritePyRegexOptions(List<FuExpr> args)
 		{
 			Include("re");
@@ -26116,6 +26233,18 @@ namespace Fusion
 				break;
 			case FuId.StringWriterToString:
 				WritePostfix(obj, ".getvalue()");
+				break;
+			case FuId.BitConverterInt32BitsToSingle:
+				WriteBitConverterIntFloat('i', 'f', args[0]);
+				break;
+			case FuId.BitConverterInt64BitsToDouble:
+				WriteBitConverterIntFloat('q', 'd', args[0]);
+				break;
+			case FuId.BitConverterSingleToInt32Bits:
+				WriteBitConverterIntFloat('f', 'i', args[0]);
+				break;
+			case FuId.BitConverterDoubleToInt64Bits:
+				WriteBitConverterIntFloat('d', 'q', args[0]);
 				break;
 			case FuId.ConvertToBase64String:
 				Include("base64");

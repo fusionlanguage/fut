@@ -1170,6 +1170,17 @@ public class GenCpp : GenCCpp
 			StartMethodCall(obj);
 			Write("str()"); // TODO: C++20 view()
 			break;
+		case FuId.BitConverterInt32BitsToSingle:
+		case FuId.BitConverterInt64BitsToDouble:
+		case FuId.BitConverterSingleToInt32Bits:
+		case FuId.BitConverterDoubleToInt64Bits:
+			Include("bit");
+			Write("std::bit_cast<");
+			WriteType(type, false);
+			Write(">(");
+			args[0].Accept(this, FuPriority.Argument);
+			WriteChar(')');
+			break;
 		case FuId.UTF8GetByteCount:
 			if (args[0] is FuLiteral) {
 				if (parent > FuPriority.Add)

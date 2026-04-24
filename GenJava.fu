@@ -936,6 +936,18 @@ public class GenJava : GenTyped
 			Write("System.out");
 			WriteWrite(method, args, true);
 			break;
+		case FuId.BitConverterInt32BitsToSingle:
+			WriteCall("Float.intBitsToFloat", args[0]);
+			break;
+		case FuId.BitConverterInt64BitsToDouble:
+			WriteCall("Double.longBitsToDouble", args[0]);
+			break;
+		case FuId.BitConverterSingleToInt32Bits:
+			WriteCall("Float.floatToIntBits", args[0]);
+			break;
+		case FuId.BitConverterDoubleToInt64Bits:
+			WriteCall("Double.doubleToLongBits", args[0]);
+			break;
 		case FuId.ConvertToBase64String:
 			Include("java.util.Base64");
 			if (IsWholeArray(args[0], args[1], args[2]))

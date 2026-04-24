@@ -234,6 +234,18 @@ public class GenCl : GenC
 		case FuId.ConsoleWriteLine:
 			WriteConsoleWrite(args, true);
 			break;
+		case FuId.BitConverterInt32BitsToSingle:
+			WriteCall("as_float", args[0]);
+			break;
+		case FuId.BitConverterInt64BitsToDouble:
+			WriteCall("as_double", args[0]);
+			break;
+		case FuId.BitConverterSingleToInt32Bits:
+			WriteCall("as_int", args[0]);
+			break;
+		case FuId.BitConverterDoubleToInt64Bits:
+			WriteCall("as_long", args[0]);
+			break;
 		case FuId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
 			break;
