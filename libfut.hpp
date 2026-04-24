@@ -2708,7 +2708,6 @@ public:
 protected:
 	GenCCppD() = default;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
-	void writeBitConverterUnion(const FuMethod * method);
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 private: // internal
 	void visitLiteralLong(int64_t i) override;
@@ -3225,6 +3224,7 @@ private:
 	bool hasStackPop;
 	bool hasSortedDictionaryInsert;
 	bool hasSortedDictionaryFind;
+	bool bitConverter;
 	void writeVisibility(FuVisibility visibility);
 	void writeCallType(FuCallType callType, std::string_view sealedString);
 	static bool isCreateWithNew(const FuType * type);

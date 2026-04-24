@@ -9424,15 +9424,6 @@ void GenCCppD::writeCoercedInternal(const FuType * type, const FuExpr * expr, Fu
 		GenTyped::writeCoercedInternal(type, expr, parent);
 }
 
-void GenCCppD::writeBitConverterUnion(const FuMethod * method)
-{
-	write("{ ");
-	writeType(method->firstParameter()->type.get(), false);
-	write(" from; ");
-	writeType(method->type.get(), false);
-	write(" to; }");
-}
-
 void GenCCppD::visitConst(const FuConst * statement)
 {
 	if (dynamic_cast<const FuArrayStorageType *>(statement->type.get()))
@@ -12080,9 +12071,11 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::bitConverterInt64BitsToDouble:
 	case FuId::bitConverterSingleToInt32Bits:
 	case FuId::bitConverterDoubleToInt64Bits:
-		write("(union ");
-		writeBitConverterUnion(method);
-		write("){ ");
+		write("(union { ");
+		writeType(method->firstParameter()->type.get(), false);
+		write(" from; ");
+		writeType(type, false);
+		write(" to; }){ ");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write(" }.to");
 		break;
@@ -18201,10 +18194,14 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::bitConverterInt64BitsToDouble:
 	case FuId::bitConverterSingleToInt32Bits:
 	case FuId::bitConverterDoubleToInt64Bits:
-		writeParameters(method, false);
-		write(" { union U ");
-		writeBitConverterUnion(method);
-		writeCall(" U u = U(value); return u.to; }", (*args)[0].get());
+		this->bitConverter = true;
+		write("fuBitCast!(");
+		writeType(type, false);
+		write(", ");
+		writeType(method->firstParameter()->type.get(), false);
+		write(")(");
+		(*args)[0]->accept(this, FuPriority::argument);
+		writeChar(')');
 		break;
 	case FuId::convertToBase64String:
 		include("std.base64");
@@ -18712,6 +18709,7 @@ void GenD::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->hasStackPop = false;
 	this->hasSortedDictionaryInsert = false;
 	this->hasSortedDictionaryFind = false;
+	this->bitConverter = false;
 	openStringWriter();
 	if (!namespace_.empty()) {
 		write("struct ");
@@ -18774,6 +18772,15 @@ void GenD::writeProgram(const FuProgram * program, std::string_view outputFile, 
 		openBlock();
 		writeLine("dict.removeKey(tuple(key, U.init));");
 		writeLine("dict.insert(tuple(key, value));");
+		closeBlock();
+	}
+	if (this->bitConverter) {
+		writeNewLine();
+		writeLine("private T fuBitCast(T, S)(S value)");
+		openBlock();
+		writeLine("union U { S s; T t; };");
+		writeLine("U u = U(value);");
+		writeLine("return u.t;");
 		closeBlock();
 	}
 	closeStringWriter();

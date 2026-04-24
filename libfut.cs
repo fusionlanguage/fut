@@ -9566,15 +9566,6 @@ namespace Fusion
 				base.WriteCoercedInternal(type, expr, parent);
 		}
 
-		protected void WriteBitConverterUnion(FuMethod method)
-		{
-			Write("{ ");
-			WriteType(method.FirstParameter().Type, false);
-			Write(" from; ");
-			WriteType(method.Type, false);
-			Write(" to; }");
-		}
-
 		internal override void VisitConst(FuConst statement)
 		{
 			if (statement.Type is FuArrayStorageType)
@@ -12311,9 +12302,11 @@ namespace Fusion
 			case FuId.BitConverterInt64BitsToDouble:
 			case FuId.BitConverterSingleToInt32Bits:
 			case FuId.BitConverterDoubleToInt64Bits:
-				Write("(union ");
-				WriteBitConverterUnion(method);
-				Write("){ ");
+				Write("(union { ");
+				WriteType(method.FirstParameter().Type, false);
+				Write(" from; ");
+				WriteType(type, false);
+				Write(" to; }){ ");
 				args[0].Accept(this, FuPriority.Argument);
 				Write(" }.to");
 				break;
@@ -17694,6 +17687,8 @@ namespace Fusion
 
 		bool HasSortedDictionaryFind;
 
+		bool BitConverter;
+
 		protected override string GetTargetName() => "D";
 
 		protected override void StartDocLine()
@@ -18756,10 +18751,14 @@ namespace Fusion
 			case FuId.BitConverterInt64BitsToDouble:
 			case FuId.BitConverterSingleToInt32Bits:
 			case FuId.BitConverterDoubleToInt64Bits:
-				WriteParameters(method, false);
-				Write(" { union U ");
-				WriteBitConverterUnion(method);
-				WriteCall(" U u = U(value); return u.to; }", args[0]);
+				this.BitConverter = true;
+				Write("fuBitCast!(");
+				WriteType(type, false);
+				Write(", ");
+				WriteType(method.FirstParameter().Type, false);
+				Write(")(");
+				args[0].Accept(this, FuPriority.Argument);
+				WriteChar(')');
 				break;
 			case FuId.ConvertToBase64String:
 				Include("std.base64");
@@ -19259,6 +19258,7 @@ namespace Fusion
 			this.HasStackPop = false;
 			this.HasSortedDictionaryInsert = false;
 			this.HasSortedDictionaryFind = false;
+			this.BitConverter = false;
 			OpenStringWriter();
 			if (namespace_.Length != 0) {
 				Write("struct ");
@@ -19321,6 +19321,15 @@ namespace Fusion
 				OpenBlock();
 				WriteLine("dict.removeKey(tuple(key, U.init));");
 				WriteLine("dict.insert(tuple(key, value));");
+				CloseBlock();
+			}
+			if (this.BitConverter) {
+				WriteNewLine();
+				WriteLine("private T fuBitCast(T, S)(S value)");
+				OpenBlock();
+				WriteLine("union U { S s; T t; };");
+				WriteLine("U u = U(value);");
+				WriteLine("return u.t;");
 				CloseBlock();
 			}
 			CloseStringWriter();

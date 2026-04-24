@@ -2438,9 +2438,11 @@ public class GenC : GenCCpp
 		case FuId.BitConverterInt64BitsToDouble:
 		case FuId.BitConverterSingleToInt32Bits:
 		case FuId.BitConverterDoubleToInt64Bits:
-			Write("(union ");
-			WriteBitConverterUnion(method);
-			Write("){ ");
+			Write("(union { ");
+			WriteType(method.FirstParameter().Type, false);
+			Write(" from; ");
+			WriteType(type, false);
+			Write(" to; }){ ");
 			args[0].Accept(this, FuPriority.Argument);
 			Write(" }.to");
 			break;

@@ -10016,15 +10016,6 @@ export class GenCCppD extends GenTyped
 			super.writeCoercedInternal(type, expr, parent);
 	}
 
-	writeBitConverterUnion(method)
-	{
-		this.write("{ ");
-		this.writeType(method.firstParameter().type, false);
-		this.write(" from; ");
-		this.writeType(method.type, false);
-		this.write(" to; }");
-	}
-
 	visitConst(statement)
 	{
 		if (statement.type instanceof FuArrayStorageType)
@@ -12786,9 +12777,11 @@ export class GenC extends GenCCpp
 		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
 		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
 		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
-			this.write("(union ");
-			this.writeBitConverterUnion(method);
-			this.write("){ ");
+			this.write("(union { ");
+			this.writeType(method.firstParameter().type, false);
+			this.write(" from; ");
+			this.writeType(type, false);
+			this.write(" to; }){ ");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(" }.to");
 			break;
@@ -18244,6 +18237,7 @@ export class GenD extends GenCCppD
 	#hasStackPop;
 	#hasSortedDictionaryInsert;
 	#hasSortedDictionaryFind;
+	#bitConverter;
 
 	getTargetName()
 	{
@@ -19332,10 +19326,14 @@ export class GenD extends GenCCppD
 		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
 		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
 		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
-			this.writeParameters(method, false);
-			this.write(" { union U ");
-			this.writeBitConverterUnion(method);
-			this.writeCall(" U u = U(value); return u.to; }", args[0]);
+			this.#bitConverter = true;
+			this.write("fuBitCast!(");
+			this.writeType(type, false);
+			this.write(", ");
+			this.writeType(method.firstParameter().type, false);
+			this.write(")(");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.writeChar(41);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("std.base64");
@@ -19844,6 +19842,7 @@ export class GenD extends GenCCppD
 		this.#hasStackPop = false;
 		this.#hasSortedDictionaryInsert = false;
 		this.#hasSortedDictionaryFind = false;
+		this.#bitConverter = false;
 		this.openStringWriter();
 		if (namespace.length != 0) {
 			this.write("struct ");
@@ -19906,6 +19905,15 @@ export class GenD extends GenCCppD
 			this.openBlock();
 			this.writeLine("dict.removeKey(tuple(key, U.init));");
 			this.writeLine("dict.insert(tuple(key, value));");
+			this.closeBlock();
+		}
+		if (this.#bitConverter) {
+			this.writeNewLine();
+			this.writeLine("private T fuBitCast(T, S)(S value)");
+			this.openBlock();
+			this.writeLine("union U { S s; T t; };");
+			this.writeLine("U u = U(value);");
+			this.writeLine("return u.t;");
 			this.closeBlock();
 		}
 		this.closeStringWriter();

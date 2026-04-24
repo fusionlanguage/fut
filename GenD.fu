@@ -27,6 +27,7 @@ public class GenD : GenCCppD
 	bool HasStackPop;
 	bool HasSortedDictionaryInsert;
 	bool HasSortedDictionaryFind;
+	bool BitConverter;
 
 	protected override string GetTargetName() => "D";
 
@@ -1095,10 +1096,14 @@ public class GenD : GenCCppD
 		case FuId.BitConverterInt64BitsToDouble:
 		case FuId.BitConverterSingleToInt32Bits:
 		case FuId.BitConverterDoubleToInt64Bits:
-			WriteParameters(method, false);
-			Write(" { union U ");
-			WriteBitConverterUnion(method);
-			WriteCall(" U u = U(value); return u.to; }", args[0]);
+			this.BitConverter = true;
+			Write("fuBitCast!(");
+			WriteType(type, false);
+			Write(", ");
+			WriteType(method.FirstParameter().Type, false);
+			Write(")(");
+			args[0].Accept(this, FuPriority.Argument);
+			WriteChar(')');
 			break;
 		case FuId.ConvertToBase64String:
 			Include("std.base64");
@@ -1600,6 +1605,7 @@ public class GenD : GenCCppD
 		this.HasStackPop = false;
 		this.HasSortedDictionaryInsert = false;
 		this.HasSortedDictionaryFind = false;
+		this.BitConverter = false;
 
 		OpenStringWriter();
 		if (namespace.Length != 0) {
@@ -1664,6 +1670,15 @@ public class GenD : GenCCppD
 			OpenBlock();
 			WriteLine("dict.removeKey(tuple(key, U.init));");
 			WriteLine("dict.insert(tuple(key, value));");
+			CloseBlock();
+		}
+		if (this.BitConverter) {
+			WriteNewLine();
+			WriteLine("private T fuBitCast(T, S)(S value)");
+			OpenBlock();
+			WriteLine("union U { S s; T t; };");
+			WriteLine("U u = U(value);");
+			WriteLine("return u.t;");
 			CloseBlock();
 		}
 		CloseStringWriter();
