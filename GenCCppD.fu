@@ -36,6 +36,15 @@ public abstract class GenCCppD : GenTyped
 			base.WriteCoercedInternal(type, expr, parent);
 	}
 
+	protected void WriteBitConverterUnion!(FuMethod method)
+	{
+		Write("{ ");
+		WriteType(method.FirstParameter().Type, false);
+		Write(" from; ");
+		WriteType(method.Type, false);
+		Write(" to; }");
+	}
+
 	internal override void VisitConst!(FuConst statement)
 	{
 		if (statement.Type is FuArrayStorageType)

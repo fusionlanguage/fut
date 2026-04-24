@@ -10016,6 +10016,15 @@ export class GenCCppD extends GenTyped
 			super.writeCoercedInternal(type, expr, parent);
 	}
 
+	writeBitConverterUnion(method)
+	{
+		this.write("{ ");
+		this.writeType(method.firstParameter().type, false);
+		this.write(" from; ");
+		this.writeType(method.type, false);
+		this.write(" to; }");
+	}
+
 	visitConst(statement)
 	{
 		if (statement.type instanceof FuArrayStorageType)
@@ -12332,16 +12341,6 @@ export class GenC extends GenCCpp
 		this.write(", ");
 	}
 
-	#writeBitConverterIntFloat(members, arg)
-	{
-		this.write("(union { ");
-		this.write(members);
-		this.write("; }){ ");
-		arg.accept(this, FuPriority.ARGUMENT);
-		this.write(" }.");
-		this.writeChar(members.charCodeAt(members.length - 1));
-	}
-
 	#writeCMathFloating(function_, args)
 	{
 		this.includeMath();
@@ -12784,18 +12783,14 @@ export class GenC extends GenCCpp
 			this.writePostfix(obj, "->str");
 			break;
 		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
-			this.#writeBitConverterIntFloat("int i; float f", args[0]);
-			break;
 		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
-			this.includeStdInt();
-			this.#writeBitConverterIntFloat("int64_t l; double d", args[0]);
-			break;
 		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
-			this.#writeBitConverterIntFloat("float f; int i", args[0]);
-			break;
 		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
-			this.includeStdInt();
-			this.#writeBitConverterIntFloat("double d; int64_t l", args[0]);
+			this.write("(union ");
+			this.writeBitConverterUnion(method);
+			this.write("){ ");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write(" }.to");
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.#writeGlib("g_base64_encode(");
@@ -19337,13 +19332,10 @@ export class GenD extends GenCCppD
 		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
 		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
 		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
-			this.write("() { union U { ");
-			this.writeType(method.firstParameter().type, false);
-			this.write(" source; ");
-			this.writeType(method.type, false);
-			this.write(" target; } U u = U(");
-			args[0].accept(this, FuPriority.ARGUMENT);
-			this.write("); return u.target; }()");
+			this.writeParameters(method, false);
+			this.write(" { union U ");
+			this.writeBitConverterUnion(method);
+			this.writeCall(" U u = U(value); return u.to; }", args[0]);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("std.base64");

@@ -9424,6 +9424,15 @@ void GenCCppD::writeCoercedInternal(const FuType * type, const FuExpr * expr, Fu
 		GenTyped::writeCoercedInternal(type, expr, parent);
 }
 
+void GenCCppD::writeBitConverterUnion(const FuMethod * method)
+{
+	write("{ ");
+	writeType(method->firstParameter()->type.get(), false);
+	write(" from; ");
+	writeType(method->type.get(), false);
+	write(" to; }");
+}
+
 void GenCCppD::visitConst(const FuConst * statement)
 {
 	if (dynamic_cast<const FuArrayStorageType *>(statement->type.get()))
@@ -11608,16 +11617,6 @@ void GenC::startArrayIndexing(const FuExpr * obj, const FuType * elementType)
 	write(", ");
 }
 
-void GenC::writeBitConverterIntFloat(std::string_view members, const FuExpr * arg)
-{
-	write("(union { ");
-	write(members);
-	write("; }){ ");
-	arg->accept(this, FuPriority::argument);
-	write(" }.");
-	writeChar(members[std::ssize(members) - 1]);
-}
-
 void GenC::writeCMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	includeMath();
@@ -12078,18 +12077,14 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writePostfix(obj, "->str");
 		break;
 	case FuId::bitConverterInt32BitsToSingle:
-		writeBitConverterIntFloat("int i; float f", (*args)[0].get());
-		break;
 	case FuId::bitConverterInt64BitsToDouble:
-		includeStdInt();
-		writeBitConverterIntFloat("int64_t l; double d", (*args)[0].get());
-		break;
 	case FuId::bitConverterSingleToInt32Bits:
-		writeBitConverterIntFloat("float f; int i", (*args)[0].get());
-		break;
 	case FuId::bitConverterDoubleToInt64Bits:
-		includeStdInt();
-		writeBitConverterIntFloat("double d; int64_t l", (*args)[0].get());
+		write("(union ");
+		writeBitConverterUnion(method);
+		write("){ ");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write(" }.to");
 		break;
 	case FuId::convertToBase64String:
 		writeGlib("g_base64_encode(");
@@ -18206,13 +18201,10 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::bitConverterInt64BitsToDouble:
 	case FuId::bitConverterSingleToInt32Bits:
 	case FuId::bitConverterDoubleToInt64Bits:
-		write("() { union U { ");
-		writeType(method->firstParameter()->type.get(), false);
-		write(" source; ");
-		writeType(method->type.get(), false);
-		write(" target; } U u = U(");
-		(*args)[0]->accept(this, FuPriority::argument);
-		write("); return u.target; }()");
+		writeParameters(method, false);
+		write(" { union U ");
+		writeBitConverterUnion(method);
+		writeCall(" U u = U(value); return u.to; }", (*args)[0].get());
 		break;
 	case FuId::convertToBase64String:
 		include("std.base64");

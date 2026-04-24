@@ -2708,6 +2708,7 @@ public:
 protected:
 	GenCCppD() = default;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
+	void writeBitConverterUnion(const FuMethod * method);
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 private: // internal
 	void visitLiteralLong(int64_t i) override;
@@ -2947,7 +2948,6 @@ private:
 	void writeTryParse(std::string_view prefix, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startArrayContains(const FuExpr * obj);
 	void startArrayIndexing(const FuExpr * obj, const FuType * elementType);
-	void writeBitConverterIntFloat(std::string_view members, const FuExpr * arg);
 	void writeCMathFloating(std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
 	bool writeMathClampMaxMin(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeDictionaryIndexing(std::string_view function, const FuBinaryExpr * expr, FuPriority parent);

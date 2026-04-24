@@ -9566,6 +9566,15 @@ namespace Fusion
 				base.WriteCoercedInternal(type, expr, parent);
 		}
 
+		protected void WriteBitConverterUnion(FuMethod method)
+		{
+			Write("{ ");
+			WriteType(method.FirstParameter().Type, false);
+			Write(" from; ");
+			WriteType(method.Type, false);
+			Write(" to; }");
+		}
+
 		internal override void VisitConst(FuConst statement)
 		{
 			if (statement.Type is FuArrayStorageType)
@@ -11859,16 +11868,6 @@ namespace Fusion
 			Write(", ");
 		}
 
-		void WriteBitConverterIntFloat(string members, FuExpr arg)
-		{
-			Write("(union { ");
-			Write(members);
-			Write("; }){ ");
-			arg.Accept(this, FuPriority.Argument);
-			Write(" }.");
-			WriteChar(members[members.Length - 1]);
-		}
-
 		void WriteCMathFloating(string function, List<FuExpr> args)
 		{
 			IncludeMath();
@@ -12309,18 +12308,14 @@ namespace Fusion
 				WritePostfix(obj, "->str");
 				break;
 			case FuId.BitConverterInt32BitsToSingle:
-				WriteBitConverterIntFloat("int i; float f", args[0]);
-				break;
 			case FuId.BitConverterInt64BitsToDouble:
-				IncludeStdInt();
-				WriteBitConverterIntFloat("int64_t l; double d", args[0]);
-				break;
 			case FuId.BitConverterSingleToInt32Bits:
-				WriteBitConverterIntFloat("float f; int i", args[0]);
-				break;
 			case FuId.BitConverterDoubleToInt64Bits:
-				IncludeStdInt();
-				WriteBitConverterIntFloat("double d; int64_t l", args[0]);
+				Write("(union ");
+				WriteBitConverterUnion(method);
+				Write("){ ");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(" }.to");
 				break;
 			case FuId.ConvertToBase64String:
 				WriteGlib("g_base64_encode(");
@@ -18761,13 +18756,10 @@ namespace Fusion
 			case FuId.BitConverterInt64BitsToDouble:
 			case FuId.BitConverterSingleToInt32Bits:
 			case FuId.BitConverterDoubleToInt64Bits:
-				Write("() { union U { ");
-				WriteType(method.FirstParameter().Type, false);
-				Write(" source; ");
-				WriteType(method.Type, false);
-				Write(" target; } U u = U(");
-				args[0].Accept(this, FuPriority.Argument);
-				Write("); return u.target; }()");
+				WriteParameters(method, false);
+				Write(" { union U ");
+				WriteBitConverterUnion(method);
+				WriteCall(" U u = U(value); return u.to; }", args[0]);
 				break;
 			case FuId.ConvertToBase64String:
 				Include("std.base64");

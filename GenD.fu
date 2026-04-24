@@ -1095,13 +1095,10 @@ public class GenD : GenCCppD
 		case FuId.BitConverterInt64BitsToDouble:
 		case FuId.BitConverterSingleToInt32Bits:
 		case FuId.BitConverterDoubleToInt64Bits:
-			Write("() { union U { ");
-			WriteType(method.FirstParameter().Type, false);
-			Write(" source; ");
-			WriteType(method.Type, false);
-			Write(" target; } U u = U(");
-			args[0].Accept(this, FuPriority.Argument);
-			Write("); return u.target; }()");
+			WriteParameters(method, false);
+			Write(" { union U ");
+			WriteBitConverterUnion(method);
+			WriteCall(" U u = U(value); return u.to; }", args[0]);
 			break;
 		case FuId.ConvertToBase64String:
 			Include("std.base64");
