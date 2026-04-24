@@ -19333,6 +19333,18 @@ export class GenD extends GenCCppD
 			this.include("std.datetime");
 			this.write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
 			break;
+		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
+		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
+		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
+		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
+			this.write("() { union U { ");
+			this.writeType(method.firstParameter().type, false);
+			this.write(" source; ");
+			this.writeType(method.type, false);
+			this.write(" target; } U u = U(");
+			args[0].accept(this, FuPriority.ARGUMENT);
+			this.write("); return u.target; }()");
+			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("std.base64");
 			this.write("Base64.encode(");

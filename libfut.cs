@@ -18757,6 +18757,18 @@ namespace Fusion
 				Include("std.datetime");
 				Write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
 				break;
+			case FuId.BitConverterInt32BitsToSingle:
+			case FuId.BitConverterInt64BitsToDouble:
+			case FuId.BitConverterSingleToInt32Bits:
+			case FuId.BitConverterDoubleToInt64Bits:
+				Write("() { union U { ");
+				WriteType(method.FirstParameter().Type, false);
+				Write(" source; ");
+				WriteType(method.Type, false);
+				Write(" target; } U u = U(");
+				args[0].Accept(this, FuPriority.Argument);
+				Write("); return u.target; }()");
+				break;
 			case FuId.ConvertToBase64String:
 				Include("std.base64");
 				Write("Base64.encode(");

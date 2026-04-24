@@ -4,7 +4,7 @@ public static class Test
 	{
 		long l = -4609115380302729960;
 		float f = 3.1415927410125732421875;
-		return BitConverter.Int32BitsToSingle(0x40490fdb) == 3.1415927410125732421875 //FAIL: d TODO
+		return BitConverter.Int32BitsToSingle(0x40490fdb) == 3.1415927410125732421875
 			&& BitConverter.Int64BitsToDouble(l) == -3.14159265358979311599796346854
 			&& BitConverter.SingleToInt32Bits(f) == 0x40490fdb
 			&& BitConverter.DoubleToInt64Bits(-3.14159265358979311599796346854) == l;

@@ -18202,6 +18202,18 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		include("std.datetime");
 		write("(Clock.currTime() - SysTime(unixTimeToStdTime(0))).total!\"msecs\"");
 		break;
+	case FuId::bitConverterInt32BitsToSingle:
+	case FuId::bitConverterInt64BitsToDouble:
+	case FuId::bitConverterSingleToInt32Bits:
+	case FuId::bitConverterDoubleToInt64Bits:
+		write("() { union U { ");
+		writeType(method->firstParameter()->type.get(), false);
+		write(" source; ");
+		writeType(method->type.get(), false);
+		write(" target; } U u = U(");
+		(*args)[0]->accept(this, FuPriority::argument);
+		write("); return u.target; }()");
+		break;
 	case FuId::convertToBase64String:
 		include("std.base64");
 		write("Base64.encode(");
