@@ -26129,11 +26129,8 @@ export class GenPy extends GenPySwift
 				break;
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
-				this.#writeCollectionTypeAnnotation("dict", klass);
-				break;
 			case FuId.ORDERED_DICTIONARY_CLASS:
-				this.include("collections");
-				this.#writeCollectionTypeAnnotation("collections.OrderedDict", klass);
+				this.#writeCollectionTypeAnnotation("dict", klass);
 				break;
 			case FuId.TEXT_WRITER_CLASS:
 				this.include("io");
@@ -26538,11 +26535,8 @@ export class GenPy extends GenPySwift
 			break;
 		case FuId.DICTIONARY_CLASS:
 		case FuId.SORTED_DICTIONARY_CLASS:
-			this.write("{}");
-			break;
 		case FuId.ORDERED_DICTIONARY_CLASS:
-			this.include("collections");
-			this.write("collections.OrderedDict()");
+			this.write("{}");
 			break;
 		case FuId.STRING_WRITER_CLASS:
 			this.include("io");

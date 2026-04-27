@@ -24610,11 +24610,8 @@ void GenPy::writeTypeAnnotation(const FuType * type, bool nullable)
 			break;
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
-			writeCollectionTypeAnnotation("dict", klass);
-			break;
 		case FuId::orderedDictionaryClass:
-			include("collections");
-			writeCollectionTypeAnnotation("collections.OrderedDict", klass);
+			writeCollectionTypeAnnotation("dict", klass);
 			break;
 		case FuId::textWriterClass:
 			include("io");
@@ -25013,11 +25010,8 @@ void GenPy::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 		break;
 	case FuId::dictionaryClass:
 	case FuId::sortedDictionaryClass:
-		write("{}");
-		break;
 	case FuId::orderedDictionaryClass:
-		include("collections");
-		write("collections.OrderedDict()");
+		write("{}");
 		break;
 	case FuId::stringWriterClass:
 		include("io");

@@ -25473,11 +25473,8 @@ namespace Fusion
 					break;
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
-					WriteCollectionTypeAnnotation("dict", klass);
-					break;
 				case FuId.OrderedDictionaryClass:
-					Include("collections");
-					WriteCollectionTypeAnnotation("collections.OrderedDict", klass);
+					WriteCollectionTypeAnnotation("dict", klass);
 					break;
 				case FuId.TextWriterClass:
 					Include("io");
@@ -25871,11 +25868,8 @@ namespace Fusion
 				break;
 			case FuId.DictionaryClass:
 			case FuId.SortedDictionaryClass:
-				Write("{}");
-				break;
 			case FuId.OrderedDictionaryClass:
-				Include("collections");
-				Write("collections.OrderedDict()");
+				Write("{}");
 				break;
 			case FuId.StringWriterClass:
 				Include("io");
