@@ -76,5 +76,7 @@ jobs:
     runs-on: macos-26
     steps:
       - uses: actions/checkout@main
-      - run: ls -l /Applications/Xcode*
+      - run: brew --config
+      - run: sudo xcode-select -s /Applications/Xcode_26.0.app
+      - run: brew --config
       - run: make
