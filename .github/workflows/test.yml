@@ -73,10 +73,8 @@ jobs:
       - run: make -C editors/vscode src/fucheck.js FUT_HOST=node
       - run: cd editors/vscode && npm i && npx @vscode/vsce package
   macos:
-    runs-on: macos-26
+    runs-on: macos-15
     steps:
       - uses: actions/checkout@main
-      - run: brew --config
-      - run: sudo xcode-select -s /Applications/Xcode_26.0.app
       - run: brew --config
       - run: make
