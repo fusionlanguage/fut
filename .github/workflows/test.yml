@@ -72,3 +72,13 @@ jobs:
       - run: make FUT_HOST=node
       - run: make -C editors/vscode src/fucheck.js FUT_HOST=node
       - run: cd editors/vscode && npm i && npx @vscode/vsce package
+  macos:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@main
+      - run: make
+  macos-14:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@main
+      - run: make
