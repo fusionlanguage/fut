@@ -2127,6 +2127,7 @@ private: // internal
 	std::shared_ptr<FuType> printableType = std::make_shared<FuPrintableType>();
 	std::shared_ptr<FuClass> arrayPtrClass = FuClass::new_(FuCallType::normal, FuId::arrayPtrClass, "ArrayPtr", 1);
 	std::shared_ptr<FuClass> arrayStorageClass = FuClass::new_(FuCallType::normal, FuId::arrayStorageClass, "ArrayStorage", 1);
+	std::shared_ptr<FuClass> exceptionClass = FuClass::new_(FuCallType::normal, FuId::exceptionClass, "Exception");
 	std::shared_ptr<FuEnum> regexOptionsEnum;
 	std::unique_ptr<FuReadWriteClassType> lockPtrType = std::make_unique<FuReadWriteClassType>();
 	std::shared_ptr<FuLiteralLong> newLiteralLong(int64_t value, int loc = 0) const;
@@ -2138,6 +2139,7 @@ private: // internal
 	friend FuParser;
 	friend FuSema;
 	friend GenBase;
+	friend GenPy;
 	friend GenSwift;
 	friend GenTs;
 private:

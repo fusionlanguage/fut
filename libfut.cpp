@@ -2812,9 +2812,8 @@ FuSystem::FuSystem()
 	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::public_, FuCallType::normal, this->voidType, FuId::arrayFillAll, "Fill", true, FuVar::new_(this->typeParam0, "value")), arrayFillPart));
 	this->arrayStorageClass->add(FuProperty::new_(this->nIntType, FuId::arrayLength, "Length"));
 	this->arrayStorageClass->add(FuMethodGroup::new_(FuMethod::new_(this->arrayStorageClass.get(), FuVisibility::numericElementType, FuCallType::normal, this->voidType, FuId::arraySortAll, "Sort", true), arraySortPart));
-	std::shared_ptr<FuClass> exceptionClass = FuClass::new_(FuCallType::normal, FuId::exceptionClass, "Exception");
-	exceptionClass->isPublic = true;
-	add(exceptionClass);
+	this->exceptionClass->isPublic = true;
+	add(this->exceptionClass);
 	std::shared_ptr<FuType> typeParam0NotFinal = std::make_shared<FuType>();
 	typeParam0NotFinal->id = FuId::typeParam0NotFinal;
 	typeParam0NotFinal->name = "T";
@@ -14274,6 +14273,9 @@ void GenCpp::writeClassType(const FuClassType * klass)
 		write("const ");
 	if (klass->class_->typeParameterCount == 0) {
 		switch (klass->class_->id) {
+		case FuId::exceptionClass:
+			writeExceptionClass(klass->class_);
+			break;
 		case FuId::textWriterClass:
 			include("iostream");
 			write("std::ostream");
@@ -21782,6 +21784,9 @@ void GenTs::writeType(const FuType * type, bool readOnly)
 				writeArrayElementType(klass->getElementType().get());
 				write("Array");
 				break;
+			case FuId::exceptionClass:
+				writeExceptionClass(klass->class_);
+				break;
 			case FuId::hashSetClass:
 			case FuId::sortedSetClass:
 				write("Set<");
@@ -22525,6 +22530,9 @@ void GenSwift::writeClassName(const FuClassType * klass)
 		writeChar('[');
 		writeType(klass->getElementType().get());
 		writeChar(']');
+		break;
+	case FuId::exceptionClass:
+		writeExceptionClass(klass->class_);
 		break;
 	case FuId::hashSetClass:
 	case FuId::sortedSetClass:
@@ -24562,6 +24570,7 @@ void GenPy::writeTypeAnnotation(const FuType * type, bool nullable)
 		nullable = nullable ? !dynamic_cast<const FuStorageType *>(klass) : klass->nullable;
 		switch (klass->class_->id) {
 		case FuId::none:
+		case FuId::exceptionClass:
 			if (nullable && !this->writtenTypes.contains(klass->class_)) {
 				writeChar('"');
 				writeName(klass->class_);
@@ -26027,6 +26036,7 @@ void GenPy::writeMain(const FuMethod * main)
 void GenPy::writeProgram(const FuProgram * program, std::string_view outputFile, std::string_view namespace_)
 {
 	this->writtenTypes.clear();
+	this->writtenTypes.insert(program->system->exceptionClass.get());
 	this->timeNs = false;
 	this->switchBreak = false;
 	openStringWriter();

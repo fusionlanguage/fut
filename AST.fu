@@ -1600,6 +1600,7 @@ public class FuSystem : FuScope
 	internal FuType# PrintableType = new FuPrintableType { Name = "printable" };
 	internal FuClass# ArrayPtrClass = FuClass.New(FuCallType.Normal, FuId.ArrayPtrClass, "ArrayPtr", 1);
 	internal FuClass# ArrayStorageClass = FuClass.New(FuCallType.Normal, FuId.ArrayStorageClass, "ArrayStorage", 1);
+	internal FuClass# ExceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
 	internal FuEnum# RegexOptionsEnum;
 	internal FuReadWriteClassType# LockPtrType = new FuReadWriteClassType();
 
@@ -1759,9 +1760,8 @@ public class FuSystem : FuScope
 		ArrayStorageClass.Add(FuMethodGroup.New(
 			FuMethod.New(ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, VoidType, FuId.ArraySortAll, "Sort", true),
 			arraySortPart));
-		FuClass# exceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
-		exceptionClass.IsPublic = true;
-		Add(exceptionClass);
+		ExceptionClass.IsPublic = true;
+		Add(ExceptionClass);
 
 		FuType# typeParam0NotFinal = new FuType { Id = FuId.TypeParam0NotFinal, Name = "T" };
 		FuType# typeParam0Predicate = new FuType { Id = FuId.TypeParam0Predicate, Name = "Predicate<T>" };

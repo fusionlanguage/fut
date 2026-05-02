@@ -284,6 +284,7 @@ public class GenPy : GenPySwift
 			nullable = nullable ? !(klass is FuStorageType) : klass.Nullable;
 			switch (klass.Class.Id) {
 			case FuId.None:
+			case FuId.ExceptionClass:
 				if (nullable && !this.WrittenTypes.Contains(klass.Class)) {
 					WriteChar('"');
 					WriteName(klass.Class);
@@ -1742,6 +1743,7 @@ public class GenPy : GenPySwift
 	public override void WriteProgram!(FuProgram program, string outputFile, string namespace)
 	{
 		this.WrittenTypes.Clear();
+		this.WrittenTypes.Add(program.System.ExceptionClass);
 		this.TimeNs = false;
 		this.SwitchBreak = false;
 		OpenStringWriter();

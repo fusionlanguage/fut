@@ -235,6 +235,9 @@ public class GenSwift : GenPySwift
 			WriteType(klass.GetElementType());
 			WriteChar(']');
 			break;
+		case FuId.ExceptionClass:
+			WriteExceptionClass(klass.Class);
+			break;
 		case FuId.HashSetClass:
 		case FuId.SortedSetClass:
 			Write("Set<");

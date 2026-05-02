@@ -3302,9 +3302,8 @@ namespace Fusion
 			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.ArrayFillAll, "Fill", true, FuVar.New(this.TypeParam0, "value")), arrayFillPart));
 			this.ArrayStorageClass.Add(FuProperty.New(this.NIntType, FuId.ArrayLength, "Length"));
 			this.ArrayStorageClass.Add(FuMethodGroup.New(FuMethod.New(this.ArrayStorageClass, FuVisibility.NumericElementType, FuCallType.Normal, this.VoidType, FuId.ArraySortAll, "Sort", true), arraySortPart));
-			FuClass exceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
-			exceptionClass.IsPublic = true;
-			Add(exceptionClass);
+			this.ExceptionClass.IsPublic = true;
+			Add(this.ExceptionClass);
 			FuType typeParam0NotFinal = new FuType { Id = FuId.TypeParam0NotFinal, Name = "T" };
 			FuType typeParam0Predicate = new FuType { Id = FuId.TypeParam0Predicate, Name = "Predicate<T>" };
 			FuClass listClass = AddCollection(FuId.ListClass, "List", 1, FuId.ListClear, FuId.ListCount);
@@ -3498,6 +3497,8 @@ namespace Fusion
 		internal FuClass ArrayPtrClass = FuClass.New(FuCallType.Normal, FuId.ArrayPtrClass, "ArrayPtr", 1);
 
 		internal FuClass ArrayStorageClass = FuClass.New(FuCallType.Normal, FuId.ArrayStorageClass, "ArrayStorage", 1);
+
+		internal FuClass ExceptionClass = FuClass.New(FuCallType.Normal, FuId.ExceptionClass, "Exception");
 
 		internal FuEnum RegexOptionsEnum;
 
@@ -14623,6 +14624,9 @@ namespace Fusion
 				Write("const ");
 			if (klass.Class.TypeParameterCount == 0) {
 				switch (klass.Class.Id) {
+				case FuId.ExceptionClass:
+					WriteExceptionClass(klass.Class);
+					break;
 				case FuId.TextWriterClass:
 					Include("iostream");
 					Write("std::ostream");
@@ -22449,6 +22453,9 @@ namespace Fusion
 						WriteArrayElementType(klass.GetElementType());
 						Write("Array");
 						break;
+					case FuId.ExceptionClass:
+						WriteExceptionClass(klass.Class);
+						break;
 					case FuId.HashSetClass:
 					case FuId.SortedSetClass:
 						Write("Set<");
@@ -23304,6 +23311,9 @@ namespace Fusion
 				WriteChar('[');
 				WriteType(klass.GetElementType());
 				WriteChar(']');
+				break;
+			case FuId.ExceptionClass:
+				WriteExceptionClass(klass.Class);
 				break;
 			case FuId.HashSetClass:
 			case FuId.SortedSetClass:
@@ -25428,6 +25438,7 @@ namespace Fusion
 				nullable = nullable ? !(klass is FuStorageType) : klass.Nullable;
 				switch (klass.Class.Id) {
 				case FuId.None:
+				case FuId.ExceptionClass:
 					if (nullable && !this.WrittenTypes.Contains(klass.Class)) {
 						WriteChar('"');
 						WriteName(klass.Class);
@@ -26875,6 +26886,7 @@ namespace Fusion
 		public override void WriteProgram(FuProgram program, string outputFile, string namespace_)
 		{
 			this.WrittenTypes.Clear();
+			this.WrittenTypes.Add(program.System.ExceptionClass);
 			this.TimeNs = false;
 			this.SwitchBreak = false;
 			OpenStringWriter();

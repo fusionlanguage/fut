@@ -281,6 +281,9 @@ public class GenCpp : GenCCpp
 			Write("const ");
 		if (klass.Class.TypeParameterCount == 0) {
 			switch (klass.Class.Id) {
+			case FuId.ExceptionClass:
+				WriteExceptionClass(klass.Class);
+				break;
 			case FuId.TextWriterClass:
 				Include("iostream");
 				Write("std::ostream");

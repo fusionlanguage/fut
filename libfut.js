@@ -3548,9 +3548,8 @@ export class FuSystem extends FuScope
 		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.ARRAY_FILL_ALL, "Fill", true, FuVar.new(this.#typeParam0, "value")), arrayFillPart));
 		this.arrayStorageClass.add(FuProperty.new(this.nIntType, FuId.ARRAY_LENGTH, "Length"));
 		this.arrayStorageClass.add(FuMethodGroup.new(FuMethod.new(this.arrayStorageClass, FuVisibility.NUMERIC_ELEMENT_TYPE, FuCallType.NORMAL, this.voidType, FuId.ARRAY_SORT_ALL, "Sort", true), arraySortPart));
-		let exceptionClass = FuClass.new(FuCallType.NORMAL, FuId.EXCEPTION_CLASS, "Exception");
-		exceptionClass.isPublic = true;
-		this.add(exceptionClass);
+		this.exceptionClass.isPublic = true;
+		this.add(this.exceptionClass);
 		let typeParam0NotFinal = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0_NOT_FINAL, name: "T" });
 		let typeParam0Predicate = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0_PREDICATE, name: "Predicate<T>" });
 		let listClass = this.#addCollection(FuId.LIST_CLASS, "List", 1, FuId.LIST_CLEAR, FuId.LIST_COUNT);
@@ -3724,6 +3723,7 @@ export class FuSystem extends FuScope
 	printableType = Object.assign(new FuPrintableType(), { name: "printable" });
 	arrayPtrClass = FuClass.new(FuCallType.NORMAL, FuId.ARRAY_PTR_CLASS, "ArrayPtr", 1);
 	arrayStorageClass = FuClass.new(FuCallType.NORMAL, FuId.ARRAY_STORAGE_CLASS, "ArrayStorage", 1);
+	exceptionClass = FuClass.new(FuCallType.NORMAL, FuId.EXCEPTION_CLASS, "Exception");
 	regexOptionsEnum;
 	lockPtrType = new FuReadWriteClassType();
 
@@ -15118,6 +15118,9 @@ export class GenCpp extends GenCCpp
 			this.write("const ");
 		if (klass.class.typeParameterCount == 0) {
 			switch (klass.class.id) {
+			case FuId.EXCEPTION_CLASS:
+				this.writeExceptionClass(klass.class);
+				break;
 			case FuId.TEXT_WRITER_CLASS:
 				this.include("iostream");
 				this.write("std::ostream");
@@ -23069,6 +23072,9 @@ export class GenTs extends GenJs
 					this.writeArrayElementType(klass.getElementType());
 					this.write("Array");
 					break;
+				case FuId.EXCEPTION_CLASS:
+					this.writeExceptionClass(klass.class);
+					break;
 				case FuId.HASH_SET_CLASS:
 				case FuId.SORTED_SET_CLASS:
 					this.write("Set<");
@@ -23938,6 +23944,9 @@ export class GenSwift extends GenPySwift
 			this.writeChar(91);
 			this.#writeType(klass.getElementType());
 			this.writeChar(93);
+			break;
+		case FuId.EXCEPTION_CLASS:
+			this.writeExceptionClass(klass.class);
 			break;
 		case FuId.HASH_SET_CLASS:
 		case FuId.SORTED_SET_CLASS:
@@ -26083,6 +26092,7 @@ export class GenPy extends GenPySwift
 			nullable = nullable ? !(klass instanceof FuStorageType) : klass.nullable;
 			switch (klass.class.id) {
 			case FuId.NONE:
+			case FuId.EXCEPTION_CLASS:
 				if (nullable && !this.writtenTypes.has(klass.class)) {
 					this.writeChar(34);
 					this.writeName(klass.class);
@@ -27554,6 +27564,7 @@ export class GenPy extends GenPySwift
 	writeProgram(program, outputFile, namespace)
 	{
 		this.writtenTypes.clear();
+		this.writtenTypes.add(program.system.exceptionClass);
 		this.#timeNs = false;
 		this.#switchBreak = false;
 		this.openStringWriter();

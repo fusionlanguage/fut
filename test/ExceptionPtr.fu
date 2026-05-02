@@ -1,0 +1,19 @@
+public class FooException : Exception
+{
+}
+
+public class BarException : FooException
+{
+}
+
+public static class Test
+{
+	public static bool IsFooException(Exception e) => e is FooException; //FAIL: c cl
+
+	public static bool IsBarException(FooException e) => e is BarException;
+
+	public static bool Run()
+	{
+		return true;
+	}
+}

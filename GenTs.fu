@@ -100,6 +100,9 @@ public class GenTs : GenJs
 					WriteArrayElementType(klass.GetElementType());
 					Write("Array");
 					break;
+				case FuId.ExceptionClass:
+					WriteExceptionClass(klass.Class);
+					break;
 				case FuId.HashSetClass:
 				case FuId.SortedSetClass:
 					Write("Set<");
