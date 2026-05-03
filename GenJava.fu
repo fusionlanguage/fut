@@ -540,6 +540,9 @@ public class GenJava : GenTyped
 		case FuId.ConsoleError:
 			Write("System.err");
 			break;
+		case FuId.ConsoleOut:
+			Write("System.out");
+			break;
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:
@@ -854,8 +857,8 @@ public class GenJava : GenTyped
 			WriteChar(')');
 			break;
 		case FuId.TextWriterWrite:
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				Write("System.err");
+			if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+				obj.Accept(this, FuPriority.Primary);
 				WriteWrite(method, args, false);
 			}
 			else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
@@ -872,7 +875,7 @@ public class GenJava : GenTyped
 			}
 			break;
 		case FuId.TextWriterWriteChar:
-			if (IsReferenceTo(obj, FuId.ConsoleError))
+			if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut))
 				WriteCharMethodCall(obj, "print", args[0]);
 			else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
 				WriteCharMethodCall(obj, "append", args[0]);
@@ -884,8 +887,8 @@ public class GenJava : GenTyped
 			}
 			break;
 		case FuId.TextWriterWriteCodePoint:
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				WriteCall("System.err.print(Character.toChars", args[0]);
+			if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+				WriteMethodCall(obj, "print(Character.toChars", args[0]);
 				WriteChar(')');
 			}
 			else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
@@ -900,8 +903,8 @@ public class GenJava : GenTyped
 			}
 			break;
 		case FuId.TextWriterWriteLine:
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				Write("System.err");
+			if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+				obj.Accept(this, FuPriority.Primary);
 				WriteWrite(method, args, true);
 			}
 			else {

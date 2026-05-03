@@ -1350,6 +1350,7 @@ namespace Fusion
 		StringLength,
 		ArrayLength,
 		ConsoleError,
+		ConsoleOut,
 		Main,
 		ClassToString,
 		MatchStart,
@@ -3346,7 +3347,9 @@ namespace Fusion
 			consoleClass.AddStaticMethod(this.StringStorageType, FuId.ConsoleReadLine, "ReadLine");
 			consoleClass.AddStaticMethod(this.VoidType, FuId.ConsoleWrite, "Write", FuVar.New(this.PrintableType, "value"));
 			consoleClass.AddStaticMethod(this.VoidType, FuId.ConsoleWriteLine, "WriteLine", FuVar.New(this.PrintableType, "value", NewLiteralString("")));
-			consoleClass.Add(FuStaticProperty.New(new FuStorageType { Class = textWriterClass }, FuId.ConsoleError, "Error"));
+			FuStorageType textWriterStorage = new FuStorageType { Class = textWriterClass };
+			consoleClass.Add(FuStaticProperty.New(textWriterStorage, FuId.ConsoleError, "Error"));
+			consoleClass.Add(FuStaticProperty.New(textWriterStorage, FuId.ConsoleOut, "Out"));
 			Add(consoleClass);
 			FuClass stringWriterClass = FuClass.New(FuCallType.Sealed, FuId.StringWriterClass, "StringWriter");
 			stringWriterClass.AddMethod(this.VoidType, FuId.StringWriterClear, "Clear", true);
@@ -10284,6 +10287,10 @@ namespace Fusion
 				Include("stdio.h");
 				Write("stderr");
 				break;
+			case FuId.ConsoleOut:
+				Include("stdio.h");
+				Write("stdout");
+				break;
 			case FuId.ListCount:
 			case FuId.StackCount:
 				WritePostfix(expr.Left, "->len");
@@ -15766,7 +15773,12 @@ namespace Fusion
 		{
 			switch (expr.Symbol.Id) {
 			case FuId.ConsoleError:
+				Include("iostream");
 				Write("std::cerr");
+				break;
+			case FuId.ConsoleOut:
+				Include("iostream");
+				Write("std::cout");
 				break;
 			case FuId.ListCount:
 			case FuId.QueueCount:
@@ -16942,6 +16954,10 @@ namespace Fusion
 			case FuId.ConsoleError:
 				Include("System");
 				Write("Console.Error");
+				break;
+			case FuId.ConsoleOut:
+				Include("System");
+				Write("Console.Out");
 				break;
 			case FuId.MatchStart:
 				WritePostfix(expr.Left, ".Index");
@@ -18357,6 +18373,9 @@ namespace Fusion
 			switch (expr.Symbol.Id) {
 			case FuId.ConsoleError:
 				Write("stderr");
+				break;
+			case FuId.ConsoleOut:
+				Write("stdout");
 				break;
 			case FuId.ListCount:
 			case FuId.StackCount:
@@ -19856,6 +19875,9 @@ namespace Fusion
 			case FuId.ConsoleError:
 				Write("System.err");
 				break;
+			case FuId.ConsoleOut:
+				Write("System.out");
+				break;
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
@@ -20161,8 +20183,8 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.TextWriterWrite:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					Write("System.err");
+				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+					obj.Accept(this, FuPriority.Primary);
 					WriteWrite(method, args, false);
 				}
 				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
@@ -20179,7 +20201,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteChar:
-				if (IsReferenceTo(obj, FuId.ConsoleError))
+				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut))
 					WriteCharMethodCall(obj, "print", args[0]);
 				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
 					WriteCharMethodCall(obj, "append", args[0]);
@@ -20191,8 +20213,8 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteCodePoint:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					WriteCall("System.err.print(Character.toChars", args[0]);
+				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+					WriteMethodCall(obj, "print(Character.toChars", args[0]);
 					WriteChar(')');
 				}
 				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass) {
@@ -20207,8 +20229,8 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteLine:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					Write("System.err");
+				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+					obj.Accept(this, FuPriority.Primary);
 					WriteWrite(method, args, true);
 				}
 				else {
@@ -21269,6 +21291,9 @@ namespace Fusion
 			case FuId.ConsoleError:
 				Write("process.stderr");
 				break;
+			case FuId.ConsoleOut:
+				Write("process.stdout");
+				break;
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
@@ -21683,6 +21708,8 @@ namespace Fusion
 			case FuId.TextWriterWriteLine:
 				if (IsReferenceTo(obj, FuId.ConsoleError))
 					WriteWriteLine("console.error", args);
+				else if (IsReferenceTo(obj, FuId.ConsoleOut))
+					WriteWriteLine("console.log", args);
 				else {
 					WritePostfix(obj, ".write(");
 					if (args.Count != 0) {
@@ -23549,6 +23576,21 @@ namespace Fusion
 				WriteCoerced(type, value, FuPriority.Argument);
 		}
 
+		bool IsConsoleStreamWrite(FuExpr obj)
+		{
+			if (IsReferenceTo(obj, FuId.ConsoleError)) {
+				Include("Foundation");
+				Write("FileHandle.standardError.write(Data(");
+				return true;
+			}
+			if (IsReferenceTo(obj, FuId.ConsoleOut)) {
+				Include("Foundation");
+				Write("FileHandle.standardOutput.write(Data(");
+				return true;
+			}
+			return false;
+		}
+
 		void WriteToTextWriter(FuExpr obj)
 		{
 			Write("to: &");
@@ -23839,9 +23881,7 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.TextWriterWrite:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					Include("Foundation");
-					Write("FileHandle.standardError.write(Data(");
+				if (IsConsoleStreamWrite(obj)) {
 					if (args[0].Type is FuStringType)
 						WriteUnwrapped(args[0], FuPriority.Primary, true);
 					else
@@ -23864,9 +23904,7 @@ namespace Fusion
 				break;
 			case FuId.TextWriterWriteChar:
 			case FuId.TextWriterWriteCodePoint:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					Include("Foundation");
-					Write("FileHandle.standardError.write(Data(");
+				if (IsConsoleStreamWrite(obj)) {
 					WriteUnicodeScalar(args[0]);
 					Write(".utf8))");
 				}
@@ -23877,9 +23915,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteLine:
-				if (IsReferenceTo(obj, FuId.ConsoleError)) {
-					Include("Foundation");
-					Write("FileHandle.standardError.write(Data(");
+				if (IsConsoleStreamWrite(obj)) {
 					if (args.Count == 0)
 						Write("[ 10 ]");
 					else {
@@ -25636,6 +25672,10 @@ namespace Fusion
 			case FuId.ConsoleError:
 				Include("sys");
 				Write("sys.stderr");
+				break;
+			case FuId.ConsoleOut:
+				Include("sys");
+				Write("sys.stdout");
 				break;
 			case FuId.ListCount:
 			case FuId.QueueCount:

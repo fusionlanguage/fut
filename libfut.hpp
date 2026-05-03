@@ -234,6 +234,7 @@ enum class FuId
 	stringLength,
 	arrayLength,
 	consoleError,
+	consoleOut,
 	main,
 	classToString,
 	matchStart,
@@ -3585,6 +3586,7 @@ private:
 	static bool isIntIndexing(const FuExpr * expr);
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRange(const FuExpr * startIndex, const FuExpr * length);
+	bool isConsoleStreamWrite(const FuExpr * obj);
 	void writeToTextWriter(const FuExpr * obj);
 	void writeUnicodeScalar(const FuExpr * expr);
 	bool addVar(std::string_view name);

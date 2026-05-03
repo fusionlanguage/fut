@@ -1337,145 +1337,146 @@ export const FuId = {
 	STRING_LENGTH : 44,
 	ARRAY_LENGTH : 45,
 	CONSOLE_ERROR : 46,
-	MAIN : 47,
-	CLASS_TO_STRING : 48,
-	MATCH_START : 49,
-	MATCH_END : 50,
-	MATCH_LENGTH : 51,
-	MATCH_VALUE : 52,
-	MATH_NA_N : 53,
-	MATH_NEGATIVE_INFINITY : 54,
-	MATH_POSITIVE_INFINITY : 55,
-	ENUM_FROM_INT : 56,
-	ENUM_HAS_FLAG : 57,
-	ENUM_TO_INT : 58,
-	INT_TRY_PARSE : 59,
-	N_INT_TRY_PARSE : 60,
-	LONG_TRY_PARSE : 61,
-	FLOAT_TRY_PARSE : 62,
-	DOUBLE_TRY_PARSE : 63,
-	STRING_CONTAINS : 64,
-	STRING_ENDS_WITH : 65,
-	STRING_INDEX_OF : 66,
-	STRING_LAST_INDEX_OF : 67,
-	STRING_REPLACE : 68,
-	STRING_STARTS_WITH : 69,
-	STRING_SUBSTRING : 70,
-	STRING_TO_LOWER : 71,
-	STRING_TO_UPPER : 72,
-	ARRAY_BINARY_SEARCH_ALL : 73,
-	ARRAY_BINARY_SEARCH_PART : 74,
-	ARRAY_CONTAINS : 75,
-	ARRAY_COPY_TO : 76,
-	ARRAY_FILL_ALL : 77,
-	ARRAY_FILL_PART : 78,
-	ARRAY_SORT_ALL : 79,
-	ARRAY_SORT_PART : 80,
-	LIST_ADD : 81,
-	LIST_ADD_RANGE : 82,
-	LIST_ALL : 83,
-	LIST_ANY : 84,
-	LIST_CLEAR : 85,
-	LIST_CONTAINS : 86,
-	LIST_COPY_TO : 87,
-	LIST_COUNT : 88,
-	LIST_INDEX_OF : 89,
-	LIST_INSERT : 90,
-	LIST_LAST : 91,
-	LIST_REMOVE_AT : 92,
-	LIST_REMOVE_RANGE : 93,
-	LIST_SORT_ALL : 94,
-	LIST_SORT_PART : 95,
-	QUEUE_CLEAR : 96,
-	QUEUE_COUNT : 97,
-	QUEUE_DEQUEUE : 98,
-	QUEUE_ENQUEUE : 99,
-	QUEUE_PEEK : 100,
-	STACK_CLEAR : 101,
-	STACK_COUNT : 102,
-	STACK_PEEK : 103,
-	STACK_PUSH : 104,
-	STACK_POP : 105,
-	PRIORITY_QUEUE_CLEAR : 106,
-	PRIORITY_QUEUE_COUNT : 107,
-	PRIORITY_QUEUE_DEQUEUE : 108,
-	PRIORITY_QUEUE_ENQUEUE : 109,
-	PRIORITY_QUEUE_PEEK : 110,
-	HASH_SET_ADD : 111,
-	HASH_SET_CLEAR : 112,
-	HASH_SET_CONTAINS : 113,
-	HASH_SET_COUNT : 114,
-	HASH_SET_REMOVE : 115,
-	SORTED_SET_ADD : 116,
-	SORTED_SET_CLEAR : 117,
-	SORTED_SET_CONTAINS : 118,
-	SORTED_SET_COUNT : 119,
-	SORTED_SET_REMOVE : 120,
-	DICTIONARY_ADD : 121,
-	DICTIONARY_CLEAR : 122,
-	DICTIONARY_CONTAINS_KEY : 123,
-	DICTIONARY_COUNT : 124,
-	DICTIONARY_REMOVE : 125,
-	SORTED_DICTIONARY_CLEAR : 126,
-	SORTED_DICTIONARY_CONTAINS_KEY : 127,
-	SORTED_DICTIONARY_COUNT : 128,
-	SORTED_DICTIONARY_REMOVE : 129,
-	ORDERED_DICTIONARY_CLEAR : 130,
-	ORDERED_DICTIONARY_CONTAINS_KEY : 131,
-	ORDERED_DICTIONARY_COUNT : 132,
-	ORDERED_DICTIONARY_REMOVE : 133,
-	TEXT_WRITER_WRITE : 134,
-	TEXT_WRITER_WRITE_CHAR : 135,
-	TEXT_WRITER_WRITE_CODE_POINT : 136,
-	TEXT_WRITER_WRITE_LINE : 137,
-	CONSOLE_READ_LINE : 138,
-	CONSOLE_WRITE : 139,
-	CONSOLE_WRITE_LINE : 140,
-	STRING_WRITER_CLEAR : 141,
-	STRING_WRITER_TO_STRING : 142,
-	BIT_CONVERTER_INT32_BITS_TO_SINGLE : 143,
-	BIT_CONVERTER_INT64_BITS_TO_DOUBLE : 144,
-	BIT_CONVERTER_SINGLE_TO_INT32_BITS : 145,
-	BIT_CONVERTER_DOUBLE_TO_INT64_BITS : 146,
-	CONVERT_TO_BASE64_STRING : 147,
-	U_T_F8_GET_BYTE_COUNT : 148,
-	U_T_F8_GET_BYTES : 149,
-	U_T_F8_GET_STRING : 150,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 151,
-	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 152,
-	REGEX_COMPILE : 153,
-	REGEX_ESCAPE : 154,
-	REGEX_IS_MATCH_STR : 155,
-	REGEX_IS_MATCH_REGEX : 156,
-	MATCH_FIND_STR : 157,
-	MATCH_FIND_REGEX : 158,
-	MATCH_GET_CAPTURE : 159,
-	JSON_ELEMENT_PARSE : 160,
-	JSON_ELEMENT_IS_OBJECT : 161,
-	JSON_ELEMENT_IS_ARRAY : 162,
-	JSON_ELEMENT_IS_STRING : 163,
-	JSON_ELEMENT_IS_NUMBER : 164,
-	JSON_ELEMENT_IS_BOOLEAN : 165,
-	JSON_ELEMENT_IS_NULL : 166,
-	JSON_ELEMENT_GET_OBJECT : 167,
-	JSON_ELEMENT_GET_ARRAY : 168,
-	JSON_ELEMENT_GET_STRING : 169,
-	JSON_ELEMENT_GET_DOUBLE : 170,
-	JSON_ELEMENT_GET_BOOLEAN : 171,
-	MATH_METHOD : 172,
-	MATH_ABS : 173,
-	MATH_CEILING : 174,
-	MATH_CLAMP : 175,
-	MATH_FUSED_MULTIPLY_ADD : 176,
-	MATH_IS_FINITE : 177,
-	MATH_IS_INFINITY : 178,
-	MATH_IS_NA_N : 179,
-	MATH_LOG2 : 180,
-	MATH_MAX : 181,
-	MATH_MIN : 182,
-	MATH_ROUND : 183,
-	MATH_SQRT : 184,
-	MATH_TRUNCATE : 185
+	CONSOLE_OUT : 47,
+	MAIN : 48,
+	CLASS_TO_STRING : 49,
+	MATCH_START : 50,
+	MATCH_END : 51,
+	MATCH_LENGTH : 52,
+	MATCH_VALUE : 53,
+	MATH_NA_N : 54,
+	MATH_NEGATIVE_INFINITY : 55,
+	MATH_POSITIVE_INFINITY : 56,
+	ENUM_FROM_INT : 57,
+	ENUM_HAS_FLAG : 58,
+	ENUM_TO_INT : 59,
+	INT_TRY_PARSE : 60,
+	N_INT_TRY_PARSE : 61,
+	LONG_TRY_PARSE : 62,
+	FLOAT_TRY_PARSE : 63,
+	DOUBLE_TRY_PARSE : 64,
+	STRING_CONTAINS : 65,
+	STRING_ENDS_WITH : 66,
+	STRING_INDEX_OF : 67,
+	STRING_LAST_INDEX_OF : 68,
+	STRING_REPLACE : 69,
+	STRING_STARTS_WITH : 70,
+	STRING_SUBSTRING : 71,
+	STRING_TO_LOWER : 72,
+	STRING_TO_UPPER : 73,
+	ARRAY_BINARY_SEARCH_ALL : 74,
+	ARRAY_BINARY_SEARCH_PART : 75,
+	ARRAY_CONTAINS : 76,
+	ARRAY_COPY_TO : 77,
+	ARRAY_FILL_ALL : 78,
+	ARRAY_FILL_PART : 79,
+	ARRAY_SORT_ALL : 80,
+	ARRAY_SORT_PART : 81,
+	LIST_ADD : 82,
+	LIST_ADD_RANGE : 83,
+	LIST_ALL : 84,
+	LIST_ANY : 85,
+	LIST_CLEAR : 86,
+	LIST_CONTAINS : 87,
+	LIST_COPY_TO : 88,
+	LIST_COUNT : 89,
+	LIST_INDEX_OF : 90,
+	LIST_INSERT : 91,
+	LIST_LAST : 92,
+	LIST_REMOVE_AT : 93,
+	LIST_REMOVE_RANGE : 94,
+	LIST_SORT_ALL : 95,
+	LIST_SORT_PART : 96,
+	QUEUE_CLEAR : 97,
+	QUEUE_COUNT : 98,
+	QUEUE_DEQUEUE : 99,
+	QUEUE_ENQUEUE : 100,
+	QUEUE_PEEK : 101,
+	STACK_CLEAR : 102,
+	STACK_COUNT : 103,
+	STACK_PEEK : 104,
+	STACK_PUSH : 105,
+	STACK_POP : 106,
+	PRIORITY_QUEUE_CLEAR : 107,
+	PRIORITY_QUEUE_COUNT : 108,
+	PRIORITY_QUEUE_DEQUEUE : 109,
+	PRIORITY_QUEUE_ENQUEUE : 110,
+	PRIORITY_QUEUE_PEEK : 111,
+	HASH_SET_ADD : 112,
+	HASH_SET_CLEAR : 113,
+	HASH_SET_CONTAINS : 114,
+	HASH_SET_COUNT : 115,
+	HASH_SET_REMOVE : 116,
+	SORTED_SET_ADD : 117,
+	SORTED_SET_CLEAR : 118,
+	SORTED_SET_CONTAINS : 119,
+	SORTED_SET_COUNT : 120,
+	SORTED_SET_REMOVE : 121,
+	DICTIONARY_ADD : 122,
+	DICTIONARY_CLEAR : 123,
+	DICTIONARY_CONTAINS_KEY : 124,
+	DICTIONARY_COUNT : 125,
+	DICTIONARY_REMOVE : 126,
+	SORTED_DICTIONARY_CLEAR : 127,
+	SORTED_DICTIONARY_CONTAINS_KEY : 128,
+	SORTED_DICTIONARY_COUNT : 129,
+	SORTED_DICTIONARY_REMOVE : 130,
+	ORDERED_DICTIONARY_CLEAR : 131,
+	ORDERED_DICTIONARY_CONTAINS_KEY : 132,
+	ORDERED_DICTIONARY_COUNT : 133,
+	ORDERED_DICTIONARY_REMOVE : 134,
+	TEXT_WRITER_WRITE : 135,
+	TEXT_WRITER_WRITE_CHAR : 136,
+	TEXT_WRITER_WRITE_CODE_POINT : 137,
+	TEXT_WRITER_WRITE_LINE : 138,
+	CONSOLE_READ_LINE : 139,
+	CONSOLE_WRITE : 140,
+	CONSOLE_WRITE_LINE : 141,
+	STRING_WRITER_CLEAR : 142,
+	STRING_WRITER_TO_STRING : 143,
+	BIT_CONVERTER_INT32_BITS_TO_SINGLE : 144,
+	BIT_CONVERTER_INT64_BITS_TO_DOUBLE : 145,
+	BIT_CONVERTER_SINGLE_TO_INT32_BITS : 146,
+	BIT_CONVERTER_DOUBLE_TO_INT64_BITS : 147,
+	CONVERT_TO_BASE64_STRING : 148,
+	U_T_F8_GET_BYTE_COUNT : 149,
+	U_T_F8_GET_BYTES : 150,
+	U_T_F8_GET_STRING : 151,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 152,
+	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 153,
+	REGEX_COMPILE : 154,
+	REGEX_ESCAPE : 155,
+	REGEX_IS_MATCH_STR : 156,
+	REGEX_IS_MATCH_REGEX : 157,
+	MATCH_FIND_STR : 158,
+	MATCH_FIND_REGEX : 159,
+	MATCH_GET_CAPTURE : 160,
+	JSON_ELEMENT_PARSE : 161,
+	JSON_ELEMENT_IS_OBJECT : 162,
+	JSON_ELEMENT_IS_ARRAY : 163,
+	JSON_ELEMENT_IS_STRING : 164,
+	JSON_ELEMENT_IS_NUMBER : 165,
+	JSON_ELEMENT_IS_BOOLEAN : 166,
+	JSON_ELEMENT_IS_NULL : 167,
+	JSON_ELEMENT_GET_OBJECT : 168,
+	JSON_ELEMENT_GET_ARRAY : 169,
+	JSON_ELEMENT_GET_STRING : 170,
+	JSON_ELEMENT_GET_DOUBLE : 171,
+	JSON_ELEMENT_GET_BOOLEAN : 172,
+	MATH_METHOD : 173,
+	MATH_ABS : 174,
+	MATH_CEILING : 175,
+	MATH_CLAMP : 176,
+	MATH_FUSED_MULTIPLY_ADD : 177,
+	MATH_IS_FINITE : 178,
+	MATH_IS_INFINITY : 179,
+	MATH_IS_NA_N : 180,
+	MATH_LOG2 : 181,
+	MATH_MAX : 182,
+	MATH_MIN : 183,
+	MATH_ROUND : 184,
+	MATH_SQRT : 185,
+	MATH_TRUNCATE : 186
 }
 
 export class FuDocInline
@@ -3592,7 +3593,9 @@ export class FuSystem extends FuScope
 		consoleClass.addStaticMethod(this.stringStorageType, FuId.CONSOLE_READ_LINE, "ReadLine");
 		consoleClass.addStaticMethod(this.voidType, FuId.CONSOLE_WRITE, "Write", FuVar.new(this.printableType, "value"));
 		consoleClass.addStaticMethod(this.voidType, FuId.CONSOLE_WRITE_LINE, "WriteLine", FuVar.new(this.printableType, "value", this.newLiteralString("")));
-		consoleClass.add(FuStaticProperty.new(Object.assign(new FuStorageType(), { class: textWriterClass }), FuId.CONSOLE_ERROR, "Error"));
+		let textWriterStorage = Object.assign(new FuStorageType(), { class: textWriterClass });
+		consoleClass.add(FuStaticProperty.new(textWriterStorage, FuId.CONSOLE_ERROR, "Error"));
+		consoleClass.add(FuStaticProperty.new(textWriterStorage, FuId.CONSOLE_OUT, "Out"));
 		this.add(consoleClass);
 		let stringWriterClass = FuClass.new(FuCallType.SEALED, FuId.STRING_WRITER_CLASS, "StringWriter");
 		stringWriterClass.addMethod(this.voidType, FuId.STRING_WRITER_CLEAR, "Clear", true);
@@ -10706,6 +10709,10 @@ export class GenC extends GenCCpp
 			this.include("stdio.h");
 			this.write("stderr");
 			break;
+		case FuId.CONSOLE_OUT:
+			this.include("stdio.h");
+			this.write("stdout");
+			break;
 		case FuId.LIST_COUNT:
 		case FuId.STACK_COUNT:
 			this.writePostfix(expr.left, "->len");
@@ -16268,7 +16275,12 @@ export class GenCpp extends GenCCpp
 	{
 		switch (expr.symbol.id) {
 		case FuId.CONSOLE_ERROR:
+			this.include("iostream");
 			this.write("std::cerr");
+			break;
+		case FuId.CONSOLE_OUT:
+			this.include("iostream");
+			this.write("std::cout");
 			break;
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:
@@ -17486,6 +17498,10 @@ export class GenCs extends GenTyped
 		case FuId.CONSOLE_ERROR:
 			this.include("System");
 			this.write("Console.Error");
+			break;
+		case FuId.CONSOLE_OUT:
+			this.include("System");
+			this.write("Console.Out");
 			break;
 		case FuId.MATCH_START:
 			this.writePostfix(expr.left, ".Index");
@@ -18928,6 +18944,9 @@ export class GenD extends GenCCppD
 		switch (expr.symbol.id) {
 		case FuId.CONSOLE_ERROR:
 			this.write("stderr");
+			break;
+		case FuId.CONSOLE_OUT:
+			this.write("stdout");
 			break;
 		case FuId.LIST_COUNT:
 		case FuId.STACK_COUNT:
@@ -20453,6 +20472,9 @@ export class GenJava extends GenTyped
 		case FuId.CONSOLE_ERROR:
 			this.write("System.err");
 			break;
+		case FuId.CONSOLE_OUT:
+			this.write("System.out");
+			break;
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:
 		case FuId.STACK_COUNT:
@@ -20759,8 +20781,8 @@ export class GenJava extends GenTyped
 			this.writeChar(41);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.write("System.err");
+			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+				obj.accept(this, FuPriority.PRIMARY);
 				this.#writeWrite(method, args, false);
 			}
 			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
@@ -20777,7 +20799,7 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR))
+			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT))
 				this.writeCharMethodCall(obj, "print", args[0]);
 			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS)
 				this.writeCharMethodCall(obj, "append", args[0]);
@@ -20789,8 +20811,8 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.writeCall("System.err.print(Character.toChars", args[0]);
+			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+				this.writeMethodCall(obj, "print(Character.toChars", args[0]);
 				this.writeChar(41);
 			}
 			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS) {
@@ -20805,8 +20827,8 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.write("System.err");
+			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+				obj.accept(this, FuPriority.PRIMARY);
 				this.#writeWrite(method, args, true);
 			}
 			else {
@@ -21894,6 +21916,9 @@ export class GenJsNoModule extends GenBase
 		case FuId.CONSOLE_ERROR:
 			this.write("process.stderr");
 			break;
+		case FuId.CONSOLE_OUT:
+			this.write("process.stdout");
+			break;
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:
 		case FuId.STACK_COUNT:
@@ -22312,6 +22337,8 @@ export class GenJsNoModule extends GenBase
 		case FuId.TEXT_WRITER_WRITE_LINE:
 			if (GenJsNoModule.isReferenceTo(obj, FuId.CONSOLE_ERROR))
 				this.#writeWriteLine("console.error", args);
+			else if (GenJsNoModule.isReferenceTo(obj, FuId.CONSOLE_OUT))
+				this.#writeWriteLine("console.log", args);
 			else {
 				this.writePostfix(obj, ".write(");
 				if (args.length != 0) {
@@ -24189,6 +24216,21 @@ export class GenSwift extends GenPySwift
 			this.writeCoerced(type, value, FuPriority.ARGUMENT);
 	}
 
+	#isConsoleStreamWrite(obj)
+	{
+		if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
+			this.include("Foundation");
+			this.write("FileHandle.standardError.write(Data(");
+			return true;
+		}
+		if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+			this.include("Foundation");
+			this.write("FileHandle.standardOutput.write(Data(");
+			return true;
+		}
+		return false;
+	}
+
 	#writeToTextWriter(obj)
 	{
 		this.write("to: &");
@@ -24481,9 +24523,7 @@ export class GenSwift extends GenPySwift
 			this.writeChar(41);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
-			if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.include("Foundation");
-				this.write("FileHandle.standardError.write(Data(");
+			if (this.#isConsoleStreamWrite(obj)) {
 				if (args[0].type instanceof FuStringType)
 					this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
 				else
@@ -24506,9 +24546,7 @@ export class GenSwift extends GenPySwift
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
-			if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.include("Foundation");
-				this.write("FileHandle.standardError.write(Data(");
+			if (this.#isConsoleStreamWrite(obj)) {
 				this.#writeUnicodeScalar(args[0]);
 				this.write(".utf8))");
 			}
@@ -24519,9 +24557,7 @@ export class GenSwift extends GenPySwift
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
-			if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-				this.include("Foundation");
-				this.write("FileHandle.standardError.write(Data(");
+			if (this.#isConsoleStreamWrite(obj)) {
 				if (args.length == 0)
 					this.write("[ 10 ]");
 				else {
@@ -26295,6 +26331,10 @@ export class GenPy extends GenPySwift
 		case FuId.CONSOLE_ERROR:
 			this.include("sys");
 			this.write("sys.stderr");
+			break;
+		case FuId.CONSOLE_OUT:
+			this.include("sys");
+			this.write("sys.stdout");
 			break;
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:

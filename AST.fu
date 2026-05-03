@@ -107,6 +107,7 @@ public enum FuId
 	StringLength,
 	ArrayLength,
 	ConsoleError,
+	ConsoleOut,
 	Main,
 	ClassToString,
 	MatchStart,
@@ -1809,7 +1810,9 @@ public class FuSystem : FuScope
 		consoleClass.AddStaticMethod(StringStorageType, FuId.ConsoleReadLine, "ReadLine");
 		consoleClass.AddStaticMethod(VoidType, FuId.ConsoleWrite, "Write", FuVar.New(PrintableType, "value"));
 		consoleClass.AddStaticMethod(VoidType, FuId.ConsoleWriteLine, "WriteLine", FuVar.New(PrintableType, "value", NewLiteralString("")));
-		consoleClass.Add(FuStaticProperty.New(new FuStorageType { Class = textWriterClass }, FuId.ConsoleError, "Error"));
+		FuStorageType# textWriterStorage = new FuStorageType { Class = textWriterClass };
+		consoleClass.Add(FuStaticProperty.New(textWriterStorage, FuId.ConsoleError, "Error"));
+		consoleClass.Add(FuStaticProperty.New(textWriterStorage, FuId.ConsoleOut, "Out"));
 		Add(consoleClass);
 		FuClass# stringWriterClass = FuClass.New(FuCallType.Sealed, FuId.StringWriterClass, "StringWriter");
 		stringWriterClass.AddMethod(VoidType, FuId.StringWriterClear, "Clear", true);

@@ -398,6 +398,10 @@ public class GenC : GenCCpp
 			Include("stdio.h");
 			Write("stderr");
 			break;
+		case FuId.ConsoleOut:
+			Include("stdio.h");
+			Write("stdout");
+			break;
 		case FuId.ListCount:
 		case FuId.StackCount:
 			WritePostfix(expr.Left, "->len");

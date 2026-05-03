@@ -483,6 +483,10 @@ public class GenPy : GenPySwift
 			Include("sys");
 			Write("sys.stderr");
 			break;
+		case FuId.ConsoleOut:
+			Include("sys");
+			Write("sys.stdout");
+			break;
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:

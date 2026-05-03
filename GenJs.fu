@@ -363,6 +363,9 @@ public class GenJsNoModule : GenBase
 		case FuId.ConsoleError:
 			Write("process.stderr");
 			break;
+		case FuId.ConsoleOut:
+			Write("process.stdout");
+			break;
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:
@@ -777,6 +780,8 @@ public class GenJsNoModule : GenBase
 		case FuId.TextWriterWriteLine:
 			if (IsReferenceTo(obj, FuId.ConsoleError))
 				WriteWriteLine("console.error", args);
+			else if (IsReferenceTo(obj, FuId.ConsoleOut))
+				WriteWriteLine("console.log", args);
 			else {
 				WritePostfix(obj, ".write(");
 				if (args.Count != 0) {

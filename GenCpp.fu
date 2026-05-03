@@ -1435,7 +1435,12 @@ public class GenCpp : GenCCpp
 	{
 		switch (expr.Symbol.Id) {
 		case FuId.ConsoleError:
+			Include("iostream");
 			Write("std::cerr");
+			break;
+		case FuId.ConsoleOut:
+			Include("iostream");
+			Write("std::cout");
 			break;
 		case FuId.ListCount:
 		case FuId.QueueCount:

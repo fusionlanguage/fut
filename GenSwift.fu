@@ -474,6 +474,21 @@ public class GenSwift : GenPySwift
 			WriteCoerced(type, value, FuPriority.Argument);
 	}
 
+	bool IsConsoleStreamWrite!(FuExpr obj)
+	{
+		if (IsReferenceTo(obj, FuId.ConsoleError)) {
+			Include("Foundation");
+			Write("FileHandle.standardError.write(Data(");
+			return true;
+		}
+		if (IsReferenceTo(obj, FuId.ConsoleOut)) {
+			Include("Foundation");
+			Write("FileHandle.standardOutput.write(Data(");
+			return true;
+		}
+		return false;
+	}
+
 	void WriteToTextWriter!(FuExpr obj)
 	{
 		Write("to: &");
@@ -764,9 +779,7 @@ public class GenSwift : GenPySwift
 			WriteChar(')');
 			break;
 		case FuId.TextWriterWrite:
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				Include("Foundation");
-				Write("FileHandle.standardError.write(Data(");
+			if (IsConsoleStreamWrite(obj)) {
 				if (args[0].Type is FuStringType)
 					WriteUnwrapped(args[0], FuPriority.Primary, true);
 				else
@@ -789,9 +802,7 @@ public class GenSwift : GenPySwift
 			break;
 		case FuId.TextWriterWriteChar:
 		case FuId.TextWriterWriteCodePoint:
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				Include("Foundation");
-				Write("FileHandle.standardError.write(Data(");
+			if (IsConsoleStreamWrite(obj)) {
 				WriteUnicodeScalar(args[0]);
 				Write(".utf8))");
 			}
@@ -802,9 +813,7 @@ public class GenSwift : GenPySwift
 			}
 			break;
 		case FuId.TextWriterWriteLine:
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				Include("Foundation");
-				Write("FileHandle.standardError.write(Data(");
+			if (IsConsoleStreamWrite(obj)) {
 				if (args.Count == 0)
 					Write("[ 10 ]");
 				else {

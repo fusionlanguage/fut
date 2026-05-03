@@ -696,6 +696,9 @@ public class GenD : GenCCppD
 		case FuId.ConsoleError:
 			Write("stderr");
 			break;
+		case FuId.ConsoleOut:
+			Write("stdout");
+			break;
 		case FuId.ListCount:
 		case FuId.StackCount:
 		case FuId.HashSetCount:

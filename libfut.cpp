@@ -2866,9 +2866,10 @@ FuSystem::FuSystem()
 	consoleClass->addStaticMethod(this->stringStorageType, FuId::consoleReadLine, "ReadLine");
 	consoleClass->addStaticMethod(this->voidType, FuId::consoleWrite, "Write", FuVar::new_(this->printableType, "value"));
 	consoleClass->addStaticMethod(this->voidType, FuId::consoleWriteLine, "WriteLine", FuVar::new_(this->printableType, "value", newLiteralString("")));
-	std::shared_ptr<FuStorageType> futemp3 = std::make_shared<FuStorageType>();
-	futemp3->class_ = textWriterClass.get();
-	consoleClass->add(FuStaticProperty::new_(futemp3, FuId::consoleError, "Error"));
+	std::shared_ptr<FuStorageType> textWriterStorage = std::make_shared<FuStorageType>();
+	textWriterStorage->class_ = textWriterClass.get();
+	consoleClass->add(FuStaticProperty::new_(textWriterStorage, FuId::consoleError, "Error"));
+	consoleClass->add(FuStaticProperty::new_(textWriterStorage, FuId::consoleOut, "Out"));
 	add(consoleClass);
 	std::shared_ptr<FuClass> stringWriterClass = FuClass::new_(FuCallType::sealed, FuId::stringWriterClass, "StringWriter");
 	stringWriterClass->addMethod(this->voidType, FuId::stringWriterClear, "Clear", true);
@@ -2882,21 +2883,21 @@ FuSystem::FuSystem()
 	bitConverterClass->addStaticMethod(this->longType, FuId::bitConverterDoubleToInt64Bits, "DoubleToInt64Bits", FuVar::new_(this->doubleType, "value"));
 	add(bitConverterClass);
 	std::shared_ptr<FuClass> convertClass = FuClass::new_(FuCallType::static_, FuId::none, "Convert");
-	std::shared_ptr<FuClassType> futemp4 = std::make_shared<FuClassType>();
-	futemp4->class_ = this->arrayPtrClass.get();
-	futemp4->typeArg0 = this->byteType;
-	convertClass->addStaticMethod(this->stringStorageType, FuId::convertToBase64String, "ToBase64String", FuVar::new_(futemp4, "bytes"), FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length"));
+	std::shared_ptr<FuClassType> futemp3 = std::make_shared<FuClassType>();
+	futemp3->class_ = this->arrayPtrClass.get();
+	futemp3->typeArg0 = this->byteType;
+	convertClass->addStaticMethod(this->stringStorageType, FuId::convertToBase64String, "ToBase64String", FuVar::new_(futemp3, "bytes"), FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length"));
 	add(convertClass);
 	std::shared_ptr<FuClass> utf8EncodingClass = FuClass::new_(FuCallType::sealed, FuId::none, "UTF8Encoding");
 	utf8EncodingClass->addMethod(this->nIntType, FuId::uTF8GetByteCount, "GetByteCount", false, FuVar::new_(this->stringPtrType, "str"));
-	std::shared_ptr<FuReadWriteClassType> futemp5 = std::make_shared<FuReadWriteClassType>();
+	std::shared_ptr<FuReadWriteClassType> futemp4 = std::make_shared<FuReadWriteClassType>();
+	futemp4->class_ = this->arrayPtrClass.get();
+	futemp4->typeArg0 = this->byteType;
+	utf8EncodingClass->addMethod(this->voidType, FuId::uTF8GetBytes, "GetBytes", false, FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp4, "bytes"), FuVar::new_(this->nIntType, "byteIndex"));
+	std::shared_ptr<FuClassType> futemp5 = std::make_shared<FuClassType>();
 	futemp5->class_ = this->arrayPtrClass.get();
 	futemp5->typeArg0 = this->byteType;
-	utf8EncodingClass->addMethod(this->voidType, FuId::uTF8GetBytes, "GetBytes", false, FuVar::new_(this->stringPtrType, "str"), FuVar::new_(futemp5, "bytes"), FuVar::new_(this->nIntType, "byteIndex"));
-	std::shared_ptr<FuClassType> futemp6 = std::make_shared<FuClassType>();
-	futemp6->class_ = this->arrayPtrClass.get();
-	futemp6->typeArg0 = this->byteType;
-	utf8EncodingClass->addMethod(this->stringStorageType, FuId::uTF8GetString, "GetString", false, FuVar::new_(futemp6, "bytes"), FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length"));
+	utf8EncodingClass->addMethod(this->stringStorageType, FuId::uTF8GetString, "GetString", false, FuVar::new_(futemp5, "bytes"), FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length"));
 	std::shared_ptr<FuClass> encodingClass = FuClass::new_(FuCallType::static_, FuId::none, "Encoding");
 	encodingClass->add(FuStaticProperty::new_(utf8EncodingClass, FuId::none, "UTF8"));
 	add(encodingClass);
@@ -2904,9 +2905,9 @@ FuSystem::FuSystem()
 	environmentClass->addStaticMethod(this->stringNullablePtrType, FuId::environmentGetEnvironmentVariable, "GetEnvironmentVariable", FuVar::new_(this->stringPtrType, "name"));
 	add(environmentClass);
 	std::shared_ptr<FuClass> dateTimeOffsetClass = FuClass::new_(FuCallType::abstract, FuId::none, "DateTimeOffset");
-	std::shared_ptr<FuClassType> futemp7 = std::make_shared<FuClassType>();
-	futemp7->class_ = dateTimeOffsetClass.get();
-	dateTimeOffsetClass->add(FuStaticProperty::new_(futemp7, FuId::none, "UtcNow"));
+	std::shared_ptr<FuClassType> futemp6 = std::make_shared<FuClassType>();
+	futemp6->class_ = dateTimeOffsetClass.get();
+	dateTimeOffsetClass->add(FuStaticProperty::new_(futemp6, FuId::none, "UtcNow"));
 	dateTimeOffsetClass->addMethod(this->longType, FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds, "ToUnixTimeMilliseconds", false);
 	add(dateTimeOffsetClass);
 	this->regexOptionsEnum = newEnum(true);
@@ -2922,14 +2923,14 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuClass> regexClass = FuClass::new_(FuCallType::sealed, FuId::regexClass, "Regex");
 	regexClass->addStaticMethod(this->stringStorageType, FuId::regexEscape, "Escape", FuVar::new_(this->stringPtrType, "str"));
 	regexClass->add(FuMethodGroup::new_(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, this->boolType, FuId::regexIsMatchStr, "IsMatch", false, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::regexIsMatchRegex, "IsMatch", false, FuVar::new_(this->stringPtrType, "input"))));
-	std::shared_ptr<FuDynamicPtrType> futemp8 = std::make_shared<FuDynamicPtrType>();
-	futemp8->class_ = regexClass.get();
-	regexClass->addStaticMethod(futemp8, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone));
+	std::shared_ptr<FuDynamicPtrType> futemp7 = std::make_shared<FuDynamicPtrType>();
+	futemp7->class_ = regexClass.get();
+	regexClass->addStaticMethod(futemp7, FuId::regexCompile, "Compile", FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone));
 	add(regexClass);
 	std::shared_ptr<FuClass> matchClass = FuClass::new_(FuCallType::sealed, FuId::matchClass, "Match");
-	std::shared_ptr<FuClassType> futemp9 = std::make_shared<FuClassType>();
-	futemp9->class_ = regexClass.get();
-	matchClass->add(FuMethodGroup::new_(FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindStr, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindRegex, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp9, "pattern"))));
+	std::shared_ptr<FuClassType> futemp8 = std::make_shared<FuClassType>();
+	futemp8->class_ = regexClass.get();
+	matchClass->add(FuMethodGroup::new_(FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindStr, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(this->stringPtrType, "pattern"), FuVar::new_(this->regexOptionsEnum, "options", regexOptionsNone)), FuMethod::new_(matchClass.get(), FuVisibility::public_, FuCallType::normal, this->boolType, FuId::matchFindRegex, "Find", true, FuVar::new_(this->stringPtrType, "input"), FuVar::new_(futemp8, "pattern"))));
 	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchStart, "Start"));
 	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchEnd, "End"));
 	matchClass->addMethod(this->stringStorageType, FuId::matchGetCapture, "GetCapture", false, FuVar::new_(this->uIntType, "group"));
@@ -2946,15 +2947,15 @@ FuSystem::FuSystem()
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNumber, "IsNumber", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsBoolean, "IsBoolean", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNull, "IsNull", false));
+	std::shared_ptr<FuClassType> futemp9 = std::make_shared<FuClassType>();
+	futemp9->class_ = dictionaryClass;
+	futemp9->typeArg0 = this->stringStorageType;
+	futemp9->typeArg1 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp9, FuId::jsonElementGetObject, "GetObject", false));
 	std::shared_ptr<FuClassType> futemp10 = std::make_shared<FuClassType>();
-	futemp10->class_ = dictionaryClass;
-	futemp10->typeArg0 = this->stringStorageType;
-	futemp10->typeArg1 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp10, FuId::jsonElementGetObject, "GetObject", false));
-	std::shared_ptr<FuClassType> futemp11 = std::make_shared<FuClassType>();
-	futemp11->class_ = listClass;
-	futemp11->typeArg0 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp11, FuId::jsonElementGetArray, "GetArray", false));
+	futemp10->class_ = listClass;
+	futemp10->typeArg0 = jsonElementPtr;
+	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp10, FuId::jsonElementGetArray, "GetArray", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->stringPtrType, FuId::jsonElementGetString, "GetString", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->doubleType, FuId::jsonElementGetDouble, "GetDouble", false));
 	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementGetBoolean, "GetBoolean", false));
@@ -10011,6 +10012,10 @@ void GenC::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 		include("stdio.h");
 		write("stderr");
 		break;
+	case FuId::consoleOut:
+		include("stdio.h");
+		write("stdout");
+		break;
 	case FuId::listCount:
 	case FuId::stackCount:
 		writePostfix(expr->left.get(), "->len");
@@ -15421,7 +15426,12 @@ void GenCpp::visitSymbolReference(const FuSymbolReference * expr, FuPriority par
 {
 	switch (expr->symbol->id) {
 	case FuId::consoleError:
+		include("iostream");
 		write("std::cerr");
+		break;
+	case FuId::consoleOut:
+		include("iostream");
+		write("std::cout");
 		break;
 	case FuId::listCount:
 	case FuId::queueCount:
@@ -16552,6 +16562,10 @@ void GenCs::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	case FuId::consoleError:
 		include("System");
 		write("Console.Error");
+		break;
+	case FuId::consoleOut:
+		include("System");
+		write("Console.Out");
 		break;
 	case FuId::matchStart:
 		writePostfix(expr->left.get(), ".Index");
@@ -17798,6 +17812,9 @@ void GenD::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 	switch (expr->symbol->id) {
 	case FuId::consoleError:
 		write("stderr");
+		break;
+	case FuId::consoleOut:
+		write("stdout");
 		break;
 	case FuId::listCount:
 	case FuId::stackCount:
@@ -19227,6 +19244,9 @@ void GenJava::visitSymbolReference(const FuSymbolReference * expr, FuPriority pa
 	case FuId::consoleError:
 		write("System.err");
 		break;
+	case FuId::consoleOut:
+		write("System.out");
+		break;
 	case FuId::listCount:
 	case FuId::queueCount:
 	case FuId::stackCount:
@@ -19535,8 +19555,8 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		writeChar(')');
 		break;
 	case FuId::textWriterWrite:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			write("System.err");
+		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut)) {
+			obj->accept(this, FuPriority::primary);
 			writeWrite(method, args, false);
 		}
 		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
@@ -19553,7 +19573,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		}
 		break;
 	case FuId::textWriterWriteChar:
-		if (isReferenceTo(obj, FuId::consoleError))
+		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut))
 			writeCharMethodCall(obj, "print", (*args)[0].get());
 		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass)
 			writeCharMethodCall(obj, "append", (*args)[0].get());
@@ -19565,8 +19585,8 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		}
 		break;
 	case FuId::textWriterWriteCodePoint:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			writeCall("System.err.print(Character.toChars", (*args)[0].get());
+		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut)) {
+			writeMethodCall(obj, "print(Character.toChars", (*args)[0].get());
 			writeChar(')');
 		}
 		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass) {
@@ -19581,8 +19601,8 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		}
 		break;
 	case FuId::textWriterWriteLine:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			write("System.err");
+		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut)) {
+			obj->accept(this, FuPriority::primary);
 			writeWrite(method, args, true);
 		}
 		else {
@@ -20622,6 +20642,9 @@ void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPrior
 	case FuId::consoleError:
 		write("process.stderr");
 		break;
+	case FuId::consoleOut:
+		write("process.stdout");
+		break;
 	case FuId::listCount:
 	case FuId::queueCount:
 	case FuId::stackCount:
@@ -21039,6 +21062,8 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 	case FuId::textWriterWriteLine:
 		if (isReferenceTo(obj, FuId::consoleError))
 			writeWriteLine("console.error", args);
+		else if (isReferenceTo(obj, FuId::consoleOut))
+			writeWriteLine("console.log", args);
 		else {
 			writePostfix(obj, ".write(");
 			if (std::ssize(*args) != 0) {
@@ -22773,6 +22798,21 @@ void GenSwift::writeElementCoerced(const FuType * type, const FuExpr * value)
 		writeCoerced(type, value, FuPriority::argument);
 }
 
+bool GenSwift::isConsoleStreamWrite(const FuExpr * obj)
+{
+	if (isReferenceTo(obj, FuId::consoleError)) {
+		include("Foundation");
+		write("FileHandle.standardError.write(Data(");
+		return true;
+	}
+	if (isReferenceTo(obj, FuId::consoleOut)) {
+		include("Foundation");
+		write("FileHandle.standardOutput.write(Data(");
+		return true;
+	}
+	return false;
+}
+
 void GenSwift::writeToTextWriter(const FuExpr * obj)
 {
 	write("to: &");
@@ -23073,9 +23113,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writeChar(')');
 		break;
 	case FuId::textWriterWrite:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			include("Foundation");
-			write("FileHandle.standardError.write(Data(");
+		if (isConsoleStreamWrite(obj)) {
 			if (dynamic_cast<const FuStringType *>((*args)[0]->type.get()))
 				writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
 			else
@@ -23098,9 +23136,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		break;
 	case FuId::textWriterWriteChar:
 	case FuId::textWriterWriteCodePoint:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			include("Foundation");
-			write("FileHandle.standardError.write(Data(");
+		if (isConsoleStreamWrite(obj)) {
 			writeUnicodeScalar((*args)[0].get());
 			write(".utf8))");
 		}
@@ -23111,9 +23147,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		}
 		break;
 	case FuId::textWriterWriteLine:
-		if (isReferenceTo(obj, FuId::consoleError)) {
-			include("Foundation");
-			write("FileHandle.standardError.write(Data(");
+		if (isConsoleStreamWrite(obj)) {
 			if (std::ssize(*args) == 0)
 				write("[ 10 ]");
 			else {
@@ -24774,6 +24808,10 @@ void GenPy::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	case FuId::consoleError:
 		include("sys");
 		write("sys.stderr");
+		break;
+	case FuId::consoleOut:
+		include("sys");
+		write("sys.stdout");
 		break;
 	case FuId::listCount:
 	case FuId::queueCount:

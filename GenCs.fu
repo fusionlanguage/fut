@@ -397,6 +397,10 @@ public class GenCs : GenTyped
 			Include("System");
 			Write("Console.Error");
 			break;
+		case FuId.ConsoleOut:
+			Include("System");
+			Write("Console.Out");
+			break;
 		case FuId.MatchStart:
 			WritePostfix(expr.Left, ".Index");
 			break;

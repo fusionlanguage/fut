@@ -1,0 +1,11 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		Console.Out.Write("Hello, "); //FAIL: cl
+		Console.Out.WriteLine("world!");
+		int i = 42;
+		Console.Out.Write($"i={i:X}");
+		return true;
+	}
+}
