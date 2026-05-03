@@ -15152,6 +15152,7 @@ namespace Fusion
 			case FuId.SortedSetClear:
 			case FuId.DictionaryClear:
 			case FuId.SortedDictionaryClear:
+			case FuId.TextWriterFlush:
 				if (obj != null) {
 					if (IsReferenceTo(obj, FuId.BasePtr)) {
 						WriteName(method.Parent);
@@ -15430,9 +15431,6 @@ namespace Fusion
 				Write(") != 0");
 				if (parent > FuPriority.Equality)
 					WriteChar(')');
-				break;
-			case FuId.TextWriterFlush:
-				WritePostfix(obj, ".flush()");
 				break;
 			case FuId.TextWriterWrite:
 				WriteCollectionObject(obj, FuPriority.Shift);

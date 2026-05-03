@@ -14804,6 +14804,7 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 	case FuId::sortedSetClear:
 	case FuId::dictionaryClear:
 	case FuId::sortedDictionaryClear:
+	case FuId::textWriterFlush:
 		if (obj != nullptr) {
 			if (isReferenceTo(obj, FuId::basePtr)) {
 				writeName(method->parent);
@@ -15082,9 +15083,6 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		write(") != 0");
 		if (parent > FuPriority::equality)
 			writeChar(')');
-		break;
-	case FuId::textWriterFlush:
-		writePostfix(obj, ".flush()");
 		break;
 	case FuId::textWriterWrite:
 		writeCollectionObject(obj, FuPriority::shift);

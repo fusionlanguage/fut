@@ -15656,6 +15656,7 @@ export class GenCpp extends GenCCpp
 		case FuId.SORTED_SET_CLEAR:
 		case FuId.DICTIONARY_CLEAR:
 		case FuId.SORTED_DICTIONARY_CLEAR:
+		case FuId.TEXT_WRITER_FLUSH:
 			if (obj != null) {
 				if (GenCpp.isReferenceTo(obj, FuId.BASE_PTR)) {
 					this.writeName(method.parent);
@@ -15934,9 +15935,6 @@ export class GenCpp extends GenCCpp
 			this.write(") != 0");
 			if (parent > FuPriority.EQUALITY)
 				this.writeChar(41);
-			break;
-		case FuId.TEXT_WRITER_FLUSH:
-			this.writePostfix(obj, ".flush()");
 			break;
 		case FuId.TEXT_WRITER_WRITE:
 			this.#writeCollectionObject(obj, FuPriority.SHIFT);
