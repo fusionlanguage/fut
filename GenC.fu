@@ -2397,6 +2397,10 @@ public class GenC : GenCCpp
 		case FuId.SortedDictionaryRemove:
 			WriteDictionaryLookup(obj, "g_tree_remove", args[0]);
 			break;
+		case FuId.TextWriterFlush:
+			Include("stdio.h");
+			WriteCall("fflush", obj);
+			break;
 		case FuId.TextWriterWrite:
 			WriteTextWriterWrite(obj, args, false);
 			break;

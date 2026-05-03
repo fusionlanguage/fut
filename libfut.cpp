@@ -2857,6 +2857,7 @@ FuSystem::FuSystem()
 	addDictionary(FuId::sortedDictionaryClass, "SortedDictionary", FuId::sortedDictionaryClear, FuId::sortedDictionaryContainsKey, FuId::sortedDictionaryCount, FuId::sortedDictionaryRemove);
 	addDictionary(FuId::orderedDictionaryClass, "OrderedDictionary", FuId::orderedDictionaryClear, FuId::orderedDictionaryContainsKey, FuId::orderedDictionaryCount, FuId::orderedDictionaryRemove);
 	std::shared_ptr<FuClass> textWriterClass = FuClass::new_(FuCallType::normal, FuId::textWriterClass, "TextWriter");
+	textWriterClass->addMethod(this->voidType, FuId::textWriterFlush, "Flush", true);
 	textWriterClass->addMethod(this->voidType, FuId::textWriterWrite, "Write", true, FuVar::new_(this->printableType, "value"));
 	textWriterClass->addMethod(this->voidType, FuId::textWriterWriteChar, "WriteChar", true, FuVar::new_(this->intType, "c"));
 	textWriterClass->addMethod(this->voidType, FuId::textWriterWriteCodePoint, "WriteCodePoint", true, FuVar::new_(this->intType, "c"));
@@ -12030,6 +12031,10 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::sortedDictionaryRemove:
 		writeDictionaryLookup(obj, "g_tree_remove", (*args)[0].get());
 		break;
+	case FuId::textWriterFlush:
+		include("stdio.h");
+		writeCall("fflush", obj);
+		break;
 	case FuId::textWriterWrite:
 		writeTextWriterWrite(obj, args, false);
 		break;
@@ -15078,6 +15083,9 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		if (parent > FuPriority::equality)
 			writeChar(')');
 		break;
+	case FuId::textWriterFlush:
+		writePostfix(obj, ".flush()");
+		break;
 	case FuId::textWriterWrite:
 		writeCollectionObject(obj, FuPriority::shift);
 		writeWrite(args, false);
@@ -16666,6 +16674,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::sortedDictionaryRemove:
 	case FuId::orderedDictionaryClear:
 	case FuId::orderedDictionaryRemove:
+	case FuId::textWriterFlush:
 	case FuId::consoleReadLine:
 	case FuId::stringWriterToString:
 	case FuId::bitConverterInt32BitsToSingle:
@@ -17924,6 +17933,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::stackClear:
 	case FuId::hashSetRemove:
 	case FuId::dictionaryRemove:
+	case FuId::textWriterFlush:
 		if (obj != nullptr) {
 			if (isReferenceTo(obj, FuId::basePtr))
 				write("super.");
@@ -19385,6 +19395,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::orderedDictionaryClear:
 	case FuId::orderedDictionaryContainsKey:
 	case FuId::orderedDictionaryRemove:
+	case FuId::textWriterFlush:
 	case FuId::stringWriterToString:
 	case FuId::mathAbs:
 	case FuId::mathMax:
@@ -25176,6 +25187,7 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::dictionaryClear:
 	case FuId::sortedDictionaryClear:
 	case FuId::orderedDictionaryClear:
+	case FuId::textWriterFlush:
 		if (obj == nullptr)
 			writeLocalName(method, FuPriority::primary);
 		else if (isReferenceTo(obj, FuId::basePtr)) {

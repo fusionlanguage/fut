@@ -1438,6 +1438,7 @@ namespace Fusion
 		OrderedDictionaryContainsKey,
 		OrderedDictionaryCount,
 		OrderedDictionaryRemove,
+		TextWriterFlush,
 		TextWriterWrite,
 		TextWriterWriteChar,
 		TextWriterWriteCodePoint,
@@ -3338,6 +3339,7 @@ namespace Fusion
 			AddDictionary(FuId.SortedDictionaryClass, "SortedDictionary", FuId.SortedDictionaryClear, FuId.SortedDictionaryContainsKey, FuId.SortedDictionaryCount, FuId.SortedDictionaryRemove);
 			AddDictionary(FuId.OrderedDictionaryClass, "OrderedDictionary", FuId.OrderedDictionaryClear, FuId.OrderedDictionaryContainsKey, FuId.OrderedDictionaryCount, FuId.OrderedDictionaryRemove);
 			FuClass textWriterClass = FuClass.New(FuCallType.Normal, FuId.TextWriterClass, "TextWriter");
+			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterFlush, "Flush", true);
 			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWrite, "Write", true, FuVar.New(this.PrintableType, "value"));
 			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWriteChar, "WriteChar", true, FuVar.New(this.IntType, "c"));
 			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWriteCodePoint, "WriteCodePoint", true, FuVar.New(this.IntType, "c"));
@@ -12265,6 +12267,10 @@ namespace Fusion
 			case FuId.SortedDictionaryRemove:
 				WriteDictionaryLookup(obj, "g_tree_remove", args[0]);
 				break;
+			case FuId.TextWriterFlush:
+				Include("stdio.h");
+				WriteCall("fflush", obj);
+				break;
 			case FuId.TextWriterWrite:
 				WriteTextWriterWrite(obj, args, false);
 				break;
@@ -15425,6 +15431,9 @@ namespace Fusion
 				if (parent > FuPriority.Equality)
 					WriteChar(')');
 				break;
+			case FuId.TextWriterFlush:
+				WritePostfix(obj, ".flush()");
+				break;
 			case FuId.TextWriterWrite:
 				WriteCollectionObject(obj, FuPriority.Shift);
 				WriteWrite(args, false);
@@ -17054,6 +17063,7 @@ namespace Fusion
 			case FuId.SortedDictionaryRemove:
 			case FuId.OrderedDictionaryClear:
 			case FuId.OrderedDictionaryRemove:
+			case FuId.TextWriterFlush:
 			case FuId.ConsoleReadLine:
 			case FuId.StringWriterToString:
 			case FuId.BitConverterInt32BitsToSingle:
@@ -18485,6 +18495,7 @@ namespace Fusion
 			case FuId.StackClear:
 			case FuId.HashSetRemove:
 			case FuId.DictionaryRemove:
+			case FuId.TextWriterFlush:
 				if (obj != null) {
 					if (IsReferenceTo(obj, FuId.BasePtr))
 						Write("super.");
@@ -20015,6 +20026,7 @@ namespace Fusion
 			case FuId.OrderedDictionaryClear:
 			case FuId.OrderedDictionaryContainsKey:
 			case FuId.OrderedDictionaryRemove:
+			case FuId.TextWriterFlush:
 			case FuId.StringWriterToString:
 			case FuId.MathAbs:
 			case FuId.MathMax:
@@ -26038,6 +26050,7 @@ namespace Fusion
 			case FuId.DictionaryClear:
 			case FuId.SortedDictionaryClear:
 			case FuId.OrderedDictionaryClear:
+			case FuId.TextWriterFlush:
 				if (obj == null)
 					WriteLocalName(method, FuPriority.Primary);
 				else if (IsReferenceTo(obj, FuId.BasePtr)) {

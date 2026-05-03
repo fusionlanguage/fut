@@ -810,6 +810,7 @@ public class GenD : GenCCppD
 		case FuId.StackClear:
 		case FuId.HashSetRemove:
 		case FuId.DictionaryRemove:
+		case FuId.TextWriterFlush:
 			if (obj != null) {
 				if (IsReferenceTo(obj, FuId.BasePtr))
 					Write("super.");

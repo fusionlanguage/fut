@@ -853,6 +853,7 @@ public class GenPy : GenPySwift
 		case FuId.DictionaryClear:
 		case FuId.SortedDictionaryClear:
 		case FuId.OrderedDictionaryClear:
+		case FuId.TextWriterFlush:
 			if (obj == null)
 				WriteLocalName(method, FuPriority.Primary);
 			else if (IsReferenceTo(obj, FuId.BasePtr)) {

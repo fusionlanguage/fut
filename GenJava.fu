@@ -680,6 +680,7 @@ public class GenJava : GenTyped
 		case FuId.OrderedDictionaryClear:
 		case FuId.OrderedDictionaryContainsKey:
 		case FuId.OrderedDictionaryRemove:
+		case FuId.TextWriterFlush:
 		case FuId.StringWriterToString:
 		case FuId.MathAbs:
 		case FuId.MathMax:

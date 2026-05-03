@@ -1084,6 +1084,9 @@ public class GenCpp : GenCCpp
 			if (parent > FuPriority.Equality)
 				WriteChar(')');
 			break;
+		case FuId.TextWriterFlush:
+			WritePostfix(obj, ".flush()");
+			break;
 		case FuId.TextWriterWrite:
 			WriteCollectionObject(obj, FuPriority.Shift);
 			WriteWrite(args, false);

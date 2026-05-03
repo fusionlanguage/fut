@@ -322,6 +322,7 @@ enum class FuId
 	orderedDictionaryContainsKey,
 	orderedDictionaryCount,
 	orderedDictionaryRemove,
+	textWriterFlush,
 	textWriterWrite,
 	textWriterWriteChar,
 	textWriterWriteCodePoint,

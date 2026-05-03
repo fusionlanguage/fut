@@ -195,6 +195,7 @@ public enum FuId
 	OrderedDictionaryContainsKey,
 	OrderedDictionaryCount,
 	OrderedDictionaryRemove,
+	TextWriterFlush,
 	TextWriterWrite,
 	TextWriterWriteChar,
 	TextWriterWriteCodePoint,
@@ -1801,6 +1802,7 @@ public class FuSystem : FuScope
 		AddDictionary(FuId.OrderedDictionaryClass, "OrderedDictionary", FuId.OrderedDictionaryClear, FuId.OrderedDictionaryContainsKey, FuId.OrderedDictionaryCount, FuId.OrderedDictionaryRemove);
 
 		FuClass# textWriterClass = FuClass.New(FuCallType.Normal, FuId.TextWriterClass, "TextWriter");
+		textWriterClass.AddMethod(VoidType, FuId.TextWriterFlush, "Flush", true);
 		textWriterClass.AddMethod(VoidType, FuId.TextWriterWrite, "Write", true, FuVar.New(PrintableType, "value"));
 		textWriterClass.AddMethod(VoidType, FuId.TextWriterWriteChar, "WriteChar", true, FuVar.New(IntType, "c"));
 		textWriterClass.AddMethod(VoidType, FuId.TextWriterWriteCodePoint, "WriteCodePoint", true, FuVar.New(IntType, "c"));
