@@ -8814,32 +8814,50 @@ namespace Fusion
 			WriteChild(statement.Body);
 		}
 
-		internal static FuCallExpr IsIfTryParse(FuIf statement)
+		protected void WriteTryParseFailure(FuCallExpr call, FuStatement onFailure)
 		{
-			FuExpr cond = statement.Cond;
-			if (cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark)
-				cond = not.Inner;
-			if (cond is FuCallExpr call) {
+			switch (onFailure) {
+			case FuReturn:
+			case FuThrow:
+				break;
+			default:
+				call.Method.Left.Accept(this, FuPriority.Assign);
+				Write(" = 0");
+				EndStatement();
+				break;
+			}
+			if (onFailure != null)
+				FlattenBlock(onFailure);
+		}
+
+		protected virtual void WriteTryParseStatement(FuCallExpr call, FuStatement onParsed, FuStatement onFailure)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected bool TryWriteTryParse(FuExpr expr, FuStatement onParsed, FuStatement onFailure)
+		{
+			if (expr is FuCallExpr call) {
 				switch (call.Method.Symbol.Id) {
 				case FuId.IntTryParse:
 				case FuId.NIntTryParse:
 				case FuId.LongTryParse:
 				case FuId.FloatTryParse:
 				case FuId.DoubleTryParse:
-					return call;
+					WriteTryParseStatement(call, onParsed, onFailure);
+					return true;
 				default:
 					break;
 				}
 			}
-			return null;
+			return false;
 		}
 
-		internal void FlattenBranch(FuIf statement, bool cond)
+		internal bool TryWriteIfTryParse(FuIf statement)
 		{
-			if (cond)
-				FlattenBlock(statement.OnTrue);
-			else if (statement.OnFalse != null)
-				FlattenBlock(statement.OnFalse);
+			if (statement.Cond is FuPrefixExpr not && not.Op == FuToken.ExclamationMark)
+				return TryWriteTryParse(not.Inner, statement.OnFalse, statement.OnTrue);
+			return TryWriteTryParse(statement.Cond, statement.OnTrue, statement.OnFalse);
 		}
 
 		protected virtual bool EmbedIfWhileIsVar(FuExpr expr, bool write) => false;
@@ -20496,6 +20514,46 @@ namespace Fusion
 			expr.Body.Accept(this, FuPriority.Statement);
 		}
 
+		protected override void WriteTryParseStatement(FuCallExpr call, FuStatement onParsed, FuStatement onFailure)
+		{
+			Write("try ");
+			OpenBlock();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			Write(" = ");
+			switch (call.Method.Symbol.Id) {
+			case FuId.IntTryParse:
+			case FuId.NIntTryParse:
+				Write("Integer.parseInt");
+				break;
+			case FuId.LongTryParse:
+				Write("Long.parseLong");
+				break;
+			case FuId.FloatTryParse:
+				Write("Float.parseFloat");
+				break;
+			case FuId.DoubleTryParse:
+				Write("Double.parseDouble");
+				break;
+			default:
+				throw new NotImplementedException();
+			}
+			WriteInParentheses(call.Arguments);
+			WriteCharLine(';');
+			if (onParsed != null)
+				FlattenBlock(onParsed);
+			CloseBlock();
+			Write("catch (NumberFormatException e_) ");
+			OpenBlock();
+			WriteTryParseFailure(call, onFailure);
+			CloseBlock();
+		}
+
+		internal override void VisitExpr(FuExpr statement)
+		{
+			if (!TryWriteTryParse(statement, null, null))
+				base.VisitExpr(statement);
+		}
+
 		protected override void DefineIsVar(FuBinaryExpr binary)
 		{
 		}
@@ -20563,49 +20621,7 @@ namespace Fusion
 
 		internal override void VisitIf(FuIf statement)
 		{
-			FuCallExpr call = IsIfTryParse(statement);
-			if (call != null) {
-				Write("try ");
-				OpenBlock();
-				call.Method.Left.Accept(this, FuPriority.Assign);
-				Write(" = ");
-				switch (call.Method.Symbol.Id) {
-				case FuId.IntTryParse:
-				case FuId.NIntTryParse:
-					Write("Integer.parseInt");
-					break;
-				case FuId.LongTryParse:
-					Write("Long.parseLong");
-					break;
-				case FuId.FloatTryParse:
-					Write("Float.parseFloat");
-					break;
-				case FuId.DoubleTryParse:
-					Write("Double.parseDouble");
-					break;
-				default:
-					throw new NotImplementedException();
-				}
-				WriteInParentheses(call.Arguments);
-				WriteCharLine(';');
-				bool not = statement.Cond != call;
-				FlattenBranch(statement, !not);
-				CloseBlock();
-				Write("catch (NumberFormatException e_) ");
-				OpenBlock();
-				switch (not ? statement.OnTrue : statement.OnFalse) {
-				case FuReturn:
-				case FuThrow:
-					break;
-				default:
-					call.Method.Left.Accept(this, FuPriority.Assign);
-					WriteLine(" = 0;");
-					break;
-				}
-				FlattenBranch(statement, not);
-				CloseBlock();
-			}
-			else
+			if (!TryWriteIfTryParse(statement))
 				base.VisitIf(statement);
 		}
 
@@ -23078,6 +23094,8 @@ namespace Fusion
 
 		internal override void VisitIf(FuIf statement)
 		{
+			if (TryWriteIfTryParse(statement))
+				return;
 			bool condPostXcrement = OpenCond("if ", statement.Cond, FuPriority.Argument);
 			statement.OnTrue.AcceptStatement(this);
 			CloseChild();
@@ -24474,11 +24492,37 @@ namespace Fusion
 			Write("var ");
 		}
 
+		protected override void WriteTryParseStatement(FuCallExpr call, FuStatement onParsed, FuStatement onFailure)
+		{
+			Write("if let fuparsed = ");
+			WritePromotedType(call.Method.Left.Type);
+			WriteChar('(');
+			WriteUnwrapped(call.Arguments[0], FuPriority.Argument, true);
+			if (call.Arguments.Count == 2) {
+				Write(", radix: ");
+				call.Arguments[1].Accept(this, FuPriority.Argument);
+			}
+			Write(") ");
+			OpenBlock();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			WriteLine(" = fuparsed");
+			if (onParsed != null)
+				FlattenBlock(onParsed);
+			CloseBlock();
+			Write("else ");
+			OpenBlock();
+			WriteTryParseFailure(call, onFailure);
+			CloseBlock();
+		}
+
 		internal override void VisitExpr(FuExpr statement)
 		{
 			WriteTemporaries(statement);
-			if (statement is FuCallExpr call && statement.Type.Id != FuId.VoidType)
+			if (statement is FuCallExpr && statement.Type.Id != FuId.VoidType) {
+				if (TryWriteTryParse(statement, null, null))
+					return;
 				Write("_ = ");
+			}
 			base.VisitExpr(statement);
 		}
 
@@ -24690,36 +24734,6 @@ namespace Fusion
 				break;
 			}
 			WriteChild(statement.Body);
-		}
-
-		internal override void VisitIf(FuIf statement)
-		{
-			FuCallExpr call = IsIfTryParse(statement);
-			if (call != null) {
-				Write("if let fuparsed = ");
-				WritePromotedType(call.Method.Left.Type);
-				WriteChar('(');
-				WriteUnwrapped(call.Arguments[0], FuPriority.Argument, true);
-				if (call.Arguments.Count == 2) {
-					Write(", radix: ");
-					call.Arguments[1].Accept(this, FuPriority.Argument);
-				}
-				Write(") ");
-				OpenBlock();
-				call.Method.Left.Accept(this, FuPriority.Assign);
-				WriteLine(" = fuparsed");
-				bool not = statement.Cond != call;
-				FlattenBranch(statement, !not);
-				CloseBlock();
-				Write("else ");
-				OpenBlock();
-				call.Method.Left.Accept(this, FuPriority.Assign);
-				WriteLine(" = 0");
-				FlattenBranch(statement, not);
-				CloseBlock();
-			}
-			else
-				base.VisitIf(statement);
 		}
 
 		internal override void VisitLock(FuLock statement)
@@ -26511,10 +26525,30 @@ namespace Fusion
 		{
 		}
 
+		protected override void WriteTryParseStatement(FuCallExpr call, FuStatement onParsed, FuStatement onFailure)
+		{
+			Write("try");
+			OpenChild();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			Write(" = ");
+			Write(call.Method.Symbol.Id == FuId.FloatTryParse || call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
+			WriteInParentheses(call.Arguments);
+			WriteNewLine();
+			if (onParsed != null)
+				FlattenBlock(onParsed);
+			CloseChild();
+			Write("except ValueError");
+			OpenChild();
+			WriteTryParseFailure(call, onFailure);
+			CloseChild();
+		}
+
 		protected override bool HasInitCode(FuNamedValue def) => def.Type is FuArrayStorageType || (def.Type.IsFinal() ? !(def.Value is FuLiteralNull) : def.Value != null);
 
 		internal override void VisitExpr(FuExpr statement)
 		{
+			if (TryWriteTryParse(statement, null, null))
+				return;
 			if (!(statement is FuVar def) || HasInitCode(def)) {
 				WriteTemporaries(statement);
 				base.VisitExpr(statement);
@@ -26572,31 +26606,6 @@ namespace Fusion
 		}
 
 		protected override string GetIfNot() => "if not ";
-
-		internal override void VisitIf(FuIf statement)
-		{
-			FuCallExpr call = IsIfTryParse(statement);
-			if (call != null) {
-				Write("try");
-				OpenChild();
-				call.Method.Left.Accept(this, FuPriority.Assign);
-				Write(" = ");
-				Write(call.Method.Symbol.Id == FuId.FloatTryParse || call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
-				WriteInParentheses(call.Arguments);
-				WriteNewLine();
-				bool not = statement.Cond != call;
-				FlattenBranch(statement, !not);
-				CloseChild();
-				Write("except ValueError");
-				OpenChild();
-				call.Method.Left.Accept(this, FuPriority.Assign);
-				WriteLine(" = 0");
-				FlattenBranch(statement, not);
-				CloseChild();
-			}
-			else
-				base.VisitIf(statement);
-		}
 
 		void WriteInclusiveLimit(FuExpr limit, int increment, string incrementString)
 		{

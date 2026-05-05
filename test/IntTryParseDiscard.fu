@@ -1,0 +1,17 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i;
+		i.TryParse("foo"); //FAIL: cl
+		if (i != 0)
+			return false;
+		i.TryParse("42");
+		if (i != 42)
+			return false;
+		i.TryParse("1337");
+		if (i != 1337)
+			return false;
+		return true;
+	}
+}

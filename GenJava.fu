@@ -1160,6 +1160,46 @@ public class GenJava : GenTyped
 		expr.Body.Accept(this, FuPriority.Statement);
 	}
 
+	protected override void WriteTryParseStatement!(FuCallExpr call, FuStatement!? onParsed, FuStatement!? onFailure)
+	{
+		Write("try ");
+		OpenBlock();
+		call.Method.Left.Accept(this, FuPriority.Assign);
+		Write(" = ");
+		switch (call.Method.Symbol.Id) {
+		case FuId.IntTryParse:
+		case FuId.NIntTryParse:
+			Write("Integer.parseInt");
+			break;
+		case FuId.LongTryParse:
+			Write("Long.parseLong");
+			break;
+		case FuId.FloatTryParse:
+			Write("Float.parseFloat");
+			break;
+		case FuId.DoubleTryParse:
+			Write("Double.parseDouble");
+			break;
+		default:
+			assert false;
+		}
+		WriteInParentheses(call.Arguments);
+		WriteCharLine(';');
+		if (onParsed != null)
+			FlattenBlock(onParsed);
+		CloseBlock();
+		Write("catch (NumberFormatException e_) ");
+		OpenBlock();
+		WriteTryParseFailure(call, onFailure);
+		CloseBlock();
+	}
+
+	internal override void VisitExpr!(FuExpr statement)
+	{
+		if (!TryWriteTryParse(statement, null, null))
+			base.VisitExpr(statement);
+	}
+
 	protected override void DefineIsVar!(FuBinaryExpr binary)
 	{
 	}
@@ -1228,49 +1268,7 @@ public class GenJava : GenTyped
 
 	internal override void VisitIf!(FuIf statement)
 	{
-		FuCallExpr? call = IsIfTryParse(statement);
-		if (call != null) {
-			Write("try ");
-			OpenBlock();
-			call.Method.Left.Accept(this, FuPriority.Assign);
-			Write(" = ");
-			switch (call.Method.Symbol.Id) {
-			case FuId.IntTryParse:
-			case FuId.NIntTryParse:
-				Write("Integer.parseInt");
-				break;
-			case FuId.LongTryParse:
-				Write("Long.parseLong");
-				break;
-			case FuId.FloatTryParse:
-				Write("Float.parseFloat");
-				break;
-			case FuId.DoubleTryParse:
-				Write("Double.parseDouble");
-				break;
-			default:
-				assert false;
-			}
-			WriteInParentheses(call.Arguments);
-			WriteCharLine(';');
-			bool not = statement.Cond != call;
-			FlattenBranch(statement, !not);
-			CloseBlock();
-			Write("catch (NumberFormatException e_) ");
-			OpenBlock();
-			switch (not ? statement.OnTrue : statement.OnFalse) {
-			case FuReturn:
-			case FuThrow:
-				break;
-			default:
-				call.Method.Left.Accept(this, FuPriority.Assign);
-				WriteLine(" = 0;");
-				break;
-			}
-			FlattenBranch(statement, not);
-			CloseBlock();
-		}
-		else
+		if (!TryWriteIfTryParse(statement))
 			base.VisitIf(statement);
 	}
 

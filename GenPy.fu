@@ -1309,11 +1309,31 @@ public class GenPy : GenPySwift
 	{
 	}
 
+	protected override void WriteTryParseStatement!(FuCallExpr call, FuStatement!? onParsed, FuStatement!? onFailure)
+	{
+		Write("try");
+		OpenChild();
+		call.Method.Left.Accept(this, FuPriority.Assign);
+		Write(" = ");
+		Write(call.Method.Symbol.Id == FuId.FloatTryParse || call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
+		WriteInParentheses(call.Arguments);
+		WriteNewLine();
+		if (onParsed != null)
+			FlattenBlock(onParsed);
+		CloseChild();
+		Write("except ValueError");
+		OpenChild();
+		WriteTryParseFailure(call, onFailure);
+		CloseChild();
+	}
+
 	protected override bool HasInitCode(FuNamedValue def) => def.Type is FuArrayStorageType
 		|| (def.Type.IsFinal() ? !(def.Value is FuLiteralNull) : def.Value != null);
 
 	internal override void VisitExpr!(FuExpr statement)
 	{
+		if (TryWriteTryParse(statement, null, null))
+			return;
 		if (!(statement is FuVar def) || HasInitCode(def)) {
 			WriteTemporaries(statement);
 			base.VisitExpr(statement);
@@ -1371,31 +1391,6 @@ public class GenPy : GenPySwift
 	}
 
 	protected override string GetIfNot() => "if not ";
-
-	internal override void VisitIf!(FuIf statement)
-	{
-		FuCallExpr? call = IsIfTryParse(statement);
-		if (call != null) {
-			Write("try");
-			OpenChild();
-			call.Method.Left.Accept(this, FuPriority.Assign);
-			Write(" = ");
-			Write(call.Method.Symbol.Id == FuId.FloatTryParse || call.Method.Symbol.Id == FuId.DoubleTryParse ? "float" : "int");
-			WriteInParentheses(call.Arguments);
-			WriteNewLine();
-			bool not = statement.Cond != call;
-			FlattenBranch(statement, !not);
-			CloseChild();
-			Write("except ValueError");
-			OpenChild();
-			call.Method.Left.Accept(this, FuPriority.Assign);
-			WriteLine(" = 0");
-			FlattenBranch(statement, not);
-			CloseChild();
-		}
-		else
-			base.VisitIf(statement);
-	}
 
 	void WriteInclusiveLimit!(FuExpr limit, int increment, string incrementString)
 	{

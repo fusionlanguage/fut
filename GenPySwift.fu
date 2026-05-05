@@ -346,6 +346,8 @@ public abstract class GenPySwift : GenBase
 
 	internal override void VisitIf!(FuIf statement)
 	{
+		if (TryWriteIfTryParse(statement))
+			return;
 		bool condPostXcrement = OpenCond("if ", statement.Cond, FuPriority.Argument);
 		statement.OnTrue.AcceptStatement(this);
 		CloseChild();

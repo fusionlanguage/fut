@@ -1474,10 +1474,7 @@ private: // internal
 	friend FuSwitch;
 	friend GenBase;
 	friend GenCpp;
-	friend GenJava;
-	friend GenPy;
 	friend GenPySwift;
-	friend GenSwift;
 };
 
 class FuLock : public FuStatement
@@ -2573,6 +2570,9 @@ protected:
 	void trimTemporariesAndCloseBlock(int temporariesCount);
 	virtual void writeChild(FuStatement * statement);
 	virtual void startBreakGoto();
+	void writeTryParseFailure(const FuCallExpr * call, FuStatement * onFailure);
+	virtual void writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure);
+	bool tryWriteTryParse(const FuExpr * expr, FuStatement * onParsed, FuStatement * onFailure);
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
 	virtual void startIf(const FuExpr * expr);
 	void defineVar(const FuExpr * value);
@@ -2635,8 +2635,7 @@ private: // internal
 	void visitContinue(const FuContinue * statement) override;
 	void visitDoWhile(const FuDoWhile * statement) override;
 	void visitFor(const FuFor * statement) override;
-	static const FuCallExpr * isIfTryParse(const FuIf * statement);
-	void flattenBranch(const FuIf * statement, bool cond);
+	bool tryWriteIfTryParse(const FuIf * statement);
 	void visitIf(const FuIf * statement) override;
 	void visitNative(const FuNative * statement) override;
 	void visitReturn(const FuReturn * statement) override;
@@ -3277,6 +3276,7 @@ protected:
 	void writeVar(const FuNamedValue * def) override;
 	bool hasInitCode(const FuNamedValue * def) const override;
 	void writeInitCode(const FuNamedValue * def) override;
+	void writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure) override;
 	void defineIsVar(const FuBinaryExpr * binary) override;
 	void writeAssert(const FuAssert * statement) override;
 	void startBreakGoto() override;
@@ -3294,6 +3294,7 @@ private: // internal
 	void visitPostfixExpr(const FuPostfixExpr * expr, FuPriority parent) override;
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
+	void visitExpr(const FuExpr * statement) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitIf(const FuIf * statement) override;
 	void visitLock(const FuLock * statement) override;
@@ -3529,6 +3530,7 @@ protected:
 	void writeExpr(const FuExpr * expr, FuPriority parent) override;
 	void writeCoercedExpr(const FuType * type, const FuExpr * expr) override;
 	void startTemporaryVar(const FuType * type) override;
+	void writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure) override;
 	void openChild() override;
 	void closeChild() override;
 	void writeVar(const FuNamedValue * def) override;
@@ -3562,7 +3564,6 @@ private: // internal
 	void visitBreak(const FuBreak * statement) override;
 	void visitDoWhile(const FuDoWhile * statement) override;
 	void visitForeach(const FuForeach * statement) override;
-	void visitIf(const FuIf * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
 	void visitThrow(const FuThrow * statement) override;
@@ -3637,6 +3638,7 @@ protected:
 	void writeResource(std::string_view name, int length) override;
 	bool visitPreCall(const FuCallExpr * call) override;
 	void startTemporaryVar(const FuType * type) override;
+	void writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure) override;
 	bool hasInitCode(const FuNamedValue * def) const override;
 	void startLine() override;
 	void openChild() override;
@@ -3665,7 +3667,6 @@ private: // internal
 	void visitExpr(const FuExpr * statement) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
 	void visitBreak(const FuBreak * statement) override;
-	void visitIf(const FuIf * statement) override;
 	void visitForeach(const FuForeach * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;

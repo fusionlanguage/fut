@@ -1362,11 +1362,37 @@ public class GenSwift : GenPySwift
 		Write("var ");
 	}
 
+	protected override void WriteTryParseStatement!(FuCallExpr call, FuStatement!? onParsed, FuStatement!? onFailure)
+	{
+		Write("if let fuparsed = ");
+		WritePromotedType(call.Method.Left.Type);
+		WriteChar('(');
+		WriteUnwrapped(call.Arguments[0], FuPriority.Argument, true);
+		if (call.Arguments.Count == 2) {
+			Write(", radix: ");
+			call.Arguments[1].Accept(this, FuPriority.Argument);
+		}
+		Write(") ");
+		OpenBlock();
+		call.Method.Left.Accept(this, FuPriority.Assign);
+		WriteLine(" = fuparsed");
+		if (onParsed != null)
+			FlattenBlock(onParsed);
+		CloseBlock();
+		Write("else ");
+		OpenBlock();
+		WriteTryParseFailure(call, onFailure);
+		CloseBlock();
+	}
+
 	internal override void VisitExpr!(FuExpr statement)
 	{
 		WriteTemporaries(statement);
-		if (statement is FuCallExpr call && statement.Type.Id != FuId.VoidType)
+		if (statement is FuCallExpr && statement.Type.Id != FuId.VoidType) {
+			if (TryWriteTryParse(statement, null, null))
+				return;
 			Write("_ = ");
+		}
 		base.VisitExpr(statement);
 	}
 
@@ -1584,36 +1610,6 @@ public class GenSwift : GenPySwift
 			break;
 		}
 		WriteChild(statement.Body);
-	}
-
-	internal override void VisitIf!(FuIf statement)
-	{
-		FuCallExpr? call = IsIfTryParse(statement);
-		if (call != null) {
-			Write("if let fuparsed = ");
-			WritePromotedType(call.Method.Left.Type);
-			WriteChar('(');
-			WriteUnwrapped(call.Arguments[0], FuPriority.Argument, true);
-			if (call.Arguments.Count == 2) {
-				Write(", radix: ");
-				call.Arguments[1].Accept(this, FuPriority.Argument);
-			}
-			Write(") ");
-			OpenBlock();
-			call.Method.Left.Accept(this, FuPriority.Assign);
-			WriteLine(" = fuparsed");
-			bool not = statement.Cond != call;
-			FlattenBranch(statement, !not);
-			CloseBlock();
-			Write("else ");
-			OpenBlock();
-			call.Method.Left.Accept(this, FuPriority.Assign);
-			WriteLine(" = 0");
-			FlattenBranch(statement, not);
-			CloseBlock();
-		}
-		else
-			base.VisitIf(statement);
 	}
 
 	internal override void VisitLock!(FuLock statement)

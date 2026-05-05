@@ -9241,34 +9241,49 @@ export class GenBase extends FuVisitor
 		this.writeChild(statement.body);
 	}
 
-	static isIfTryParse(statement)
+	writeTryParseFailure(call, onFailure)
 	{
-		let cond = statement.cond;
-		let not;
-		if ((not = cond) instanceof FuPrefixExpr && not.op == FuToken.EXCLAMATION_MARK)
-			cond = not.inner;
+		if (onFailure instanceof FuReturn || onFailure instanceof FuThrow) {
+		}
+		else {
+			call.method.left.accept(this, FuPriority.ASSIGN);
+			this.write(" = 0");
+			this.endStatement();
+		}
+		if (onFailure != null)
+			this.flattenBlock(onFailure);
+	}
+
+	writeTryParseStatement(call, onParsed, onFailure)
+	{
+		throw new Error();
+	}
+
+	tryWriteTryParse(expr, onParsed, onFailure)
+	{
 		let call;
-		if ((call = cond) instanceof FuCallExpr) {
+		if ((call = expr) instanceof FuCallExpr) {
 			switch (call.method.symbol.id) {
 			case FuId.INT_TRY_PARSE:
 			case FuId.N_INT_TRY_PARSE:
 			case FuId.LONG_TRY_PARSE:
 			case FuId.FLOAT_TRY_PARSE:
 			case FuId.DOUBLE_TRY_PARSE:
-				return call;
+				this.writeTryParseStatement(call, onParsed, onFailure);
+				return true;
 			default:
 				break;
 			}
 		}
-		return null;
+		return false;
 	}
 
-	flattenBranch(statement, cond)
+	tryWriteIfTryParse(statement)
 	{
-		if (cond)
-			this.flattenBlock(statement.onTrue);
-		else if (statement.onFalse != null)
-			this.flattenBlock(statement.onFalse);
+		let not;
+		if ((not = statement.cond) instanceof FuPrefixExpr && not.op == FuToken.EXCLAMATION_MARK)
+			return this.tryWriteTryParse(not.inner, statement.onFalse, statement.onTrue);
+		return this.tryWriteTryParse(statement.cond, statement.onTrue, statement.onFalse);
 	}
 
 	embedIfWhileIsVar(expr, write)
@@ -21111,6 +21126,46 @@ export class GenJava extends GenTyped
 		expr.body.accept(this, FuPriority.STATEMENT);
 	}
 
+	writeTryParseStatement(call, onParsed, onFailure)
+	{
+		this.write("try ");
+		this.openBlock();
+		call.method.left.accept(this, FuPriority.ASSIGN);
+		this.write(" = ");
+		switch (call.method.symbol.id) {
+		case FuId.INT_TRY_PARSE:
+		case FuId.N_INT_TRY_PARSE:
+			this.write("Integer.parseInt");
+			break;
+		case FuId.LONG_TRY_PARSE:
+			this.write("Long.parseLong");
+			break;
+		case FuId.FLOAT_TRY_PARSE:
+			this.write("Float.parseFloat");
+			break;
+		case FuId.DOUBLE_TRY_PARSE:
+			this.write("Double.parseDouble");
+			break;
+		default:
+			throw new Error();
+		}
+		this.writeInParentheses(call.arguments_);
+		this.writeCharLine(59);
+		if (onParsed != null)
+			this.flattenBlock(onParsed);
+		this.closeBlock();
+		this.write("catch (NumberFormatException e_) ");
+		this.openBlock();
+		this.writeTryParseFailure(call, onFailure);
+		this.closeBlock();
+	}
+
+	visitExpr(statement)
+	{
+		if (!this.tryWriteTryParse(statement, null, null))
+			super.visitExpr(statement);
+	}
+
 	defineIsVar(binary)
 	{
 	}
@@ -21178,46 +21233,7 @@ export class GenJava extends GenTyped
 
 	visitIf(statement)
 	{
-		let call = GenJava.isIfTryParse(statement);
-		if (call != null) {
-			this.write("try ");
-			this.openBlock();
-			call.method.left.accept(this, FuPriority.ASSIGN);
-			this.write(" = ");
-			switch (call.method.symbol.id) {
-			case FuId.INT_TRY_PARSE:
-			case FuId.N_INT_TRY_PARSE:
-				this.write("Integer.parseInt");
-				break;
-			case FuId.LONG_TRY_PARSE:
-				this.write("Long.parseLong");
-				break;
-			case FuId.FLOAT_TRY_PARSE:
-				this.write("Float.parseFloat");
-				break;
-			case FuId.DOUBLE_TRY_PARSE:
-				this.write("Double.parseDouble");
-				break;
-			default:
-				throw new Error();
-			}
-			this.writeInParentheses(call.arguments_);
-			this.writeCharLine(59);
-			let not = statement.cond != call;
-			this.flattenBranch(statement, !not);
-			this.closeBlock();
-			this.write("catch (NumberFormatException e_) ");
-			this.openBlock();
-			if ((not ? statement.onTrue : statement.onFalse) instanceof FuReturn || (not ? statement.onTrue : statement.onFalse) instanceof FuThrow) {
-			}
-			else {
-				call.method.left.accept(this, FuPriority.ASSIGN);
-				this.writeLine(" = 0;");
-			}
-			this.flattenBranch(statement, not);
-			this.closeBlock();
-		}
-		else
+		if (!this.tryWriteIfTryParse(statement))
 			super.visitIf(statement);
 	}
 
@@ -23711,6 +23727,8 @@ export class GenPySwift extends GenBase
 
 	visitIf(statement)
 	{
+		if (this.tryWriteIfTryParse(statement))
+			return;
 		let condPostXcrement = this.#openCond("if ", statement.cond, FuPriority.ARGUMENT);
 		statement.onTrue.acceptStatement(this);
 		this.closeChild();
@@ -25112,12 +25130,37 @@ export class GenSwift extends GenPySwift
 		this.write("var ");
 	}
 
+	writeTryParseStatement(call, onParsed, onFailure)
+	{
+		this.write("if let fuparsed = ");
+		this.#writePromotedType(call.method.left.type);
+		this.writeChar(40);
+		this.#writeUnwrapped(call.arguments_[0], FuPriority.ARGUMENT, true);
+		if (call.arguments_.length == 2) {
+			this.write(", radix: ");
+			call.arguments_[1].accept(this, FuPriority.ARGUMENT);
+		}
+		this.write(") ");
+		this.openBlock();
+		call.method.left.accept(this, FuPriority.ASSIGN);
+		this.writeLine(" = fuparsed");
+		if (onParsed != null)
+			this.flattenBlock(onParsed);
+		this.closeBlock();
+		this.write("else ");
+		this.openBlock();
+		this.writeTryParseFailure(call, onFailure);
+		this.closeBlock();
+	}
+
 	visitExpr(statement)
 	{
 		this.writeTemporaries(statement);
-		let call;
-		if ((call = statement) instanceof FuCallExpr && statement.type.id != FuId.VOID_TYPE)
+		if (statement instanceof FuCallExpr && statement.type.id != FuId.VOID_TYPE) {
+			if (this.tryWriteTryParse(statement, null, null))
+				return;
 			this.write("_ = ");
+		}
 		super.visitExpr(statement);
 	}
 
@@ -25339,36 +25382,6 @@ export class GenSwift extends GenPySwift
 			break;
 		}
 		this.writeChild(statement.body);
-	}
-
-	visitIf(statement)
-	{
-		let call = GenSwift.isIfTryParse(statement);
-		if (call != null) {
-			this.write("if let fuparsed = ");
-			this.#writePromotedType(call.method.left.type);
-			this.writeChar(40);
-			this.#writeUnwrapped(call.arguments_[0], FuPriority.ARGUMENT, true);
-			if (call.arguments_.length == 2) {
-				this.write(", radix: ");
-				call.arguments_[1].accept(this, FuPriority.ARGUMENT);
-			}
-			this.write(") ");
-			this.openBlock();
-			call.method.left.accept(this, FuPriority.ASSIGN);
-			this.writeLine(" = fuparsed");
-			let not = statement.cond != call;
-			this.flattenBranch(statement, !not);
-			this.closeBlock();
-			this.write("else ");
-			this.openBlock();
-			call.method.left.accept(this, FuPriority.ASSIGN);
-			this.writeLine(" = 0");
-			this.flattenBranch(statement, not);
-			this.closeBlock();
-		}
-		else
-			super.visitIf(statement);
 	}
 
 	visitLock(statement)
@@ -27178,6 +27191,24 @@ export class GenPy extends GenPySwift
 	{
 	}
 
+	writeTryParseStatement(call, onParsed, onFailure)
+	{
+		this.write("try");
+		this.openChild();
+		call.method.left.accept(this, FuPriority.ASSIGN);
+		this.write(" = ");
+		this.write(call.method.symbol.id == FuId.FLOAT_TRY_PARSE || call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
+		this.writeInParentheses(call.arguments_);
+		this.writeNewLine();
+		if (onParsed != null)
+			this.flattenBlock(onParsed);
+		this.closeChild();
+		this.write("except ValueError");
+		this.openChild();
+		this.writeTryParseFailure(call, onFailure);
+		this.closeChild();
+	}
+
 	hasInitCode(def)
 	{
 		return def.type instanceof FuArrayStorageType || (def.type.isFinal() ? !(def.value instanceof FuLiteralNull) : def.value != null);
@@ -27185,6 +27216,8 @@ export class GenPy extends GenPySwift
 
 	visitExpr(statement)
 	{
+		if (this.tryWriteTryParse(statement, null, null))
+			return;
 		let def;
 		if (!((def = statement) instanceof FuVar) || this.hasInitCode(def)) {
 			this.writeTemporaries(statement);
@@ -27245,31 +27278,6 @@ export class GenPy extends GenPySwift
 	getIfNot()
 	{
 		return "if not ";
-	}
-
-	visitIf(statement)
-	{
-		let call = GenPy.isIfTryParse(statement);
-		if (call != null) {
-			this.write("try");
-			this.openChild();
-			call.method.left.accept(this, FuPriority.ASSIGN);
-			this.write(" = ");
-			this.write(call.method.symbol.id == FuId.FLOAT_TRY_PARSE || call.method.symbol.id == FuId.DOUBLE_TRY_PARSE ? "float" : "int");
-			this.writeInParentheses(call.arguments_);
-			this.writeNewLine();
-			let not = statement.cond != call;
-			this.flattenBranch(statement, !not);
-			this.closeChild();
-			this.write("except ValueError");
-			this.openChild();
-			call.method.left.accept(this, FuPriority.ASSIGN);
-			this.writeLine(" = 0");
-			this.flattenBranch(statement, not);
-			this.closeChild();
-		}
-		else
-			super.visitIf(statement);
 	}
 
 	#writeInclusiveLimit(limit, increment, incrementString)
