@@ -9252,6 +9252,17 @@ export class GenBase extends FuVisitor
 			this.flattenBlock(onFailure);
 	}
 
+	endTryParse(call, onParsed, statement, onFailure)
+	{
+		if (onParsed != null)
+			this.flattenBlock(onParsed);
+		this.closeBlock();
+		this.write(statement);
+		this.openBlock();
+		this.writeTryParseFailure(call, onFailure);
+		this.closeBlock();
+	}
+
 	writeTryParseStatement(call, onParsed, onFailure)
 	{
 		throw new Error();
@@ -19016,6 +19027,29 @@ export class GenD extends GenCCppD
 		}
 	}
 
+	#writeTryParseAssign(obj, args)
+	{
+		obj.accept(this, FuPriority.ASSIGN);
+		this.write(" = ");
+		this.include("std.conv");
+		this.writePostfix(args[0], ".to!");
+		this.writeType(obj.type, false);
+		if (args.length == 2) {
+			this.writeChar(40);
+			args[1].accept(this, FuPriority.ARGUMENT);
+			this.writeChar(41);
+		}
+	}
+
+	writeTryParseStatement(call, onParsed, onFailure)
+	{
+		this.write("try ");
+		this.openBlock();
+		this.#writeTryParseAssign(call.method.left, call.arguments_);
+		this.endStatement();
+		this.endTryParse(call, onParsed, "catch (ConvException e_) ", onFailure);
+	}
+
 	#writeWrite(args, newLine)
 	{
 		this.include("std.stdio");
@@ -19110,16 +19144,8 @@ export class GenD extends GenCCppD
 		case FuId.DOUBLE_TRY_PARSE:
 			this.include("std.conv");
 			this.write("() { try { ");
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" = ");
-			this.writePostfix(args[0], ".to!");
-			this.writeType(obj.type, false);
-			if (args.length == 2) {
-				this.writeChar(40);
-				args[1].accept(this, FuPriority.ARGUMENT);
-				this.writeChar(41);
-			}
-			this.write("; return true; } catch (ConvException e) { ");
+			this.#writeTryParseAssign(obj, args);
+			this.write("; return true; } catch (ConvException e_) { ");
 			obj.accept(this, FuPriority.ASSIGN);
 			this.write(" = 0; return false; } }()");
 			break;
@@ -19668,6 +19694,12 @@ export class GenD extends GenCCppD
 		expr.body.accept(this, FuPriority.STATEMENT);
 	}
 
+	visitExpr(statement)
+	{
+		if (!this.tryWriteTryParse(statement, null, null))
+			super.visitExpr(statement);
+	}
+
 	writeAssert(statement)
 	{
 		this.write("assert(");
@@ -19697,6 +19729,12 @@ export class GenD extends GenCCppD
 			this.write(".byKey");
 		this.writeChar(41);
 		this.writeChild(statement.body);
+	}
+
+	visitIf(statement)
+	{
+		if (!this.tryWriteIfTryParse(statement))
+			super.visitIf(statement);
 	}
 
 	visitLock(statement)
@@ -21148,14 +21186,8 @@ export class GenJava extends GenTyped
 			throw new Error();
 		}
 		this.writeInParentheses(call.arguments_);
-		this.writeCharLine(59);
-		if (onParsed != null)
-			this.flattenBlock(onParsed);
-		this.closeBlock();
-		this.write("catch (NumberFormatException e_) ");
-		this.openBlock();
-		this.writeTryParseFailure(call, onFailure);
-		this.closeBlock();
+		this.endStatement();
+		this.endTryParse(call, onParsed, "catch (NumberFormatException e_) ", onFailure);
 	}
 
 	visitExpr(statement)
@@ -25142,13 +25174,7 @@ export class GenSwift extends GenPySwift
 		this.openBlock();
 		call.method.left.accept(this, FuPriority.ASSIGN);
 		this.writeLine(" = fuparsed");
-		if (onParsed != null)
-			this.flattenBlock(onParsed);
-		this.closeBlock();
-		this.write("else ");
-		this.openBlock();
-		this.writeTryParseFailure(call, onFailure);
-		this.closeBlock();
+		this.endTryParse(call, onParsed, "else ", onFailure);
 	}
 
 	visitExpr(statement)

@@ -1282,6 +1282,7 @@ private: // internal
 	friend GenCCpp;
 	friend GenCl;
 	friend GenCpp;
+	friend GenD;
 	friend GenJava;
 	friend GenPy;
 	friend GenPySwift;
@@ -2571,6 +2572,7 @@ protected:
 	virtual void writeChild(FuStatement * statement);
 	virtual void startBreakGoto();
 	void writeTryParseFailure(const FuCallExpr * call, FuStatement * onFailure);
+	void endTryParse(const FuCallExpr * call, FuStatement * onParsed, std::string_view statement, FuStatement * onFailure);
 	virtual void writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure);
 	bool tryWriteTryParse(const FuExpr * expr, FuStatement * onParsed, FuStatement * onFailure);
 	virtual bool embedIfWhileIsVar(const FuExpr * expr, bool write);
@@ -3196,6 +3198,7 @@ protected:
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;
 	void writeResource(std::string_view name, int length) override;
 	void writeStringLength(const FuExpr * expr) override;
+	void writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure) override;
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_) override;
@@ -3217,7 +3220,9 @@ private: // internal
 	void visitSymbolReference(const FuSymbolReference * expr, FuPriority parent) override;
 	void visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void visitLambdaExpr(const FuLambdaExpr * expr) override;
+	void visitExpr(const FuExpr * statement) override;
 	void visitForeach(const FuForeach * statement) override;
+	void visitIf(const FuIf * statement) override;
 	void visitLock(const FuLock * statement) override;
 	void visitSwitch(const FuSwitch * statement) override;
 private:
@@ -3237,6 +3242,7 @@ private:
 	void writeElementType(const FuType * type);
 	void writeStaticInitializer(const FuType * type);
 	void writeClassReference(const FuExpr * expr, FuPriority priority = FuPriority::primary);
+	void writeTryParseAssign(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
 	void writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length);
 	void writeInsertedArg(const FuType * type, const std::vector<std::shared_ptr<FuExpr>> * args, int index = 0);

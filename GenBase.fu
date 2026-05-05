@@ -1730,6 +1730,17 @@ public abstract class GenBase : FuVisitor
 			FlattenBlock(onFailure);
 	}
 
+	protected void EndTryParse!(FuCallExpr call, FuStatement!? onParsed, string statement, FuStatement!? onFailure)
+	{
+		if (onParsed != null)
+			FlattenBlock(onParsed);
+		CloseBlock();
+		Write(statement);
+		OpenBlock();
+		WriteTryParseFailure(call, onFailure);
+		CloseBlock();
+	}
+
 	protected virtual void WriteTryParseStatement!(FuCallExpr call, FuStatement!? onParsed, FuStatement!? onFailure)
 	{
 		assert false;

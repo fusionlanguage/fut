@@ -8825,6 +8825,17 @@ namespace Fusion
 				FlattenBlock(onFailure);
 		}
 
+		protected void EndTryParse(FuCallExpr call, FuStatement onParsed, string statement, FuStatement onFailure)
+		{
+			if (onParsed != null)
+				FlattenBlock(onParsed);
+			CloseBlock();
+			Write(statement);
+			OpenBlock();
+			WriteTryParseFailure(call, onFailure);
+			CloseBlock();
+		}
+
 		protected virtual void WriteTryParseStatement(FuCallExpr call, FuStatement onParsed, FuStatement onFailure)
 		{
 			throw new NotImplementedException();
@@ -18445,6 +18456,29 @@ namespace Fusion
 			}
 		}
 
+		void WriteTryParseAssign(FuExpr obj, List<FuExpr> args)
+		{
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = ");
+			Include("std.conv");
+			WritePostfix(args[0], ".to!");
+			WriteType(obj.Type, false);
+			if (args.Count == 2) {
+				WriteChar('(');
+				args[1].Accept(this, FuPriority.Argument);
+				WriteChar(')');
+			}
+		}
+
+		protected override void WriteTryParseStatement(FuCallExpr call, FuStatement onParsed, FuStatement onFailure)
+		{
+			Write("try ");
+			OpenBlock();
+			WriteTryParseAssign(call.Method.Left, call.Arguments);
+			EndStatement();
+			EndTryParse(call, onParsed, "catch (ConvException e_) ", onFailure);
+		}
+
 		void WriteWrite(List<FuExpr> args, bool newLine)
 		{
 			Include("std.stdio");
@@ -18536,16 +18570,8 @@ namespace Fusion
 			case FuId.DoubleTryParse:
 				Include("std.conv");
 				Write("() { try { ");
-				obj.Accept(this, FuPriority.Assign);
-				Write(" = ");
-				WritePostfix(args[0], ".to!");
-				WriteType(obj.Type, false);
-				if (args.Count == 2) {
-					WriteChar('(');
-					args[1].Accept(this, FuPriority.Argument);
-					WriteChar(')');
-				}
-				Write("; return true; } catch (ConvException e) { ");
+				WriteTryParseAssign(obj, args);
+				Write("; return true; } catch (ConvException e_) { ");
 				obj.Accept(this, FuPriority.Assign);
 				Write(" = 0; return false; } }()");
 				break;
@@ -19087,6 +19113,12 @@ namespace Fusion
 			expr.Body.Accept(this, FuPriority.Statement);
 		}
 
+		internal override void VisitExpr(FuExpr statement)
+		{
+			if (!TryWriteTryParse(statement, null, null))
+				base.VisitExpr(statement);
+		}
+
 		protected override void WriteAssert(FuAssert statement)
 		{
 			Write("assert(");
@@ -19114,6 +19146,12 @@ namespace Fusion
 				Write(".byKey");
 			WriteChar(')');
 			WriteChild(statement.Body);
+		}
+
+		internal override void VisitIf(FuIf statement)
+		{
+			if (!TryWriteIfTryParse(statement))
+				base.VisitIf(statement);
 		}
 
 		internal override void VisitLock(FuLock statement)
@@ -20533,14 +20571,8 @@ namespace Fusion
 				throw new NotImplementedException();
 			}
 			WriteInParentheses(call.Arguments);
-			WriteCharLine(';');
-			if (onParsed != null)
-				FlattenBlock(onParsed);
-			CloseBlock();
-			Write("catch (NumberFormatException e_) ");
-			OpenBlock();
-			WriteTryParseFailure(call, onFailure);
-			CloseBlock();
+			EndStatement();
+			EndTryParse(call, onParsed, "catch (NumberFormatException e_) ", onFailure);
 		}
 
 		internal override void VisitExpr(FuExpr statement)
@@ -24501,13 +24533,7 @@ namespace Fusion
 			OpenBlock();
 			call.Method.Left.Accept(this, FuPriority.Assign);
 			WriteLine(" = fuparsed");
-			if (onParsed != null)
-				FlattenBlock(onParsed);
-			CloseBlock();
-			Write("else ");
-			OpenBlock();
-			WriteTryParseFailure(call, onFailure);
-			CloseBlock();
+			EndTryParse(call, onParsed, "else ", onFailure);
 		}
 
 		internal override void VisitExpr(FuExpr statement)

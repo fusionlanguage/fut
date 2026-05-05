@@ -1376,13 +1376,7 @@ public class GenSwift : GenPySwift
 		OpenBlock();
 		call.Method.Left.Accept(this, FuPriority.Assign);
 		WriteLine(" = fuparsed");
-		if (onParsed != null)
-			FlattenBlock(onParsed);
-		CloseBlock();
-		Write("else ");
-		OpenBlock();
-		WriteTryParseFailure(call, onFailure);
-		CloseBlock();
+		EndTryParse(call, onParsed, "else ", onFailure);
 	}
 
 	internal override void VisitExpr!(FuExpr statement)

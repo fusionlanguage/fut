@@ -8687,6 +8687,17 @@ void GenBase::writeTryParseFailure(const FuCallExpr * call, FuStatement * onFail
 		flattenBlock(onFailure);
 }
 
+void GenBase::endTryParse(const FuCallExpr * call, FuStatement * onParsed, std::string_view statement, FuStatement * onFailure)
+{
+	if (onParsed != nullptr)
+		flattenBlock(onParsed);
+	closeBlock();
+	write(statement);
+	openBlock();
+	writeTryParseFailure(call, onFailure);
+	closeBlock();
+}
+
 void GenBase::writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure)
 {
 	std::abort();
@@ -17886,6 +17897,29 @@ void GenD::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 	}
 }
 
+void GenD::writeTryParseAssign(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	obj->accept(this, FuPriority::assign);
+	write(" = ");
+	include("std.conv");
+	writePostfix((*args)[0].get(), ".to!");
+	writeType(obj->type.get(), false);
+	if (std::ssize(*args) == 2) {
+		writeChar('(');
+		(*args)[1]->accept(this, FuPriority::argument);
+		writeChar(')');
+	}
+}
+
+void GenD::writeTryParseStatement(const FuCallExpr * call, FuStatement * onParsed, FuStatement * onFailure)
+{
+	write("try ");
+	openBlock();
+	writeTryParseAssign(call->method->left.get(), &call->arguments);
+	endStatement();
+	endTryParse(call, onParsed, "catch (ConvException e_) ", onFailure);
+}
+
 void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
 {
 	include("std.stdio");
@@ -17977,16 +18011,8 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::doubleTryParse:
 		include("std.conv");
 		write("() { try { ");
-		obj->accept(this, FuPriority::assign);
-		write(" = ");
-		writePostfix((*args)[0].get(), ".to!");
-		writeType(obj->type.get(), false);
-		if (std::ssize(*args) == 2) {
-			writeChar('(');
-			(*args)[1]->accept(this, FuPriority::argument);
-			writeChar(')');
-		}
-		write("; return true; } catch (ConvException e) { ");
+		writeTryParseAssign(obj, args);
+		write("; return true; } catch (ConvException e_) { ");
 		obj->accept(this, FuPriority::assign);
 		write(" = 0; return false; } }()");
 		break;
@@ -18534,6 +18560,12 @@ void GenD::visitLambdaExpr(const FuLambdaExpr * expr)
 	expr->body->accept(this, FuPriority::statement);
 }
 
+void GenD::visitExpr(const FuExpr * statement)
+{
+	if (!tryWriteTryParse(statement, nullptr, nullptr))
+		GenBase::visitExpr(statement);
+}
+
 void GenD::writeAssert(const FuAssert * statement)
 {
 	write("assert(");
@@ -18563,6 +18595,12 @@ void GenD::visitForeach(const FuForeach * statement)
 		write(".byKey");
 	writeChar(')');
 	writeChild(statement->body.get());
+}
+
+void GenD::visitIf(const FuIf * statement)
+{
+	if (!tryWriteIfTryParse(statement))
+		GenBase::visitIf(statement);
 }
 
 void GenD::visitLock(const FuLock * statement)
@@ -19919,14 +19957,8 @@ void GenJava::writeTryParseStatement(const FuCallExpr * call, FuStatement * onPa
 		std::abort();
 	}
 	writeInParentheses(&call->arguments);
-	writeCharLine(';');
-	if (onParsed != nullptr)
-		flattenBlock(onParsed);
-	closeBlock();
-	write("catch (NumberFormatException e_) ");
-	openBlock();
-	writeTryParseFailure(call, onFailure);
-	closeBlock();
+	endStatement();
+	endTryParse(call, onParsed, "catch (NumberFormatException e_) ", onFailure);
 }
 
 void GenJava::visitExpr(const FuExpr * statement)
@@ -23717,13 +23749,7 @@ void GenSwift::writeTryParseStatement(const FuCallExpr * call, FuStatement * onP
 	openBlock();
 	call->method->left->accept(this, FuPriority::assign);
 	writeLine(" = fuparsed");
-	if (onParsed != nullptr)
-		flattenBlock(onParsed);
-	closeBlock();
-	write("else ");
-	openBlock();
-	writeTryParseFailure(call, onFailure);
-	closeBlock();
+	endTryParse(call, onParsed, "else ", onFailure);
 }
 
 void GenSwift::visitExpr(const FuExpr * statement)
