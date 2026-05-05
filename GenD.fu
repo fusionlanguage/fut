@@ -838,7 +838,8 @@ public class GenD : GenCCppD
 		case FuId.DoubleTryParse:
 			Include("std.conv");
 			Write("() { try { ");
-			WritePostfix(obj, " = ");
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = ");
 			WritePostfix(args[0], ".to!");
 			WriteType(obj.Type, false);
 			if (args.Count == 2) {
@@ -846,7 +847,9 @@ public class GenD : GenCCppD
 				args[1].Accept(this, FuPriority.Argument);
 				WriteChar(')');
 			}
-			Write("; return true; } catch (ConvException e) return false; }()");
+			Write("; return true; } catch (ConvException e) { ");
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = 0; return false; } }()");
 			break;
 		case FuId.StringContains:
 			Include("std.algorithm");

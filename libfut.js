@@ -4005,7 +4005,7 @@ export class FuParser extends FuLexer
 	#parseDouble()
 	{
 		let d;
-		if (!!isNaN(d = parseFloat(this.getLexeme().replaceAll("_", ""))))
+		if (!(() => { const fuparsed = parseFloat(this.getLexeme().replaceAll("_", "")); d = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })())
 			this.reportError("Invalid floating-point number");
 		let result = Object.assign(new FuLiteralDouble(), { loc: this.tokenLoc, type: this.host.program.system.doubleType, value: d });
 		this.nextToken();
@@ -13995,10 +13995,9 @@ export class GenC extends GenCCpp
 			this.#startTryParseLibrary(klassName, type, ", int base");
 			if (klassName == "Int") {
 				this.writeLine("long l = strtol(str, &end, base);");
-				this.writeLine("if (l < INT_MIN || l > INT_MAX || *end != '\\0' || errno != 0)");
-				this.writeLine("\treturn false;");
-				this.writeLine("*result = (int) l;");
-				this.writeLine("return true;");
+				this.writeLine("bool ok = l >= INT_MIN && l <= INT_MAX && *end == '\\0' && errno == 0;");
+				this.writeLine("*result = ok ? (int) l : 0;");
+				this.writeLine("return ok;");
 			}
 			else if (klassName == "NInt") {
 				this.writeLine("*result =");
@@ -17017,7 +17016,10 @@ export class GenCpp extends GenCCpp
 			this.openBlock();
 			this.writeLine("const char *end = s.data() + s.size();");
 			this.writeLine("auto result = std::from_chars(s.data(), end, number, args...);");
-			this.writeLine("return result.ec == std::errc{} && result.ptr == end;");
+			this.writeLine("if (result.ec == std::errc{} && result.ptr == end)");
+			this.writeLine("\treturn true;");
+			this.writeLine("number = 0;");
+			this.writeLine("return false;");
 			this.closeBlock();
 		}
 		if (this.#stringReplace) {
@@ -19095,7 +19097,8 @@ export class GenD extends GenCCppD
 		case FuId.DOUBLE_TRY_PARSE:
 			this.include("std.conv");
 			this.write("() { try { ");
-			this.writePostfix(obj, " = ");
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = ");
 			this.writePostfix(args[0], ".to!");
 			this.writeType(obj.type, false);
 			if (args.length == 2) {
@@ -19103,7 +19106,9 @@ export class GenD extends GenCCppD
 				args[1].accept(this, FuPriority.ARGUMENT);
 				this.writeChar(41);
 			}
-			this.write("; return true; } catch (ConvException e) return false; }()");
+			this.write("; return true; } catch (ConvException e) { ");
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = 0; return false; } }()");
 			break;
 		case FuId.STRING_CONTAINS:
 			this.include("std.algorithm");
@@ -22162,12 +22167,12 @@ export class GenJsNoModule extends GenBase
 			break;
 		case FuId.INT_TRY_PARSE:
 		case FuId.N_INT_TRY_PARSE:
-			this.write("!isNaN(");
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" = parseInt(");
+			this.write("(() => { const fuparsed = parseInt(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeTryParseRadix(args);
-			this.write("))");
+			this.write("); ");
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 			break;
 		case FuId.LONG_TRY_PARSE:
 			if (args.length != 1)
@@ -22176,15 +22181,17 @@ export class GenJsNoModule extends GenBase
 			obj.accept(this, FuPriority.ASSIGN);
 			this.write(" = BigInt(");
 			args[0].accept(this, FuPriority.ARGUMENT);
-			this.write("); return true; } catch { return false; }})()");
+			this.write("); return true; } catch { ");
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = 0n; return false; }})()");
 			break;
 		case FuId.FLOAT_TRY_PARSE:
 		case FuId.DOUBLE_TRY_PARSE:
-			this.write("!isNaN(");
-			obj.accept(this, FuPriority.ASSIGN);
-			this.write(" = parseFloat(");
+			this.write("(() => { const fuparsed = parseFloat(");
 			args[0].accept(this, FuPriority.ARGUMENT);
-			this.write("))");
+			this.write("); ");
+			obj.accept(this, FuPriority.ASSIGN);
+			this.write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 			break;
 		case FuId.STRING_CONTAINS:
 		case FuId.ARRAY_CONTAINS:
@@ -25353,12 +25360,12 @@ export class GenSwift extends GenPySwift
 			let not = statement.cond != call;
 			this.flattenBranch(statement, !not);
 			this.closeBlock();
-			if (not || statement.onFalse != null) {
-				this.write("else ");
-				this.openBlock();
-				this.flattenBranch(statement, not);
-				this.closeBlock();
-			}
+			this.write("else ");
+			this.openBlock();
+			call.method.left.accept(this, FuPriority.ASSIGN);
+			this.writeLine(" = 0");
+			this.flattenBranch(statement, not);
+			this.closeBlock();
 		}
 		else
 			super.visitIf(statement);
@@ -27256,6 +27263,8 @@ export class GenPy extends GenPySwift
 			this.closeChild();
 			this.write("except ValueError");
 			this.openChild();
+			call.method.left.accept(this, FuPriority.ASSIGN);
+			this.writeLine(" = 0");
 			this.flattenBranch(statement, not);
 			this.closeChild();
 		}

@@ -3643,10 +3643,9 @@ public class GenC : GenCCpp
 			StartTryParseLibrary(klassName, type, ", int base");
 			if (klassName == "Int") {
 				WriteLine("long l = strtol(str, &end, base);");
-				WriteLine("if (l < INT_MIN || l > INT_MAX || *end != '\\0' || errno != 0)");
-				WriteLine("\treturn false;");
-				WriteLine("*result = (int) l;");
-				WriteLine("return true;");
+				WriteLine("bool ok = l >= INT_MIN && l <= INT_MAX && *end == '\\0' && errno == 0;");
+				WriteLine("*result = ok ? (int) l : 0;");
+				WriteLine("return ok;");
 			}
 			else if (klassName =="NInt") {
 				WriteLine("*result =");

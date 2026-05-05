@@ -2155,7 +2155,10 @@ public class GenCpp : GenCCpp
 			OpenBlock();
 			WriteLine("const char *end = s.data() + s.size();");
 			WriteLine("auto result = std::from_chars(s.data(), end, number, args...);");
-			WriteLine("return result.ec == std::errc{} && result.ptr == end;");
+			WriteLine("if (result.ec == std::errc{} && result.ptr == end)");
+			WriteLine("\treturn true;");
+			WriteLine("number = 0;");
+			WriteLine("return false;");
 			CloseBlock();
 		}
 		if (this.StringReplace) {

@@ -595,12 +595,12 @@ public class GenJsNoModule : GenBase
 			break;
 		case FuId.IntTryParse:
 		case FuId.NIntTryParse:
-			Write("!isNaN(");
-			obj.Accept(this, FuPriority.Assign);
-			Write(" = parseInt(");
+			Write("(() => { const fuparsed = parseInt(");
 			args[0].Accept(this, FuPriority.Argument);
 			WriteTryParseRadix(args);
-			Write("))");
+			Write("); ");
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 			break;
 		case FuId.LongTryParse:
 			if (args.Count != 1)
@@ -609,15 +609,18 @@ public class GenJsNoModule : GenBase
 			obj.Accept(this, FuPriority.Assign);
 			Write(" = BigInt(");
 			args[0].Accept(this, FuPriority.Argument);
-			Write("); return true; } catch { return false; }})()");
+			Write("); return true; } catch { ");
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = 0n; return false; }})()");
 			break;
 		case FuId.FloatTryParse:
 		case FuId.DoubleTryParse:
-			Write("!isNaN(");
-			obj.Accept(this, FuPriority.Assign);
-			Write(" = parseFloat("); // ignores trailing invalid characters; Number() does not, but it accepts empty string and bin/oct/hex
+			Write("(() => { const fuparsed = parseFloat("); // parseFloat ignores trailing invalid characters; Number() does not, but it accepts empty string and bin/oct/hex
 			args[0].Accept(this, FuPriority.Argument);
-			Write("))");
+			Write("); ");
+			obj.Accept(this, FuPriority.Assign);
+			Write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
+			// FIXME: check float
 			break;
 		case FuId.StringContains:
 		case FuId.ArrayContains:

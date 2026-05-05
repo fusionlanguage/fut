@@ -1605,12 +1605,12 @@ public class GenSwift : GenPySwift
 			bool not = statement.Cond != call;
 			FlattenBranch(statement, !not);
 			CloseBlock();
-			if (not || statement.OnFalse != null) {
-				Write("else ");
-				OpenBlock();
-				FlattenBranch(statement, not);
-				CloseBlock();
-			}
+			Write("else ");
+			OpenBlock();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			WriteLine(" = 0");
+			FlattenBranch(statement, not);
+			CloseBlock();
 		}
 		else
 			base.VisitIf(statement);

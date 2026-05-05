@@ -1,0 +1,30 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		int i;
+		if (i.TryParse("foo")) //FAIL: cl
+			return false;
+		if (i != 0)
+			return false;
+		if (!i.TryParse("42"))
+			return false;
+		if (i != 42)
+			return false;
+		if (i.TryParse("6502")) {
+			if (i != 6502)
+				return false;
+		}
+		else
+			return false;
+		if (!i.TryParse("1337"))
+			return false;
+		else if (i != 1337)
+			return false;
+		if (!i.TryParse("bar")) {
+			if (i != 0)
+				return false;
+		}
+		return true;
+	}
+}

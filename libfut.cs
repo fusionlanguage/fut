@@ -13500,10 +13500,9 @@ namespace Fusion
 				StartTryParseLibrary(klassName, type, ", int base");
 				if (klassName == "Int") {
 					WriteLine("long l = strtol(str, &end, base);");
-					WriteLine("if (l < INT_MIN || l > INT_MAX || *end != '\\0' || errno != 0)");
-					WriteLine("\treturn false;");
-					WriteLine("*result = (int) l;");
-					WriteLine("return true;");
+					WriteLine("bool ok = l >= INT_MIN && l <= INT_MAX && *end == '\\0' && errno == 0;");
+					WriteLine("*result = ok ? (int) l : 0;");
+					WriteLine("return ok;");
 				}
 				else if (klassName == "NInt") {
 					WriteLine("*result =");
@@ -16485,7 +16484,10 @@ namespace Fusion
 				OpenBlock();
 				WriteLine("const char *end = s.data() + s.size();");
 				WriteLine("auto result = std::from_chars(s.data(), end, number, args...);");
-				WriteLine("return result.ec == std::errc{} && result.ptr == end;");
+				WriteLine("if (result.ec == std::errc{} && result.ptr == end)");
+				WriteLine("\treturn true;");
+				WriteLine("number = 0;");
+				WriteLine("return false;");
 				CloseBlock();
 			}
 			if (this.StringReplace) {
@@ -18521,7 +18523,8 @@ namespace Fusion
 			case FuId.DoubleTryParse:
 				Include("std.conv");
 				Write("() { try { ");
-				WritePostfix(obj, " = ");
+				obj.Accept(this, FuPriority.Assign);
+				Write(" = ");
 				WritePostfix(args[0], ".to!");
 				WriteType(obj.Type, false);
 				if (args.Count == 2) {
@@ -18529,7 +18532,9 @@ namespace Fusion
 					args[1].Accept(this, FuPriority.Argument);
 					WriteChar(')');
 				}
-				Write("; return true; } catch (ConvException e) return false; }()");
+				Write("; return true; } catch (ConvException e) { ");
+				obj.Accept(this, FuPriority.Assign);
+				Write(" = 0; return false; } }()");
 				break;
 			case FuId.StringContains:
 				Include("std.algorithm");
@@ -21533,12 +21538,12 @@ namespace Fusion
 				break;
 			case FuId.IntTryParse:
 			case FuId.NIntTryParse:
-				Write("!isNaN(");
-				obj.Accept(this, FuPriority.Assign);
-				Write(" = parseInt(");
+				Write("(() => { const fuparsed = parseInt(");
 				args[0].Accept(this, FuPriority.Argument);
 				WriteTryParseRadix(args);
-				Write("))");
+				Write("); ");
+				obj.Accept(this, FuPriority.Assign);
+				Write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 				break;
 			case FuId.LongTryParse:
 				if (args.Count != 1)
@@ -21547,15 +21552,17 @@ namespace Fusion
 				obj.Accept(this, FuPriority.Assign);
 				Write(" = BigInt(");
 				args[0].Accept(this, FuPriority.Argument);
-				Write("); return true; } catch { return false; }})()");
+				Write("); return true; } catch { ");
+				obj.Accept(this, FuPriority.Assign);
+				Write(" = 0n; return false; }})()");
 				break;
 			case FuId.FloatTryParse:
 			case FuId.DoubleTryParse:
-				Write("!isNaN(");
-				obj.Accept(this, FuPriority.Assign);
-				Write(" = parseFloat(");
+				Write("(() => { const fuparsed = parseFloat(");
 				args[0].Accept(this, FuPriority.Argument);
-				Write("))");
+				Write("); ");
+				obj.Accept(this, FuPriority.Assign);
+				Write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 				break;
 			case FuId.StringContains:
 			case FuId.ArrayContains:
@@ -24704,12 +24711,12 @@ namespace Fusion
 				bool not = statement.Cond != call;
 				FlattenBranch(statement, !not);
 				CloseBlock();
-				if (not || statement.OnFalse != null) {
-					Write("else ");
-					OpenBlock();
-					FlattenBranch(statement, not);
-					CloseBlock();
-				}
+				Write("else ");
+				OpenBlock();
+				call.Method.Left.Accept(this, FuPriority.Assign);
+				WriteLine(" = 0");
+				FlattenBranch(statement, not);
+				CloseBlock();
 			}
 			else
 				base.VisitIf(statement);
@@ -26582,6 +26589,8 @@ namespace Fusion
 				CloseChild();
 				Write("except ValueError");
 				OpenChild();
+				call.Method.Left.Accept(this, FuPriority.Assign);
+				WriteLine(" = 0");
 				FlattenBranch(statement, not);
 				CloseChild();
 			}

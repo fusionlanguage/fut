@@ -1388,6 +1388,8 @@ public class GenPy : GenPySwift
 			CloseChild();
 			Write("except ValueError");
 			OpenChild();
+			call.Method.Left.Accept(this, FuPriority.Assign);
+			WriteLine(" = 0");
 			FlattenBranch(statement, not);
 			CloseChild();
 		}

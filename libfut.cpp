@@ -12,7 +12,10 @@ bool FuNumber_TryParse(T &number, std::string_view s, Args... args)
 {
 	const char *end = s.data() + s.size();
 	auto result = std::from_chars(s.data(), end, number, args...);
-	return result.ec == std::errc{} && result.ptr == end;
+	if (result.ec == std::errc{} && result.ptr == end)
+		return true;
+	number = 0;
+	return false;
 }
 
 static std::string FuString_Replace(std::string_view s, std::string_view oldValue, std::string_view newValue)
@@ -13273,10 +13276,9 @@ void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, co
 		startTryParseLibrary(klassName, type, ", int base");
 		if (klassName == "Int") {
 			writeLine("long l = strtol(str, &end, base);");
-			writeLine("if (l < INT_MIN || l > INT_MAX || *end != '\\0' || errno != 0)");
-			writeLine("\treturn false;");
-			writeLine("*result = (int) l;");
-			writeLine("return true;");
+			writeLine("bool ok = l >= INT_MIN && l <= INT_MAX && *end == '\\0' && errno == 0;");
+			writeLine("*result = ok ? (int) l : 0;");
+			writeLine("return ok;");
 		}
 		else if (klassName == "NInt") {
 			writeLine("*result =");
@@ -16133,7 +16135,10 @@ void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile
 		openBlock();
 		writeLine("const char *end = s.data() + s.size();");
 		writeLine("auto result = std::from_chars(s.data(), end, number, args...);");
-		writeLine("return result.ec == std::errc{} && result.ptr == end;");
+		writeLine("if (result.ec == std::errc{} && result.ptr == end)");
+		writeLine("\treturn true;");
+		writeLine("number = 0;");
+		writeLine("return false;");
 		closeBlock();
 	}
 	if (this->stringReplace) {
@@ -17959,7 +17964,8 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::doubleTryParse:
 		include("std.conv");
 		write("() { try { ");
-		writePostfix(obj, " = ");
+		obj->accept(this, FuPriority::assign);
+		write(" = ");
 		writePostfix((*args)[0].get(), ".to!");
 		writeType(obj->type.get(), false);
 		if (std::ssize(*args) == 2) {
@@ -17967,7 +17973,9 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 			(*args)[1]->accept(this, FuPriority::argument);
 			writeChar(')');
 		}
-		write("; return true; } catch (ConvException e) return false; }()");
+		write("; return true; } catch (ConvException e) { ");
+		obj->accept(this, FuPriority::assign);
+		write(" = 0; return false; } }()");
 		break;
 	case FuId::stringContains:
 		include("std.algorithm");
@@ -20886,12 +20894,12 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		break;
 	case FuId::intTryParse:
 	case FuId::nIntTryParse:
-		write("!isNaN(");
-		obj->accept(this, FuPriority::assign);
-		write(" = parseInt(");
+		write("(() => { const fuparsed = parseInt(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeTryParseRadix(args);
-		write("))");
+		write("); ");
+		obj->accept(this, FuPriority::assign);
+		write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 		break;
 	case FuId::longTryParse:
 		if (std::ssize(*args) != 1)
@@ -20900,15 +20908,17 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		obj->accept(this, FuPriority::assign);
 		write(" = BigInt(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		write("); return true; } catch { return false; }})()");
+		write("); return true; } catch { ");
+		obj->accept(this, FuPriority::assign);
+		write(" = 0n; return false; }})()");
 		break;
 	case FuId::floatTryParse:
 	case FuId::doubleTryParse:
-		write("!isNaN(");
-		obj->accept(this, FuPriority::assign);
-		write(" = parseFloat(");
+		write("(() => { const fuparsed = parseFloat(");
 		(*args)[0]->accept(this, FuPriority::argument);
-		write("))");
+		write("); ");
+		obj->accept(this, FuPriority::assign);
+		write(" = isNaN(fuparsed) ? 0 : fuparsed; return !isNaN(fuparsed); })()");
 		break;
 	case FuId::stringContains:
 	case FuId::arrayContains:
@@ -23925,12 +23935,12 @@ void GenSwift::visitIf(const FuIf * statement)
 		bool not_ = statement->cond.get() != call;
 		flattenBranch(statement, !not_);
 		closeBlock();
-		if (not_ || statement->onFalse != nullptr) {
-			write("else ");
-			openBlock();
-			flattenBranch(statement, not_);
-			closeBlock();
-		}
+		write("else ");
+		openBlock();
+		call->method->left->accept(this, FuPriority::assign);
+		writeLine(" = 0");
+		flattenBranch(statement, not_);
+		closeBlock();
 	}
 	else
 		GenPySwift::visitIf(statement);
@@ -25729,6 +25739,8 @@ void GenPy::visitIf(const FuIf * statement)
 		closeChild();
 		write("except ValueError");
 		openChild();
+		call->method->left->accept(this, FuPriority::assign);
+		writeLine(" = 0");
 		flattenBranch(statement, not_);
 		closeChild();
 	}
