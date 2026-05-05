@@ -8678,9 +8678,7 @@ void GenBase::visitFor(const FuFor * statement)
 
 void GenBase::writeTryParseFailure(const FuCallExpr * call, FuStatement * onFailure)
 {
-	if (dynamic_cast<const FuReturn *>(onFailure) || dynamic_cast<const FuThrow *>(onFailure)) {
-	}
-	else {
+	if (!(dynamic_cast<const FuReturn *>(onFailure) || dynamic_cast<const FuThrow *>(onFailure))) {
 		call->method->left->accept(this, FuPriority::assign);
 		write(" = 0");
 		endStatement();

@@ -8816,15 +8816,10 @@ namespace Fusion
 
 		protected void WriteTryParseFailure(FuCallExpr call, FuStatement onFailure)
 		{
-			switch (onFailure) {
-			case FuReturn:
-			case FuThrow:
-				break;
-			default:
+			if (!(onFailure is FuReturn || onFailure is FuThrow)) {
 				call.Method.Left.Accept(this, FuPriority.Assign);
 				Write(" = 0");
 				EndStatement();
-				break;
 			}
 			if (onFailure != null)
 				FlattenBlock(onFailure);

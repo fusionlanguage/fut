@@ -9243,9 +9243,7 @@ export class GenBase extends FuVisitor
 
 	writeTryParseFailure(call, onFailure)
 	{
-		if (onFailure instanceof FuReturn || onFailure instanceof FuThrow) {
-		}
-		else {
+		if (!(onFailure instanceof FuReturn || onFailure instanceof FuThrow)) {
 			call.method.left.accept(this, FuPriority.ASSIGN);
 			this.write(" = 0");
 			this.endStatement();
