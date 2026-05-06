@@ -989,7 +989,7 @@ public class GenPy : GenPySwift
 			break;
 		case FuId.ListClear:
 		case FuId.StackClear:
-			if (obj.Type.AsClassType().GetElementType() is FuNumericType number && GetArrayCode(number) != 'B') {
+			if (obj.Type.AsClassType().GetElementType() is FuNumericType number && GetArrayCode(number) != 'B') { // TODO: Python 3.13 adds array.clear
 				Write("del ");
 				WritePostfix(obj, "[:]");
 			}
