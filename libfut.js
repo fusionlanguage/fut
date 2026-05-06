@@ -27640,7 +27640,7 @@ export class GenPy extends GenPySwift
 	#writeMain(main)
 	{
 		this.writeNewLine();
-		this.writeLine("if __name__ == '__main__':");
+		this.writeLine("if __name__ == \"__main__\":");
 		this.writeChar(9);
 		if (main.type.id == FuId.INT_TYPE)
 			this.write("sys.exit(");

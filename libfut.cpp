@@ -26112,7 +26112,7 @@ void GenPy::writeResources(const std::map<std::string, std::vector<uint8_t>> * r
 void GenPy::writeMain(const FuMethod * main)
 {
 	writeNewLine();
-	writeLine("if __name__ == '__main__':");
+	writeLine("if __name__ == \"__main__\":");
 	writeChar('\t');
 	if (main->type->id == FuId::intType)
 		write("sys.exit(");

@@ -26960,7 +26960,7 @@ namespace Fusion
 		void WriteMain(FuMethod main)
 		{
 			WriteNewLine();
-			WriteLine("if __name__ == '__main__':");
+			WriteLine("if __name__ == \"__main__\":");
 			WriteChar('\t');
 			if (main.Type.Id == FuId.IntType)
 				Write("sys.exit(");
