@@ -21753,6 +21753,8 @@ namespace Fusion
 				Write("delete ");
 				WriteIndexing(obj, args[0]);
 				break;
+			case FuId.TextWriterFlush:
+				break;
 			case FuId.TextWriterWrite:
 				WritePostfix(obj, ".write(");
 				EndWrite(args[0]);

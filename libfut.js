@@ -22385,6 +22385,8 @@ export class GenJsNoModule extends GenBase
 			this.write("delete ");
 			this.writeIndexing(obj, args[0]);
 			break;
+		case FuId.TEXT_WRITER_FLUSH:
+			break;
 		case FuId.TEXT_WRITER_WRITE:
 			this.writePostfix(obj, ".write(");
 			this.#endWrite(args[0]);

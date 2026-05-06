@@ -768,6 +768,9 @@ public class GenJsNoModule : GenBase
 			Write("delete ");
 			WriteIndexing(obj, args[0]);
 			break;
+		case FuId.TextWriterFlush:
+			// no operation
+			break;
 		case FuId.TextWriterWrite:
 			WritePostfix(obj, ".write(");
 			EndWrite(args[0]);

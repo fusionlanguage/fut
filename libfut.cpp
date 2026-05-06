@@ -21112,6 +21112,8 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		write("delete ");
 		writeIndexing(obj, (*args)[0].get());
 		break;
+	case FuId::textWriterFlush:
+		break;
 	case FuId::textWriterWrite:
 		writePostfix(obj, ".write(");
 		endWrite((*args)[0].get());
