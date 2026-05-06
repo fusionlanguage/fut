@@ -21627,6 +21627,7 @@ export class GenJava extends GenTyped
 export class GenJsNoModule extends GenBase
 {
 	#stringWriter = false;
+	#consoleReadLine = false;
 
 	getTargetName()
 	{
@@ -22413,6 +22414,10 @@ export class GenJsNoModule extends GenBase
 				this.write("\"\\n\")");
 			}
 			break;
+		case FuId.CONSOLE_READ_LINE:
+			this.#consoleReadLine = true;
+			this.write("readLineSync()");
+			break;
 		case FuId.CONSOLE_WRITE:
 			this.write("process.stdout.write(");
 			this.#endWrite(args[0]);
@@ -23038,6 +23043,23 @@ export class GenJsNoModule extends GenBase
 			this.openBlock();
 			this.writeLine("return this.#buf;");
 			this.closeBlock();
+			this.closeBlock();
+		}
+		if (this.#consoleReadLine) {
+			this.writeNewLine();
+			this.writeLine("import fs from \"node:fs\";");
+			this.writeNewLine();
+			this.write("function readLineSync()");
+			this.writeNamedType("string");
+			this.writeNewLine();
+			this.openBlock();
+			this.writeLine("const buf = Buffer.alloc(1);");
+			this.writeLine("const result = [];");
+			this.writeLine("while (fs.readSync(0, buf) == 1 && buf[0] != 10)");
+			this.writeLine("\tresult.push(buf[0]);");
+			this.writeLine("if (result.length > 0 && result.at(-1) == 13)");
+			this.writeLine("\tresult.pop();");
+			this.writeLine("return new TextDecoder().decode(new Uint8Array(result));");
 			this.closeBlock();
 		}
 		if (Object.keys(program.resources).length > 0) {

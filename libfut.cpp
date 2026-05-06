@@ -21140,6 +21140,10 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 			write("\"\\n\")");
 		}
 		break;
+	case FuId::consoleReadLine:
+		this->consoleReadLine = true;
+		write("readLineSync()");
+		break;
 	case FuId::consoleWrite:
 		write("process.stdout.write(");
 		endWrite((*args)[0].get());
@@ -21764,6 +21768,23 @@ void GenJsNoModule::writeLib(const FuProgram * program)
 		openBlock();
 		writeLine("return this.#buf;");
 		closeBlock();
+		closeBlock();
+	}
+	if (this->consoleReadLine) {
+		writeNewLine();
+		writeLine("import fs from \"node:fs\";");
+		writeNewLine();
+		write("function readLineSync()");
+		writeNamedType("string");
+		writeNewLine();
+		openBlock();
+		writeLine("const buf = Buffer.alloc(1);");
+		writeLine("const result = [];");
+		writeLine("while (fs.readSync(0, buf) == 1 && buf[0] != 10)");
+		writeLine("\tresult.push(buf[0]);");
+		writeLine("if (result.length > 0 && result.at(-1) == 13)");
+		writeLine("\tresult.pop();");
+		writeLine("return new TextDecoder().decode(new Uint8Array(result));");
 		closeBlock();
 	}
 	if (std::ssize(program->resources) > 0) {

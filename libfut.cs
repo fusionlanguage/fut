@@ -21010,6 +21010,8 @@ namespace Fusion
 
 		bool StringWriter = false;
 
+		bool ConsoleReadLine = false;
+
 		protected override string GetTargetName() => "JavaScript";
 
 		void WriteCamelCaseNotKeyword(string name)
@@ -21781,6 +21783,10 @@ namespace Fusion
 					Write("\"\\n\")");
 				}
 				break;
+			case FuId.ConsoleReadLine:
+				this.ConsoleReadLine = true;
+				Write("readLineSync()");
+				break;
 			case FuId.ConsoleWrite:
 				Write("process.stdout.write(");
 				EndWrite(args[0]);
@@ -22412,6 +22418,23 @@ namespace Fusion
 				OpenBlock();
 				WriteLine("return this.#buf;");
 				CloseBlock();
+				CloseBlock();
+			}
+			if (this.ConsoleReadLine) {
+				WriteNewLine();
+				WriteLine("import fs from \"node:fs\";");
+				WriteNewLine();
+				Write("function readLineSync()");
+				WriteNamedType("string");
+				WriteNewLine();
+				OpenBlock();
+				WriteLine("const buf = Buffer.alloc(1);");
+				WriteLine("const result = [];");
+				WriteLine("while (fs.readSync(0, buf) == 1 && buf[0] != 10)");
+				WriteLine("\tresult.push(buf[0]);");
+				WriteLine("if (result.length > 0 && result.at(-1) == 13)");
+				WriteLine("\tresult.pop();");
+				WriteLine("return new TextDecoder().decode(new Uint8Array(result));");
 				CloseBlock();
 			}
 			if (program.Resources.Count > 0) {

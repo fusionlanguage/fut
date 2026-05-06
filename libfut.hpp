@@ -3398,6 +3398,7 @@ private: // internal
 	void visitEnumValue(const FuConst * konst, const FuConst * previous) override;
 private:
 	bool stringWriter = false;
+	bool consoleReadLine = false;
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeInterpolatedLiteral(std::string_view s);
 	void writeSlice(const FuExpr * array, const FuExpr * offset, const FuExpr * length, FuPriority parent, std::string_view method);
