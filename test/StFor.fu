@@ -15,7 +15,7 @@ public static class Test
 			u += i++;
 
 		int v = 0;
-		for (int i = 0; i <= 5; )
+		for (int i = 0; i <= 5; ) //FAIL: py TODO
 			v += i++;
 
 		return s == 10 && t == 15 && u == 10 && v == 15;
