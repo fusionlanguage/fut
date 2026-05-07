@@ -10,7 +10,7 @@ public static class Test
 					s += i;
 				}
 				{
-					int i = 3; //FAIL: swift TODO
+					int i = 3; //FAIL: py swift TODO
 					s += i;
 				}
 			}
