@@ -350,6 +350,14 @@ as [UTF-8](https://en.wikipedia.org/wiki/UTF-8)
 or [UTF-16](https://en.wikipedia.org/wiki/UTF-16).
 However, Fusion doesn't enforce any encoding.
 
+To convert a number from its text representation, use `x.TryParse(str)`
+where `x` is a variable of type `int`, `nint`, `long`, `float` or `double`.
+If `str` can be converted to this type, the variable `x` is assigned the value
+and the method returns `true`. Otherwise, `x` is zeroed and the method returns
+`false`. This method call should be used as a condition to the `if` statement.
+For integer types, an `radix` argument can be added, e.g.
+`i.TryParse(hexNumStr, 16)`.
+
 #### Interpolated strings
 
 An interpolated string starts with `$"` and contains expressions in braces.
@@ -1342,6 +1350,13 @@ Console.WriteLine($"Yes, {40 + 2}");
 
 Use `Console.Error.Write` and `Console.Error.WriteLine` to target
 the standard error stream.
+
+`Console.Out.Flush()` and `Console.Error.Flush()` release the characters
+kept in a buffer on some systems.
+
+`Console.ReadLine()` reads a line of text from standard input and returns
+as a `string()` without the trailing newline character.
+This method is experimental and subject to change.
 
 ### Environment variables
 
