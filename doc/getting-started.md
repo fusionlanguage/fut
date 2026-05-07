@@ -253,6 +253,7 @@ in it - starting with really small ones:
 - [encoder of Data Matrix barcodes](https://github.com/pfusik/datamatrix-fu)
 - [encoder/decoder of the Quite OK Image format](https://github.com/pfusik/qoi-fu)
 - [encoder/decoder of the Quite OK Audio format](https://github.com/pfusik/qoa-fu)
+- [a Large Language Model](https://github.com/pfusik/llama2.fu)
 - [decoder of PNG, GIF and JPEG](https://github.com/pfusik/image-fu)
 
 Then there's a [very portable chiptune player](https://asap.sourceforge.net):
