@@ -80,5 +80,9 @@ jobs:
       - run: brew --config
       - run: sudo xcode-select -s /Applications/Xcode_26.1.1.app
       - run: brew --config
+      - run: sudo xcode-select -s /Applications/Xcode_26.3.app
+      - run: brew --config
+      - run: sudo xcode-select -s /Applications/Xcode_26.4.1.app
+      - run: brew --config
       - uses: actions/checkout@main
       - run: make
