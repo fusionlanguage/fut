@@ -19432,6 +19432,7 @@ export class GenD extends GenCCppD
 		case FuId.U_T_F8_GET_STRING:
 			this.write("cast(string) ");
 			this.#writeSlice(args[0], args[1], args[2]);
+			this.write(".idup");
 			break;
 		case FuId.REGEX_COMPILE:
 			this.include("std.regex");

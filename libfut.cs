@@ -18858,6 +18858,7 @@ namespace Fusion
 			case FuId.UTF8GetString:
 				Write("cast(string) ");
 				WriteSlice(args[0], args[1], args[2]);
+				Write(".idup");
 				break;
 			case FuId.RegexCompile:
 				Include("std.regex");

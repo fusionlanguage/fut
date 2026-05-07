@@ -18299,6 +18299,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::uTF8GetString:
 		write("cast(string) ");
 		writeSlice((*args)[0].get(), (*args)[1].get(), (*args)[2].get());
+		write(".idup");
 		break;
 	case FuId::regexCompile:
 		include("std.regex");
