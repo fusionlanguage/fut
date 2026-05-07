@@ -18489,7 +18489,7 @@ namespace Fusion
 				WritePrintf(interpolated, false);
 			}
 			else
-				WriteCall(newLine ? "writeln" : "stdout.write", args[0]);
+				WriteCall(newLine ? "writeln" : "write", args[0]);
 		}
 
 		void WriteSlice(FuExpr obj, FuExpr offset, FuExpr length)
@@ -18813,6 +18813,7 @@ namespace Fusion
 				break;
 			case FuId.ConsoleWrite:
 			case FuId.ConsoleWriteLine:
+				Write("stdout.");
 				WriteWrite(args, method.Id == FuId.ConsoleWriteLine);
 				break;
 			case FuId.EnvironmentGetEnvironmentVariable:

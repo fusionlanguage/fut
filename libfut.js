@@ -19062,7 +19062,7 @@ export class GenD extends GenCCppD
 				this.writePrintf(interpolated, false);
 			}
 			else
-				this.writeCall(newLine ? "writeln" : "stdout.write", args[0]);
+				this.writeCall(newLine ? "writeln" : "write", args[0]);
 		}
 	}
 
@@ -19387,6 +19387,7 @@ export class GenD extends GenCCppD
 			break;
 		case FuId.CONSOLE_WRITE:
 		case FuId.CONSOLE_WRITE_LINE:
+			this.write("stdout.");
 			this.#writeWrite(args, method.id == FuId.CONSOLE_WRITE_LINE);
 			break;
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:

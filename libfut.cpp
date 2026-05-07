@@ -17930,7 +17930,7 @@ void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool ne
 		writePrintf(interpolated, false);
 	}
 	else
-		writeCall(newLine ? "writeln" : "stdout.write", (*args)[0].get());
+		writeCall(newLine ? "writeln" : "write", (*args)[0].get());
 }
 
 void GenD::writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length)
@@ -18254,6 +18254,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::consoleWrite:
 	case FuId::consoleWriteLine:
+		write("stdout.");
 		writeWrite(args, method->id == FuId::consoleWriteLine);
 		break;
 	case FuId::environmentGetEnvironmentVariable:
