@@ -17930,7 +17930,7 @@ void GenD::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool ne
 		writePrintf(interpolated, false);
 	}
 	else
-		writeCall(newLine ? "writeln" : "write", (*args)[0].get());
+		writeCall(newLine ? "writeln" : "stdout.write", (*args)[0].get());
 }
 
 void GenD::writeSlice(const FuExpr * obj, const FuExpr * offset, const FuExpr * length)

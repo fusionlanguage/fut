@@ -2,7 +2,9 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Console.Write("Hello");
+		bool write = true;
+		if (write)
+			Console.Write("Hello");
 		int i = 42;
 		Console.Write(i);
 		float f = 10.5;

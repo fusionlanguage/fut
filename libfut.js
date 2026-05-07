@@ -19062,7 +19062,7 @@ export class GenD extends GenCCppD
 				this.writePrintf(interpolated, false);
 			}
 			else
-				this.writeCall(newLine ? "writeln" : "write", args[0]);
+				this.writeCall(newLine ? "writeln" : "stdout.write", args[0]);
 		}
 	}
 

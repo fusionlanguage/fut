@@ -18489,7 +18489,7 @@ namespace Fusion
 				WritePrintf(interpolated, false);
 			}
 			else
-				WriteCall(newLine ? "writeln" : "write", args[0]);
+				WriteCall(newLine ? "writeln" : "stdout.write", args[0]);
 		}
 
 		void WriteSlice(FuExpr obj, FuExpr offset, FuExpr length)
