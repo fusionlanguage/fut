@@ -1180,6 +1180,11 @@ int FuExpr::intValue() const
 	std::abort();
 }
 
+bool FuExpr::isPure() const
+{
+	return false;
+}
+
 void FuExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	std::abort();
@@ -1272,6 +1277,11 @@ bool FuScope::encloses(const FuSymbol * symbol) const
 void FuAggregateInitializer::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitAggregateInitializer(this);
+}
+
+bool FuLiteral::isPure() const
+{
+	return true;
 }
 
 std::string FuLiteral::getLiteralString() const
@@ -1540,6 +1550,11 @@ bool FuSymbolReference::isReferenceTo(const FuSymbol * symbol) const
 	return this->symbol == symbol;
 }
 
+bool FuSymbolReference::isPure() const
+{
+	return this->symbol->isPure();
+}
+
 bool FuSymbolReference::isNewString(bool substringOffset) const
 {
 	return this->symbol->id == FuId::matchValue;
@@ -1593,6 +1608,11 @@ int FuPrefixExpr::intValue() const
 {
 	assert(this->op == FuToken::tilde);
 	return ~this->inner->intValue();
+}
+
+bool FuPrefixExpr::isPure() const
+{
+	return (this->op == FuToken::minus || this->op == FuToken::tilde || this->op == FuToken::exclamationMark || this->op == FuToken::resource) && this->inner->isPure();
 }
 
 void FuPrefixExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1684,6 +1704,11 @@ int FuBinaryExpr::intValue() const
 	default:
 		std::abort();
 	}
+}
+
+bool FuBinaryExpr::isPure() const
+{
+	return this->left->isPure() && this->right->isPure();
 }
 
 void FuBinaryExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1807,6 +1832,11 @@ int FuSelectExpr::getLocLength() const
 	return 1;
 }
 
+bool FuSelectExpr::isPure() const
+{
+	return this->cond->isPure() && this->onTrue->isPure() && this->onFalse->isPure();
+}
+
 void FuSelectExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitSelectExpr(this, parent);
@@ -1826,6 +1856,12 @@ void FuSelectExpr::setShared() const
 std::string FuSelectExpr::toString() const
 {
 	return std::format("({} ? {} : {})", this->cond->toString(), this->onTrue->toString(), this->onFalse->toString());
+}
+
+bool FuCallExpr::isPure() const
+{
+	const FuMethod * method = static_cast<const FuMethod *>(this->method->symbol);
+	return method->isPure() && std::all_of(this->arguments.begin(), this->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->isPure(); });
 }
 
 void FuCallExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -2252,6 +2288,11 @@ std::shared_ptr<FuVar> FuVar::new_(std::shared_ptr<FuType> type, std::string_vie
 	return futemp0;
 }
 
+bool FuVar::isPure() const
+{
+	return true;
+}
+
 void FuVar::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitVar(this);
@@ -2261,6 +2302,11 @@ FuVar * FuVar::nextVar() const
 {
 	FuVar * def = static_cast<FuVar *>(this->next);
 	return def;
+}
+
+bool FuConst::isPure() const
+{
+	return true;
 }
 
 void FuConst::acceptStatement(FuVisitor * visitor) const
@@ -2281,6 +2327,11 @@ bool FuField::isStatic() const
 bool FuProperty::isStatic() const
 {
 	return false;
+}
+
+bool FuProperty::isPure() const
+{
+	return this->id == FuId::stringLength || this->id == FuId::arrayLength;
 }
 
 std::shared_ptr<FuProperty> FuProperty::new_(std::shared_ptr<FuType> type, FuId id, std::string_view name)
@@ -2402,6 +2453,20 @@ const FuMethod * FuMethod::getDeclaringMethod() const
 		method = baseMethod;
 	}
 	return method;
+}
+
+bool FuMethod::isPure() const
+{
+	if (!isStatic())
+		return false;
+	for (const FuVar * param = this->firstParameter(); param != nullptr; param = param->nextVar()) {
+		if (dynamic_cast<const FuNumericType *>(param->type.get()) || dynamic_cast<const FuEnum *>(param->type.get()) || dynamic_cast<const FuStringType *>(param->type.get())) {
+		}
+		else
+			return false;
+	}
+	const FuReturn * ret;
+	return (ret = dynamic_cast<const FuReturn *>(this->body.get())) && ret->value->isPure();
 }
 FuMethodGroup::FuMethodGroup()
 {
@@ -4933,11 +4998,6 @@ int FuSema::saturatedDiv(int a, int b)
 	if (a == -2147483648 && b == -1)
 		return 2147483647;
 	return a / b;
-}
-
-int FuSema::saturatedShiftRight(int a, int b)
-{
-	return a >> (b >= 31 || b < 0 ? 31 : b);
 }
 
 std::shared_ptr<FuRangeType> FuSema::bitwiseUnsignedOp(const FuRangeType * left, FuToken op, const FuRangeType * right)
@@ -8039,11 +8099,6 @@ void GenBase::writeBinaryExpr(const FuBinaryExpr * expr, bool parentheses, FuPri
 void GenBase::writeBinaryExpr2(const FuBinaryExpr * expr, FuPriority parent, FuPriority child, std::string_view op)
 {
 	writeBinaryExpr(expr, parent > child, child, op, child);
-}
-
-std::string_view GenBase::getEqOp(bool not_)
-{
-	return not_ ? " != " : " == ";
 }
 
 void GenBase::writeEqualOperand(const FuExpr * expr, const FuExpr * other)
@@ -15981,9 +16036,12 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 			if (method->visibility != visibility || method->id == FuId::main)
 				continue;
 			writeMethodDoc(method);
+			bool pure = method->isPure();
 			switch (method->callType) {
 			case FuCallType::static_:
 				write("static ");
+				if (pure)
+					write("constexpr ");
 				break;
 			case FuCallType::abstract:
 			case FuCallType::virtual_:
@@ -16007,7 +16065,10 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 			default:
 				break;
 			}
-			writeCharLine(';');
+			if (pure)
+				writeBody(method);
+			else
+				writeCharLine(';');
 		}
 		else if (const FuNative *nat = dynamic_cast<const FuNative *>(symbol)) {
 			const FuMember * followingMember = nat->getFollowingMember();
@@ -16052,7 +16113,7 @@ void GenCpp::writeConstructor(const FuClass * klass)
 
 void GenCpp::writeMethod(const FuMethod * method)
 {
-	if (method->callType == FuCallType::abstract)
+	if (method->callType == FuCallType::abstract || method->isPure())
 		return;
 	writeNewLine();
 	if (method->id == FuId::main) {
@@ -18711,6 +18772,8 @@ void GenD::writeMethod(const FuMethod * method)
 	writeVisibility(method->visibility);
 	if (method->id == FuId::classToString)
 		write("override ");
+	else if (method->isPure())
+		write("static pure ");
 	else
 		writeCallType(method->callType, "final override ");
 	writeTypeAndName(method);

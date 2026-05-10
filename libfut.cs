@@ -1650,6 +1650,8 @@ namespace Fusion
 			throw new NotImplementedException();
 		}
 
+		public virtual bool IsPure() => false;
+
 		public virtual void Accept(FuVisitor visitor, FuPriority parent)
 		{
 			throw new NotImplementedException();
@@ -1759,6 +1761,8 @@ namespace Fusion
 
 	public abstract class FuLiteral : FuExpr
 	{
+
+		public override bool IsPure() => true;
 
 		public abstract bool IsDefaultValue();
 
@@ -2007,6 +2011,8 @@ namespace Fusion
 
 		public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 
+		public override bool IsPure() => this.Symbol.IsPure();
+
 		public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 
 		public override void SetShared()
@@ -2059,6 +2065,8 @@ namespace Fusion
 			Debug.Assert(this.Op == FuToken.Tilde);
 			return ~this.Inner.IntValue();
 		}
+
+		public override bool IsPure() => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner.IsPure();
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2158,6 +2166,8 @@ namespace Fusion
 				throw new NotImplementedException();
 			}
 		}
+
+		public override bool IsPure() => this.Left.IsPure() && this.Right.IsPure();
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2281,6 +2291,8 @@ namespace Fusion
 
 		public override int GetLocLength() => 1;
 
+		public override bool IsPure() => this.Cond.IsPure() && this.OnTrue.IsPure() && this.OnFalse.IsPure();
+
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
 			visitor.VisitSelectExpr(this, parent);
@@ -2303,6 +2315,12 @@ namespace Fusion
 		internal FuSymbolReference Method;
 
 		internal readonly List<FuExpr> Arguments = new List<FuExpr>();
+
+		public override bool IsPure()
+		{
+			FuMethod method = (FuMethod) this.Method.Symbol;
+			return method.IsPure() && this.Arguments.TrueForAll(arg => arg.IsPure());
+		}
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2776,6 +2794,8 @@ namespace Fusion
 
 		public static FuVar New(FuType type, string name, FuExpr defaultValue = null) => new FuVar { Type = type, Name = name, Value = defaultValue };
 
+		public override bool IsPure() => true;
+
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
 			visitor.VisitVar(this);
@@ -2804,6 +2824,8 @@ namespace Fusion
 
 		internal FuVisitStatus VisitStatus;
 
+		public override bool IsPure() => true;
+
 		public override void AcceptStatement(FuVisitor visitor)
 		{
 			visitor.VisitConst(this);
@@ -2822,6 +2844,8 @@ namespace Fusion
 	{
 
 		public override bool IsStatic() => false;
+
+		public override bool IsPure() => this.Id == FuId.StringLength || this.Id == FuId.ArrayLength;
 
 		public static FuProperty New(FuType type, FuId id, string name) => new FuProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 	}
@@ -2933,6 +2957,23 @@ namespace Fusion
 				method = baseMethod;
 			}
 			return method;
+		}
+
+		public override bool IsPure()
+		{
+			if (!IsStatic())
+				return false;
+			for (FuVar param = this.FirstParameter(); param != null; param = param.NextVar()) {
+				switch (param.Type) {
+				case FuNumericType:
+				case FuEnum:
+				case FuStringType:
+					break;
+				default:
+					return false;
+				}
+			}
+			return this.Body is FuReturn ret && ret.Value.IsPure();
 		}
 	}
 
@@ -16329,9 +16370,12 @@ namespace Fusion
 					if (method.Visibility != visibility || method.Id == FuId.Main)
 						continue;
 					WriteMethodDoc(method);
+					bool pure = method.IsPure();
 					switch (method.CallType) {
 					case FuCallType.Static:
 						Write("static ");
+						if (pure)
+							Write("constexpr ");
 						break;
 					case FuCallType.Abstract:
 					case FuCallType.Virtual:
@@ -16355,7 +16399,10 @@ namespace Fusion
 					default:
 						break;
 					}
-					WriteCharLine(';');
+					if (pure)
+						WriteBody(method);
+					else
+						WriteCharLine(';');
 					break;
 				case FuNative nat:
 					FuMember followingMember = nat.GetFollowingMember();
@@ -16401,7 +16448,7 @@ namespace Fusion
 
 		protected override void WriteMethod(FuMethod method)
 		{
-			if (method.CallType == FuCallType.Abstract)
+			if (method.CallType == FuCallType.Abstract || method.IsPure())
 				return;
 			WriteNewLine();
 			if (method.Id == FuId.Main) {
@@ -19262,6 +19309,8 @@ namespace Fusion
 			WriteVisibility(method.Visibility);
 			if (method.Id == FuId.ClassToString)
 				Write("override ");
+			else if (method.IsPure())
+				Write("static pure ");
 			else
 				WriteCallType(method.CallType, "final override ");
 			WriteTypeAndName(method);

@@ -1572,6 +1572,11 @@ export class FuExpr extends FuStatement
 		throw new Error();
 	}
 
+	isPure()
+	{
+		return false;
+	}
+
 	accept(visitor, parent)
 	{
 		throw new Error();
@@ -1694,6 +1699,11 @@ export class FuAggregateInitializer extends FuExpr
 
 export class FuLiteral extends FuExpr
 {
+
+	isPure()
+	{
+		return true;
+	}
 
 	getLiteralString()
 	{
@@ -2013,6 +2023,11 @@ export class FuSymbolReference extends FuName
 		return this.symbol == symbol;
 	}
 
+	isPure()
+	{
+		return this.symbol.isPure();
+	}
+
 	isNewString(substringOffset)
 	{
 		return this.symbol.id == FuId.MATCH_VALUE;
@@ -2076,6 +2091,11 @@ export class FuPrefixExpr extends FuUnaryExpr
 	{
 		console.assert(this.op == FuToken.TILDE);
 		return ~this.inner.intValue();
+	}
+
+	isPure()
+	{
+		return (this.op == FuToken.MINUS || this.op == FuToken.TILDE || this.op == FuToken.EXCLAMATION_MARK || this.op == FuToken.RESOURCE) && this.inner.isPure();
 	}
 
 	accept(visitor, parent)
@@ -2178,6 +2198,11 @@ export class FuBinaryExpr extends FuExpr
 		default:
 			throw new Error();
 		}
+	}
+
+	isPure()
+	{
+		return this.left.isPure() && this.right.isPure();
 	}
 
 	accept(visitor, parent)
@@ -2308,6 +2333,11 @@ export class FuSelectExpr extends FuExpr
 		return 1;
 	}
 
+	isPure()
+	{
+		return this.cond.isPure() && this.onTrue.isPure() && this.onFalse.isPure();
+	}
+
 	accept(visitor, parent)
 	{
 		visitor.visitSelectExpr(this, parent);
@@ -2334,6 +2364,12 @@ export class FuCallExpr extends FuExpr
 {
 	method;
 	arguments_ = [];
+
+	isPure()
+	{
+		let method = this.method.symbol;
+		return method.isPure() && this.arguments_.every(arg => arg.isPure());
+	}
 
 	accept(visitor, parent)
 	{
@@ -2907,6 +2943,11 @@ export class FuVar extends FuNamedValue
 		return Object.assign(new FuVar(), { type: type, name: name, value: defaultValue });
 	}
 
+	isPure()
+	{
+		return true;
+	}
+
 	accept(visitor, parent)
 	{
 		visitor.visitVar(this);
@@ -2930,6 +2971,11 @@ export class FuConst extends FuMember
 	inMethod;
 	inMethodIndex = 0;
 	visitStatus;
+
+	isPure()
+	{
+		return true;
+	}
 
 	acceptStatement(visitor)
 	{
@@ -2957,6 +3003,11 @@ class FuProperty extends FuMember
 	isStatic()
 	{
 		return false;
+	}
+
+	isPure()
+	{
+		return this.id == FuId.STRING_LENGTH || this.id == FuId.ARRAY_LENGTH;
 	}
 
 	static new(type, id, name)
@@ -3086,6 +3137,20 @@ export class FuMethod extends FuMethodBase
 			method = baseMethod;
 		}
 		return method;
+	}
+
+	isPure()
+	{
+		if (!this.isStatic())
+			return false;
+		for (let param = this.firstParameter(); param != null; param = param.nextVar()) {
+			if (param.type instanceof FuNumericType || param.type instanceof FuEnum || param.type instanceof FuStringType) {
+			}
+			else
+				return false;
+		}
+		let ret;
+		return (ret = this.body) instanceof FuReturn && ret.value.isPure();
 	}
 }
 
@@ -16860,9 +16925,12 @@ export class GenCpp extends GenCCpp
 				if (method.visibility != visibility || method.id == FuId.MAIN)
 					continue;
 				this.writeMethodDoc(method);
+				let pure = method.isPure();
 				switch (method.callType) {
 				case FuCallType.STATIC:
 					this.write("static ");
+					if (pure)
+						this.write("constexpr ");
 					break;
 				case FuCallType.ABSTRACT:
 				case FuCallType.VIRTUAL:
@@ -16886,7 +16954,10 @@ export class GenCpp extends GenCCpp
 				default:
 					break;
 				}
-				this.writeCharLine(59);
+				if (pure)
+					this.writeBody(method);
+				else
+					this.writeCharLine(59);
 			}
 			else if (symbol instanceof FuNative) {
 				const nat = symbol;
@@ -16932,7 +17003,7 @@ export class GenCpp extends GenCCpp
 
 	writeMethod(method)
 	{
-		if (method.callType == FuCallType.ABSTRACT)
+		if (method.callType == FuCallType.ABSTRACT || method.isPure())
 			return;
 		this.writeNewLine();
 		if (method.id == FuId.MAIN) {
@@ -19845,6 +19916,8 @@ export class GenD extends GenCCppD
 		this.#writeVisibility(method.visibility);
 		if (method.id == FuId.CLASS_TO_STRING)
 			this.write("override ");
+		else if (method.isPure())
+			this.write("static pure ");
 		else
 			this.#writeCallType(method.callType, "final override ");
 		this.writeTypeAndName(method);

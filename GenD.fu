@@ -1549,6 +1549,8 @@ public class GenD : GenCCppD
 		WriteVisibility(method.Visibility);
 		if (method.Id == FuId.ClassToString)
 			Write("override ");
+		else if (method.IsPure())
+			Write("static pure ");
 		else
 			WriteCallType(method.CallType, "final override ");
 		WriteTypeAndName(method);

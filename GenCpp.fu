@@ -1967,9 +1967,12 @@ public class GenCpp : GenCCpp
 				if (method.Visibility != visibility || method.Id == FuId.Main)
 					continue;
 				WriteMethodDoc(method);
+				bool pure = method.IsPure();
 				switch (method.CallType) {
 				case FuCallType.Static:
 					Write("static ");
+					if (pure)
+						Write("constexpr ");
 					break;
 				case FuCallType.Abstract:
 				case FuCallType.Virtual:
@@ -1993,7 +1996,10 @@ public class GenCpp : GenCCpp
 				default:
 					break;
 				}
-				WriteCharLine(';');
+				if (pure)
+					WriteBody(method);
+				else
+					WriteCharLine(';');
 				break;
 			case FuNative nat:
 				FuMember? followingMember = nat.GetFollowingMember();
@@ -2039,7 +2045,7 @@ public class GenCpp : GenCCpp
 
 	protected override void WriteMethod!(FuMethod method)
 	{
-		if (method.CallType == FuCallType.Abstract)
+		if (method.CallType == FuCallType.Abstract || method.IsPure())
 			return;
 		WriteNewLine();
 		if (method.Id == FuId.Main) {

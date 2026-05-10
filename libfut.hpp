@@ -773,6 +773,7 @@ public:
 	virtual bool isLiteralZero() const;
 	virtual bool isConstEnum() const;
 	virtual int intValue() const;
+	virtual bool isPure() const;
 	virtual void accept(FuVisitor * visitor, FuPriority parent) const;
 	void acceptStatement(FuVisitor * visitor) const override;
 	virtual bool isReferenceTo(const FuSymbol * symbol) const;
@@ -964,6 +965,7 @@ class FuLiteral : public FuExpr
 {
 public:
 	virtual ~FuLiteral() = default;
+	bool isPure() const override;
 	virtual bool isDefaultValue() const = 0;
 	virtual std::string getLiteralString() const;
 protected:
@@ -1143,6 +1145,7 @@ public:
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isReferenceTo(const FuSymbol * symbol) const override;
+	bool isPure() const override;
 	bool isNewString(bool substringOffset) const override;
 	void setShared() const override;
 	const FuSymbol * getSymbol() const override;
@@ -1196,6 +1199,7 @@ public:
 	FuPrefixExpr() = default;
 	bool isConstEnum() const override;
 	int intValue() const override;
+	bool isPure() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isUnique() const override;
 };
@@ -1215,6 +1219,7 @@ public:
 	bool isIndexing() const override;
 	bool isConstEnum() const override;
 	int intValue() const override;
+	bool isPure() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	bool isRel() const;
@@ -1248,6 +1253,7 @@ class FuSelectExpr : public FuExpr
 public:
 	FuSelectExpr() = default;
 	int getLocLength() const override;
+	bool isPure() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isUnique() const override;
 	void setShared() const override;
@@ -1269,6 +1275,7 @@ class FuCallExpr : public FuExpr
 {
 public:
 	FuCallExpr() = default;
+	bool isPure() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	std::string toString() const override;
@@ -1522,6 +1529,7 @@ public:
 	void acceptStatement(FuVisitor * visitor) const override;
 private: // internal
 	std::shared_ptr<FuExpr> value;
+	friend FuMethod;
 	friend FuParser;
 	friend FuSema;
 	friend GenBase;
@@ -1752,6 +1760,7 @@ class FuVar : public FuNamedValue
 public:
 	FuVar() = default;
 	static std::shared_ptr<FuVar> new_(std::shared_ptr<FuType> type, std::string_view name, std::shared_ptr<FuExpr> defaultValue = nullptr);
+	bool isPure() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	FuVar * nextVar() const;
 private: // internal
@@ -1766,6 +1775,7 @@ class FuConst : public FuMember
 {
 public:
 	FuConst() = default;
+	bool isPure() const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 	bool isStatic() const override;
 private: // internal
@@ -1793,6 +1803,7 @@ class FuProperty : public FuMember
 public:
 	FuProperty() = default;
 	bool isStatic() const override;
+	bool isPure() const override;
 	static std::shared_ptr<FuProperty> new_(std::shared_ptr<FuType> type, FuId id, std::string_view name);
 };
 
@@ -1858,6 +1869,7 @@ public:
 	FuVar * firstParameter() const;
 	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;
+	bool isPure() const override;
 private: // internal
 	FuCallType callType;
 	friend FuClass;
@@ -2345,7 +2357,10 @@ private:
 	static int saturatedSub(int a, int b);
 	static int saturatedMul(int a, int b);
 	static int saturatedDiv(int a, int b);
-	static int saturatedShiftRight(int a, int b);
+	static constexpr int saturatedShiftRight(int a, int b)
+	{
+		return a >> (b >= 31 || b < 0 ? 31 : b);
+	}
 	static std::shared_ptr<FuRangeType> bitwiseUnsignedOp(const FuRangeType * left, FuToken op, const FuRangeType * right);
 	bool isEnumOp(const FuExpr * left, const FuExpr * right) const;
 	std::shared_ptr<FuType> bitwiseOp(const FuExpr * left, FuToken op, const FuExpr * right) const;
@@ -2525,7 +2540,10 @@ protected:
 	virtual void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary);
 	void writeBinaryExpr(const FuBinaryExpr * expr, bool parentheses, FuPriority left, std::string_view op, FuPriority right);
 	void writeBinaryExpr2(const FuBinaryExpr * expr, FuPriority parent, FuPriority child, std::string_view op);
-	static std::string_view getEqOp(bool not_);
+	static constexpr std::string_view getEqOp(bool not_)
+	{
+		return not_ ? " != " : " == ";
+	}
 	virtual void writeEqualOperand(const FuExpr * expr, const FuExpr * other);
 	void writeEqualExpr(const FuExpr * left, const FuExpr * right, FuPriority parent, std::string_view op);
 	virtual void writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_);
