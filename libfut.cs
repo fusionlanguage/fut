@@ -13131,7 +13131,13 @@ namespace Fusion
 			if (konst.Type is FuArrayStorageType array) {
 				Write("static ");
 				Write(GetConst(array));
-				WriteTypeAndName(konst);
+				if (array.GetElementType() is FuStringType) {
+					Write("char *const ");
+					WriteName(konst);
+					EndDefinition(konst.Type);
+				}
+				else
+					WriteTypeAndName(konst);
 				Write(" = ");
 				konst.Value.Accept(this, FuPriority.Argument);
 				WriteCharLine(';');

@@ -30,23 +30,9 @@ public static class Test
 		}
 		i = 0;
 		foreach (string x in ss) {
-			// FIXME: c
-			// const string[] expecteds = { "bar", "foo" };
-			// if (x != expecteds[i++])
-			// 	return false;
-			switch (i) {
-			case 0:
-				if (x != "bar")
-					return false;
-				break;
-			case 1:
-				if (x != "foo")
-					return false;
-				break;
-			default:
+			const string[] expecteds = { "bar", "foo" };
+			if (x != expecteds[i++])
 				return false;
-			}
-			i++;
 		}
 		return true;
 	}

@@ -13623,7 +13623,13 @@ export class GenC extends GenCCpp
 		if ((array = konst.type) instanceof FuArrayStorageType) {
 			this.write("static ");
 			this.write(this.getConst(array));
-			this.writeTypeAndName(konst);
+			if (array.getElementType() instanceof FuStringType) {
+				this.write("char *const ");
+				this.writeName(konst);
+				this.#endDefinition(konst.type);
+			}
+			else
+				this.writeTypeAndName(konst);
 			this.write(" = ");
 			konst.value.accept(this, FuPriority.ARGUMENT);
 			this.writeCharLine(59);

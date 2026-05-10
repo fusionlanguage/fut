@@ -12911,7 +12911,13 @@ void GenC::writeConst(const FuConst * konst)
 	if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(konst->type.get())) {
 		write("static ");
 		write(getConst(array));
-		writeTypeAndName(konst);
+		if (dynamic_cast<const FuStringType *>(array->getElementType().get())) {
+			write("char *const ");
+			writeName(konst);
+			endDefinition(konst->type.get());
+		}
+		else
+			writeTypeAndName(konst);
 		write(" = ");
 		konst->value->accept(this, FuPriority::argument);
 		writeCharLine(';');
