@@ -1,9 +1,11 @@
 public static class Test
 {
+	public static int GetReadLineLength() => Console.ReadLine().Length; //FAIL: cl
+
 	public static bool Run()
 	{
 		if (false) {
-			string() s = Console.ReadLine(); //FAIL: cl
+			string() s = Console.ReadLine();
 			Console.WriteLine(s);
 		}
 		return true;

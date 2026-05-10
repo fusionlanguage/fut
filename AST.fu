@@ -624,7 +624,7 @@ public class FuSymbolReference : FuName
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
 	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
-	public override bool IsPure() => this.Symbol.IsPure();
+	public override bool IsPure() => this.Symbol.IsPure() && (this.Left == null || this.Left.IsPure());
 	public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 	public override void SetShared()
 	{

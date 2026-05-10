@@ -2011,7 +2011,7 @@ namespace Fusion
 
 		public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 
-		public override bool IsPure() => this.Symbol.IsPure();
+		public override bool IsPure() => this.Symbol.IsPure() && (this.Left == null || this.Left.IsPure());
 
 		public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 

@@ -2025,7 +2025,7 @@ export class FuSymbolReference extends FuName
 
 	isPure()
 	{
-		return this.symbol.isPure();
+		return this.symbol.isPure() && (this.left == null || this.left.isPure());
 	}
 
 	isNewString(substringOffset)

@@ -1552,7 +1552,7 @@ bool FuSymbolReference::isReferenceTo(const FuSymbol * symbol) const
 
 bool FuSymbolReference::isPure() const
 {
-	return this->symbol->isPure();
+	return this->symbol->isPure() && (this->left == nullptr || this->left->isPure());
 }
 
 bool FuSymbolReference::isNewString(bool substringOffset) const
