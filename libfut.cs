@@ -5631,6 +5631,8 @@ namespace Fusion
 				default:
 					break;
 				}
+				if (left.Type is FuEnum && left.IsConst(false) && right.IsConst(false))
+					return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
 			}
 			TakePtr(left);
 			TakePtr(right);

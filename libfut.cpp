@@ -5435,6 +5435,8 @@ std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::
 			return toLiteralBool(expr, expr->op == FuToken::equal);
 		else if ((dynamic_cast<const FuLiteralFalse *>(left.get()) && dynamic_cast<const FuLiteralTrue *>(right.get())) || (dynamic_cast<const FuLiteralTrue *>(left.get()) && dynamic_cast<const FuLiteralFalse *>(right.get())))
 			return toLiteralBool(expr, expr->op == FuToken::notEqual);
+		if (dynamic_cast<const FuEnum *>(left->type.get()) && left->isConst(false) && right->isConst(false))
+			return toLiteralBool(expr, (expr->op == FuToken::notEqual) ^ (left->intValue() == right->intValue()));
 	}
 	takePtr(left.get());
 	takePtr(right.get());

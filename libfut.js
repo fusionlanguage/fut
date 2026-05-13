@@ -5933,6 +5933,8 @@ export class FuSema
 				return this.#toLiteralBool(expr, expr.op == FuToken.EQUAL);
 			else if ((left instanceof FuLiteralFalse && right instanceof FuLiteralTrue) || (left instanceof FuLiteralTrue && right instanceof FuLiteralFalse))
 				return this.#toLiteralBool(expr, expr.op == FuToken.NOT_EQUAL);
+			if (left.type instanceof FuEnum && left.isConst(false) && right.isConst(false))
+				return this.#toLiteralBool(expr, (expr.op == FuToken.NOT_EQUAL) != (left.intValue() == right.intValue()));
 		}
 		FuSema.#takePtr(left);
 		FuSema.#takePtr(right);
