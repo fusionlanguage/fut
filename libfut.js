@@ -7264,9 +7264,8 @@ export class FuSema
 	#foldConst(expr)
 	{
 		expr = this.#visitExpr(expr);
-		if (expr.isConst(false))
-			return expr;
-		this.#reportError(expr, "Expected constant value");
+		if (!expr.isConst(false))
+			this.#reportError(expr, "Expected constant value");
 		return expr;
 	}
 
@@ -7283,6 +7282,16 @@ export class FuSema
 		}
 		this.#reportError(expr, "Expected integer");
 		return 0;
+	}
+
+	#checkConstInitializer(konst, type, value)
+	{
+		if (value == this.#poison)
+			return;
+		if (value.isConst(false))
+			this.#coerce(value, type);
+		else
+			this.#reportError(konst.value, `Value for constant '${konst.name}' is not constant`);
 	}
 
 	#resolveConst(konst)
@@ -7317,17 +7326,15 @@ export class FuSema
 					konst.type = Object.assign(new FuArrayStorageType(), { class: this.#host.program.system.arrayStorageClass, typeArg0: elementType, length: coll.items.length });
 				coll.type = konst.type;
 				for (const item of coll.items)
-					this.#coerce(item, elementType);
+					this.#checkConstInitializer(konst, elementType, item);
 			}
 			else
 				this.#reportError(konst, `Array initializer for scalar constant '${konst.name}'`);
 		}
 		else if (this.#currentScope instanceof FuEnum && konst.value.type instanceof FuRangeType && konst.value instanceof FuLiteral) {
 		}
-		else if (konst.value.isConst(false))
-			this.#coerce(konst.value, konst.type);
-		else if (konst.value != this.#poison)
-			this.#reportError(konst.value, `Value for constant '${konst.name}' is not constant`);
+		else
+			this.#checkConstInitializer(konst, konst.type, konst.value);
 		konst.inMethod = this.#currentMethod;
 		konst.visitStatus = FuVisitStatus.DONE;
 	}

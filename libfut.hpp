@@ -2419,6 +2419,7 @@ private:
 	void visitStatement(std::shared_ptr<FuStatement> statement);
 	std::shared_ptr<FuExpr> foldConst(std::shared_ptr<FuExpr> expr);
 	int foldConstInt(std::shared_ptr<FuExpr> expr);
+	void checkConstInitializer(const FuConst * konst, const FuType * type, const FuExpr * value) const;
 	void resolveConst(FuConst * konst);
 	void resolveConsts(FuContainerType * container);
 	void resolveTypes(FuClass * klass);

@@ -6756,9 +6756,8 @@ void FuSema::visitStatement(std::shared_ptr<FuStatement> statement)
 std::shared_ptr<FuExpr> FuSema::foldConst(std::shared_ptr<FuExpr> expr)
 {
 	expr = visitExpr(expr);
-	if (expr->isConst(false))
-		return expr;
-	reportError(expr.get(), "Expected constant value");
+	if (!expr->isConst(false))
+		reportError(expr.get(), "Expected constant value");
 	return expr;
 }
 
@@ -6774,6 +6773,16 @@ int FuSema::foldConstInt(std::shared_ptr<FuExpr> expr)
 	}
 	reportError(expr.get(), "Expected integer");
 	return 0;
+}
+
+void FuSema::checkConstInitializer(const FuConst * konst, const FuType * type, const FuExpr * value) const
+{
+	if (value == this->poison.get())
+		return;
+	if (value->isConst(false))
+		coerce(value, type);
+	else
+		reportError(konst->value.get(), std::format("Value for constant '{}' is not constant", konst->name));
 }
 
 void FuSema::resolveConst(FuConst * konst)
@@ -6810,17 +6819,15 @@ void FuSema::resolveConst(FuConst * konst)
 			}
 			coll->type = konst->type;
 			for (const std::shared_ptr<FuExpr> &item : coll->items)
-				coerce(item.get(), elementType.get());
+				checkConstInitializer(konst, elementType.get(), item.get());
 		}
 		else
 			reportError(konst, std::format("Array initializer for scalar constant '{}'", konst->name));
 	}
 	else if (dynamic_cast<const FuEnum *>(this->currentScope) && dynamic_cast<const FuRangeType *>(konst->value->type.get()) && dynamic_cast<const FuLiteral *>(konst->value.get())) {
 	}
-	else if (konst->value->isConst(false))
-		coerce(konst->value.get(), konst->type.get());
-	else if (konst->value != this->poison)
-		reportError(konst->value.get(), std::format("Value for constant '{}' is not constant", konst->name));
+	else
+		checkConstInitializer(konst, konst->type.get(), konst->value.get());
 	konst->inMethod = this->currentMethod;
 	konst->visitStatus = FuVisitStatus::done;
 }

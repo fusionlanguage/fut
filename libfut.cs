@@ -6838,9 +6838,8 @@ namespace Fusion
 		FuExpr FoldConst(FuExpr expr)
 		{
 			expr = VisitExpr(expr);
-			if (expr.IsConst(false))
-				return expr;
-			ReportError(expr, "Expected constant value");
+			if (!expr.IsConst(false))
+				ReportError(expr, "Expected constant value");
 			return expr;
 		}
 
@@ -6856,6 +6855,16 @@ namespace Fusion
 			}
 			ReportError(expr, "Expected integer");
 			return 0;
+		}
+
+		void CheckConstInitializer(FuConst konst, FuType type, FuExpr value)
+		{
+			if (value == this.Poison)
+				return;
+			if (value.IsConst(false))
+				Coerce(value, type);
+			else
+				ReportError(konst.Value, $"Value for constant '{konst.Name}' is not constant");
 		}
 
 		void ResolveConst(FuConst konst)
@@ -6887,17 +6896,15 @@ namespace Fusion
 						konst.Type = new FuArrayStorageType { Class = this.Host.Program.System.ArrayStorageClass, TypeArg0 = elementType, Length = coll.Items.Count };
 					coll.Type = konst.Type;
 					foreach (FuExpr item in coll.Items)
-						Coerce(item, elementType);
+						CheckConstInitializer(konst, elementType, item);
 				}
 				else
 					ReportError(konst, $"Array initializer for scalar constant '{konst.Name}'");
 			}
 			else if (this.CurrentScope is FuEnum && konst.Value.Type is FuRangeType && konst.Value is FuLiteral) {
 			}
-			else if (konst.Value.IsConst(false))
-				Coerce(konst.Value, konst.Type);
-			else if (konst.Value != this.Poison)
-				ReportError(konst.Value, $"Value for constant '{konst.Name}' is not constant");
+			else
+				CheckConstInitializer(konst, konst.Type, konst.Value);
 			konst.InMethod = this.CurrentMethod;
 			konst.VisitStatus = FuVisitStatus.Done;
 		}
