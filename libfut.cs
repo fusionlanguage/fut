@@ -1643,14 +1643,12 @@ namespace Fusion
 
 		public virtual bool IsLiteralZero() => false;
 
-		public virtual bool IsConstEnum() => false;
-
 		public virtual int IntValue()
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual bool IsPure() => false;
+		public virtual bool IsConst(bool varIsConst) => false;
 
 		public virtual void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -1762,7 +1760,7 @@ namespace Fusion
 	public abstract class FuLiteral : FuExpr
 	{
 
-		public override bool IsPure() => true;
+		public override bool IsConst(bool varIsConst) => true;
 
 		public abstract bool IsDefaultValue();
 
@@ -1996,8 +1994,6 @@ namespace Fusion
 
 		internal FuSymbol Symbol;
 
-		public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
-
 		public override int IntValue()
 		{
 			FuConst konst = (FuConst) this.Symbol;
@@ -2011,7 +2007,7 @@ namespace Fusion
 
 		public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 
-		public override bool IsPure() => this.Symbol.IsPure() && (this.Left == null || this.Left.IsPure());
+		public override bool IsConst(bool varIsConst) => this.Symbol.IsConst(varIsConst) && (this.Left == null || this.Left.IsConst(varIsConst));
 
 		public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 
@@ -2058,15 +2054,13 @@ namespace Fusion
 	public class FuPrefixExpr : FuUnaryExpr
 	{
 
-		public override bool IsConstEnum() => this.Type is FuEnumFlags && this.Inner.IsConstEnum();
-
 		public override int IntValue()
 		{
 			Debug.Assert(this.Op == FuToken.Tilde);
 			return ~this.Inner.IntValue();
 		}
 
-		public override bool IsPure() => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner.IsPure();
+		public override bool IsConst(bool varIsConst) => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner.IsConst(varIsConst);
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2141,18 +2135,6 @@ namespace Fusion
 
 		public override bool IsIndexing() => this.Op == FuToken.LeftBracket;
 
-		public override bool IsConstEnum()
-		{
-			switch (this.Op) {
-			case FuToken.And:
-			case FuToken.Or:
-			case FuToken.Xor:
-				return this.Type is FuEnumFlags && this.Left.IsConstEnum() && this.Right.IsConstEnum();
-			default:
-				return false;
-			}
-		}
-
 		public override int IntValue()
 		{
 			switch (this.Op) {
@@ -2167,7 +2149,7 @@ namespace Fusion
 			}
 		}
 
-		public override bool IsPure() => this.Left.IsPure() && this.Right.IsPure();
+		public override bool IsConst(bool varIsConst) => this.Left.IsConst(varIsConst) && this.Right.IsConst(varIsConst);
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2291,7 +2273,7 @@ namespace Fusion
 
 		public override int GetLocLength() => 1;
 
-		public override bool IsPure() => this.Cond.IsPure() && this.OnTrue.IsPure() && this.OnFalse.IsPure();
+		public override bool IsConst(bool varIsConst) => this.Cond.IsConst(varIsConst) && this.OnTrue.IsConst(varIsConst) && this.OnFalse.IsConst(varIsConst);
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2316,10 +2298,10 @@ namespace Fusion
 
 		internal readonly List<FuExpr> Arguments = new List<FuExpr>();
 
-		public override bool IsPure()
+		public override bool IsConst(bool varIsConst)
 		{
 			FuMethod method = (FuMethod) this.Method.Symbol;
-			return method.IsPure() && this.Arguments.TrueForAll(arg => arg.IsPure());
+			return method.IsPure() && this.Arguments.TrueForAll(arg => arg.IsConst(varIsConst));
 		}
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
@@ -2794,7 +2776,7 @@ namespace Fusion
 
 		public static FuVar New(FuType type, string name, FuExpr defaultValue = null) => new FuVar { Type = type, Name = name, Value = defaultValue };
 
-		public override bool IsPure() => true;
+		public override bool IsConst(bool varIsConst) => varIsConst;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2824,7 +2806,7 @@ namespace Fusion
 
 		internal FuVisitStatus VisitStatus;
 
-		public override bool IsPure() => true;
+		public override bool IsConst(bool VarIsConst) => true;
 
 		public override void AcceptStatement(FuVisitor visitor)
 		{
@@ -2845,7 +2827,7 @@ namespace Fusion
 
 		public override bool IsStatic() => false;
 
-		public override bool IsPure() => this.Id == FuId.StringLength || this.Id == FuId.ArrayLength;
+		public override bool IsConst(bool varIsConst) => this.Id == FuId.StringLength || this.Id == FuId.ArrayLength;
 
 		public static FuProperty New(FuType type, FuId id, string name) => new FuProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 	}
@@ -2959,7 +2941,7 @@ namespace Fusion
 			return method;
 		}
 
-		public override bool IsPure()
+		public bool IsPure()
 		{
 			if (!IsStatic())
 				return false;
@@ -2973,7 +2955,7 @@ namespace Fusion
 					return false;
 				}
 			}
-			return this.Body is FuReturn ret && ret.Value.IsPure();
+			return this.Body is FuReturn ret && ret.Value.IsConst(true);
 		}
 	}
 
@@ -3011,6 +2993,8 @@ namespace Fusion
 		internal int EndLine;
 
 		internal int EndColumn;
+
+		public override bool IsConst(bool varIsConst) => true;
 	}
 
 	public class FuEnum : FuContainerType
@@ -5017,7 +5001,7 @@ namespace Fusion
 			}
 			if (!(scope is FuEnum) && expr.Symbol is FuConst konst) {
 				ResolveConst(konst);
-				if (konst.Value is FuLiteral || konst.Value is FuSymbolReference) {
+				if (konst.Value.IsConst(false)) {
 					if (konst.Type is FuFloatingType && konst.Value is FuLiteralLong intValue)
 						return ToLiteralDouble(expr, intValue.Value);
 					return konst.Value;
@@ -5647,8 +5631,6 @@ namespace Fusion
 				default:
 					break;
 				}
-				if (left.IsConstEnum() && right.IsConstEnum())
-					return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
 			}
 			TakePtr(left);
 			TakePtr(right);
@@ -6854,7 +6836,7 @@ namespace Fusion
 		FuExpr FoldConst(FuExpr expr)
 		{
 			expr = VisitExpr(expr);
-			if (expr is FuLiteral || expr.IsConstEnum())
+			if (expr.IsConst(false))
 				return expr;
 			ReportError(expr, "Expected constant value");
 			return expr;
@@ -6910,7 +6892,7 @@ namespace Fusion
 			}
 			else if (this.CurrentScope is FuEnum && konst.Value.Type is FuRangeType && konst.Value is FuLiteral) {
 			}
-			else if (konst.Value is FuLiteral || konst.Value.IsConstEnum())
+			else if (konst.Value.IsConst(false))
 				Coerce(konst.Value, konst.Type);
 			else if (konst.Value != this.Poison)
 				ReportError(konst.Value, $"Value for constant '{konst.Name}' is not constant");
@@ -13187,7 +13169,7 @@ namespace Fusion
 				Write("#define ");
 				WriteName(konst);
 				WriteChar(' ');
-				konst.Value.Accept(this, FuPriority.Argument);
+				konst.Value.Accept(this, FuPriority.Primary);
 				WriteNewLine();
 			}
 		}

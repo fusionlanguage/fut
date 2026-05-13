@@ -1170,17 +1170,12 @@ bool FuExpr::isLiteralZero() const
 	return false;
 }
 
-bool FuExpr::isConstEnum() const
-{
-	return false;
-}
-
 int FuExpr::intValue() const
 {
 	std::abort();
 }
 
-bool FuExpr::isPure() const
+bool FuExpr::isConst(bool varIsConst) const
 {
 	return false;
 }
@@ -1279,7 +1274,7 @@ void FuAggregateInitializer::accept(FuVisitor * visitor, FuPriority parent) cons
 	visitor->visitAggregateInitializer(this);
 }
 
-bool FuLiteral::isPure() const
+bool FuLiteral::isConst(bool varIsConst) const
 {
 	return true;
 }
@@ -1529,11 +1524,6 @@ int FuImplicitEnumValue::intValue() const
 	return this->value;
 }
 
-bool FuSymbolReference::isConstEnum() const
-{
-	return dynamic_cast<const FuEnum *>(this->symbol->parent);
-}
-
 int FuSymbolReference::intValue() const
 {
 	const FuConst * konst = static_cast<const FuConst *>(this->symbol);
@@ -1550,9 +1540,9 @@ bool FuSymbolReference::isReferenceTo(const FuSymbol * symbol) const
 	return this->symbol == symbol;
 }
 
-bool FuSymbolReference::isPure() const
+bool FuSymbolReference::isConst(bool varIsConst) const
 {
-	return this->symbol->isPure() && (this->left == nullptr || this->left->isPure());
+	return this->symbol->isConst(varIsConst) && (this->left == nullptr || this->left->isConst(varIsConst));
 }
 
 bool FuSymbolReference::isNewString(bool substringOffset) const
@@ -1599,20 +1589,15 @@ int FuUnaryExpr::getLocLength() const
 	}
 }
 
-bool FuPrefixExpr::isConstEnum() const
-{
-	return dynamic_cast<const FuEnumFlags *>(this->type.get()) && this->inner->isConstEnum();
-}
-
 int FuPrefixExpr::intValue() const
 {
 	assert(this->op == FuToken::tilde);
 	return ~this->inner->intValue();
 }
 
-bool FuPrefixExpr::isPure() const
+bool FuPrefixExpr::isConst(bool varIsConst) const
 {
-	return (this->op == FuToken::minus || this->op == FuToken::tilde || this->op == FuToken::exclamationMark || this->op == FuToken::resource) && this->inner->isPure();
+	return (this->op == FuToken::minus || this->op == FuToken::tilde || this->op == FuToken::exclamationMark || this->op == FuToken::resource) && this->inner->isConst(varIsConst);
 }
 
 void FuPrefixExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1680,18 +1665,6 @@ bool FuBinaryExpr::isIndexing() const
 	return this->op == FuToken::leftBracket;
 }
 
-bool FuBinaryExpr::isConstEnum() const
-{
-	switch (this->op) {
-	case FuToken::and_:
-	case FuToken::or_:
-	case FuToken::xor_:
-		return dynamic_cast<const FuEnumFlags *>(this->type.get()) && this->left->isConstEnum() && this->right->isConstEnum();
-	default:
-		return false;
-	}
-}
-
 int FuBinaryExpr::intValue() const
 {
 	switch (this->op) {
@@ -1706,9 +1679,9 @@ int FuBinaryExpr::intValue() const
 	}
 }
 
-bool FuBinaryExpr::isPure() const
+bool FuBinaryExpr::isConst(bool varIsConst) const
 {
-	return this->left->isPure() && this->right->isPure();
+	return this->left->isConst(varIsConst) && this->right->isConst(varIsConst);
 }
 
 void FuBinaryExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1832,9 +1805,9 @@ int FuSelectExpr::getLocLength() const
 	return 1;
 }
 
-bool FuSelectExpr::isPure() const
+bool FuSelectExpr::isConst(bool varIsConst) const
 {
-	return this->cond->isPure() && this->onTrue->isPure() && this->onFalse->isPure();
+	return this->cond->isConst(varIsConst) && this->onTrue->isConst(varIsConst) && this->onFalse->isConst(varIsConst);
 }
 
 void FuSelectExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1858,10 +1831,10 @@ std::string FuSelectExpr::toString() const
 	return std::format("({} ? {} : {})", this->cond->toString(), this->onTrue->toString(), this->onFalse->toString());
 }
 
-bool FuCallExpr::isPure() const
+bool FuCallExpr::isConst(bool varIsConst) const
 {
 	const FuMethod * method = static_cast<const FuMethod *>(this->method->symbol);
-	return method->isPure() && std::all_of(this->arguments.begin(), this->arguments.end(), [](const std::shared_ptr<FuExpr> &arg) { return arg->isPure(); });
+	return method->isPure() && std::all_of(this->arguments.begin(), this->arguments.end(), [&](const std::shared_ptr<FuExpr> &arg) { return arg->isConst(varIsConst); });
 }
 
 void FuCallExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -2288,9 +2261,9 @@ std::shared_ptr<FuVar> FuVar::new_(std::shared_ptr<FuType> type, std::string_vie
 	return futemp0;
 }
 
-bool FuVar::isPure() const
+bool FuVar::isConst(bool varIsConst) const
 {
-	return true;
+	return varIsConst;
 }
 
 void FuVar::accept(FuVisitor * visitor, FuPriority parent) const
@@ -2304,7 +2277,7 @@ FuVar * FuVar::nextVar() const
 	return def;
 }
 
-bool FuConst::isPure() const
+bool FuConst::isConst(bool varIsConst) const
 {
 	return true;
 }
@@ -2329,7 +2302,7 @@ bool FuProperty::isStatic() const
 	return false;
 }
 
-bool FuProperty::isPure() const
+bool FuProperty::isConst(bool varIsConst) const
 {
 	return this->id == FuId::stringLength || this->id == FuId::arrayLength;
 }
@@ -2466,7 +2439,7 @@ bool FuMethod::isPure() const
 			return false;
 	}
 	const FuReturn * ret;
-	return (ret = dynamic_cast<const FuReturn *>(this->body.get())) && ret->value->isPure();
+	return (ret = dynamic_cast<const FuReturn *>(this->body.get())) && ret->value->isConst(true);
 }
 FuMethodGroup::FuMethodGroup()
 {
@@ -2485,6 +2458,11 @@ std::shared_ptr<FuMethodGroup> FuMethodGroup::new_(std::shared_ptr<FuMethod> met
 	result->methods[0] = method0;
 	result->methods[1] = method1;
 	return result;
+}
+
+bool FuContainerType::isConst(bool varIsConst) const
+{
+	return true;
 }
 
 const FuSymbol * FuEnum::getFirstValue() const
@@ -4772,7 +4750,7 @@ std::shared_ptr<FuExpr> FuSema::lookup(std::shared_ptr<FuSymbolReference> expr, 
 	FuConst * konst;
 	if (!dynamic_cast<const FuEnum *>(scope) && (konst = dynamic_cast<FuConst *>(expr->symbol))) {
 		resolveConst(konst);
-		if (dynamic_cast<const FuLiteral *>(konst->value.get()) || dynamic_cast<const FuSymbolReference *>(konst->value.get())) {
+		if (konst->value->isConst(false)) {
 			const FuLiteralLong * intValue;
 			if (dynamic_cast<const FuFloatingType *>(konst->type.get()) && (intValue = dynamic_cast<const FuLiteralLong *>(konst->value.get())))
 				return toLiteralDouble(expr.get(), intValue->value);
@@ -5457,8 +5435,6 @@ std::shared_ptr<FuExpr> FuSema::resolveEquality(const FuBinaryExpr * expr, std::
 			return toLiteralBool(expr, expr->op == FuToken::equal);
 		else if ((dynamic_cast<const FuLiteralFalse *>(left.get()) && dynamic_cast<const FuLiteralTrue *>(right.get())) || (dynamic_cast<const FuLiteralTrue *>(left.get()) && dynamic_cast<const FuLiteralFalse *>(right.get())))
 			return toLiteralBool(expr, expr->op == FuToken::notEqual);
-		if (left->isConstEnum() && right->isConstEnum())
-			return toLiteralBool(expr, (expr->op == FuToken::notEqual) ^ (left->intValue() == right->intValue()));
 	}
 	takePtr(left.get());
 	takePtr(right.get());
@@ -6778,7 +6754,7 @@ void FuSema::visitStatement(std::shared_ptr<FuStatement> statement)
 std::shared_ptr<FuExpr> FuSema::foldConst(std::shared_ptr<FuExpr> expr)
 {
 	expr = visitExpr(expr);
-	if (dynamic_cast<const FuLiteral *>(expr.get()) || expr->isConstEnum())
+	if (expr->isConst(false))
 		return expr;
 	reportError(expr.get(), "Expected constant value");
 	return expr;
@@ -6839,7 +6815,7 @@ void FuSema::resolveConst(FuConst * konst)
 	}
 	else if (dynamic_cast<const FuEnum *>(this->currentScope) && dynamic_cast<const FuRangeType *>(konst->value->type.get()) && dynamic_cast<const FuLiteral *>(konst->value.get())) {
 	}
-	else if (dynamic_cast<const FuLiteral *>(konst->value.get()) || konst->value->isConstEnum())
+	else if (konst->value->isConst(false))
 		coerce(konst->value.get(), konst->type.get());
 	else if (konst->value != this->poison)
 		reportError(konst->value.get(), std::format("Value for constant '{}' is not constant", konst->name));
@@ -12981,7 +12957,7 @@ void GenC::writeConst(const FuConst * konst)
 		write("#define ");
 		writeName(konst);
 		writeChar(' ');
-		konst->value->accept(this, FuPriority::argument);
+		konst->value->accept(this, FuPriority::primary);
 		writeNewLine();
 	}
 }

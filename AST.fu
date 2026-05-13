@@ -347,9 +347,8 @@ public abstract class FuExpr : FuStatement
 	public virtual string() ToString() { assert false; }
 	public virtual bool IsIndexing() => false;
 	public virtual bool IsLiteralZero() => false;
-	public virtual bool IsConstEnum() => false;
 	public virtual int IntValue() { assert false; }
-	public virtual bool IsPure() => false;
+	public virtual bool IsConst(bool varIsConst) => false;
 	public virtual void Accept(FuVisitor! visitor, FuPriority parent) { assert false; }
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitExpr(this); }
 	public virtual bool IsReferenceTo(FuSymbol symbol) => false;
@@ -429,7 +428,7 @@ public class FuAggregateInitializer : FuExpr
 
 public abstract class FuLiteral : FuExpr
 {
-	public override bool IsPure() => true;
+	public override bool IsConst(bool varIsConst) => true;
 	public abstract bool IsDefaultValue();
 	public virtual string() GetLiteralString() { assert false; }
 }
@@ -578,7 +577,7 @@ public class FuInterpolatedString : FuExpr
 	}
 	public override int GetLocLength() => 2; // FIXME
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitInterpolatedString(this, parent); }
-//	public override bool IsPure() => this.Parts.All(part => part.Argument.IsPure());
+//	public override bool IsConst(bool varIsConst) => this.Parts.All(part => part.Argument.IsConst(varIsConst));
 	public override bool IsNewString(bool substringOffset) => true;
 //	public override string() ToString()
 //	{
@@ -616,7 +615,6 @@ public class FuSymbolReference : FuName
 {
 	internal FuExpr#? Left = null;
 	internal FuSymbol!? Symbol;
-	public override bool IsConstEnum() => this.Symbol.Parent is FuEnum;
 	public override int IntValue()
 	{
 		assert this.Symbol is FuConst konst;
@@ -624,7 +622,7 @@ public class FuSymbolReference : FuName
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
 	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
-	public override bool IsPure() => this.Symbol.IsPure() && (this.Left == null || this.Left.IsPure());
+	public override bool IsConst(bool varIsConst) => this.Symbol.IsConst(varIsConst) && (this.Left == null || this.Left.IsConst(varIsConst));
 	public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 	public override void SetShared()
 	{
@@ -663,13 +661,12 @@ public abstract class FuUnaryExpr : FuExpr
 
 public class FuPrefixExpr : FuUnaryExpr
 {
-	public override bool IsConstEnum() => this.Type is FuEnumFlags && this.Inner.IsConstEnum(); // && this.Op == FuToken.Tilde
 	public override int IntValue()
 	{
 		assert this.Op == FuToken.Tilde;
 		return ~this.Inner.IntValue();
 	}
-	public override bool IsPure() => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner.IsPure();
+	public override bool IsConst(bool varIsConst) => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner.IsConst(varIsConst);
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitPrefixExpr(this, parent); }
 	public override bool IsUnique() => this.Op == FuToken.New && !(this.Inner is FuAggregateInitializer);
 }
@@ -729,17 +726,6 @@ public class FuBinaryExpr : FuExpr
 		}
 	}
 	public override bool IsIndexing() => this.Op == FuToken.LeftBracket;
-	public override bool IsConstEnum()
-	{
-		switch (this.Op) {
-		case FuToken.And:
-		case FuToken.Or:
-		case FuToken.Xor:
-			return this.Type is FuEnumFlags && this.Left.IsConstEnum() && this.Right.IsConstEnum();
-		default:
-			return false;
-		}
-	}
 	public override int IntValue()
 	{
 		switch (this.Op) {
@@ -753,7 +739,7 @@ public class FuBinaryExpr : FuExpr
 			assert false;
 		}
 	}
-	public override bool IsPure() => this.Left.IsPure() && this.Right.IsPure();
+	public override bool IsConst(bool varIsConst) => this.Left.IsConst(varIsConst) && this.Right.IsConst(varIsConst);
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitBinaryExpr(this, parent); }
 	public override bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type.Id == FuId.StringStorageType;
 	public bool IsRel()
@@ -865,7 +851,7 @@ public class FuSelectExpr : FuExpr
 	internal FuExpr# OnTrue;
 	internal FuExpr# OnFalse;
 	public override int GetLocLength() => 1;
-	public override bool IsPure() => this.Cond.IsPure() && this.OnTrue.IsPure() && this.OnFalse.IsPure();
+	public override bool IsConst(bool varIsConst) => this.Cond.IsConst(varIsConst) && this.OnTrue.IsConst(varIsConst) && this.OnFalse.IsConst(varIsConst);
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSelectExpr(this, parent); }
 	public override bool IsUnique() => this.OnTrue.IsUnique() && this.OnFalse.IsUnique();
 	public override void SetShared()
@@ -880,10 +866,10 @@ public class FuCallExpr : FuExpr
 {
 	internal FuSymbolReference# Method;
 	internal List<FuExpr#>() Arguments;
-	public override bool IsPure()
+	public override bool IsConst(bool varIsConst)
 	{
 		assert this.Method.Symbol is FuMethod method;
-		return method.IsPure() && this.Arguments.All(arg => arg.IsPure());
+		return method.IsPure() && this.Arguments.All(arg => arg.IsConst(varIsConst));
 	}
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitCallExpr(this, parent); }
 	public override bool IsNewString(bool substringOffset)
@@ -1220,7 +1206,7 @@ public class FuVar : FuNamedValue
 	internal bool IsAssigned = false;
 	public static FuVar# New(FuType#? type, string name, FuExpr#? defaultValue = null)
 		=> new FuVar { Type = type, Name = name, Value = defaultValue };
-	public override bool IsPure() => true;
+	public override bool IsConst(bool varIsConst) => varIsConst;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitVar(this); }
 	public FuVar!? NextVar()
 	{
@@ -1241,7 +1227,7 @@ public class FuConst : FuMember
 	internal FuMethodBase? InMethod;
 	internal int InMethodIndex = 0;
 	internal FuVisitStatus VisitStatus;
-	public override bool IsPure() => true;
+	public override bool IsConst(bool VarIsConst) => true;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
 }
@@ -1254,7 +1240,7 @@ public class FuField : FuMember
 class FuProperty : FuMember
 {
 	public override bool IsStatic() => false;
-	public override bool IsPure() => this.Id == FuId.StringLength || this.Id == FuId.ArrayLength;
+	public override bool IsConst(bool varIsConst) => this.Id == FuId.StringLength || this.Id == FuId.ArrayLength;
 	public static FuProperty# New(FuType# type, FuId id, string name)
 		=> new FuProperty { Visibility = FuVisibility.Public, Type = type, Id = id, Name = name };
 }
@@ -1342,7 +1328,7 @@ public class FuMethod : FuMethodBase
 		}
 		return method;
 	}
-	public override bool IsPure()
+	public bool IsPure()
 	{
 		if (!IsStatic())
 			return false;
@@ -1356,7 +1342,7 @@ public class FuMethod : FuMethodBase
 				return false;
 			}
 		}
-		return this.Body is FuReturn ret && ret.Value.IsPure();
+		return this.Body is FuReturn ret && ret.Value.IsConst(true);
 	}
 }
 
@@ -1383,6 +1369,7 @@ public abstract class FuContainerType : FuType
 	internal int StartColumn;
 	internal int EndLine;
 	internal int EndColumn;
+	public override bool IsConst(bool varIsConst) => true;
 }
 
 public class FuEnum : FuContainerType

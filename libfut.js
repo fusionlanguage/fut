@@ -1562,17 +1562,12 @@ export class FuExpr extends FuStatement
 		return false;
 	}
 
-	isConstEnum()
-	{
-		return false;
-	}
-
 	intValue()
 	{
 		throw new Error();
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
 		return false;
 	}
@@ -1700,7 +1695,7 @@ export class FuAggregateInitializer extends FuExpr
 export class FuLiteral extends FuExpr
 {
 
-	isPure()
+	isConst(varIsConst)
 	{
 		return true;
 	}
@@ -2002,11 +1997,6 @@ export class FuSymbolReference extends FuName
 	left = null;
 	symbol;
 
-	isConstEnum()
-	{
-		return this.symbol.parent instanceof FuEnum;
-	}
-
 	intValue()
 	{
 		let konst = this.symbol;
@@ -2023,9 +2013,9 @@ export class FuSymbolReference extends FuName
 		return this.symbol == symbol;
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
-		return this.symbol.isPure() && (this.left == null || this.left.isPure());
+		return this.symbol.isConst(varIsConst) && (this.left == null || this.left.isConst(varIsConst));
 	}
 
 	isNewString(substringOffset)
@@ -2082,20 +2072,15 @@ export class FuUnaryExpr extends FuExpr
 export class FuPrefixExpr extends FuUnaryExpr
 {
 
-	isConstEnum()
-	{
-		return this.type instanceof FuEnumFlags && this.inner.isConstEnum();
-	}
-
 	intValue()
 	{
 		console.assert(this.op == FuToken.TILDE);
 		return ~this.inner.intValue();
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
-		return (this.op == FuToken.MINUS || this.op == FuToken.TILDE || this.op == FuToken.EXCLAMATION_MARK || this.op == FuToken.RESOURCE) && this.inner.isPure();
+		return (this.op == FuToken.MINUS || this.op == FuToken.TILDE || this.op == FuToken.EXCLAMATION_MARK || this.op == FuToken.RESOURCE) && this.inner.isConst(varIsConst);
 	}
 
 	accept(visitor, parent)
@@ -2174,18 +2159,6 @@ export class FuBinaryExpr extends FuExpr
 		return this.op == FuToken.LEFT_BRACKET;
 	}
 
-	isConstEnum()
-	{
-		switch (this.op) {
-		case FuToken.AND:
-		case FuToken.OR:
-		case FuToken.XOR:
-			return this.type instanceof FuEnumFlags && this.left.isConstEnum() && this.right.isConstEnum();
-		default:
-			return false;
-		}
-	}
-
 	intValue()
 	{
 		switch (this.op) {
@@ -2200,9 +2173,9 @@ export class FuBinaryExpr extends FuExpr
 		}
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
-		return this.left.isPure() && this.right.isPure();
+		return this.left.isConst(varIsConst) && this.right.isConst(varIsConst);
 	}
 
 	accept(visitor, parent)
@@ -2333,9 +2306,9 @@ export class FuSelectExpr extends FuExpr
 		return 1;
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
-		return this.cond.isPure() && this.onTrue.isPure() && this.onFalse.isPure();
+		return this.cond.isConst(varIsConst) && this.onTrue.isConst(varIsConst) && this.onFalse.isConst(varIsConst);
 	}
 
 	accept(visitor, parent)
@@ -2365,10 +2338,10 @@ export class FuCallExpr extends FuExpr
 	method;
 	arguments_ = [];
 
-	isPure()
+	isConst(varIsConst)
 	{
 		let method = this.method.symbol;
-		return method.isPure() && this.arguments_.every(arg => arg.isPure());
+		return method.isPure() && this.arguments_.every(arg => arg.isConst(varIsConst));
 	}
 
 	accept(visitor, parent)
@@ -2943,9 +2916,9 @@ export class FuVar extends FuNamedValue
 		return Object.assign(new FuVar(), { type: type, name: name, value: defaultValue });
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
-		return true;
+		return varIsConst;
 	}
 
 	accept(visitor, parent)
@@ -2972,7 +2945,7 @@ export class FuConst extends FuMember
 	inMethodIndex = 0;
 	visitStatus;
 
-	isPure()
+	isConst(varIsConst)
 	{
 		return true;
 	}
@@ -3005,7 +2978,7 @@ class FuProperty extends FuMember
 		return false;
 	}
 
-	isPure()
+	isConst(varIsConst)
 	{
 		return this.id == FuId.STRING_LENGTH || this.id == FuId.ARRAY_LENGTH;
 	}
@@ -3150,7 +3123,7 @@ export class FuMethod extends FuMethodBase
 				return false;
 		}
 		let ret;
-		return (ret = this.body) instanceof FuReturn && ret.value.isPure();
+		return (ret = this.body) instanceof FuReturn && ret.value.isConst(true);
 	}
 }
 
@@ -3183,6 +3156,11 @@ export class FuContainerType extends FuType
 	startColumn;
 	endLine;
 	endColumn;
+
+	isConst(varIsConst)
+	{
+		return true;
+	}
 }
 
 export class FuEnum extends FuContainerType
@@ -5280,7 +5258,7 @@ export class FuSema
 		let konst;
 		if (!(scope instanceof FuEnum) && (konst = expr.symbol) instanceof FuConst) {
 			this.#resolveConst(konst);
-			if (konst.value instanceof FuLiteral || konst.value instanceof FuSymbolReference) {
+			if (konst.value.isConst(false)) {
 				let intValue;
 				if (konst.type instanceof FuFloatingType && (intValue = konst.value) instanceof FuLiteralLong)
 					return this.#toLiteralDouble(expr, Number(intValue.value));
@@ -5955,8 +5933,6 @@ export class FuSema
 				return this.#toLiteralBool(expr, expr.op == FuToken.EQUAL);
 			else if ((left instanceof FuLiteralFalse && right instanceof FuLiteralTrue) || (left instanceof FuLiteralTrue && right instanceof FuLiteralFalse))
 				return this.#toLiteralBool(expr, expr.op == FuToken.NOT_EQUAL);
-			if (left.isConstEnum() && right.isConstEnum())
-				return this.#toLiteralBool(expr, (expr.op == FuToken.NOT_EQUAL) != (left.intValue() == right.intValue()));
 		}
 		FuSema.#takePtr(left);
 		FuSema.#takePtr(right);
@@ -7286,7 +7262,7 @@ export class FuSema
 	#foldConst(expr)
 	{
 		expr = this.#visitExpr(expr);
-		if (expr instanceof FuLiteral || expr.isConstEnum())
+		if (expr.isConst(false))
 			return expr;
 		this.#reportError(expr, "Expected constant value");
 		return expr;
@@ -7346,7 +7322,7 @@ export class FuSema
 		}
 		else if (this.#currentScope instanceof FuEnum && konst.value.type instanceof FuRangeType && konst.value instanceof FuLiteral) {
 		}
-		else if (konst.value instanceof FuLiteral || konst.value.isConstEnum())
+		else if (konst.value.isConst(false))
 			this.#coerce(konst.value, konst.type);
 		else if (konst.value != this.#poison)
 			this.#reportError(konst.value, `Value for constant '${konst.name}' is not constant`);
@@ -13703,7 +13679,7 @@ export class GenC extends GenCCpp
 			this.write("#define ");
 			this.writeName(konst);
 			this.writeChar(32);
-			konst.value.accept(this, FuPriority.ARGUMENT);
+			konst.value.accept(this, FuPriority.PRIMARY);
 			this.writeNewLine();
 		}
 	}

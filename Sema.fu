@@ -205,7 +205,7 @@ public class FuSema
 		}
 		if (!(scope is FuEnum) && expr.Symbol is FuConst! konst) {
 			ResolveConst(konst);
-			if (konst.Value is FuLiteral || konst.Value is FuSymbolReference) {
+			if (konst.Value.IsConst(false)) {
 				if (konst.Type is FuFloatingType && konst.Value is FuLiteralLong intValue)
 					return ToLiteralDouble(expr, intValue.Value);
 				return konst.Value;
@@ -849,8 +849,6 @@ public class FuSema
 			default:
 				break;
 			}
-			if (left.IsConstEnum() && right.IsConstEnum())
-				return ToLiteralBool(expr, (expr.Op == FuToken.NotEqual) ^ (left.IntValue() == right.IntValue()));
 		}
 		TakePtr(left);
 		TakePtr(right);
@@ -2126,7 +2124,7 @@ public class FuSema
 	FuExpr# FoldConst!(FuExpr# expr)
 	{
 		expr = VisitExpr(expr);
-		if (expr is FuLiteral || expr.IsConstEnum())
+		if (expr.IsConst(false))
 			return expr;
 		ReportError(expr, "Expected constant value");
 		return expr;
@@ -2182,7 +2180,7 @@ public class FuSema
 		}
 		else if (this.CurrentScope is FuEnum && konst.Value.Type is FuRangeType && konst.Value is FuLiteral) {
 		}
-		else if (konst.Value is FuLiteral || konst.Value.IsConstEnum())
+		else if (konst.Value.IsConst(false))
 			Coerce(konst.Value, konst.Type);
 		else if (konst.Value != this.Poison)
 			ReportError(konst.Value, $"Value for constant '{konst.Name}' is not constant");

@@ -771,9 +771,8 @@ public:
 	virtual std::string toString() const;
 	virtual bool isIndexing() const;
 	virtual bool isLiteralZero() const;
-	virtual bool isConstEnum() const;
 	virtual int intValue() const;
-	virtual bool isPure() const;
+	virtual bool isConst(bool varIsConst) const;
 	virtual void accept(FuVisitor * visitor, FuPriority parent) const;
 	void acceptStatement(FuVisitor * visitor) const override;
 	virtual bool isReferenceTo(const FuSymbol * symbol) const;
@@ -791,7 +790,6 @@ private: // internal
 	friend FuMethodBase;
 	friend FuNamedValue;
 	friend FuParser;
-	friend FuPrefixExpr;
 	friend FuProperty;
 	friend FuRangeType;
 	friend FuSema;
@@ -965,7 +963,7 @@ class FuLiteral : public FuExpr
 {
 public:
 	virtual ~FuLiteral() = default;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	virtual bool isDefaultValue() const = 0;
 	virtual std::string getLiteralString() const;
 protected:
@@ -1141,11 +1139,10 @@ class FuSymbolReference : public FuName
 public:
 	FuSymbolReference() = default;
 	virtual ~FuSymbolReference() = default;
-	bool isConstEnum() const override;
 	int intValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isReferenceTo(const FuSymbol * symbol) const override;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	bool isNewString(bool substringOffset) const override;
 	void setShared() const override;
 	const FuSymbol * getSymbol() const override;
@@ -1197,9 +1194,8 @@ class FuPrefixExpr : public FuUnaryExpr
 {
 public:
 	FuPrefixExpr() = default;
-	bool isConstEnum() const override;
 	int intValue() const override;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isUnique() const override;
 };
@@ -1217,9 +1213,8 @@ public:
 	FuBinaryExpr() = default;
 	int getLocLength() const override;
 	bool isIndexing() const override;
-	bool isConstEnum() const override;
 	int intValue() const override;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	bool isRel() const;
@@ -1253,7 +1248,7 @@ class FuSelectExpr : public FuExpr
 public:
 	FuSelectExpr() = default;
 	int getLocLength() const override;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isUnique() const override;
 	void setShared() const override;
@@ -1275,7 +1270,7 @@ class FuCallExpr : public FuExpr
 {
 public:
 	FuCallExpr() = default;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	std::string toString() const override;
@@ -1760,7 +1755,7 @@ class FuVar : public FuNamedValue
 public:
 	FuVar() = default;
 	static std::shared_ptr<FuVar> new_(std::shared_ptr<FuType> type, std::string_view name, std::shared_ptr<FuExpr> defaultValue = nullptr);
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	FuVar * nextVar() const;
 private: // internal
@@ -1775,7 +1770,7 @@ class FuConst : public FuMember
 {
 public:
 	FuConst() = default;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 	bool isStatic() const override;
 private: // internal
@@ -1803,7 +1798,7 @@ class FuProperty : public FuMember
 public:
 	FuProperty() = default;
 	bool isStatic() const override;
-	bool isPure() const override;
+	bool isConst(bool varIsConst) const override;
 	static std::shared_ptr<FuProperty> new_(std::shared_ptr<FuType> type, FuId id, std::string_view name);
 };
 
@@ -1869,7 +1864,7 @@ public:
 	FuVar * firstParameter() const;
 	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;
-	bool isPure() const override;
+	bool isPure() const;
 private: // internal
 	FuCallType callType;
 	friend FuClass;
@@ -1902,6 +1897,7 @@ class FuContainerType : public FuType
 {
 public:
 	virtual ~FuContainerType() = default;
+	bool isConst(bool varIsConst) const override;
 protected:
 	FuContainerType() = default;
 private: // internal

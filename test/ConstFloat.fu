@@ -1,6 +1,6 @@
 public static class Test
 {
-	public const float Foo = -10.5;
+	public const float Foo = 21.0 / -2;
 	const float Two = 2;
 	public const float[] Array = { -1.0, -2, 0.1 };
 

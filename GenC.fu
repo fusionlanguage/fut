@@ -3260,7 +3260,7 @@ public class GenC : GenCCpp
 			Write("#define ");
 			WriteName(konst);
 			WriteChar(' ');
-			konst.Value.Accept(this, FuPriority.Argument);
+			konst.Value.Accept(this, FuPriority.Primary);
 			WriteNewLine();
 		}
 	}
