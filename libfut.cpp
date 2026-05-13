@@ -14104,14 +14104,10 @@ void GenCl::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeCall("isinf", (*args)[0].get());
 		break;
 	case FuId::mathMax:
-		if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()) || dynamic_cast<const FuFloatingType *>((*args)[1]->type.get()))
-			writeChar('f');
-		writeCall("max", (*args)[0].get(), (*args)[1].get());
-		break;
 	case FuId::mathMin:
 		if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()) || dynamic_cast<const FuFloatingType *>((*args)[1]->type.get()))
 			writeChar('f');
-		writeCall("min", (*args)[0].get(), (*args)[1].get());
+		writeCall(method->id == FuId::mathMax ? "max" : "min", (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::mathTruncate:
 		writeCall("trunc", (*args)[0].get());

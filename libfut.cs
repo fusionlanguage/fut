@@ -14329,14 +14329,10 @@ namespace Fusion
 				WriteCall("isinf", args[0]);
 				break;
 			case FuId.MathMax:
-				if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType)
-					WriteChar('f');
-				WriteCall("max", args[0], args[1]);
-				break;
 			case FuId.MathMin:
 				if (args[0].Type is FuFloatingType || args[1].Type is FuFloatingType)
 					WriteChar('f');
-				WriteCall("min", args[0], args[1]);
+				WriteCall(method.Id == FuId.MathMax ? "max" : "min", args[0], args[1]);
 				break;
 			case FuId.MathTruncate:
 				WriteCall("trunc", args[0]);

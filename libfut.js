@@ -14854,14 +14854,10 @@ export class GenCl extends GenC
 			this.writeCall("isinf", args[0]);
 			break;
 		case FuId.MATH_MAX:
-			if (args[0].type instanceof FuFloatingType || args[1].type instanceof FuFloatingType)
-				this.writeChar(102);
-			this.writeCall("max", args[0], args[1]);
-			break;
 		case FuId.MATH_MIN:
 			if (args[0].type instanceof FuFloatingType || args[1].type instanceof FuFloatingType)
 				this.writeChar(102);
-			this.writeCall("min", args[0], args[1]);
+			this.writeCall(method.id == FuId.MATH_MAX ? "max" : "min", args[0], args[1]);
 			break;
 		case FuId.MATH_TRUNCATE:
 			this.writeCall("trunc", args[0]);
