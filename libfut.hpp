@@ -3152,8 +3152,6 @@ protected:
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeOpAssignRight(const FuBinaryExpr * expr) override;
-	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
-	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
 	void defineObjectLiteralTemporary(const FuUnaryExpr * expr) override;
 	void defineIsVar(const FuBinaryExpr * binary) override;
 	void writeAssert(const FuAssert * statement) override;
@@ -3180,7 +3178,6 @@ private:
 	void writeCallType(FuCallType callType, std::string_view sealedString);
 	void writeElementType(const FuType * elementType);
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
-	void writeOrderedDictionaryIndexing(const FuBinaryExpr * expr);
 	void writeLib();
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);
 };

@@ -16886,6 +16886,7 @@ namespace Fusion
 				case FuId.PriorityQueueClass:
 				case FuId.DictionaryClass:
 				case FuId.SortedDictionaryClass:
+				case FuId.OrderedDictionaryClass:
 					Include("System.Collections.Generic");
 					Write(klass.Class.Name);
 					WriteChar('<');
@@ -16893,10 +16894,6 @@ namespace Fusion
 					Write(", ");
 					WriteType(klass.GetValueType(), false);
 					WriteChar('>');
-					break;
-				case FuId.OrderedDictionaryClass:
-					Include("System.Collections.Specialized");
-					Write("OrderedDictionary");
 					break;
 				case FuId.TextWriterClass:
 				case FuId.StringWriterClass:
@@ -17050,25 +17047,7 @@ namespace Fusion
 				Write(expr.Symbol.Name);
 				break;
 			default:
-				if (expr.Symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass) {
-					if (parent == FuPriority.Primary)
-						WriteChar('(');
-					FuVar element = forEach.GetVar();
-					if (expr.Symbol == element) {
-						WriteStaticCastType(dict.GetKeyType());
-						WriteName(element);
-						Write(".Key");
-					}
-					else {
-						WriteStaticCastType(dict.GetValueType());
-						WriteName(element);
-						Write(".Value");
-					}
-					if (parent == FuPriority.Primary)
-						WriteChar(')');
-				}
-				else
-					base.VisitSymbolReference(expr, parent);
+				base.VisitSymbolReference(expr, parent);
 				break;
 			}
 		}
@@ -17126,6 +17105,7 @@ namespace Fusion
 			case FuId.SortedDictionaryContainsKey:
 			case FuId.SortedDictionaryRemove:
 			case FuId.OrderedDictionaryClear:
+			case FuId.OrderedDictionaryContainsKey:
 			case FuId.OrderedDictionaryRemove:
 			case FuId.TextWriterFlush:
 			case FuId.ConsoleReadLine:
@@ -17284,9 +17264,6 @@ namespace Fusion
 				Write(", ");
 				WriteNewStorage(obj.Type.AsClassType().GetValueType());
 				WriteChar(')');
-				break;
-			case FuId.OrderedDictionaryContainsKey:
-				WriteMethodCall(obj, "Contains", args[0]);
 				break;
 			case FuId.TextWriterWrite:
 			case FuId.TextWriterWriteLine:
@@ -17467,42 +17444,6 @@ namespace Fusion
 			WriteAssignRight(expr);
 		}
 
-		void WriteOrderedDictionaryIndexing(FuBinaryExpr expr)
-		{
-			if (expr.Right.Type.Id == FuId.IntType || expr.Right.Type is FuRangeType) {
-				WritePostfix(expr.Left, "[(object) ");
-				expr.Right.Accept(this, FuPriority.Primary);
-				WriteChar(']');
-			}
-			else
-				base.WriteIndexingExpr(expr, FuPriority.And);
-		}
-
-		protected override void WriteIndexingExpr(FuBinaryExpr expr, FuPriority parent)
-		{
-			if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass) {
-				if (parent == FuPriority.Primary)
-					WriteChar('(');
-				WriteStaticCastType(expr.Type);
-				WriteOrderedDictionaryIndexing(expr);
-				if (parent == FuPriority.Primary)
-					WriteChar(')');
-			}
-			else
-				base.WriteIndexingExpr(expr, parent);
-		}
-
-		protected override void WriteAssign(FuBinaryExpr expr, FuPriority parent)
-		{
-			if (expr.Left is FuBinaryExpr indexing && indexing.Op == FuToken.LeftBracket && indexing.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass) {
-				WriteOrderedDictionaryIndexing(indexing);
-				Write(" = ");
-				WriteAssignRight(expr);
-			}
-			else
-				base.WriteAssign(expr, parent);
-		}
-
 		internal override void VisitBinaryExpr(FuBinaryExpr expr, FuPriority parent)
 		{
 			switch (expr.Op) {
@@ -17564,18 +17505,11 @@ namespace Fusion
 		{
 			Write("foreach (");
 			if (statement.Collection.Type is FuClassType dict && dict.Class.TypeParameterCount == 2) {
-				if (dict.Class.Id == FuId.OrderedDictionaryClass) {
-					Include("System.Collections");
-					Write("DictionaryEntry ");
-					WriteName(statement.GetVar());
-				}
-				else {
-					WriteChar('(');
-					WriteTypeAndName(statement.GetVar());
-					Write(", ");
-					WriteTypeAndName(statement.GetValueVar());
-					WriteChar(')');
-				}
+				WriteChar('(');
+				WriteTypeAndName(statement.GetVar());
+				Write(", ");
+				WriteTypeAndName(statement.GetValueVar());
+				WriteChar(')');
 			}
 			else
 				WriteTypeAndName(statement.GetVar());

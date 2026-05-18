@@ -16498,6 +16498,7 @@ void GenCs::writeType(const FuType * type, bool promote)
 		case FuId::priorityQueueClass:
 		case FuId::dictionaryClass:
 		case FuId::sortedDictionaryClass:
+		case FuId::orderedDictionaryClass:
 			include("System.Collections.Generic");
 			write(klass->class_->name);
 			writeChar('<');
@@ -16505,10 +16506,6 @@ void GenCs::writeType(const FuType * type, bool promote)
 			write(", ");
 			writeType(klass->getValueType().get(), false);
 			writeChar('>');
-			break;
-		case FuId::orderedDictionaryClass:
-			include("System.Collections.Specialized");
-			write("OrderedDictionary");
 			break;
 		case FuId::textWriterClass:
 		case FuId::stringWriterClass:
@@ -16668,30 +16665,8 @@ void GenCs::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 		write(expr->symbol->name);
 		break;
 	default:
-		{
-			const FuForeach * forEach;
-			const FuClassType * dict;
-			if ((forEach = dynamic_cast<const FuForeach *>(expr->symbol->parent)) && (dict = dynamic_cast<const FuClassType *>(forEach->collection->type.get())) && dict->class_->id == FuId::orderedDictionaryClass) {
-				if (parent == FuPriority::primary)
-					writeChar('(');
-				const FuVar * element = forEach->getVar();
-				if (expr->symbol == element) {
-					writeStaticCastType(dict->getKeyType());
-					writeName(element);
-					write(".Key");
-				}
-				else {
-					writeStaticCastType(dict->getValueType().get());
-					writeName(element);
-					write(".Value");
-				}
-				if (parent == FuPriority::primary)
-					writeChar(')');
-			}
-			else
-				GenBase::visitSymbolReference(expr, parent);
-			break;
-		}
+		GenBase::visitSymbolReference(expr, parent);
+		break;
 	}
 }
 
@@ -16748,6 +16723,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::sortedDictionaryContainsKey:
 	case FuId::sortedDictionaryRemove:
 	case FuId::orderedDictionaryClear:
+	case FuId::orderedDictionaryContainsKey:
 	case FuId::orderedDictionaryRemove:
 	case FuId::textWriterFlush:
 	case FuId::consoleReadLine:
@@ -16912,9 +16888,6 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		write(", ");
 		writeNewStorage(obj->type->asClassType()->getValueType().get());
 		writeChar(')');
-		break;
-	case FuId::orderedDictionaryContainsKey:
-		writeMethodCall(obj, "Contains", (*args)[0].get());
 		break;
 	case FuId::textWriterWrite:
 	case FuId::textWriterWriteLine:
@@ -17098,45 +17071,6 @@ void GenCs::writeOpAssignRight(const FuBinaryExpr * expr)
 	writeAssignRight(expr);
 }
 
-void GenCs::writeOrderedDictionaryIndexing(const FuBinaryExpr * expr)
-{
-	if (expr->right->type->id == FuId::intType || dynamic_cast<const FuRangeType *>(expr->right->type.get())) {
-		writePostfix(expr->left.get(), "[(object) ");
-		expr->right->accept(this, FuPriority::primary);
-		writeChar(']');
-	}
-	else
-		GenBase::writeIndexingExpr(expr, FuPriority::and_);
-}
-
-void GenCs::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
-{
-	const FuClassType * dict;
-	if ((dict = dynamic_cast<const FuClassType *>(expr->left->type.get())) && dict->class_->id == FuId::orderedDictionaryClass) {
-		if (parent == FuPriority::primary)
-			writeChar('(');
-		writeStaticCastType(expr->type.get());
-		writeOrderedDictionaryIndexing(expr);
-		if (parent == FuPriority::primary)
-			writeChar(')');
-	}
-	else
-		GenBase::writeIndexingExpr(expr, parent);
-}
-
-void GenCs::writeAssign(const FuBinaryExpr * expr, FuPriority parent)
-{
-	const FuBinaryExpr * indexing;
-	const FuClassType * dict;
-	if ((indexing = dynamic_cast<const FuBinaryExpr *>(expr->left.get())) && indexing->op == FuToken::leftBracket && (dict = dynamic_cast<const FuClassType *>(indexing->left->type.get())) && dict->class_->id == FuId::orderedDictionaryClass) {
-		writeOrderedDictionaryIndexing(indexing);
-		write(" = ");
-		writeAssignRight(expr);
-	}
-	else
-		GenBase::writeAssign(expr, parent);
-}
-
 void GenCs::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 {
 	switch (expr->op) {
@@ -17199,18 +17133,11 @@ void GenCs::visitForeach(const FuForeach * statement)
 	write("foreach (");
 	const FuClassType * dict;
 	if ((dict = dynamic_cast<const FuClassType *>(statement->collection->type.get())) && dict->class_->typeParameterCount == 2) {
-		if (dict->class_->id == FuId::orderedDictionaryClass) {
-			include("System.Collections");
-			write("DictionaryEntry ");
-			writeName(statement->getVar());
-		}
-		else {
-			writeChar('(');
-			writeTypeAndName(statement->getVar());
-			write(", ");
-			writeTypeAndName(statement->getValueVar());
-			writeChar(')');
-		}
+		writeChar('(');
+		writeTypeAndName(statement->getVar());
+		write(", ");
+		writeTypeAndName(statement->getValueVar());
+		writeChar(')');
 	}
 	else
 		writeTypeAndName(statement->getVar());

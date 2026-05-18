@@ -17442,6 +17442,7 @@ export class GenCs extends GenTyped
 			case FuId.PRIORITY_QUEUE_CLASS:
 			case FuId.DICTIONARY_CLASS:
 			case FuId.SORTED_DICTIONARY_CLASS:
+			case FuId.ORDERED_DICTIONARY_CLASS:
 				this.include("System.Collections.Generic");
 				this.write(klass.class.name);
 				this.writeChar(60);
@@ -17449,10 +17450,6 @@ export class GenCs extends GenTyped
 				this.write(", ");
 				this.writeType(klass.getValueType(), false);
 				this.writeChar(62);
-				break;
-			case FuId.ORDERED_DICTIONARY_CLASS:
-				this.include("System.Collections.Specialized");
-				this.write("OrderedDictionary");
 				break;
 			case FuId.TEXT_WRITER_CLASS:
 			case FuId.STRING_WRITER_CLASS:
@@ -17612,27 +17609,7 @@ export class GenCs extends GenTyped
 			this.write(expr.symbol.name);
 			break;
 		default:
-			let forEach;
-			let dict;
-			if ((forEach = expr.symbol.parent) instanceof FuForeach && (dict = forEach.collection.type) instanceof FuClassType && dict.class.id == FuId.ORDERED_DICTIONARY_CLASS) {
-				if (parent == FuPriority.PRIMARY)
-					this.writeChar(40);
-				let element = forEach.getVar();
-				if (expr.symbol == element) {
-					this.writeStaticCastType(dict.getKeyType());
-					this.writeName(element);
-					this.write(".Key");
-				}
-				else {
-					this.writeStaticCastType(dict.getValueType());
-					this.writeName(element);
-					this.write(".Value");
-				}
-				if (parent == FuPriority.PRIMARY)
-					this.writeChar(41);
-			}
-			else
-				super.visitSymbolReference(expr, parent);
+			super.visitSymbolReference(expr, parent);
 			break;
 		}
 	}
@@ -17690,6 +17667,7 @@ export class GenCs extends GenTyped
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
 		case FuId.SORTED_DICTIONARY_REMOVE:
 		case FuId.ORDERED_DICTIONARY_CLEAR:
+		case FuId.ORDERED_DICTIONARY_CONTAINS_KEY:
 		case FuId.ORDERED_DICTIONARY_REMOVE:
 		case FuId.TEXT_WRITER_FLUSH:
 		case FuId.CONSOLE_READ_LINE:
@@ -17850,9 +17828,6 @@ export class GenCs extends GenTyped
 			this.write(", ");
 			this.writeNewStorage(obj.type.asClassType().getValueType());
 			this.writeChar(41);
-			break;
-		case FuId.ORDERED_DICTIONARY_CONTAINS_KEY:
-			this.writeMethodCall(obj, "Contains", args[0]);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
 		case FuId.TEXT_WRITER_WRITE_LINE:
@@ -18034,45 +18009,6 @@ export class GenCs extends GenTyped
 		this.writeAssignRight(expr);
 	}
 
-	#writeOrderedDictionaryIndexing(expr)
-	{
-		if (expr.right.type.id == FuId.INT_TYPE || expr.right.type instanceof FuRangeType) {
-			this.writePostfix(expr.left, "[(object) ");
-			expr.right.accept(this, FuPriority.PRIMARY);
-			this.writeChar(93);
-		}
-		else
-			super.writeIndexingExpr(expr, FuPriority.AND);
-	}
-
-	writeIndexingExpr(expr, parent)
-	{
-		let dict;
-		if ((dict = expr.left.type) instanceof FuClassType && dict.class.id == FuId.ORDERED_DICTIONARY_CLASS) {
-			if (parent == FuPriority.PRIMARY)
-				this.writeChar(40);
-			this.writeStaticCastType(expr.type);
-			this.#writeOrderedDictionaryIndexing(expr);
-			if (parent == FuPriority.PRIMARY)
-				this.writeChar(41);
-		}
-		else
-			super.writeIndexingExpr(expr, parent);
-	}
-
-	writeAssign(expr, parent)
-	{
-		let indexing;
-		let dict;
-		if ((indexing = expr.left) instanceof FuBinaryExpr && indexing.op == FuToken.LEFT_BRACKET && (dict = indexing.left.type) instanceof FuClassType && dict.class.id == FuId.ORDERED_DICTIONARY_CLASS) {
-			this.#writeOrderedDictionaryIndexing(indexing);
-			this.write(" = ");
-			this.writeAssignRight(expr);
-		}
-		else
-			super.writeAssign(expr, parent);
-	}
-
 	visitBinaryExpr(expr, parent)
 	{
 		switch (expr.op) {
@@ -18135,18 +18071,11 @@ export class GenCs extends GenTyped
 		this.write("foreach (");
 		let dict;
 		if ((dict = statement.collection.type) instanceof FuClassType && dict.class.typeParameterCount == 2) {
-			if (dict.class.id == FuId.ORDERED_DICTIONARY_CLASS) {
-				this.include("System.Collections");
-				this.write("DictionaryEntry ");
-				this.writeName(statement.getVar());
-			}
-			else {
-				this.writeChar(40);
-				this.writeTypeAndName(statement.getVar());
-				this.write(", ");
-				this.writeTypeAndName(statement.getValueVar());
-				this.writeChar(41);
-			}
+			this.writeChar(40);
+			this.writeTypeAndName(statement.getVar());
+			this.write(", ");
+			this.writeTypeAndName(statement.getValueVar());
+			this.writeChar(41);
 		}
 		else
 			this.writeTypeAndName(statement.getVar());
