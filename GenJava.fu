@@ -78,11 +78,7 @@ public class GenJava : GenTyped
 
 	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
-		if (expr.Suffix.Length == 0
-		 && expr.Parts.Count == 1
-		 && expr.Parts[0].Prefix.Length == 0
-		 && expr.Parts[0].WidthExpr == null
-		 && expr.Parts[0].Format == ' ')
+		if (expr.IsToString(' '))
 			WriteToString(expr.Parts[0].Argument, parent);
 		else {
 			Write("String.format(");

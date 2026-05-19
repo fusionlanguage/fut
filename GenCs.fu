@@ -311,6 +311,10 @@ public class GenCs : GenTyped
 
 	internal override void VisitInterpolatedString!(FuInterpolatedString expr, FuPriority parent)
 	{
+		if (expr.IsToString('u')) {
+			WriteCall("char.ConvertFromUtf32", expr.Parts[0].Argument);
+			return;
+		}
 		Write("$\"");
 		foreach (FuInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '{');

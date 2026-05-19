@@ -579,6 +579,14 @@ public class FuInterpolatedString : FuExpr
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitInterpolatedString(this, parent); }
 //	public override bool IsConst(bool varIsConst) => this.Parts.All(part => part.Argument.IsConst(varIsConst));
 	public override bool IsNewString(bool substringOffset) => true;
+	public bool IsToString(int format)
+	{
+		return this.Suffix.Length == 0
+			&& this.Parts.Count == 1
+			&& this.Parts[0].Prefix.Length == 0
+			&& this.Parts[0].WidthExpr == null
+			&& (this.Parts[0].Format | 0x20) == format;
+	}
 //	public override string() ToString()
 //	{
 //		StringBuilder sb = new StringBuilder();

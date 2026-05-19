@@ -1108,6 +1108,7 @@ public:
 	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
+	bool isToString(int format) const;
 private: // internal
 	std::vector<FuInterpolatedPart> parts;
 	std::string suffix;

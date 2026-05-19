@@ -1977,6 +1977,11 @@ namespace Fusion
 		}
 
 		public override bool IsNewString(bool substringOffset) => true;
+
+		public bool IsToString(int format)
+		{
+			return this.Suffix.Length == 0 && this.Parts.Count == 1 && this.Parts[0].Prefix.Length == 0 && this.Parts[0].WidthExpr == null && (this.Parts[0].Format | 32) == format;
+		}
 	}
 
 	class FuImplicitEnumValue : FuExpr
@@ -16942,6 +16947,10 @@ namespace Fusion
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
 		{
+			if (expr.IsToString('u')) {
+				WriteCall("char.ConvertFromUtf32", expr.Parts[0].Argument);
+				return;
+			}
 			Write("$\"");
 			foreach (FuInterpolatedPart part in expr.Parts) {
 				WriteDoubling(part.Prefix, '{');
@@ -19468,7 +19477,7 @@ namespace Fusion
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
 		{
-			if (expr.Suffix.Length == 0 && expr.Parts.Count == 1 && expr.Parts[0].Prefix.Length == 0 && expr.Parts[0].WidthExpr == null && expr.Parts[0].Format == ' ')
+			if (expr.IsToString(' '))
 				WriteToString(expr.Parts[0].Argument, parent);
 			else {
 				Write("String.format(");
@@ -21171,6 +21180,10 @@ namespace Fusion
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
 		{
+			if (expr.IsToString('u')) {
+				WriteCall("String.fromCodePoint", expr.Parts[0].Argument);
+				return;
+			}
 			WriteChar('`');
 			foreach (FuInterpolatedPart part in expr.Parts) {
 				WriteInterpolatedLiteral(part.Prefix);

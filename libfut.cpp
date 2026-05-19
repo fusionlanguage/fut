@@ -1519,6 +1519,11 @@ bool FuInterpolatedString::isNewString(bool substringOffset) const
 	return true;
 }
 
+bool FuInterpolatedString::isToString(int format) const
+{
+	return this->suffix.empty() && std::ssize(this->parts) == 1 && this->parts[0].prefix.empty() && this->parts[0].widthExpr == nullptr && (this->parts[0].format | 32) == format;
+}
+
 int FuImplicitEnumValue::intValue() const
 {
 	return this->value;
@@ -16556,6 +16561,10 @@ bool GenCs::isPromoted(const FuExpr * expr) const
 
 void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
 {
+	if (expr->isToString('u')) {
+		writeCall("char.ConvertFromUtf32", expr->parts[0].argument.get());
+		return;
+	}
 	write("$\"");
 	for (const FuInterpolatedPart &part : expr->parts) {
 		writeDoubling(part.prefix, '{');
@@ -18914,7 +18923,7 @@ void GenJava::writePrintfWidth(const FuInterpolatedPart * part)
 
 void GenJava::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
 {
-	if (expr->suffix.empty() && std::ssize(expr->parts) == 1 && expr->parts[0].prefix.empty() && expr->parts[0].widthExpr == nullptr && expr->parts[0].format == ' ')
+	if (expr->isToString(' '))
 		writeToString(expr->parts[0].argument.get(), parent);
 	else {
 		write("String.format(");
@@ -20522,6 +20531,10 @@ void GenJsNoModule::writeInterpolatedLiteral(std::string_view s)
 
 void GenJsNoModule::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
 {
+	if (expr->isToString('u')) {
+		writeCall("String.fromCodePoint", expr->parts[0].argument.get());
+		return;
+	}
 	writeChar('`');
 	for (const FuInterpolatedPart &part : expr->parts) {
 		writeInterpolatedLiteral(part.prefix);

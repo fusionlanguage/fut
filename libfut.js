@@ -1980,6 +1980,11 @@ export class FuInterpolatedString extends FuExpr
 	{
 		return true;
 	}
+
+	isToString(format)
+	{
+		return this.suffix.length == 0 && this.parts.length == 1 && this.parts[0].prefix.length == 0 && this.parts[0].widthExpr == null && (this.parts[0].format | 32) == format;
+	}
 }
 
 class FuImplicitEnumValue extends FuExpr
@@ -17500,6 +17505,10 @@ export class GenCs extends GenTyped
 
 	visitInterpolatedString(expr, parent)
 	{
+		if (expr.isToString(117)) {
+			this.writeCall("char.ConvertFromUtf32", expr.parts[0].argument);
+			return;
+		}
 		this.write("$\"");
 		for (const part of expr.parts) {
 			this.writeDoubling(part.prefix, 123);
@@ -20067,7 +20076,7 @@ export class GenJava extends GenTyped
 
 	visitInterpolatedString(expr, parent)
 	{
-		if (expr.suffix.length == 0 && expr.parts.length == 1 && expr.parts[0].prefix.length == 0 && expr.parts[0].widthExpr == null && expr.parts[0].format == 32)
+		if (expr.isToString(32))
 			this.#writeToString(expr.parts[0].argument, parent);
 		else {
 			this.write("String.format(");
@@ -21803,6 +21812,10 @@ export class GenJsNoModule extends GenBase
 
 	visitInterpolatedString(expr, parent)
 	{
+		if (expr.isToString(117)) {
+			this.writeCall("String.fromCodePoint", expr.parts[0].argument);
+			return;
+		}
 		this.writeChar(96);
 		for (const part of expr.parts) {
 			this.#writeInterpolatedLiteral(part.prefix);
