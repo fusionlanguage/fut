@@ -1618,7 +1618,7 @@ public class GenPy : GenPySwift
 		Write("def ");
 		WriteName(method);
 		if (method.CallType == FuCallType.Static)
-			WriteParameters(method, true);
+			WriteParameters(method, method.Id != FuId.Main);
 		else {
 			Write("(self");
 			WriteRemainingParameters(method, false, true);

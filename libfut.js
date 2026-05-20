@@ -5381,7 +5381,7 @@ export class FuSema
 				switch (expr.symbol.id) {
 				case FuId.ARRAY_LENGTH:
 					let arrayStorage;
-					if ((arrayStorage = left.type) instanceof FuArrayStorageType)
+					if (left.type.id != FuId.MAIN_ARGS_TYPE && (arrayStorage = left.type) instanceof FuArrayStorageType)
 						return this.#toLiteralLong(expr, BigInt(arrayStorage.length));
 					break;
 				case FuId.STRING_LENGTH:
@@ -6044,7 +6044,7 @@ export class FuSema
 						this.#reportError(right, "Negative index");
 					else {
 						let array;
-						if ((array = klass) instanceof FuArrayStorageType && indexRange.min >= array.length)
+						if (klass.id != FuId.MAIN_ARGS_TYPE && (array = klass) instanceof FuArrayStorageType && indexRange.min >= array.length)
 							this.#reportError(right, "Array index out of bounds");
 					}
 				}
@@ -7414,8 +7414,7 @@ export class FuSema
 						if ((argsType = args.type) instanceof FuClassType && argsType.isArray() && !(argsType instanceof FuReadWriteClassType) && !argsType.nullable) {
 							let argsElement = argsType.getElementType();
 							if (argsElement.id == FuId.STRING_PTR_TYPE && !argsElement.nullable && args.value == null) {
-								argsType.id = FuId.MAIN_ARGS_TYPE;
-								argsType.class = this.#host.program.system.arrayStorageClass;
+								args.type = Object.assign(new FuArrayStorageType(), { id: FuId.MAIN_ARGS_TYPE, class: this.#host.program.system.arrayStorageClass, typeArg0: argsElement });
 								break;
 							}
 						}
@@ -10832,7 +10831,7 @@ export class GenC extends GenCCpp
 			break;
 		default:
 			if (expr.symbol.type.id == FuId.MAIN_ARGS_TYPE)
-				this.write("(const char **) (argv + 1)");
+				this.write("(const char *const *) (argv + 1)");
 			else if (expr.left == null || expr.symbol instanceof FuConst)
 				this.writeLocalName(expr.symbol, parent);
 			else if (GenC.#isDictionaryClassStgIndexing(expr.left)) {
@@ -13319,17 +13318,17 @@ export class GenC extends GenCCpp
 			case FuId.ARRAY_STORAGE_CLASS:
 				this.write("for (int ");
 				this.writeCamelCaseNotKeyword(element);
-				let array;
-				if ((array = klass) instanceof FuArrayStorageType) {
-					this.write(" = 0; ");
-					this.writeCamelCaseNotKeyword(element);
-					this.write(" < ");
-					this.visitLiteralLong(BigInt(array.length));
-				}
-				else {
+				if (klass.id == FuId.MAIN_ARGS_TYPE) {
 					this.write(" = 1; ");
 					this.writeCamelCaseNotKeyword(element);
 					this.write(" < argc");
+				}
+				else {
+					this.write(" = 0; ");
+					this.writeCamelCaseNotKeyword(element);
+					this.write(" < ");
+					let array = klass;
+					this.visitLiteralLong(BigInt(array.length));
 				}
 				this.write("; ");
 				this.writeCamelCaseNotKeyword(element);
@@ -16266,7 +16265,7 @@ export class GenCpp extends GenCCpp
 	{
 		let klass;
 		if (expr.type instanceof FuArrayStorageType || expr.type instanceof FuStringType)
-			this.writePostfix(expr, ".data()");
+			this.writePostfix(expr, expr.type.id == FuId.MAIN_ARGS_TYPE ? ".get()" : ".data()");
 		else if (expr.type instanceof FuDynamicPtrType)
 			this.writePostfix(expr, ".get()");
 		else if ((klass = expr.type) instanceof FuClassType && klass.class.id == FuId.LIST_CLASS) {
@@ -16995,10 +16994,30 @@ export class GenCpp extends GenCCpp
 			return;
 		this.writeNewLine();
 		if (method.id == FuId.MAIN) {
-			this.write("int main(");
-			if (method.parameters.count() == 1)
-				this.write("int argc, char **argv");
-			this.writeChar(41);
+			if (method.parameters.count() == 1) {
+				this.write("int main(int argc, char **argv)");
+				let argsType = method.firstParameter().type;
+				if (argsType.ptrTaken) {
+					this.currentMethod = method;
+					this.writeNewLine();
+					this.openBlock();
+					let args = method.firstParameter().name;
+					this.write("auto ");
+					this.#writeCamelCaseNotKeyword(args);
+					this.include("memory");
+					this.writeLine(" = std::make_unique<std::string_view[]>(argc - 1);");
+					this.writeLine("for (int i = 1; i < argc; i++)");
+					this.writeChar(9);
+					this.#writeCamelCaseNotKeyword(args);
+					this.writeLine("[i - 1] = argv[i];");
+					this.flattenBlock(method.body);
+					this.closeBlock();
+					this.currentMethod = null;
+					return;
+				}
+			}
+			else
+				this.write("int main()");
 		}
 		else {
 			this.writeType(method.type, true);
@@ -18190,7 +18209,7 @@ export class GenCs extends GenTyped
 		else
 			this.#writeCallType(method.callType, "sealed override ");
 		this.writeTypeAndName(method);
-		this.writeParameters(method, true);
+		this.writeParameters(method, method.id != FuId.MAIN);
 		this.writeBody(method);
 	}
 
@@ -18707,7 +18726,7 @@ export class GenD extends GenCCppD
 					this.#writeElementType(klass.getElementType());
 				this.writeChar(91);
 				let arrayStorage;
-				if ((arrayStorage = klass) instanceof FuArrayStorageType)
+				if (klass.id != FuId.MAIN_ARGS_TYPE && (arrayStorage = klass) instanceof FuArrayStorageType)
 					this.visitLiteralLong(BigInt(arrayStorage.length));
 				this.writeChar(93);
 				break;
@@ -22962,7 +22981,7 @@ export class GenJsNoModule extends GenBase
 		if (method.callType == FuCallType.STATIC)
 			this.write("static ");
 		this.writeName(method);
-		this.writeParameters(method, true);
+		this.writeParameters(method, method.id != FuId.MAIN);
 		this.writeBody(method);
 	}
 
@@ -25728,7 +25747,7 @@ export class GenSwift extends GenPySwift
 		else {
 			this.write("func ");
 			this.writeName(method);
-			this.writeParameters(method, true);
+			this.writeParameters(method, method.id != FuId.MAIN);
 			if (method.throws.length > 0)
 				this.write(" throws");
 			if (method.type.id != FuId.VOID_TYPE) {
@@ -27558,7 +27577,7 @@ export class GenPy extends GenPySwift
 		this.write("def ");
 		this.writeName(method);
 		if (method.callType == FuCallType.STATIC)
-			this.writeParameters(method, true);
+			this.writeParameters(method, method.id != FuId.MAIN);
 		else {
 			this.write("(self");
 			this.writeRemainingParameters(method, false, true);

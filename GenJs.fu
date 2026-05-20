@@ -1355,7 +1355,7 @@ public class GenJsNoModule : GenBase
 		if (method.CallType == FuCallType.Static)
 			Write("static ");
 		WriteName(method);
-		WriteParameters(method, true);
+		WriteParameters(method, method.Id != FuId.Main);
 		WriteBody(method);
 	}
 

@@ -1894,7 +1894,7 @@ public class GenSwift : GenPySwift
 		else {
 			Write("func ");
 			WriteName(method);
-			WriteParameters(method, true);
+			WriteParameters(method, method.Id != FuId.Main);
 			if (method.Throws.Count > 0)
 				Write(" throws");
 			if (method.Type.Id != FuId.VoidType) {

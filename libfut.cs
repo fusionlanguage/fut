@@ -5107,7 +5107,7 @@ namespace Fusion
 				default:
 					switch (expr.Symbol.Id) {
 					case FuId.ArrayLength:
-						if (left.Type is FuArrayStorageType arrayStorage)
+						if (left.Type.Id != FuId.MainArgsType && left.Type is FuArrayStorageType arrayStorage)
 							return ToLiteralLong(expr, arrayStorage.Length);
 						break;
 					case FuId.StringLength:
@@ -5730,7 +5730,7 @@ namespace Fusion
 					if (right.Type is FuRangeType indexRange) {
 						if (indexRange.Max < 0)
 							ReportError(right, "Negative index");
-						else if (klass is FuArrayStorageType array && indexRange.Min >= array.Length)
+						else if (klass.Id != FuId.MainArgsType && klass is FuArrayStorageType array && indexRange.Min >= array.Length)
 							ReportError(right, "Array index out of bounds");
 					}
 					type = klass.GetElementType();
@@ -6980,8 +6980,7 @@ namespace Fusion
 							if (args.Type is FuClassType argsType && argsType.IsArray() && !(argsType is FuReadWriteClassType) && !argsType.Nullable) {
 								FuType argsElement = argsType.GetElementType();
 								if (argsElement.Id == FuId.StringPtrType && !argsElement.Nullable && args.Value == null) {
-									argsType.Id = FuId.MainArgsType;
-									argsType.Class = this.Host.Program.System.ArrayStorageClass;
+									args.Type = new FuArrayStorageType { Id = FuId.MainArgsType, Class = this.Host.Program.System.ArrayStorageClass, TypeArg0 = argsElement };
 									break;
 								}
 							}
@@ -10392,7 +10391,7 @@ namespace Fusion
 				break;
 			default:
 				if (expr.Symbol.Type.Id == FuId.MainArgsType)
-					Write("(const char **) (argv + 1)");
+					Write("(const char *const *) (argv + 1)");
 				else if (expr.Left == null || expr.Symbol is FuConst)
 					WriteLocalName(expr.Symbol, parent);
 				else if (IsDictionaryClassStgIndexing(expr.Left)) {
@@ -12823,16 +12822,17 @@ namespace Fusion
 				case FuId.ArrayStorageClass:
 					Write("for (int ");
 					WriteCamelCaseNotKeyword(element);
-					if (klass is FuArrayStorageType array) {
-						Write(" = 0; ");
-						WriteCamelCaseNotKeyword(element);
-						Write(" < ");
-						VisitLiteralLong(array.Length);
-					}
-					else {
+					if (klass.Id == FuId.MainArgsType) {
 						Write(" = 1; ");
 						WriteCamelCaseNotKeyword(element);
 						Write(" < argc");
+					}
+					else {
+						Write(" = 0; ");
+						WriteCamelCaseNotKeyword(element);
+						Write(" < ");
+						FuArrayStorageType array = (FuArrayStorageType) klass;
+						VisitLiteralLong(array.Length);
 					}
 					Write("; ");
 					WriteCamelCaseNotKeyword(element);
@@ -15743,7 +15743,7 @@ namespace Fusion
 			switch (expr.Type) {
 			case FuArrayStorageType:
 			case FuStringType:
-				WritePostfix(expr, ".data()");
+				WritePostfix(expr, expr.Type.Id == FuId.MainArgsType ? ".get()" : ".data()");
 				break;
 			case FuDynamicPtrType:
 				WritePostfix(expr, ".get()");
@@ -16446,10 +16446,30 @@ namespace Fusion
 				return;
 			WriteNewLine();
 			if (method.Id == FuId.Main) {
-				Write("int main(");
-				if (method.Parameters.Count() == 1)
-					Write("int argc, char **argv");
-				WriteChar(')');
+				if (method.Parameters.Count() == 1) {
+					Write("int main(int argc, char **argv)");
+					FuArrayStorageType argsType = (FuArrayStorageType) method.FirstParameter().Type;
+					if (argsType.PtrTaken) {
+						this.CurrentMethod = method;
+						WriteNewLine();
+						OpenBlock();
+						string args = method.FirstParameter().Name;
+						Write("auto ");
+						WriteCamelCaseNotKeyword(args);
+						Include("memory");
+						WriteLine(" = std::make_unique<std::string_view[]>(argc - 1);");
+						WriteLine("for (int i = 1; i < argc; i++)");
+						WriteChar('\t');
+						WriteCamelCaseNotKeyword(args);
+						WriteLine("[i - 1] = argv[i];");
+						FlattenBlock(method.Body);
+						CloseBlock();
+						this.CurrentMethod = null;
+						return;
+					}
+				}
+				else
+					Write("int main()");
 			}
 			else {
 				WriteType(method.Type, true);
@@ -17621,7 +17641,7 @@ namespace Fusion
 			else
 				WriteCallType(method.CallType, "sealed override ");
 			WriteTypeAndName(method);
-			WriteParameters(method, true);
+			WriteParameters(method, method.Id != FuId.Main);
 			WriteBody(method);
 		}
 
@@ -18127,7 +18147,7 @@ namespace Fusion
 					else
 						WriteElementType(klass.GetElementType());
 					WriteChar('[');
-					if (klass is FuArrayStorageType arrayStorage)
+					if (klass.Id != FuId.MainArgsType && klass is FuArrayStorageType arrayStorage)
 						VisitLiteralLong(arrayStorage.Length);
 					WriteChar(']');
 					break;
@@ -22324,7 +22344,7 @@ namespace Fusion
 			if (method.CallType == FuCallType.Static)
 				Write("static ");
 			WriteName(method);
-			WriteParameters(method, true);
+			WriteParameters(method, method.Id != FuId.Main);
 			WriteBody(method);
 		}
 
@@ -25062,7 +25082,7 @@ namespace Fusion
 			else {
 				Write("func ");
 				WriteName(method);
-				WriteParameters(method, true);
+				WriteParameters(method, method.Id != FuId.Main);
 				if (method.Throws.Count > 0)
 					Write(" throws");
 				if (method.Type.Id != FuId.VoidType) {
@@ -26868,7 +26888,7 @@ namespace Fusion
 			Write("def ");
 			WriteName(method);
 			if (method.CallType == FuCallType.Static)
-				WriteParameters(method, true);
+				WriteParameters(method, method.Id != FuId.Main);
 			else {
 				Write("(self");
 				WriteRemainingParameters(method, false, true);

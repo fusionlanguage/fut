@@ -4869,9 +4869,12 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		default:
 			switch (expr->symbol->id) {
 			case FuId::arrayLength:
-				if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(left->type.get()))
-					return toLiteralLong(expr.get(), arrayStorage->length);
-				break;
+				{
+					const FuArrayStorageType * arrayStorage;
+					if (left->type->id != FuId::mainArgsType && (arrayStorage = dynamic_cast<const FuArrayStorageType *>(left->type.get())))
+						return toLiteralLong(expr.get(), arrayStorage->length);
+					break;
+				}
 			case FuId::stringLength:
 				if (const FuLiteralString *leftLiteral = dynamic_cast<const FuLiteralString *>(left.get())) {
 					int length = leftLiteral->getAsciiLength();
@@ -5551,7 +5554,7 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 						reportError(right.get(), "Negative index");
 					else {
 						const FuArrayStorageType * array;
-						if ((array = dynamic_cast<const FuArrayStorageType *>(klass)) && indexRange->min >= array->length)
+						if (klass->id != FuId::mainArgsType && (array = dynamic_cast<const FuArrayStorageType *>(klass)) && indexRange->min >= array->length)
 							reportError(right.get(), "Array index out of bounds");
 					}
 				}
@@ -6899,13 +6902,16 @@ void FuSema::resolveTypes(FuClass * klass)
 					break;
 				case 1:
 					{
-						const FuVar * args = method->firstParameter();
+						FuVar * args = method->firstParameter();
 						FuClassType * argsType;
 						if ((argsType = dynamic_cast<FuClassType *>(args->type.get())) && argsType->isArray() && !dynamic_cast<const FuReadWriteClassType *>(argsType) && !argsType->nullable) {
-							const FuType * argsElement = argsType->getElementType().get();
+							std::shared_ptr<FuType> argsElement = argsType->getElementType();
 							if (argsElement->id == FuId::stringPtrType && !argsElement->nullable && args->value == nullptr) {
-								argsType->id = FuId::mainArgsType;
-								argsType->class_ = this->host->program->system->arrayStorageClass.get();
+								std::shared_ptr<FuArrayStorageType> futemp0 = std::make_shared<FuArrayStorageType>();
+								futemp0->id = FuId::mainArgsType;
+								futemp0->class_ = this->host->program->system->arrayStorageClass.get();
+								futemp0->typeArg0 = argsElement;
+								args->type = futemp0;
 								break;
 							}
 						}
@@ -10127,7 +10133,7 @@ void GenC::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 		break;
 	default:
 		if (expr->symbol->type->id == FuId::mainArgsType)
-			write("(const char **) (argv + 1)");
+			write("(const char *const *) (argv + 1)");
 		else if (expr->left == nullptr || dynamic_cast<const FuConst *>(expr->symbol))
 			writeLocalName(expr->symbol, parent);
 		else if (isDictionaryClassStgIndexing(expr->left.get())) {
@@ -12601,16 +12607,17 @@ void GenC::visitForeach(const FuForeach * statement)
 		case FuId::arrayStorageClass:
 			write("for (int ");
 			writeCamelCaseNotKeyword(element);
-			if (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(klass)) {
-				write(" = 0; ");
-				writeCamelCaseNotKeyword(element);
-				write(" < ");
-				visitLiteralLong(array->length);
-			}
-			else {
+			if (klass->id == FuId::mainArgsType) {
 				write(" = 1; ");
 				writeCamelCaseNotKeyword(element);
 				write(" < argc");
+			}
+			else {
+				write(" = 0; ");
+				writeCamelCaseNotKeyword(element);
+				write(" < ");
+				const FuArrayStorageType * array = static_cast<const FuArrayStorageType *>(klass);
+				visitLiteralLong(array->length);
 			}
 			write("; ");
 			writeCamelCaseNotKeyword(element);
@@ -15411,7 +15418,7 @@ void GenCpp::writeArrayPtr(const FuExpr * expr, FuPriority parent)
 {
 	const FuClassType * klass;
 	if (dynamic_cast<const FuArrayStorageType *>(expr->type.get()) || dynamic_cast<const FuStringType *>(expr->type.get()))
-		writePostfix(expr, ".data()");
+		writePostfix(expr, expr->type->id == FuId::mainArgsType ? ".get()" : ".data()");
 	else if (dynamic_cast<const FuDynamicPtrType *>(expr->type.get()))
 		writePostfix(expr, ".get()");
 	else if ((klass = dynamic_cast<const FuClassType *>(expr->type.get())) && klass->class_->id == FuId::listClass) {
@@ -16105,10 +16112,30 @@ void GenCpp::writeMethod(const FuMethod * method)
 		return;
 	writeNewLine();
 	if (method->id == FuId::main) {
-		write("int main(");
-		if (method->parameters.count() == 1)
-			write("int argc, char **argv");
-		writeChar(')');
+		if (method->parameters.count() == 1) {
+			write("int main(int argc, char **argv)");
+			const FuArrayStorageType * argsType = static_cast<const FuArrayStorageType *>(method->firstParameter()->type.get());
+			if (argsType->ptrTaken) {
+				this->currentMethod = method;
+				writeNewLine();
+				openBlock();
+				std::string_view args = method->firstParameter()->name;
+				write("auto ");
+				writeCamelCaseNotKeyword(args);
+				include("memory");
+				writeLine(" = std::make_unique<std::string_view[]>(argc - 1);");
+				writeLine("for (int i = 1; i < argc; i++)");
+				writeChar('\t');
+				writeCamelCaseNotKeyword(args);
+				writeLine("[i - 1] = argv[i];");
+				flattenBlock(method->body.get());
+				closeBlock();
+				this->currentMethod = nullptr;
+				return;
+			}
+		}
+		else
+			write("int main()");
 	}
 	else {
 		writeType(method->type.get(), true);
@@ -17252,7 +17279,7 @@ void GenCs::writeMethod(const FuMethod * method)
 	else
 		writeCallType(method->callType, "sealed override ");
 	writeTypeAndName(method);
-	writeParameters(method, true);
+	writeParameters(method, method->id != FuId::main);
 	writeBody(method);
 }
 
@@ -17571,10 +17598,13 @@ void GenD::writeType(const FuType * type, bool promote)
 			else
 				writeElementType(klass->getElementType().get());
 			writeChar('[');
-			if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass))
-				visitLiteralLong(arrayStorage->length);
-			writeChar(']');
-			break;
+			{
+				const FuArrayStorageType * arrayStorage;
+				if (klass->id != FuId::mainArgsType && (arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)))
+					visitLiteralLong(arrayStorage->length);
+				writeChar(']');
+				break;
+			}
 		case FuId::listClass:
 		case FuId::stackClass:
 			if (isJsonElementList(klass)) {
@@ -21675,7 +21705,7 @@ void GenJsNoModule::writeMethod(const FuMethod * method)
 	if (method->callType == FuCallType::static_)
 		write("static ");
 	writeName(method);
-	writeParameters(method, true);
+	writeParameters(method, method->id != FuId::main);
 	writeBody(method);
 }
 
@@ -24288,7 +24318,7 @@ void GenSwift::writeMethod(const FuMethod * method)
 	else {
 		write("func ");
 		writeName(method);
-		writeParameters(method, true);
+		writeParameters(method, method->id != FuId::main);
 		if (std::ssize(method->throws) > 0)
 			write(" throws");
 		if (method->type->id != FuId::voidType) {
@@ -26019,7 +26049,7 @@ void GenPy::writeMethod(const FuMethod * method)
 	write("def ");
 	writeName(method);
 	if (method->callType == FuCallType::static_)
-		writeParameters(method, true);
+		writeParameters(method, method->id != FuId::main);
 	else {
 		write("(self");
 		writeRemainingParameters(method, false, true);

@@ -985,7 +985,7 @@ public class GenCs : GenTyped
 		else
 			WriteCallType(method.CallType, "sealed override ");
 		WriteTypeAndName(method);
-		WriteParameters(method, true);
+		WriteParameters(method, method.Id != FuId.Main);
 		WriteBody(method);
 	}
 

@@ -1332,7 +1332,7 @@ public class GenCpp : GenCCpp
 		switch (expr.Type) {
 		case FuArrayStorageType:
 		case FuStringType:
-			WritePostfix(expr, ".data()");
+			WritePostfix(expr, expr.Type.Id == FuId.MainArgsType ? ".get()" : ".data()");
 			break;
 		case FuDynamicPtrType:
 			WritePostfix(expr, ".get()");
@@ -2049,10 +2049,30 @@ public class GenCpp : GenCCpp
 			return;
 		WriteNewLine();
 		if (method.Id == FuId.Main) {
-			Write("int main(");
-			if (method.Parameters.Count() == 1)
-				Write("int argc, char **argv");
-			WriteChar(')');
+			if (method.Parameters.Count() == 1) {
+				Write("int main(int argc, char **argv)");
+				assert method.FirstParameter().Type is FuArrayStorageType argsType;
+				if (argsType.PtrTaken) {
+					this.CurrentMethod = method;
+					WriteNewLine();
+					OpenBlock();
+					string args = method.FirstParameter().Name;
+					Write("auto ");
+					WriteCamelCaseNotKeyword(args);
+					Include("memory");
+					WriteLine(" = std::make_unique<std::string_view[]>(argc - 1);");
+					WriteLine("for (int i = 1; i < argc; i++)");
+					WriteChar('\t');
+					WriteCamelCaseNotKeyword(args);
+					WriteLine("[i - 1] = argv[i];");
+					FlattenBlock(method.Body);
+					CloseBlock();
+					this.CurrentMethod = null;
+					return;
+				}
+			}
+			else
+				Write("int main()");
 		}
 		else {
 			WriteType(method.Type, true);
