@@ -23407,7 +23407,7 @@ namespace Fusion
 
 		protected override FuId GetTypeId(FuType type, bool promote) => type.Id == FuId.IntType || (promote && type is FuRangeType) ? FuId.NIntType : type.Id;
 
-		static bool IsArrayRef(FuArrayStorageType array) => array.PtrTaken || array.GetElementType() is FuStorageType;
+		static bool IsArrayRef(FuArrayStorageType array) => array.Id != FuId.MainArgsType && (array.PtrTaken || array.GetElementType() is FuStorageType);
 
 		void WriteArrayRef(FuType elementType)
 		{
@@ -23600,6 +23600,8 @@ namespace Fusion
 					expr.Accept(this, FuPriority.Argument);
 				WriteChar(')');
 			}
+			else if (expr.Type.Id == FuId.MainArgsType)
+				WriteCall("ArrayRef<String>", expr);
 			else if (!type.Nullable)
 				WriteUnwrapped(expr, parent, false);
 			else

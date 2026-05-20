@@ -22637,7 +22637,7 @@ FuId GenSwift::getTypeId(const FuType * type, bool promote) const
 
 bool GenSwift::isArrayRef(const FuArrayStorageType * array)
 {
-	return array->ptrTaken || dynamic_cast<const FuStorageType *>(array->getElementType().get());
+	return array->id != FuId::mainArgsType && (array->ptrTaken || dynamic_cast<const FuStorageType *>(array->getElementType().get()));
 }
 
 void GenSwift::writeArrayRef(const FuType * elementType)
@@ -22833,6 +22833,8 @@ void GenSwift::writeCoercedInternal(const FuType * type, const FuExpr * expr, Fu
 			expr->accept(this, FuPriority::argument);
 		writeChar(')');
 	}
+	else if (expr->type->id == FuId::mainArgsType)
+		writeCall("ArrayRef<String>", expr);
 	else if (!type->nullable)
 		writeUnwrapped(expr, parent, false);
 	else

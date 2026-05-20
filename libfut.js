@@ -24053,7 +24053,7 @@ export class GenSwift extends GenPySwift
 
 	static #isArrayRef(array)
 	{
-		return array.ptrTaken || array.getElementType() instanceof FuStorageType;
+		return array.id != FuId.MAIN_ARGS_TYPE && (array.ptrTaken || array.getElementType() instanceof FuStorageType);
 	}
 
 	#writeArrayRef(elementType)
@@ -24251,6 +24251,8 @@ export class GenSwift extends GenPySwift
 				expr.accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
 		}
+		else if (expr.type.id == FuId.MAIN_ARGS_TYPE)
+			this.writeCall("ArrayRef<String>", expr);
 		else if (!type.nullable)
 			this.#writeUnwrapped(expr, parent, false);
 		else

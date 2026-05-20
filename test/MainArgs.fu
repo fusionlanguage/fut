@@ -12,7 +12,7 @@ public static class Runner
 					break;
 				i++;
 			}
-			if (i == 2 && Foo(args, args.Length)) { //FAIL: swift TODO
+			if (i == 2 && Foo(args, args.Length)) {
 				Console.WriteLine("PASSED");
 				return 0;
 			}
