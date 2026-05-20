@@ -15743,7 +15743,7 @@ namespace Fusion
 			switch (expr.Type) {
 			case FuArrayStorageType:
 			case FuStringType:
-				WritePostfix(expr, expr.Type.Id == FuId.MainArgsType ? ".get()" : ".data()");
+				WritePostfix(expr, ".data()");
 				break;
 			case FuDynamicPtrType:
 				WritePostfix(expr, ".get()");
@@ -16453,15 +16453,11 @@ namespace Fusion
 						this.CurrentMethod = method;
 						WriteNewLine();
 						OpenBlock();
-						string args = method.FirstParameter().Name;
-						Write("auto ");
-						WriteCamelCaseNotKeyword(args);
-						Include("memory");
-						WriteLine(" = std::make_unique<std::string_view[]>(argc - 1);");
-						WriteLine("for (int i = 1; i < argc; i++)");
-						WriteChar('\t');
-						WriteCamelCaseNotKeyword(args);
-						WriteLine("[i - 1] = argv[i];");
+						Include("string_view");
+						Include("vector");
+						Write("std::vector<std::string_view> ");
+						WriteName(method.FirstParameter());
+						WriteLine(" { argv + 1, argv + argc };");
 						FlattenBlock(method.Body);
 						CloseBlock();
 						this.CurrentMethod = null;

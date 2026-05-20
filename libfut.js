@@ -16265,7 +16265,7 @@ export class GenCpp extends GenCCpp
 	{
 		let klass;
 		if (expr.type instanceof FuArrayStorageType || expr.type instanceof FuStringType)
-			this.writePostfix(expr, expr.type.id == FuId.MAIN_ARGS_TYPE ? ".get()" : ".data()");
+			this.writePostfix(expr, ".data()");
 		else if (expr.type instanceof FuDynamicPtrType)
 			this.writePostfix(expr, ".get()");
 		else if ((klass = expr.type) instanceof FuClassType && klass.class.id == FuId.LIST_CLASS) {
@@ -17001,15 +17001,11 @@ export class GenCpp extends GenCCpp
 					this.currentMethod = method;
 					this.writeNewLine();
 					this.openBlock();
-					let args = method.firstParameter().name;
-					this.write("auto ");
-					this.#writeCamelCaseNotKeyword(args);
-					this.include("memory");
-					this.writeLine(" = std::make_unique<std::string_view[]>(argc - 1);");
-					this.writeLine("for (int i = 1; i < argc; i++)");
-					this.writeChar(9);
-					this.#writeCamelCaseNotKeyword(args);
-					this.writeLine("[i - 1] = argv[i];");
+					this.include("string_view");
+					this.include("vector");
+					this.write("std::vector<std::string_view> ");
+					this.writeName(method.firstParameter());
+					this.writeLine(" { argv + 1, argv + argc };");
 					this.flattenBlock(method.body);
 					this.closeBlock();
 					this.currentMethod = null;

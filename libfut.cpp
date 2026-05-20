@@ -15418,7 +15418,7 @@ void GenCpp::writeArrayPtr(const FuExpr * expr, FuPriority parent)
 {
 	const FuClassType * klass;
 	if (dynamic_cast<const FuArrayStorageType *>(expr->type.get()) || dynamic_cast<const FuStringType *>(expr->type.get()))
-		writePostfix(expr, expr->type->id == FuId::mainArgsType ? ".get()" : ".data()");
+		writePostfix(expr, ".data()");
 	else if (dynamic_cast<const FuDynamicPtrType *>(expr->type.get()))
 		writePostfix(expr, ".get()");
 	else if ((klass = dynamic_cast<const FuClassType *>(expr->type.get())) && klass->class_->id == FuId::listClass) {
@@ -16119,15 +16119,11 @@ void GenCpp::writeMethod(const FuMethod * method)
 				this->currentMethod = method;
 				writeNewLine();
 				openBlock();
-				std::string_view args = method->firstParameter()->name;
-				write("auto ");
-				writeCamelCaseNotKeyword(args);
-				include("memory");
-				writeLine(" = std::make_unique<std::string_view[]>(argc - 1);");
-				writeLine("for (int i = 1; i < argc; i++)");
-				writeChar('\t');
-				writeCamelCaseNotKeyword(args);
-				writeLine("[i - 1] = argv[i];");
+				include("string_view");
+				include("vector");
+				write("std::vector<std::string_view> ");
+				writeName(method->firstParameter());
+				writeLine(" { argv + 1, argv + argc };");
 				flattenBlock(method->body.get());
 				closeBlock();
 				this->currentMethod = nullptr;
