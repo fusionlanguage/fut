@@ -87,8 +87,8 @@ class JsonNull : JsonElement
 class JsonParser
 {
 	string Input;
-	int Offset;
-	int InputLength;
+	nint Offset;
+	nint InputLength;
 
 	bool SkipWhitespace!()
 	{
@@ -171,7 +171,7 @@ class JsonParser
 	{
 		Offset++;
 		StringWriter() result;
-		int startOffset = Offset;
+		nint startOffset = Offset;
 		while (Offset < InputLength) {
 			switch (Input[Offset]) {
 			case 0:
@@ -267,7 +267,7 @@ class JsonParser
 
 	JsonNumber#? ParseNumber!()
 	{
-		int startOffset = Offset;
+		nint startOffset = Offset;
 		if (Input[Offset] == '-')
 			Offset++;
 		if (!SeeDigit())
