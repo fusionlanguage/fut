@@ -1,5 +1,7 @@
 public static class Runner
 {
+	static bool Foo(string[] args, int argsLen) => argsLen == 2 && args[0] == "foo" && args[1] == "bar";
+
 	public static int Main(string[] args) //FAIL: cl
 	{
 		int zero = 0;
@@ -10,7 +12,7 @@ public static class Runner
 					break;
 				i++;
 			}
-			if (i == 2) {
+			if (i == 2 && Foo(args, args.Length)) { //FAIL: cpp TODO
 				Console.WriteLine("PASSED");
 				return 0;
 			}

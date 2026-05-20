@@ -10126,7 +10126,9 @@ void GenC::visitSymbolReference(const FuSymbolReference * expr, FuPriority paren
 		}
 		break;
 	default:
-		if (expr->left == nullptr || dynamic_cast<const FuConst *>(expr->symbol))
+		if (expr->symbol->type->id == FuId::mainArgsType)
+			write("(const char **) (argv + 1)");
+		else if (expr->left == nullptr || dynamic_cast<const FuConst *>(expr->symbol))
 			writeLocalName(expr->symbol, parent);
 		else if (isDictionaryClassStgIndexing(expr->left.get())) {
 			writePostfix(expr->left.get(), "->");

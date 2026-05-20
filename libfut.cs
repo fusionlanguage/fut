@@ -10391,7 +10391,9 @@ namespace Fusion
 				}
 				break;
 			default:
-				if (expr.Left == null || expr.Symbol is FuConst)
+				if (expr.Symbol.Type.Id == FuId.MainArgsType)
+					Write("(const char **) (argv + 1)");
+				else if (expr.Left == null || expr.Symbol is FuConst)
 					WriteLocalName(expr.Symbol, parent);
 				else if (IsDictionaryClassStgIndexing(expr.Left)) {
 					WritePostfix(expr.Left, "->");

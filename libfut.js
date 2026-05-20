@@ -10831,7 +10831,9 @@ export class GenC extends GenCCpp
 			}
 			break;
 		default:
-			if (expr.left == null || expr.symbol instanceof FuConst)
+			if (expr.symbol.type.id == FuId.MAIN_ARGS_TYPE)
+				this.write("(const char **) (argv + 1)");
+			else if (expr.left == null || expr.symbol instanceof FuConst)
 				this.writeLocalName(expr.symbol, parent);
 			else if (GenC.#isDictionaryClassStgIndexing(expr.left)) {
 				this.writePostfix(expr.left, "->");
