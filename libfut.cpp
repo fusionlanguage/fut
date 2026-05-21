@@ -9877,6 +9877,14 @@ void GenC::writePrintfLongPrefix()
 	write("ll");
 }
 
+void GenC::writePrintfIntPrefix(FuId type)
+{
+	if (type == FuId::longType)
+		writePrintfLongPrefix();
+	else if (type == FuId::nIntType)
+		writeChar('t');
+}
+
 void GenC::writePrintfWidth(const FuInterpolatedPart * part)
 {
 	GenBase::writePrintfWidth(part);
@@ -9886,10 +9894,8 @@ void GenC::writePrintfWidth(const FuInterpolatedPart * part)
 	}
 	if (part->format == 'U' || part->format == 'u')
 		writeChar('l');
-	else if (part->argument->type->id == FuId::nIntType)
-		writeChar('t');
-	else if (part->argument->type->id == FuId::longType)
-		writePrintfLongPrefix();
+	else
+		writePrintfIntPrefix(part->argument->type->id);
 }
 
 void GenC::writeInterpolatedStringArgBase(const FuExpr * expr)
@@ -11468,8 +11474,7 @@ void GenC::writePrintfNotInterpolated(const std::vector<std::shared_ptr<FuExpr>>
 {
 	write("\"%");
 	if (const FuIntegerType *intType = dynamic_cast<const FuIntegerType *>((*args)[0]->type.get())) {
-		if (intType->id == FuId::longType)
-			writePrintfLongPrefix();
+		writePrintfIntPrefix(intType->id);
 		writeChar('d');
 	}
 	else if (dynamic_cast<const FuFloatingType *>((*args)[0]->type.get()))

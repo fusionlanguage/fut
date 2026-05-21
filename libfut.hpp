@@ -2901,6 +2901,7 @@ private:
 	bool dateTimeOffsetUtcNowToUnixTimeMilliseconds;
 	std::vector<const FuVar *> varsToDestruct;
 	bool conditionVarInScope;
+	void writePrintfIntPrefix(FuId type);
 	void writeStringPtrAdd(const FuCallExpr * call, bool cast);
 	static bool isDictionaryClassStgIndexing(const FuExpr * expr);
 	void writeUpcast(const FuClass * resultClass, const FuSymbol * klass);

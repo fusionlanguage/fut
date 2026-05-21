@@ -10,6 +10,9 @@ public static class Test
 		Console.WriteLine(i);
 		Console.WriteLine($"i={i:X}");
 		Console.WriteLine($"i={i:X}={i}");
+		nint n = 10;
+		Console.WriteLine(n);
+		Console.WriteLine($"n={n}");
 		long l = 5;
 		Console.WriteLine(l);
 		Console.WriteLine($"l={l}");

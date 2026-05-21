@@ -10069,6 +10069,14 @@ namespace Fusion
 			Write("ll");
 		}
 
+		void WritePrintfIntPrefix(FuId type)
+		{
+			if (type == FuId.LongType)
+				WritePrintfLongPrefix();
+			else if (type == FuId.NIntType)
+				WriteChar('t');
+		}
+
 		protected override void WritePrintfWidth(FuInterpolatedPart part)
 		{
 			base.WritePrintfWidth(part);
@@ -10078,10 +10086,8 @@ namespace Fusion
 			}
 			if (part.Format == 'U' || part.Format == 'u')
 				WriteChar('l');
-			else if (part.Argument.Type.Id == FuId.NIntType)
-				WriteChar('t');
-			else if (part.Argument.Type.Id == FuId.LongType)
-				WritePrintfLongPrefix();
+			else
+				WritePrintfIntPrefix(part.Argument.Type.Id);
 		}
 
 		protected virtual void WriteInterpolatedStringArgBase(FuExpr expr)
@@ -11704,8 +11710,7 @@ namespace Fusion
 			Write("\"%");
 			switch (args[0].Type) {
 			case FuIntegerType intType:
-				if (intType.Id == FuId.LongType)
-					WritePrintfLongPrefix();
+				WritePrintfIntPrefix(intType.Id);
 				WriteChar('d');
 				break;
 			case FuFloatingType:

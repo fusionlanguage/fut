@@ -10510,6 +10510,14 @@ export class GenC extends GenCCpp
 		this.write("ll");
 	}
 
+	#writePrintfIntPrefix(type)
+	{
+		if (type == FuId.LONG_TYPE)
+			this.writePrintfLongPrefix();
+		else if (type == FuId.N_INT_TYPE)
+			this.writeChar(116);
+	}
+
 	writePrintfWidth(part)
 	{
 		super.writePrintfWidth(part);
@@ -10519,10 +10527,8 @@ export class GenC extends GenCCpp
 		}
 		if (part.format == 85 || part.format == 117)
 			this.writeChar(108);
-		else if (part.argument.type.id == FuId.N_INT_TYPE)
-			this.writeChar(116);
-		else if (part.argument.type.id == FuId.LONG_TYPE)
-			this.writePrintfLongPrefix();
+		else
+			this.#writePrintfIntPrefix(part.argument.type.id);
 	}
 
 	writeInterpolatedStringArgBase(expr)
@@ -12187,8 +12193,7 @@ export class GenC extends GenCCpp
 		this.write("\"%");
 		if (args[0].type instanceof FuIntegerType) {
 			const intType = args[0].type;
-			if (intType.id == FuId.LONG_TYPE)
-				this.writePrintfLongPrefix();
+			this.#writePrintfIntPrefix(intType.id);
 			this.writeChar(100);
 		}
 		else if (args[0].type instanceof FuFloatingType)
