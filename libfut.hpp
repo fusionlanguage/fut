@@ -950,6 +950,7 @@ private: // internal
 	std::vector<std::shared_ptr<FuExpr>> items;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenCpp;
 	friend GenD;
@@ -1152,8 +1153,10 @@ private: // internal
 	std::shared_ptr<FuExpr> left = nullptr;
 	FuSymbol * symbol;
 	friend FuCallExpr;
+	friend FuClass;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCCpp;
@@ -1182,6 +1185,7 @@ private: // internal
 	friend FuParser;
 	friend FuPrefixExpr;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
@@ -1229,6 +1233,7 @@ private: // internal
 	friend FuParser;
 	friend FuSema;
 	friend FuSwitch;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCCpp;
@@ -1260,6 +1265,7 @@ private: // internal
 	std::shared_ptr<FuExpr> onFalse;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenCpp;
 	friend GenPy;
@@ -1280,6 +1286,7 @@ private: // internal
 	std::vector<std::shared_ptr<FuExpr>> arguments;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCCpp;
@@ -1333,6 +1340,7 @@ private: // internal
 	friend FuParser;
 	friend FuSema;
 	friend FuSwitch;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenPySwift;
@@ -1350,6 +1358,7 @@ private: // internal
 	std::shared_ptr<FuExpr> message = nullptr;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenCCpp;
 	friend GenCpp;
@@ -1373,6 +1382,7 @@ private: // internal
 	bool hasBreak = false;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
@@ -1396,6 +1406,7 @@ private: // internal
 	FuCondCompletionStatement * loopOrSwitch;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenPy;
@@ -1411,6 +1422,7 @@ public:
 private: // internal
 	const FuLoop * loop;
 	friend FuParser;
+	friend FuSystem;
 	friend GenC;
 	friend GenPySwift;
 };
@@ -1453,6 +1465,7 @@ private: // internal
 	std::shared_ptr<FuExpr> collection;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenC;
 	friend GenCpp;
 	friend GenCs;
@@ -1476,6 +1489,7 @@ private: // internal
 	friend FuParser;
 	friend FuSema;
 	friend FuSwitch;
+	friend FuSystem;
 	friend GenBase;
 	friend GenCpp;
 	friend GenPySwift;
@@ -1528,6 +1542,7 @@ private: // internal
 	friend FuMethod;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCCpp;
@@ -1547,6 +1562,7 @@ private: // internal
 	friend FuParser;
 	friend FuSema;
 	friend FuSwitch;
+	friend FuSystem;
 	friend GenBase;
 	friend GenCCppD;
 	friend GenJava;
@@ -1573,6 +1589,7 @@ private: // internal
 	std::vector<std::shared_ptr<FuStatement>> defaultBody;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenCCpp;
 	friend GenCCppD;
@@ -1842,6 +1859,7 @@ private: // internal
 	friend FuMethod;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
@@ -1957,9 +1975,11 @@ private: // internal
 	std::shared_ptr<FuMethodBase> constructor;
 	std::vector<FuConst *> constArrays;
 	std::set<std::string_view> cppFriends;
+	void setBaseClass(FuClass * baseClass);
 	friend FuClassType;
 	friend FuParser;
 	friend FuSema;
+	friend FuSystem;
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
@@ -2139,6 +2159,7 @@ private: // internal
 	std::shared_ptr<FuClass> exceptionClass = FuClass::new_(FuCallType::normal, FuId::exceptionClass, "Exception");
 	std::shared_ptr<FuEnum> regexOptionsEnum;
 	std::unique_ptr<FuReadWriteClassType> lockPtrType = std::make_unique<FuReadWriteClassType>();
+	std::array<const FuClass *, 9> jsonClasses;
 	std::shared_ptr<FuLiteralLong> newLiteralLong(int64_t value, int loc = 0) const;
 	std::shared_ptr<FuLiteralString> newLiteralString(std::string_view value, int loc = 0) const;
 	std::shared_ptr<FuType> promoteIntegerTypes(const FuType * left, const FuType * right) const;
@@ -2148,6 +2169,9 @@ private: // internal
 	friend FuParser;
 	friend FuSema;
 	friend GenBase;
+	friend GenC;
+	friend GenCpp;
+	friend GenJava;
 	friend GenPy;
 	friend GenSwift;
 	friend GenTs;
@@ -2163,6 +2187,26 @@ private:
 	std::shared_ptr<FuConst> newConstLong(std::string_view name, int64_t value) const;
 	std::shared_ptr<FuConst> newConstDouble(std::string_view name, double value) const;
 	void addMinMaxValue(FuIntegerType * target, int64_t min, int64_t max) const;
+	std::shared_ptr<FuReturn> newReturnFalse() const;
+	std::shared_ptr<FuReturn> newReturnTrue() const;
+	std::shared_ptr<FuReturn> newReturnNull() const;
+	void addFalseMethod(FuClass * klass, FuCallType callType, FuId id, std::string_view name) const;
+	void addVirtualAssertFalseMethod(FuClass * klass, std::shared_ptr<FuType> type, FuId id, std::string_view name) const;
+	void addOverrideTrueMethod(FuClass * klass, std::string_view name) const;
+	static std::shared_ptr<FuSymbolReference> newSymbolReference(FuSymbol * symbol);
+	static std::shared_ptr<FuSymbolReference> newMemberReference(std::shared_ptr<FuSymbolReference> left, FuSymbol * member);
+	std::shared_ptr<FuCallExpr> newCall(FuMethod * method) const;
+	std::shared_ptr<FuCallExpr> newMethodCall(FuSymbol * obj, FuMethod * method) const;
+	void addJsonGetMethod(FuClass * klass, std::shared_ptr<FuType> type, std::string_view name, FuField * valueField) const;
+	std::shared_ptr<FuBinaryExpr> newOffsetLessInputLength(FuSymbol * offsetField, FuSymbol * inputLengthField) const;
+	std::shared_ptr<FuBinaryExpr> newInputAtOffset(FuSymbol * inputField, FuSymbol * offsetField) const;
+	void addCaseCharValue(FuCase * kase, int value) const;
+	std::shared_ptr<FuVar> newDynamicResult(const FuClass * klass) const;
+	std::shared_ptr<FuCallExpr> newWriteJsonStringPart(FuField * inputField, FuMethod * stringSubstringMethod, FuVar * startOffsetVar, FuField * offsetField, FuVar * resultVar, FuMethod * textWriterWriteMethod) const;
+	void addJsonEscape(FuSwitch * switch2, int c, FuVar * resultVar, FuMethod * textWriterWriteCharMethod, std::shared_ptr<FuLiteralLong> literal) const;
+	std::shared_ptr<FuIf> newIfNotSeeDigitReturnNull(FuMethod * seeDigitMethod) const;
+	void addParseJsonType(FuSwitch * switch_, int c, FuMethod * method) const;
+	void addParseJsonKeyword(FuSwitch * switch_, std::string_view keyword, FuMethod * parseKeywordMethod, const FuClass * klass) const;
 };
 
 class FuSourceFile
@@ -2745,6 +2789,7 @@ public:
 	virtual ~GenCCpp() = default;
 protected:
 	GenCCpp() = default;
+	bool hasJsonElement;
 	void writeDocCode(std::string_view s) override;
 	virtual void includeStdInt() = 0;
 	virtual void includeStdDef() = 0;
@@ -2992,7 +3037,8 @@ private:
 	void writeIntMaxMin(std::string_view klassName, std::string_view method, std::string_view type, int op);
 	void startTryParseLibrary(std::string_view klassName, std::string_view type, std::string_view baseParam);
 	void writeIntLibrary(std::string_view klassName, std::string_view type, const std::set<FuId> * methods);
-	void writeLibrary();
+	void writeClassCode(const FuClass * klass);
+	void writeLibrary(const FuProgram * program);
 };
 
 class GenCl : public GenC
@@ -3125,6 +3171,7 @@ private:
 	void writeParametersAndConst(const FuMethod * method, bool defaultArguments);
 	void writeDeclarations(const FuClass * klass, FuVisibility visibility, std::string_view visibilityKeyword);
 	void writeConstructor(const FuClass * klass);
+	void writeForwardClass(const FuClass * klass);
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources, bool define);
 };
 
@@ -3325,6 +3372,7 @@ private:
 	std::string_view outputFile;
 	std::string_view namespace_;
 	bool hasPriorityQueue;
+	bool hasJsonElement;
 	void writeToString(const FuExpr * expr, FuPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeVisibility(FuVisibility visibility);
@@ -3347,6 +3395,7 @@ private:
 	void writeSignature(const FuMethod * method, int paramCount);
 	void writeOverloads(const FuMethod * method, int paramCount);
 	void writePriorityQueue();
+	void writeJsonElement(const FuProgram * program);
 	void writeResources();
 };
 

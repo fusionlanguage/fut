@@ -1278,6 +1278,31 @@ public class GenCpp : GenCCpp
 			StartMethodCall(obj);
 			WriteCall("str", args[0]);
 			break;
+		case FuId.JsonElementParse:
+		case FuId.JsonElementIsObject:
+		case FuId.JsonElementIsArray:
+		case FuId.JsonElementIsString:
+		case FuId.JsonElementIsNumber:
+		case FuId.JsonElementIsBoolean:
+		case FuId.JsonElementIsNull:
+		case FuId.JsonElementGetObject:
+		case FuId.JsonElementGetArray:
+		case FuId.JsonElementGetString:
+		case FuId.JsonElementGetDouble:
+		case FuId.JsonElementGetBoolean:
+			this.HasJsonElement = true;
+			Include("charconv");
+			Include("sstream");
+			Include("string_view");
+			this.NumberTryParse = true;
+			obj.Accept(this, FuPriority.Primary);
+			if (method.CallType == FuCallType.Static)
+				Write("::");
+			else
+				WriteMemberOp(obj, null);
+			WriteName(method);
+			WriteCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.MathMethod:
 		case FuId.MathAbs:
 		case FuId.MathIsFinite:
@@ -2081,6 +2106,13 @@ public class GenCpp : GenCCpp
 		WriteBody(method);
 	}
 
+	void WriteForwardClass!(FuClass klass)
+	{
+		Write("class ");
+		Write(klass.Name);
+		WriteCharLine(';');
+	}
+
 	void WriteResources!(SortedDictionary<string(), List<byte>()> resources, bool define)
 	{
 		if (resources.Count == 0)
@@ -2115,6 +2147,7 @@ public class GenCpp : GenCCpp
 	{
 		this.WrittenTypes.Clear();
 		this.InHeaderFile = true;
+		this.HasJsonElement = false;
 		this.HasPriorityQueue = false;
 		this.UsingStringViewLiterals = false;
 		this.HasEnumFlags = false;
@@ -2126,12 +2159,15 @@ public class GenCpp : GenCCpp
 		OpenNamespace(namespace);
 		WriteRegexOptionsEnum(program);
 		for (FuSymbol? type = program.First; type != null; type = type.Next) {
-			if (type is FuEnum enu)
+			switch (type) {
+			case FuClass klass:
+				WriteForwardClass(klass);
+				break;
+			case FuEnum enu:
 				WriteEnum(enu);
-			else {
-				Write("class ");
-				Write(type.Name);
-				WriteCharLine(';');
+				break;
+			default:
+				assert false;
 			}
 		}
 		foreach (FuClass klass in program.Classes)
@@ -2271,6 +2307,14 @@ public class GenCpp : GenCCpp
 			WriteLine("bool operator<(const FuPriorityQueueEntry &that) const { return that.priority < priority; }");
 			this.Indent--;
 			WriteLine("};");
+		}
+		if (this.HasJsonElement) {
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteForwardClass(klass);
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteClassInternal(klass);
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteMethods(klass);
 		}
 		CloseStringWriter();
 		CloseFile();

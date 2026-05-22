@@ -2883,7 +2883,7 @@ namespace Fusion
 
 		public static FuMethod New(FuClass klass, FuVisibility visibility, FuCallType callType, FuType type, FuId id, string name, bool isMutator, FuVar param0 = null, FuVar param1 = null, FuVar param2 = null, FuVar param3 = null)
 		{
-			FuMethod result = new FuMethod { Visibility = visibility, CallType = callType, Type = type, Id = id, Name = name };
+			FuMethod result = new FuMethod { Visibility = visibility, CallType = callType, Type = type, Id = id, Name = name, IsLive = true };
 			if (callType != FuCallType.Static)
 				result.AddThis(klass, isMutator);
 			if (param0 != null) {
@@ -3051,6 +3051,13 @@ namespace Fusion
 		readonly List<FuNative> Natives = new List<FuNative>();
 
 		public bool HasBaseClass() => this.BaseClass.Name.Length > 0;
+
+		internal void SetBaseClass(FuClass baseClass)
+		{
+			this.Parent = baseClass;
+			this.BaseClass.Name = baseClass.Name;
+			this.BaseClass.Symbol = baseClass;
+		}
 
 		public bool AddsVirtualMethods()
 		{
@@ -3282,7 +3289,8 @@ namespace Fusion
 			basePtr.Id = FuId.BasePtr;
 			Add(basePtr);
 			AddMinMaxValue(this.IntType, -2147483648, 2147483647);
-			this.IntType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.IntTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "radix", NewLiteralLong(0))));
+			FuMethod intTryParseMethod = FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.IntTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "radix", NewLiteralLong(0)));
+			this.IntType.Add(intTryParseMethod);
 			Add(this.IntType);
 			this.UIntType.Name = "uint";
 			Add(this.UIntType);
@@ -3304,17 +3312,20 @@ namespace Fusion
 			Add(ushortType);
 			this.FloatType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.FloatTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
 			Add(this.FloatType);
-			this.DoubleType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.DoubleTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
+			FuMethod doubleTryParseMethod = FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.DoubleTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value"));
+			this.DoubleType.Add(doubleTryParseMethod);
 			Add(this.DoubleType);
 			Add(this.BoolType);
 			this.StringClass.AddMethod(this.BoolType, FuId.StringContains, "Contains", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringEndsWith, "EndsWith", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.NIntType, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.Add(FuProperty.New(this.NIntType, FuId.StringLength, "Length"));
+			FuProperty stringLengthProperty = FuProperty.New(this.NIntType, FuId.StringLength, "Length");
+			this.StringClass.Add(stringLengthProperty);
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringReplace, "Replace", false, FuVar.New(this.StringPtrType, "oldValue"), FuVar.New(this.StringPtrType, "newValue"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringStartsWith, "StartsWith", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.AddMethod(this.StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length", NewLiteralLong(-1)));
+			FuMethod stringSubstringMethod = FuMethod.New(this.StringClass, FuVisibility.Public, FuCallType.Normal, this.StringStorageType, FuId.StringSubstring, "Substring", false, FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length", NewLiteralLong(-1)));
+			this.StringClass.Add(stringSubstringMethod);
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringToLower, "ToLower", false);
 			this.StringClass.AddMethod(this.StringStorageType, FuId.StringToUpper, "ToUpper", false);
 			this.StringPtrType.Class = this.StringClass;
@@ -3339,7 +3350,8 @@ namespace Fusion
 			FuType typeParam0NotFinal = new FuType { Id = FuId.TypeParam0NotFinal, Name = "T" };
 			FuType typeParam0Predicate = new FuType { Id = FuId.TypeParam0Predicate, Name = "Predicate<T>" };
 			FuClass listClass = AddCollection(FuId.ListClass, "List", 1, FuId.ListClear, FuId.ListCount);
-			listClass.AddMethod(this.VoidType, FuId.ListAdd, "Add", true, FuVar.New(typeParam0NotFinal, "value"));
+			FuMethod listAddMethod = FuMethod.New(listClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.ListAdd, "Add", true, FuVar.New(typeParam0NotFinal, "value"));
+			listClass.Add(listAddMethod);
 			listClass.AddMethod(this.VoidType, FuId.ListAddRange, "AddRange", true, FuVar.New(new FuClassType { Class = listClass, TypeArg0 = this.TypeParam0 }, "source"));
 			listClass.AddMethod(this.BoolType, FuId.ListAll, "All", false, FuVar.New(typeParam0Predicate, "predicate"));
 			listClass.AddMethod(this.BoolType, FuId.ListAny, "Any", false, FuVar.New(typeParam0Predicate, "predicate"));
@@ -3370,9 +3382,12 @@ namespace Fusion
 			AddDictionary(FuId.OrderedDictionaryClass, "OrderedDictionary", FuId.OrderedDictionaryClear, FuId.OrderedDictionaryContainsKey, FuId.OrderedDictionaryCount, FuId.OrderedDictionaryRemove);
 			FuClass textWriterClass = FuClass.New(FuCallType.Normal, FuId.TextWriterClass, "TextWriter");
 			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterFlush, "Flush", true);
-			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWrite, "Write", true, FuVar.New(this.PrintableType, "value"));
-			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWriteChar, "WriteChar", true, FuVar.New(this.IntType, "c"));
-			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWriteCodePoint, "WriteCodePoint", true, FuVar.New(this.IntType, "c"));
+			FuMethod textWriterWriteMethod = FuMethod.New(textWriterClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.TextWriterWrite, "Write", true, FuVar.New(this.PrintableType, "value"));
+			textWriterClass.Add(textWriterWriteMethod);
+			FuMethod textWriterWriteCharMethod = FuMethod.New(textWriterClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.TextWriterWriteChar, "WriteChar", true, FuVar.New(this.IntType, "c"));
+			textWriterClass.Add(textWriterWriteCharMethod);
+			FuMethod textWriterWriteCodePointMethod = FuMethod.New(textWriterClass, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.TextWriterWriteCodePoint, "WriteCodePoint", true, FuVar.New(this.IntType, "c"));
+			textWriterClass.Add(textWriterWriteCodePointMethod);
 			textWriterClass.AddMethod(this.VoidType, FuId.TextWriterWriteLine, "WriteLine", true, FuVar.New(this.PrintableType, "value", NewLiteralString("")));
 			Add(textWriterClass);
 			FuClass consoleClass = FuClass.New(FuCallType.Static, FuId.None, "Console");
@@ -3385,7 +3400,8 @@ namespace Fusion
 			Add(consoleClass);
 			FuClass stringWriterClass = FuClass.New(FuCallType.Sealed, FuId.StringWriterClass, "StringWriter");
 			stringWriterClass.AddMethod(this.VoidType, FuId.StringWriterClear, "Clear", true);
-			stringWriterClass.AddMethod(this.StringPtrType, FuId.StringWriterToString, "ToString", false);
+			FuMethod stringWriterToStringMethod = FuMethod.New(stringWriterClass, FuVisibility.Public, FuCallType.Normal, this.StringPtrType, FuId.StringWriterToString, "ToString", false);
+			stringWriterClass.Add(stringWriterToStringMethod);
 			Add(stringWriterClass);
 			stringWriterClass.Parent = textWriterClass;
 			FuClass bitConverterClass = FuClass.New(FuCallType.Static, FuId.None, "BitConverter");
@@ -3434,21 +3450,352 @@ namespace Fusion
 			matchClass.Add(FuProperty.New(this.NIntType, FuId.MatchLength, "Length"));
 			matchClass.Add(FuProperty.New(this.StringStorageType, FuId.MatchValue, "Value"));
 			Add(matchClass);
-			FuClass jsonElementClass = FuClass.New(FuCallType.Sealed, FuId.JsonElementClass, "JsonElement");
+			FuClass jsonElementClass = FuClass.New(FuCallType.Abstract, FuId.JsonElementClass, "JsonElement");
 			FuDynamicPtrType jsonElementPtr = new FuDynamicPtrType { Class = jsonElementClass };
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Static, jsonElementPtr, FuId.JsonElementParse, "Parse", false, FuVar.New(this.StringPtrType, "value")));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsObject, "IsObject", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsArray, "IsArray", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsString, "IsString", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsNumber, "IsNumber", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsBoolean, "IsBoolean", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementIsNull, "IsNull", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = dictionaryClass, TypeArg0 = this.StringStorageType, TypeArg1 = jsonElementPtr }, FuId.JsonElementGetObject, "GetObject", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = listClass, TypeArg0 = jsonElementPtr }, FuId.JsonElementGetArray, "GetArray", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.StringPtrType, FuId.JsonElementGetString, "GetString", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.DoubleType, FuId.JsonElementGetDouble, "GetDouble", false));
-			jsonElementClass.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.JsonElementGetBoolean, "GetBoolean", false));
+			AddFalseMethod(jsonElementClass, FuCallType.Virtual, FuId.JsonElementIsObject, "IsObject");
+			AddFalseMethod(jsonElementClass, FuCallType.Virtual, FuId.JsonElementIsArray, "IsArray");
+			AddFalseMethod(jsonElementClass, FuCallType.Virtual, FuId.JsonElementIsString, "IsString");
+			AddFalseMethod(jsonElementClass, FuCallType.Virtual, FuId.JsonElementIsNumber, "IsNumber");
+			AddFalseMethod(jsonElementClass, FuCallType.Virtual, FuId.JsonElementIsBoolean, "IsBoolean");
+			AddFalseMethod(jsonElementClass, FuCallType.Virtual, FuId.JsonElementIsNull, "IsNull");
+			AddVirtualAssertFalseMethod(jsonElementClass, new FuClassType { Class = dictionaryClass, TypeArg0 = this.StringStorageType, TypeArg1 = jsonElementPtr }, FuId.JsonElementGetObject, "GetObject");
+			AddVirtualAssertFalseMethod(jsonElementClass, new FuClassType { Class = listClass, TypeArg0 = jsonElementPtr }, FuId.JsonElementGetArray, "GetArray");
+			AddVirtualAssertFalseMethod(jsonElementClass, this.StringPtrType, FuId.JsonElementGetString, "GetString");
+			AddVirtualAssertFalseMethod(jsonElementClass, this.DoubleType, FuId.JsonElementGetDouble, "GetDouble");
+			AddVirtualAssertFalseMethod(jsonElementClass, this.BoolType, FuId.JsonElementGetBoolean, "GetBoolean");
+			FuMethod jsonElementParseMethod = FuMethod.New(null, FuVisibility.Public, FuCallType.Static, jsonElementPtr, FuId.JsonElementParse, "Parse", false);
+			FuClass jsonParserClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonParser");
+			FuMethod jsonParserTryParseMethod = FuMethod.New(null, FuVisibility.Internal, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonElementClass }, FuId.None, "TryParse", true);
+			{
+				FuVar sParam = FuVar.New(this.StringPtrType, "s");
+				jsonElementParseMethod.Parameters.Add(sParam);
+				FuBlock methodBlock = new FuBlock();
+				FuVar parserVar = FuVar.New(new FuStorageType { Class = jsonParserClass }, "parser");
+				methodBlock.Statements.Add(parserVar);
+				methodBlock.Add(parserVar);
+				FuCallExpr call = NewMethodCall(parserVar, jsonParserTryParseMethod);
+				call.Arguments.Add(NewSymbolReference(sParam));
+				methodBlock.Statements.Add(new FuReturn { Value = call });
+				jsonElementParseMethod.Body = methodBlock;
+			}
+			jsonElementClass.Add(jsonElementParseMethod);
 			Add(jsonElementClass);
+			this.JsonClasses[0] = jsonElementClass;
+			FuClass jsonObjectClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonObject");
+			FuField jsonObjectValueField = new FuField { Visibility = FuVisibility.Internal, Type = new FuStorageType { Class = dictionaryClass, TypeArg0 = this.StringStorageType, TypeArg1 = jsonElementPtr }, Name = "Value" };
+			jsonObjectClass.Add(jsonObjectValueField);
+			AddOverrideTrueMethod(jsonObjectClass, "IsObject");
+			AddJsonGetMethod(jsonObjectClass, new FuClassType { Class = dictionaryClass, TypeArg0 = this.StringStorageType, TypeArg1 = jsonElementPtr }, "GetObject", jsonObjectValueField);
+			jsonObjectClass.CppFriends.Add("JsonParser");
+			Add(jsonObjectClass);
+			jsonObjectClass.SetBaseClass(jsonElementClass);
+			this.JsonClasses[1] = jsonObjectClass;
+			FuClass jsonArrayClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonArray");
+			FuField jsonArrayValueField = new FuField { Visibility = FuVisibility.Internal, Type = new FuStorageType { Class = listClass, TypeArg0 = jsonElementPtr }, Name = "Value" };
+			jsonArrayClass.Add(jsonArrayValueField);
+			AddOverrideTrueMethod(jsonArrayClass, "IsArray");
+			AddJsonGetMethod(jsonArrayClass, new FuClassType { Class = listClass, TypeArg0 = jsonElementPtr }, "GetArray", jsonArrayValueField);
+			jsonArrayClass.CppFriends.Add("JsonParser");
+			Add(jsonArrayClass);
+			jsonArrayClass.SetBaseClass(jsonElementClass);
+			this.JsonClasses[2] = jsonArrayClass;
+			FuClass jsonStringClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonString");
+			FuField jsonStringValueField = new FuField { Visibility = FuVisibility.Internal, Type = this.StringStorageType, Name = "Value" };
+			jsonStringClass.Add(jsonStringValueField);
+			AddOverrideTrueMethod(jsonStringClass, "IsString");
+			AddJsonGetMethod(jsonStringClass, this.StringPtrType, "GetString", jsonStringValueField);
+			jsonStringClass.CppFriends.Add("JsonParser");
+			Add(jsonStringClass);
+			jsonStringClass.SetBaseClass(jsonElementClass);
+			this.JsonClasses[3] = jsonStringClass;
+			FuClass jsonNumberClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonNumber");
+			FuField jsonNumberValueField = new FuField { Visibility = FuVisibility.Internal, Type = this.DoubleType, Name = "Value" };
+			jsonNumberClass.Add(jsonNumberValueField);
+			AddOverrideTrueMethod(jsonNumberClass, "IsNumber");
+			AddJsonGetMethod(jsonNumberClass, this.DoubleType, "GetDouble", jsonNumberValueField);
+			jsonNumberClass.CppFriends.Add("JsonParser");
+			Add(jsonNumberClass);
+			jsonNumberClass.SetBaseClass(jsonElementClass);
+			this.JsonClasses[4] = jsonNumberClass;
+			FuClass jsonBooleanClass = FuClass.New(FuCallType.Normal, FuId.None, "JsonBoolean");
+			AddOverrideTrueMethod(jsonBooleanClass, "IsBoolean");
+			AddFalseMethod(jsonBooleanClass, FuCallType.Override, FuId.None, "GetBoolean");
+			Add(jsonBooleanClass);
+			jsonBooleanClass.SetBaseClass(jsonElementClass);
+			this.JsonClasses[5] = jsonBooleanClass;
+			FuClass jsonTrueClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonTrue");
+			AddOverrideTrueMethod(jsonTrueClass, "GetBoolean");
+			Add(jsonTrueClass);
+			jsonTrueClass.SetBaseClass(jsonBooleanClass);
+			this.JsonClasses[6] = jsonTrueClass;
+			FuClass jsonNullClass = FuClass.New(FuCallType.Sealed, FuId.None, "JsonNull");
+			AddOverrideTrueMethod(jsonNullClass, "IsNull");
+			Add(jsonNullClass);
+			jsonNullClass.SetBaseClass(jsonElementClass);
+			this.JsonClasses[7] = jsonNullClass;
+			FuField inputField = new FuField { Visibility = FuVisibility.Private, Type = this.StringPtrType, Name = "Input" };
+			jsonParserClass.Add(inputField);
+			FuField offsetField = new FuField { Visibility = FuVisibility.Private, Type = this.NIntType, Name = "Offset" };
+			jsonParserClass.Add(offsetField);
+			FuField inputLengthField = new FuField { Visibility = FuVisibility.Private, Type = this.NIntType, Name = "InputLength" };
+			jsonParserClass.Add(inputLengthField);
+			FuMethod jsonParserSkipWhitespaceMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, this.BoolType, FuId.None, "SkipWhitespace", true);
+			{
+				FuBlock methodBlock = new FuBlock();
+				FuBlock whileBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuWhile { Cond = NewOffsetLessInputLength(offsetField, inputLengthField), Body = whileBlock });
+				FuSwitch switch_ = new FuSwitch { Value = NewInputAtOffset(inputField, offsetField) };
+				switch_.Cases.Add(new FuCase());
+				FuCase kase = switch_.Cases[0];
+				AddCaseCharValue(kase, '\t');
+				AddCaseCharValue(kase, '\n');
+				AddCaseCharValue(kase, '\r');
+				AddCaseCharValue(kase, ' ');
+				kase.Body.Add(new FuBreak { LoopOrSwitch = switch_ });
+				switch_.DefaultBody.Add(NewReturnTrue());
+				whileBlock.Statements.Add(switch_);
+				whileBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				methodBlock.Statements.Add(new FuReturn { Value = new FuLiteralFalse { Type = this.BoolType } });
+				jsonParserSkipWhitespaceMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserSkipWhitespaceMethod);
+			FuMethod jsonParserParseObjectMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonObjectClass }, FuId.None, "ParseObject", true);
+			FuMethod jsonParserParseStringMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonStringClass }, FuId.None, "ParseString", true);
+			FuMethod jsonParserParseWhitespaceAndElementMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonElementClass }, FuId.None, "ParseWhitespaceAndElement", true);
+			{
+				FuBlock methodBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				methodBlock.Statements.Add(new FuIf { Cond = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(jsonParserSkipWhitespaceMethod) }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuVar resultVar = NewDynamicResult(jsonObjectClass);
+				methodBlock.Statements.Add(resultVar);
+				methodBlock.Add(resultVar);
+				FuBlock ifBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '}' } }, OnTrue = ifBlock, OnFalse = null });
+				ifBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				ifBlock.Statements.Add(new FuReturn { Value = NewSymbolReference(resultVar) });
+				FuBlock whileBlock = new FuBlock();
+				whileBlock.SetCompletesNormally(true);
+				methodBlock.Statements.Add(new FuWhile { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '"' } }, Body = whileBlock });
+				FuVar keyVar = FuVar.New(new FuDynamicPtrType { Nullable = true, Class = jsonStringClass }, "key", NewCall(jsonParserParseStringMethod));
+				whileBlock.Statements.Add(keyVar);
+				whileBlock.Add(keyVar);
+				whileBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = NewSymbolReference(keyVar), Op = FuToken.Equal, Right = new FuLiteralNull { Type = this.NullType } }, Op = FuToken.CondOr, Right = new FuBinaryExpr { Type = this.BoolType, Left = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(jsonParserSkipWhitespaceMethod) }, Op = FuToken.CondOr, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.NotEqual, Right = new FuLiteralChar { Type = this.IntType, Value = ':' } } } }, OnTrue = NewReturnNull(), OnFalse = null });
+				whileBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				FuVar valueVar = FuVar.New(new FuDynamicPtrType { Nullable = true, Class = jsonElementClass }, "value", NewCall(jsonParserParseWhitespaceAndElementMethod));
+				whileBlock.Statements.Add(valueVar);
+				whileBlock.Add(valueVar);
+				whileBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = NewSymbolReference(valueVar), Op = FuToken.Equal, Right = new FuLiteralNull { Type = this.NullType } }, Op = FuToken.CondOr, Right = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(jsonParserSkipWhitespaceMethod) } }, OnTrue = NewReturnNull(), OnFalse = null });
+				whileBlock.Statements.Add(new FuBinaryExpr { Type = jsonElementPtr, Left = new FuBinaryExpr { Type = jsonElementPtr, Left = NewMemberReference(NewSymbolReference(resultVar), jsonObjectValueField), Op = FuToken.LeftBracket, Right = NewMemberReference(NewSymbolReference(keyVar), jsonStringValueField) }, Op = FuToken.Assign, Right = NewSymbolReference(valueVar) });
+				FuSwitch switch_ = new FuSwitch { Value = new FuBinaryExpr { Type = this.IntType, Left = NewSymbolReference(inputField), Op = FuToken.LeftBracket, Right = new FuPostfixExpr { Type = this.NIntType, Inner = NewSymbolReference(offsetField), Op = FuToken.Increment } } };
+				switch_.Cases.Add(new FuCase());
+				AddCaseCharValue(switch_.Cases[0], ',');
+				switch_.Cases[0].Body.Add(new FuBreak { LoopOrSwitch = switch_ });
+				switch_.Cases.Add(new FuCase());
+				AddCaseCharValue(switch_.Cases[1], '}');
+				switch_.Cases[1].Body.Add(new FuReturn { Value = NewSymbolReference(resultVar) });
+				switch_.DefaultBody.Add(NewReturnNull());
+				whileBlock.Statements.Add(switch_);
+				whileBlock.Statements.Add(new FuIf { Cond = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(jsonParserSkipWhitespaceMethod) }, OnTrue = NewReturnNull(), OnFalse = null });
+				methodBlock.Statements.Add(NewReturnNull());
+				jsonParserParseObjectMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseObjectMethod);
+			FuMethod jsonParserParseArrayMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonArrayClass }, FuId.None, "ParseArray", true);
+			FuMethod jsonParserParseElementMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonElementClass }, FuId.None, "ParseElement", true);
+			{
+				FuBlock methodBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				methodBlock.Statements.Add(new FuIf { Cond = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(jsonParserSkipWhitespaceMethod) }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuVar resultVar = NewDynamicResult(jsonArrayClass);
+				methodBlock.Statements.Add(resultVar);
+				methodBlock.Add(resultVar);
+				FuBlock ifBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = ']' } }, OnTrue = ifBlock, OnFalse = null });
+				ifBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				ifBlock.Statements.Add(new FuReturn { Value = NewSymbolReference(resultVar) });
+				FuBlock doWhileBlock = new FuBlock();
+				doWhileBlock.SetCompletesNormally(true);
+				methodBlock.Statements.Add(new FuDoWhile { Body = doWhileBlock, Cond = NewCall(jsonParserSkipWhitespaceMethod) });
+				FuVar elementVar = FuVar.New(new FuDynamicPtrType { Nullable = true, Class = jsonElementClass }, "element", NewCall(jsonParserParseElementMethod));
+				doWhileBlock.Statements.Add(elementVar);
+				doWhileBlock.Add(elementVar);
+				doWhileBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = NewSymbolReference(elementVar), Op = FuToken.Equal, Right = new FuLiteralNull { Type = this.NullType } }, Op = FuToken.CondOr, Right = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(jsonParserSkipWhitespaceMethod) } }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuCallExpr addCall = new FuCallExpr { Type = this.VoidType, Method = NewMemberReference(NewMemberReference(NewSymbolReference(resultVar), jsonArrayValueField), listAddMethod) };
+				addCall.Arguments.Add(NewSymbolReference(elementVar));
+				doWhileBlock.Statements.Add(addCall);
+				FuSwitch switch_ = new FuSwitch { Value = new FuBinaryExpr { Type = this.IntType, Left = NewSymbolReference(inputField), Op = FuToken.LeftBracket, Right = new FuPostfixExpr { Type = this.NIntType, Inner = NewSymbolReference(offsetField), Op = FuToken.Increment } } };
+				switch_.Cases.Add(new FuCase());
+				AddCaseCharValue(switch_.Cases[0], ',');
+				switch_.Cases[0].Body.Add(new FuBreak { LoopOrSwitch = switch_ });
+				switch_.Cases.Add(new FuCase());
+				AddCaseCharValue(switch_.Cases[1], ']');
+				switch_.Cases[1].Body.Add(new FuReturn { Value = NewSymbolReference(resultVar) });
+				switch_.DefaultBody.Add(NewReturnNull());
+				doWhileBlock.Statements.Add(switch_);
+				methodBlock.Statements.Add(NewReturnNull());
+				jsonParserParseArrayMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseArrayMethod);
+			{
+				FuBlock methodBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				FuVar resultVar = FuVar.New(new FuStorageType { Class = stringWriterClass }, "result");
+				methodBlock.Statements.Add(resultVar);
+				methodBlock.Add(resultVar);
+				FuVar startOffsetVar = FuVar.New(this.NIntType, "startOffset", NewSymbolReference(offsetField));
+				methodBlock.Statements.Add(startOffsetVar);
+				methodBlock.Add(startOffsetVar);
+				FuBlock whileBlock = new FuBlock();
+				FuWhile while_ = new FuWhile { Cond = NewOffsetLessInputLength(offsetField, inputLengthField), Body = whileBlock };
+				FuSwitch switch_ = new FuSwitch { Value = NewInputAtOffset(inputField, offsetField) };
+				switch_.Cases.Add(new FuCase());
+				for (int i = 0; i < 32; i++)
+					switch_.Cases[0].Values.Add(NewLiteralLong(i));
+				switch_.Cases[0].Body.Add(NewReturnNull());
+				switch_.Cases.Add(new FuCase());
+				AddCaseCharValue(switch_.Cases[1], '"');
+				switch_.Cases[1].Body.Add(NewWriteJsonStringPart(inputField, stringSubstringMethod, startOffsetVar, offsetField, resultVar, textWriterWriteMethod));
+				FuAggregateInitializer init = new FuAggregateInitializer();
+				init.Items.Add(new FuBinaryExpr { Left = NewSymbolReference(jsonStringValueField), Op = FuToken.Assign, Right = NewMethodCall(resultVar, stringWriterToStringMethod) });
+				switch_.Cases[1].Body.Add(new FuReturn { Value = new FuPrefixExpr { Type = new FuDynamicPtrType { Class = jsonStringClass }, Op = FuToken.New, Inner = init } });
+				switch_.Cases.Add(new FuCase());
+				AddCaseCharValue(switch_.Cases[2], '\\');
+				switch_.Cases[2].Body.Add(NewWriteJsonStringPart(inputField, stringSubstringMethod, startOffsetVar, offsetField, resultVar, textWriterWriteMethod));
+				switch_.Cases[2].Body.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewSymbolReference(offsetField), Op = FuToken.GreaterOrEqual, Right = NewSymbolReference(inputLengthField) }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuSwitch switch2 = new FuSwitch { Value = NewInputAtOffset(inputField, offsetField) };
+				switch2.Cases.Add(new FuCase());
+				AddCaseCharValue(switch2.Cases[0], '"');
+				AddCaseCharValue(switch2.Cases[0], '\\');
+				AddCaseCharValue(switch2.Cases[0], '/');
+				switch2.Cases[0].Body.Add(new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(startOffsetVar), Op = FuToken.Assign, Right = new FuPostfixExpr { Type = this.NIntType, Inner = NewSymbolReference(offsetField), Op = FuToken.Increment } });
+				switch2.Cases[0].Body.Add(new FuContinue { Loop = while_ });
+				AddJsonEscape(switch2, 'b', resultVar, textWriterWriteCharMethod, NewLiteralLong(8));
+				AddJsonEscape(switch2, 'f', resultVar, textWriterWriteCharMethod, NewLiteralLong(12));
+				AddJsonEscape(switch2, 'n', resultVar, textWriterWriteCharMethod, new FuLiteralChar { Type = this.IntType, Value = '\n' });
+				AddJsonEscape(switch2, 'r', resultVar, textWriterWriteCharMethod, new FuLiteralChar { Type = this.IntType, Value = '\r' });
+				AddJsonEscape(switch2, 't', resultVar, textWriterWriteCharMethod, new FuLiteralChar { Type = this.IntType, Value = '\t' });
+				switch2.Cases.Add(new FuCase());
+				AddCaseCharValue(switch2.Cases[6], 'u');
+				switch2.Cases[6].Body.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(offsetField), Op = FuToken.Plus, Right = NewLiteralLong(5) }, Op = FuToken.GreaterOrEqual, Right = NewSymbolReference(inputLengthField) }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuVar cVar = FuVar.New(this.IntType, "c");
+				switch2.Cases[6].Body.Add(cVar);
+				FuCallExpr substringCall = NewMethodCall(inputField, stringSubstringMethod);
+				substringCall.Arguments.Add(new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(offsetField), Op = FuToken.Plus, Right = NewLiteralLong(1) });
+				substringCall.Arguments.Add(NewLiteralLong(4));
+				FuCallExpr tryParseCall = NewMethodCall(cVar, intTryParseMethod);
+				tryParseCall.Arguments.Add(substringCall);
+				tryParseCall.Arguments.Add(NewLiteralLong(16));
+				switch2.Cases[6].Body.Add(new FuIf { Cond = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = tryParseCall }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuCallExpr writeCodePointCall = NewMethodCall(resultVar, textWriterWriteCodePointMethod);
+				writeCodePointCall.Arguments.Add(NewSymbolReference(cVar));
+				switch2.Cases[6].Body.Add(writeCodePointCall);
+				switch2.Cases[6].Body.Add(new FuBinaryExpr { Left = NewSymbolReference(offsetField), Op = FuToken.AddAssign, Right = NewLiteralLong(4) });
+				switch2.Cases[6].Body.Add(new FuBreak { LoopOrSwitch = switch2 });
+				switch2.DefaultBody.Add(NewReturnNull());
+				switch_.Cases[2].Body.Add(switch2);
+				switch_.Cases[2].Body.Add(new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(startOffsetVar), Op = FuToken.Assign, Right = new FuPrefixExpr { Type = this.NIntType, Op = FuToken.Increment, Inner = NewSymbolReference(offsetField) } });
+				switch_.Cases[2].Body.Add(new FuBreak { LoopOrSwitch = switch_ });
+				switch_.DefaultBody.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				switch_.DefaultBody.Add(new FuBreak { LoopOrSwitch = switch_ });
+				whileBlock.Statements.Add(switch_);
+				methodBlock.Statements.Add(while_);
+				methodBlock.Statements.Add(NewReturnNull());
+				jsonParserParseStringMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseStringMethod);
+			FuMethod jsonParserSeeDigitMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, this.BoolType, FuId.None, "SeeDigit", false);
+			jsonParserSeeDigitMethod.Body = new FuReturn { Value = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = NewOffsetLessInputLength(offsetField, inputLengthField), Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.GreaterOrEqual, Right = new FuLiteralChar { Type = this.IntType, Value = '0' } } }, Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.LessOrEqual, Right = new FuLiteralChar { Type = this.IntType, Value = '9' } } } };
+			jsonParserClass.Add(jsonParserSeeDigitMethod);
+			FuMethod jsonParserParseDigitsMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, this.VoidType, FuId.None, "ParseDigits", true);
+			{
+				FuBlock methodBlock = new FuBlock();
+				FuWhile while_ = new FuWhile { Cond = NewCall(jsonParserSeeDigitMethod), Body = new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment } };
+				methodBlock.Statements.Add(while_);
+				jsonParserParseDigitsMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseDigitsMethod);
+			FuMethod jsonParserParseNumberMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, new FuDynamicPtrType { Nullable = true, Class = jsonNumberClass }, FuId.None, "ParseNumber", true);
+			{
+				FuBlock methodBlock = new FuBlock();
+				FuVar startOffsetVar = FuVar.New(this.NIntType, "startOffset", NewSymbolReference(offsetField));
+				methodBlock.Statements.Add(startOffsetVar);
+				methodBlock.Add(startOffsetVar);
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '-' } }, OnTrue = new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment }, OnFalse = null });
+				methodBlock.Statements.Add(NewIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.IntType, Left = NewSymbolReference(inputField), Op = FuToken.LeftBracket, Right = new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment } }, Op = FuToken.Greater, Right = new FuLiteralChar { Type = this.IntType, Value = '0' } }, OnTrue = NewCall(jsonParserParseDigitsMethod) });
+				FuBlock ifBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewOffsetLessInputLength(offsetField, inputLengthField), Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '.' } } }, OnTrue = ifBlock, OnFalse = null });
+				ifBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				ifBlock.Statements.Add(NewIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
+				ifBlock.Statements.Add(NewCall(jsonParserParseDigitsMethod));
+				FuBlock if2Block = new FuBlock();
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewOffsetLessInputLength(offsetField, inputLengthField), Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.IntType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Or, Right = NewLiteralLong(32) }, Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = 'e' } } }, OnTrue = if2Block, OnFalse = null });
+				if2Block.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = new FuPrefixExpr { Type = this.NIntType, Op = FuToken.Increment, Inner = NewSymbolReference(offsetField) }, Op = FuToken.Less, Right = NewSymbolReference(inputLengthField) }, Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '+' } }, Op = FuToken.CondOr, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '-' } } } }, OnTrue = new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment }, OnFalse = null });
+				if2Block.Statements.Add(NewIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
+				if2Block.Statements.Add(NewCall(jsonParserParseDigitsMethod));
+				FuVar dVar = FuVar.New(this.DoubleType, "d");
+				methodBlock.Statements.Add(dVar);
+				methodBlock.Add(dVar);
+				FuCallExpr substringCall = NewMethodCall(inputField, stringSubstringMethod);
+				substringCall.Arguments.Add(NewSymbolReference(startOffsetVar));
+				substringCall.Arguments.Add(new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(offsetField), Op = FuToken.Minus, Right = NewSymbolReference(startOffsetVar) });
+				FuCallExpr tryParseCall = NewMethodCall(dVar, doubleTryParseMethod);
+				tryParseCall.Arguments.Add(substringCall);
+				methodBlock.Statements.Add(new FuIf { Cond = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = tryParseCall }, OnTrue = NewReturnNull(), OnFalse = null });
+				FuAggregateInitializer init = new FuAggregateInitializer();
+				init.Items.Add(new FuBinaryExpr { Left = NewSymbolReference(jsonNumberValueField), Op = FuToken.Assign, Right = NewSymbolReference(dVar) });
+				methodBlock.Statements.Add(new FuReturn { Value = new FuPrefixExpr { Type = new FuDynamicPtrType { Class = jsonNumberClass }, Op = FuToken.New, Inner = init } });
+				jsonParserParseNumberMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseNumberMethod);
+			FuVar sParameter = FuVar.New(this.StringPtrType, "s");
+			FuMethod jsonParserParseKeywordMethod = FuMethod.New(jsonParserClass, FuVisibility.Private, FuCallType.Normal, this.BoolType, FuId.None, "ParseKeyword", true, sParameter);
+			{
+				FuBlock methodBlock = new FuBlock();
+				FuBlock foreachBlock = new FuBlock();
+				FuForeach loop = new FuForeach { Collection = NewSymbolReference(sParameter), Body = foreachBlock };
+				FuVar cVar = FuVar.New(this.IntType, "c");
+				loop.Add(cVar);
+				foreachBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = new FuPrefixExpr { Type = this.NIntType, Op = FuToken.Increment, Inner = NewSymbolReference(offsetField) }, Op = FuToken.GreaterOrEqual, Right = NewSymbolReference(inputLengthField) }, Op = FuToken.CondOr, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.NotEqual, Right = NewSymbolReference(cVar) } }, OnTrue = NewReturnFalse(), OnFalse = null });
+				methodBlock.Statements.Add(loop);
+				methodBlock.Statements.Add(new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment });
+				methodBlock.Statements.Add(NewReturnTrue());
+				jsonParserParseKeywordMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseKeywordMethod);
+			{
+				FuBlock methodBlock = new FuBlock();
+				FuSwitch switch_ = new FuSwitch { Value = NewInputAtOffset(inputField, offsetField) };
+				AddParseJsonType(switch_, '{', jsonParserParseObjectMethod);
+				AddParseJsonType(switch_, '[', jsonParserParseArrayMethod);
+				AddParseJsonType(switch_, '"', jsonParserParseStringMethod);
+				AddParseJsonType(switch_, '-', jsonParserParseNumberMethod);
+				AddParseJsonKeyword(switch_, "true", jsonParserParseKeywordMethod, jsonTrueClass);
+				AddParseJsonKeyword(switch_, "false", jsonParserParseKeywordMethod, jsonBooleanClass);
+				AddParseJsonKeyword(switch_, "null", jsonParserParseKeywordMethod, jsonNullClass);
+				switch_.DefaultBody.Add(NewReturnNull());
+				methodBlock.Statements.Add(switch_);
+				jsonParserParseElementMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserParseElementMethod);
+			jsonParserParseWhitespaceAndElementMethod.Body = new FuReturn { Value = new FuSelectExpr { Cond = NewCall(jsonParserSkipWhitespaceMethod), OnTrue = NewCall(jsonParserParseElementMethod), OnFalse = new FuLiteralNull { Type = this.NullType } } };
+			jsonParserClass.Add(jsonParserParseWhitespaceAndElementMethod);
+			{
+				FuVar sParam = FuVar.New(this.StringPtrType, "s");
+				jsonParserTryParseMethod.Parameters.Add(sParam);
+				FuBlock methodBlock = new FuBlock();
+				methodBlock.Statements.Add(new FuBinaryExpr { Type = this.StringPtrType, Left = NewSymbolReference(inputField), Op = FuToken.Assign, Right = NewSymbolReference(sParam) });
+				methodBlock.Statements.Add(new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(offsetField), Op = FuToken.Assign, Right = NewLiteralLong(0) });
+				methodBlock.Statements.Add(new FuBinaryExpr { Type = this.NIntType, Left = NewSymbolReference(inputLengthField), Op = FuToken.Assign, Right = NewMemberReference(NewSymbolReference(sParam), stringLengthProperty) });
+				FuVar resultVar = FuVar.New(new FuDynamicPtrType { Nullable = true, Class = jsonElementClass }, "result", NewCall(jsonParserParseWhitespaceAndElementMethod));
+				methodBlock.Statements.Add(resultVar);
+				methodBlock.Statements.Add(new FuReturn { Value = new FuSelectExpr { Cond = NewCall(jsonParserSkipWhitespaceMethod), OnTrue = new FuLiteralNull { Type = this.NullType }, OnFalse = NewSymbolReference(resultVar) } });
+				jsonParserTryParseMethod.Body = methodBlock;
+			}
+			jsonParserClass.Add(jsonParserTryParseMethod);
+			jsonParserClass.CppFriends.Add("JsonElement");
+			Add(jsonParserClass);
+			this.JsonClasses[8] = jsonParserClass;
 			FuNumericType numericType = new FuNumericType { Id = FuId.NumericType, Name = "numeric" };
 			FuFloatingType floatingType = new FuFloatingType { Id = FuId.FloatingType, Name = "float" };
 			FuFloatingType floatIntType = new FuFloatingType { Id = FuId.FloatIntType, Name = "float" };
@@ -3539,6 +3886,8 @@ namespace Fusion
 
 		internal FuReadWriteClassType LockPtrType = new FuReadWriteClassType();
 
+		internal readonly FuClass[] JsonClasses = new FuClass[9];
+
 		internal FuLiteralLong NewLiteralLong(long value, int loc = 0)
 		{
 			FuType type = value >= -2147483648 && value <= 2147483647 ? FuRangeType.New((int) value, (int) value) : this.LongType;
@@ -3622,6 +3971,110 @@ namespace Fusion
 		{
 			target.Add(NewConstLong("MinValue", min));
 			target.Add(NewConstLong("MaxValue", max));
+		}
+
+		FuReturn NewReturnFalse() => new FuReturn { Value = new FuLiteralFalse { Type = this.BoolType } };
+
+		FuReturn NewReturnTrue() => new FuReturn { Value = new FuLiteralTrue { Type = this.BoolType } };
+
+		FuReturn NewReturnNull() => new FuReturn { Value = new FuLiteralNull { Type = this.NullType } };
+
+		void AddFalseMethod(FuClass klass, FuCallType callType, FuId id, string name)
+		{
+			FuMethod method = FuMethod.New(klass, FuVisibility.Public, callType, this.BoolType, id, name, false);
+			method.Body = NewReturnFalse();
+			klass.Add(method);
+		}
+
+		void AddVirtualAssertFalseMethod(FuClass klass, FuType type, FuId id, string name)
+		{
+			FuMethod method = FuMethod.New(null, FuVisibility.Public, FuCallType.Virtual, type, id, name, false);
+			FuBlock block = new FuBlock();
+			block.Statements.Add(new FuAssert { Cond = new FuLiteralFalse { Type = this.BoolType } });
+			method.Body = block;
+			klass.Add(method);
+		}
+
+		void AddOverrideTrueMethod(FuClass klass, string name)
+		{
+			FuMethod method = FuMethod.New(klass, FuVisibility.Public, FuCallType.Override, this.BoolType, FuId.None, name, false);
+			method.Body = NewReturnTrue();
+			klass.Add(method);
+		}
+
+		static FuSymbolReference NewSymbolReference(FuSymbol symbol) => new FuSymbolReference { Type = symbol.Type, Name = symbol.Name, Symbol = symbol };
+
+		static FuSymbolReference NewMemberReference(FuSymbolReference left, FuSymbol member) => new FuSymbolReference { Left = left, Type = member.Type, Name = member.Name, Symbol = member };
+
+		FuCallExpr NewCall(FuMethod method) => new FuCallExpr { Type = method.Type, Method = NewSymbolReference(method) };
+
+		FuCallExpr NewMethodCall(FuSymbol obj, FuMethod method) => new FuCallExpr { Type = method.Type, Method = NewMemberReference(NewSymbolReference(obj), method) };
+
+		void AddJsonGetMethod(FuClass klass, FuType type, string name, FuField valueField)
+		{
+			FuMethod method = FuMethod.New(klass, FuVisibility.Public, FuCallType.Override, type, FuId.None, name, false);
+			method.Body = new FuReturn { Value = NewSymbolReference(valueField) };
+			klass.Add(method);
+		}
+
+		FuBinaryExpr NewOffsetLessInputLength(FuSymbol offsetField, FuSymbol inputLengthField) => new FuBinaryExpr { Type = this.BoolType, Left = NewSymbolReference(offsetField), Op = FuToken.Less, Right = NewSymbolReference(inputLengthField) };
+
+		FuBinaryExpr NewInputAtOffset(FuSymbol inputField, FuSymbol offsetField) => new FuBinaryExpr { Type = this.IntType, Left = NewSymbolReference(inputField), Op = FuToken.LeftBracket, Right = NewSymbolReference(offsetField) };
+
+		void AddCaseCharValue(FuCase kase, int value)
+		{
+			kase.Values.Add(new FuLiteralChar { Type = this.IntType, Value = value });
+		}
+
+		FuVar NewDynamicResult(FuClass klass)
+		{
+			FuDynamicPtrType type = new FuDynamicPtrType { Class = klass };
+			return FuVar.New(type, "result", new FuPrefixExpr { Type = type, Op = FuToken.New, Inner = null });
+		}
+
+		FuCallExpr NewWriteJsonStringPart(FuField inputField, FuMethod stringSubstringMethod, FuVar startOffsetVar, FuField offsetField, FuVar resultVar, FuMethod textWriterWriteMethod)
+		{
+			FuCallExpr substringCall = NewMethodCall(inputField, stringSubstringMethod);
+			substringCall.Arguments.Add(NewSymbolReference(startOffsetVar));
+			substringCall.Arguments.Add(new FuBinaryExpr { Type = this.NIntType, Left = new FuPostfixExpr { Type = this.NIntType, Inner = NewSymbolReference(offsetField), Op = FuToken.Increment }, Op = FuToken.Minus, Right = NewSymbolReference(startOffsetVar) });
+			FuCallExpr writeCall = NewMethodCall(resultVar, textWriterWriteMethod);
+			writeCall.Arguments.Add(substringCall);
+			return writeCall;
+		}
+
+		void AddJsonEscape(FuSwitch switch2, int c, FuVar resultVar, FuMethod textWriterWriteCharMethod, FuLiteralLong literal)
+		{
+			switch2.Cases.Add(new FuCase());
+			FuCase kase = switch2.Cases[^1];
+			AddCaseCharValue(kase, c);
+			FuCallExpr call = NewMethodCall(resultVar, textWriterWriteCharMethod);
+			call.Arguments.Add(literal);
+			kase.Body.Add(call);
+			kase.Body.Add(new FuBreak { LoopOrSwitch = switch2 });
+		}
+
+		FuIf NewIfNotSeeDigitReturnNull(FuMethod seeDigitMethod) => new FuIf { Cond = new FuPrefixExpr { Type = this.BoolType, Op = FuToken.ExclamationMark, Inner = NewCall(seeDigitMethod) }, OnTrue = NewReturnNull(), OnFalse = null };
+
+		void AddParseJsonType(FuSwitch switch_, int c, FuMethod method)
+		{
+			switch_.Cases.Add(new FuCase());
+			FuCase kase = switch_.Cases[^1];
+			AddCaseCharValue(kase, c);
+			if (c == '-') {
+				for (c = '0'; c <= '9'; c++)
+					AddCaseCharValue(kase, c);
+			}
+			kase.Body.Add(new FuReturn { Value = NewCall(method) });
+		}
+
+		void AddParseJsonKeyword(FuSwitch switch_, string keyword, FuMethod parseKeywordMethod, FuClass klass)
+		{
+			switch_.Cases.Add(new FuCase());
+			FuCase kase = switch_.Cases[^1];
+			AddCaseCharValue(kase, keyword[0]);
+			FuCallExpr call = NewCall(parseKeywordMethod);
+			call.Arguments.Add(NewLiteralString(keyword.Substring(1)));
+			kase.Body.Add(new FuReturn { Value = new FuSelectExpr { Cond = call, OnTrue = new FuPrefixExpr { Type = new FuDynamicPtrType { Class = klass }, Op = FuToken.New, Inner = null }, OnFalse = new FuLiteralNull { Type = this.NullType } } });
 		}
 
 		public static FuSystem New() => new FuSystem();
@@ -9656,6 +10109,8 @@ namespace Fusion
 	public abstract class GenCCpp : GenCCppD
 	{
 
+		protected bool HasJsonElement;
+
 		protected override void WriteDocCode(string s)
 		{
 			if (s == "null")
@@ -10430,6 +10885,7 @@ namespace Fusion
 		{
 			switch (klass.Class.Id) {
 			case FuId.None:
+			case FuId.JsonElementClass:
 				if (!(klass is FuReadWriteClassType))
 					Write("const ");
 				WriteName(klass.Class);
@@ -10687,6 +11143,7 @@ namespace Fusion
 			switch (elementType.Class.Id) {
 			case FuId.None:
 			case FuId.ArrayPtrClass:
+			case FuId.JsonElementClass:
 				if (elementType is FuDynamicPtrType) {
 					this.SharedRelease = true;
 					AddListFree(FuId.None);
@@ -10868,20 +11325,18 @@ namespace Fusion
 				Write("free");
 				break;
 			case FuOwningType owning:
-				if (owning.Class.Id == FuId.None) {
-					if (type is FuStorageType) {
-						if (NeedsDestructor(owning.Class)) {
-							Write("(GDestroyNotify) ");
-							WriteName(owning.Class);
-							Write("_Delete");
-						}
-						else
-							Write("free");
-						break;
-					}
-				}
-				else
+				if (owning.Class.Id != FuId.None && owning.Class.Id != FuId.JsonElementClass)
 					Write("(GDestroyNotify) ");
+				else if (type is FuStorageType) {
+					if (NeedsDestructor(owning.Class)) {
+						Write("(GDestroyNotify) ");
+						WriteName(owning.Class);
+						Write("_Delete");
+					}
+					else
+						Write("free");
+					break;
+				}
 				WriteDestructMethodName(owning);
 				break;
 			default:
@@ -12481,6 +12936,32 @@ namespace Fusion
 			case FuId.MatchGetCapture:
 				WriteCall("g_match_info_fetch", obj, args[0]);
 				break;
+			case FuId.JsonElementParse:
+			case FuId.JsonElementIsObject:
+			case FuId.JsonElementIsArray:
+			case FuId.JsonElementIsString:
+			case FuId.JsonElementIsNumber:
+			case FuId.JsonElementIsBoolean:
+			case FuId.JsonElementIsNull:
+			case FuId.JsonElementGetObject:
+			case FuId.JsonElementGetArray:
+			case FuId.JsonElementGetString:
+			case FuId.JsonElementGetDouble:
+			case FuId.JsonElementGetBoolean:
+				this.HasJsonElement = true;
+				Include("errno.h");
+				Include("limits.h");
+				IncludeStdBool();
+				IncludeStdDef();
+				Include("string.h");
+				this.StringSubstring = true;
+				this.SharedMake = true;
+				this.SharedAddRef = true;
+				this.IntFunctions.Add(FuId.IntTryParse);
+				this.DoubleTryParse = true;
+				this.ListFrees.Add(FuId.None);
+				WriteCCall(obj, method, args);
+				break;
 			case FuId.MathMethod:
 			case FuId.MathLog2:
 			case FuId.MathSqrt:
@@ -13596,7 +14077,16 @@ namespace Fusion
 			}
 		}
 
-		void WriteLibrary()
+		void WriteClassCode(FuClass klass)
+		{
+			this.CurrentClass = klass;
+			WriteConstructor(klass);
+			WriteDestructor(klass);
+			WriteNewDelete(klass, true);
+			WriteMethods(klass);
+		}
+
+		void WriteLibrary(FuProgram program)
 		{
 			WriteIntLibrary("Int", "int", this.IntFunctions);
 			WriteIntLibrary("NInt", "ptrdiff_t", this.NIntFunctions);
@@ -13960,6 +14450,14 @@ namespace Fusion
 				WriteLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
 				CloseBlock();
 			}
+			if (this.HasJsonElement) {
+				foreach (FuClass klass in program.System.JsonClasses)
+					WriteTypedef(klass);
+				foreach (FuClass klass in program.System.JsonClasses)
+					WriteClassInternal(klass);
+				foreach (FuClass klass in program.System.JsonClasses)
+					WriteClassCode(klass);
+			}
 		}
 
 		protected void WriteResources(SortedDictionary<string, List<byte>> resources)
@@ -14039,22 +14537,18 @@ namespace Fusion
 			this.TreeCompareInteger = false;
 			this.TreeCompareString = false;
 			this.DateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
+			this.HasJsonElement = false;
 			this.Compares.Clear();
 			this.Contains.Clear();
 			OpenStringWriter();
 			foreach (FuClass klass in program.Classes)
 				WriteClass(klass, program);
 			WriteResources(program.Resources);
-			foreach (FuClass klass in program.Classes) {
-				this.CurrentClass = klass;
-				WriteConstructor(klass);
-				WriteDestructor(klass);
-				WriteNewDelete(klass, true);
-				WriteMethods(klass);
-			}
+			foreach (FuClass klass in program.Classes)
+				WriteClassCode(klass);
 			Include("stdlib.h");
 			CreateImplementationFile(program, outputFile, ".h");
-			WriteLibrary();
+			WriteLibrary(program);
 			WriteRegexOptionsEnum(program);
 			WriteTypedefs(program, false);
 			CloseStringWriter();
@@ -15694,6 +16188,31 @@ namespace Fusion
 				StartMethodCall(obj);
 				WriteCall("str", args[0]);
 				break;
+			case FuId.JsonElementParse:
+			case FuId.JsonElementIsObject:
+			case FuId.JsonElementIsArray:
+			case FuId.JsonElementIsString:
+			case FuId.JsonElementIsNumber:
+			case FuId.JsonElementIsBoolean:
+			case FuId.JsonElementIsNull:
+			case FuId.JsonElementGetObject:
+			case FuId.JsonElementGetArray:
+			case FuId.JsonElementGetString:
+			case FuId.JsonElementGetDouble:
+			case FuId.JsonElementGetBoolean:
+				this.HasJsonElement = true;
+				Include("charconv");
+				Include("sstream");
+				Include("string_view");
+				this.NumberTryParse = true;
+				obj.Accept(this, FuPriority.Primary);
+				if (method.CallType == FuCallType.Static)
+					Write("::");
+				else
+					WriteMemberOp(obj, null);
+				WriteName(method);
+				WriteCoercedArgsInParentheses(method, args);
+				break;
 			case FuId.MathMethod:
 			case FuId.MathAbs:
 			case FuId.MathIsFinite:
@@ -16483,6 +17002,13 @@ namespace Fusion
 			WriteBody(method);
 		}
 
+		void WriteForwardClass(FuClass klass)
+		{
+			Write("class ");
+			Write(klass.Name);
+			WriteCharLine(';');
+		}
+
 		void WriteResources(SortedDictionary<string, List<byte>> resources, bool define)
 		{
 			if (resources.Count == 0)
@@ -16517,6 +17043,7 @@ namespace Fusion
 		{
 			this.WrittenTypes.Clear();
 			this.InHeaderFile = true;
+			this.HasJsonElement = false;
 			this.HasPriorityQueue = false;
 			this.UsingStringViewLiterals = false;
 			this.HasEnumFlags = false;
@@ -16528,12 +17055,15 @@ namespace Fusion
 			OpenNamespace(namespace_);
 			WriteRegexOptionsEnum(program);
 			for (FuSymbol type = program.First; type != null; type = type.Next) {
-				if (type is FuEnum enu)
+				switch (type) {
+				case FuClass klass:
+					WriteForwardClass(klass);
+					break;
+				case FuEnum enu:
 					WriteEnum(enu);
-				else {
-					Write("class ");
-					Write(type.Name);
-					WriteCharLine(';');
+					break;
+				default:
+					throw new NotImplementedException();
 				}
 			}
 			foreach (FuClass klass in program.Classes)
@@ -16670,6 +17200,14 @@ namespace Fusion
 				WriteLine("bool operator<(const FuPriorityQueueEntry &that) const { return that.priority < priority; }");
 				this.Indent--;
 				WriteLine("};");
+			}
+			if (this.HasJsonElement) {
+				foreach (FuClass klass in program.System.JsonClasses)
+					WriteForwardClass(klass);
+				foreach (FuClass klass in program.System.JsonClasses)
+					WriteClassInternal(klass);
+				foreach (FuClass klass in program.System.JsonClasses)
+					WriteMethods(klass);
 			}
 			CloseStringWriter();
 			CloseFile();
@@ -19446,6 +19984,8 @@ namespace Fusion
 
 		bool HasPriorityQueue;
 
+		bool HasJsonElement;
+
 		protected override string GetTargetName() => "Java";
 
 		internal override void VisitLiteralLong(long value)
@@ -20428,6 +20968,24 @@ namespace Fusion
 			case FuId.MatchGetCapture:
 				WriteMethodCall(obj, "group", args[0]);
 				break;
+			case FuId.JsonElementParse:
+			case FuId.JsonElementIsObject:
+			case FuId.JsonElementIsArray:
+			case FuId.JsonElementIsString:
+			case FuId.JsonElementIsNumber:
+			case FuId.JsonElementIsBoolean:
+			case FuId.JsonElementIsNull:
+			case FuId.JsonElementGetObject:
+			case FuId.JsonElementGetArray:
+			case FuId.JsonElementGetString:
+			case FuId.JsonElementGetDouble:
+			case FuId.JsonElementGetBoolean:
+				this.HasJsonElement = true;
+				obj.Accept(this, FuPriority.Primary);
+				WriteChar('.');
+				WriteName(method);
+				WriteCoercedArgsInParentheses(method, args);
+				break;
 			case FuId.MathMethod:
 			case FuId.MathSqrt:
 				if (type.Id == FuId.FloatType)
@@ -20965,6 +21523,12 @@ namespace Fusion
 			CloseFile();
 		}
 
+		void WriteJsonElement(FuProgram program)
+		{
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteClass(klass, program);
+		}
+
 		void WriteResources()
 		{
 			CreateJavaFile("FuResource");
@@ -21007,9 +21571,12 @@ namespace Fusion
 			this.OutputFile = outputFile;
 			this.Namespace = namespace_;
 			this.HasPriorityQueue = false;
+			this.HasJsonElement = false;
 			WriteTypes(program);
 			if (this.HasPriorityQueue)
 				WritePriorityQueue();
+			if (this.HasJsonElement)
+				WriteJsonElement(program);
 			if (program.Resources.Count > 0)
 				WriteResources();
 		}

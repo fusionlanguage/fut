@@ -2362,6 +2362,7 @@ std::shared_ptr<FuMethod> FuMethod::new_(const FuClass * klass, FuVisibility vis
 	result->type = type;
 	result->id = id;
 	result->name = name;
+	result->isLive = true;
 	if (callType != FuCallType::static_)
 		result->addThis(klass, isMutator);
 	if (param0 != nullptr) {
@@ -2492,6 +2493,13 @@ void FuEnum::acceptValues(FuVisitor * visitor) const
 bool FuClass::hasBaseClass() const
 {
 	return !this->baseClass.name.empty();
+}
+
+void FuClass::setBaseClass(FuClass * baseClass)
+{
+	this->parent = baseClass;
+	this->baseClass.name = baseClass->name;
+	this->baseClass.symbol = baseClass;
 }
 
 bool FuClass::addsVirtualMethods() const
@@ -2808,7 +2816,8 @@ FuSystem::FuSystem()
 	basePtr->id = FuId::basePtr;
 	add(basePtr);
 	addMinMaxValue(this->intType.get(), -2147483648, 2147483647);
-	this->intType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::intTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
+	std::shared_ptr<FuMethod> intTryParseMethod = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::intTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0)));
+	this->intType->add(intTryParseMethod);
 	add(this->intType);
 	this->uIntType->name = "uint";
 	add(this->uIntType);
@@ -2830,17 +2839,20 @@ FuSystem::FuSystem()
 	add(ushortType);
 	this->floatType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::floatTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
 	add(this->floatType);
-	this->doubleType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::doubleTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
+	std::shared_ptr<FuMethod> doubleTryParseMethod = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::doubleTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"));
+	this->doubleType->add(doubleTryParseMethod);
 	add(this->doubleType);
 	add(this->boolType);
 	this->stringClass->addMethod(this->boolType, FuId::stringContains, "Contains", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->boolType, FuId::stringEndsWith, "EndsWith", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->nIntType, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->nIntType, FuId::stringLastIndexOf, "LastIndexOf", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->add(FuProperty::new_(this->nIntType, FuId::stringLength, "Length"));
+	std::shared_ptr<FuProperty> stringLengthProperty = FuProperty::new_(this->nIntType, FuId::stringLength, "Length");
+	this->stringClass->add(stringLengthProperty);
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringReplace, "Replace", false, FuVar::new_(this->stringPtrType, "oldValue"), FuVar::new_(this->stringPtrType, "newValue"));
 	this->stringClass->addMethod(this->boolType, FuId::stringStartsWith, "StartsWith", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->addMethod(this->stringStorageType, FuId::stringSubstring, "Substring", false, FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length", newLiteralLong(-1)));
+	std::shared_ptr<FuMethod> stringSubstringMethod = FuMethod::new_(this->stringClass.get(), FuVisibility::public_, FuCallType::normal, this->stringStorageType, FuId::stringSubstring, "Substring", false, FuVar::new_(this->nIntType, "offset"), FuVar::new_(this->nIntType, "length", newLiteralLong(-1)));
+	this->stringClass->add(stringSubstringMethod);
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringToLower, "ToLower", false);
 	this->stringClass->addMethod(this->stringStorageType, FuId::stringToUpper, "ToUpper", false);
 	this->stringPtrType->class_ = this->stringClass.get();
@@ -2872,7 +2884,8 @@ FuSystem::FuSystem()
 	typeParam0Predicate->id = FuId::typeParam0Predicate;
 	typeParam0Predicate->name = "Predicate<T>";
 	FuClass * listClass = addCollection(FuId::listClass, "List", 1, FuId::listClear, FuId::listCount);
-	listClass->addMethod(this->voidType, FuId::listAdd, "Add", true, FuVar::new_(typeParam0NotFinal, "value"));
+	std::shared_ptr<FuMethod> listAddMethod = FuMethod::new_(listClass, FuVisibility::public_, FuCallType::normal, this->voidType, FuId::listAdd, "Add", true, FuVar::new_(typeParam0NotFinal, "value"));
+	listClass->add(listAddMethod);
 	std::shared_ptr<FuClassType> futemp1 = std::make_shared<FuClassType>();
 	futemp1->class_ = listClass;
 	futemp1->typeArg0 = this->typeParam0;
@@ -2909,9 +2922,12 @@ FuSystem::FuSystem()
 	addDictionary(FuId::orderedDictionaryClass, "OrderedDictionary", FuId::orderedDictionaryClear, FuId::orderedDictionaryContainsKey, FuId::orderedDictionaryCount, FuId::orderedDictionaryRemove);
 	std::shared_ptr<FuClass> textWriterClass = FuClass::new_(FuCallType::normal, FuId::textWriterClass, "TextWriter");
 	textWriterClass->addMethod(this->voidType, FuId::textWriterFlush, "Flush", true);
-	textWriterClass->addMethod(this->voidType, FuId::textWriterWrite, "Write", true, FuVar::new_(this->printableType, "value"));
-	textWriterClass->addMethod(this->voidType, FuId::textWriterWriteChar, "WriteChar", true, FuVar::new_(this->intType, "c"));
-	textWriterClass->addMethod(this->voidType, FuId::textWriterWriteCodePoint, "WriteCodePoint", true, FuVar::new_(this->intType, "c"));
+	std::shared_ptr<FuMethod> textWriterWriteMethod = FuMethod::new_(textWriterClass.get(), FuVisibility::public_, FuCallType::normal, this->voidType, FuId::textWriterWrite, "Write", true, FuVar::new_(this->printableType, "value"));
+	textWriterClass->add(textWriterWriteMethod);
+	std::shared_ptr<FuMethod> textWriterWriteCharMethod = FuMethod::new_(textWriterClass.get(), FuVisibility::public_, FuCallType::normal, this->voidType, FuId::textWriterWriteChar, "WriteChar", true, FuVar::new_(this->intType, "c"));
+	textWriterClass->add(textWriterWriteCharMethod);
+	std::shared_ptr<FuMethod> textWriterWriteCodePointMethod = FuMethod::new_(textWriterClass.get(), FuVisibility::public_, FuCallType::normal, this->voidType, FuId::textWriterWriteCodePoint, "WriteCodePoint", true, FuVar::new_(this->intType, "c"));
+	textWriterClass->add(textWriterWriteCodePointMethod);
 	textWriterClass->addMethod(this->voidType, FuId::textWriterWriteLine, "WriteLine", true, FuVar::new_(this->printableType, "value", newLiteralString("")));
 	add(textWriterClass);
 	std::shared_ptr<FuClass> consoleClass = FuClass::new_(FuCallType::static_, FuId::none, "Console");
@@ -2925,7 +2941,8 @@ FuSystem::FuSystem()
 	add(consoleClass);
 	std::shared_ptr<FuClass> stringWriterClass = FuClass::new_(FuCallType::sealed, FuId::stringWriterClass, "StringWriter");
 	stringWriterClass->addMethod(this->voidType, FuId::stringWriterClear, "Clear", true);
-	stringWriterClass->addMethod(this->stringPtrType, FuId::stringWriterToString, "ToString", false);
+	std::shared_ptr<FuMethod> stringWriterToStringMethod = FuMethod::new_(stringWriterClass.get(), FuVisibility::public_, FuCallType::normal, this->stringPtrType, FuId::stringWriterToString, "ToString", false);
+	stringWriterClass->add(stringWriterToStringMethod);
 	add(stringWriterClass);
 	stringWriterClass->parent = textWriterClass.get();
 	std::shared_ptr<FuClass> bitConverterClass = FuClass::new_(FuCallType::static_, FuId::none, "BitConverter");
@@ -2989,29 +3006,974 @@ FuSystem::FuSystem()
 	matchClass->add(FuProperty::new_(this->nIntType, FuId::matchLength, "Length"));
 	matchClass->add(FuProperty::new_(this->stringStorageType, FuId::matchValue, "Value"));
 	add(matchClass);
-	std::shared_ptr<FuClass> jsonElementClass = FuClass::new_(FuCallType::sealed, FuId::jsonElementClass, "JsonElement");
+	std::shared_ptr<FuClass> jsonElementClass = FuClass::new_(FuCallType::abstract, FuId::jsonElementClass, "JsonElement");
 	std::shared_ptr<FuDynamicPtrType> jsonElementPtr = std::make_shared<FuDynamicPtrType>();
 	jsonElementPtr->class_ = jsonElementClass.get();
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, jsonElementPtr, FuId::jsonElementParse, "Parse", false, FuVar::new_(this->stringPtrType, "value")));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsObject, "IsObject", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsArray, "IsArray", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsString, "IsString", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNumber, "IsNumber", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsBoolean, "IsBoolean", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementIsNull, "IsNull", false));
+	addFalseMethod(jsonElementClass.get(), FuCallType::virtual_, FuId::jsonElementIsObject, "IsObject");
+	addFalseMethod(jsonElementClass.get(), FuCallType::virtual_, FuId::jsonElementIsArray, "IsArray");
+	addFalseMethod(jsonElementClass.get(), FuCallType::virtual_, FuId::jsonElementIsString, "IsString");
+	addFalseMethod(jsonElementClass.get(), FuCallType::virtual_, FuId::jsonElementIsNumber, "IsNumber");
+	addFalseMethod(jsonElementClass.get(), FuCallType::virtual_, FuId::jsonElementIsBoolean, "IsBoolean");
+	addFalseMethod(jsonElementClass.get(), FuCallType::virtual_, FuId::jsonElementIsNull, "IsNull");
 	std::shared_ptr<FuClassType> futemp9 = std::make_shared<FuClassType>();
 	futemp9->class_ = dictionaryClass;
 	futemp9->typeArg0 = this->stringStorageType;
 	futemp9->typeArg1 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp9, FuId::jsonElementGetObject, "GetObject", false));
+	addVirtualAssertFalseMethod(jsonElementClass.get(), futemp9, FuId::jsonElementGetObject, "GetObject");
 	std::shared_ptr<FuClassType> futemp10 = std::make_shared<FuClassType>();
 	futemp10->class_ = listClass;
 	futemp10->typeArg0 = jsonElementPtr;
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, futemp10, FuId::jsonElementGetArray, "GetArray", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->stringPtrType, FuId::jsonElementGetString, "GetString", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->doubleType, FuId::jsonElementGetDouble, "GetDouble", false));
-	jsonElementClass->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::jsonElementGetBoolean, "GetBoolean", false));
+	addVirtualAssertFalseMethod(jsonElementClass.get(), futemp10, FuId::jsonElementGetArray, "GetArray");
+	addVirtualAssertFalseMethod(jsonElementClass.get(), this->stringPtrType, FuId::jsonElementGetString, "GetString");
+	addVirtualAssertFalseMethod(jsonElementClass.get(), this->doubleType, FuId::jsonElementGetDouble, "GetDouble");
+	addVirtualAssertFalseMethod(jsonElementClass.get(), this->boolType, FuId::jsonElementGetBoolean, "GetBoolean");
+	std::shared_ptr<FuMethod> jsonElementParseMethod = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::static_, jsonElementPtr, FuId::jsonElementParse, "Parse", false);
+	std::shared_ptr<FuClass> jsonParserClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonParser");
+	std::shared_ptr<FuDynamicPtrType> futemp11 = std::make_shared<FuDynamicPtrType>();
+	futemp11->nullable = true;
+	futemp11->class_ = jsonElementClass.get();
+	std::shared_ptr<FuMethod> jsonParserTryParseMethod = FuMethod::new_(nullptr, FuVisibility::internal, FuCallType::normal, futemp11, FuId::none, "TryParse", true);
+	{
+		std::shared_ptr<FuVar> sParam = FuVar::new_(this->stringPtrType, "s");
+		jsonElementParseMethod->parameters.add(sParam);
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuStorageType> futemp12 = std::make_shared<FuStorageType>();
+		futemp12->class_ = jsonParserClass.get();
+		std::shared_ptr<FuVar> parserVar = FuVar::new_(futemp12, "parser");
+		methodBlock->statements.push_back(parserVar);
+		methodBlock->add(parserVar);
+		std::shared_ptr<FuCallExpr> call = newMethodCall(parserVar.get(), jsonParserTryParseMethod.get());
+		call->arguments.push_back(newSymbolReference(sParam.get()));
+		std::shared_ptr<FuReturn> futemp13 = std::make_shared<FuReturn>();
+		futemp13->value = call;
+		methodBlock->statements.push_back(futemp13);
+		jsonElementParseMethod->body = methodBlock;
+	}
+	jsonElementClass->add(jsonElementParseMethod);
 	add(jsonElementClass);
+	this->jsonClasses[0] = jsonElementClass.get();
+	std::shared_ptr<FuClass> jsonObjectClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonObject");
+	std::shared_ptr<FuStorageType> futemp12 = std::make_shared<FuStorageType>();
+	futemp12->class_ = dictionaryClass;
+	futemp12->typeArg0 = this->stringStorageType;
+	futemp12->typeArg1 = jsonElementPtr;
+	std::shared_ptr<FuField> jsonObjectValueField = std::make_shared<FuField>();
+	jsonObjectValueField->visibility = FuVisibility::internal;
+	jsonObjectValueField->type = futemp12;
+	jsonObjectValueField->name = "Value";
+	jsonObjectClass->add(jsonObjectValueField);
+	addOverrideTrueMethod(jsonObjectClass.get(), "IsObject");
+	std::shared_ptr<FuClassType> futemp13 = std::make_shared<FuClassType>();
+	futemp13->class_ = dictionaryClass;
+	futemp13->typeArg0 = this->stringStorageType;
+	futemp13->typeArg1 = jsonElementPtr;
+	addJsonGetMethod(jsonObjectClass.get(), futemp13, "GetObject", jsonObjectValueField.get());
+	jsonObjectClass->cppFriends.insert("JsonParser");
+	add(jsonObjectClass);
+	jsonObjectClass->setBaseClass(jsonElementClass.get());
+	this->jsonClasses[1] = jsonObjectClass.get();
+	std::shared_ptr<FuClass> jsonArrayClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonArray");
+	std::shared_ptr<FuStorageType> futemp14 = std::make_shared<FuStorageType>();
+	futemp14->class_ = listClass;
+	futemp14->typeArg0 = jsonElementPtr;
+	std::shared_ptr<FuField> jsonArrayValueField = std::make_shared<FuField>();
+	jsonArrayValueField->visibility = FuVisibility::internal;
+	jsonArrayValueField->type = futemp14;
+	jsonArrayValueField->name = "Value";
+	jsonArrayClass->add(jsonArrayValueField);
+	addOverrideTrueMethod(jsonArrayClass.get(), "IsArray");
+	std::shared_ptr<FuClassType> futemp15 = std::make_shared<FuClassType>();
+	futemp15->class_ = listClass;
+	futemp15->typeArg0 = jsonElementPtr;
+	addJsonGetMethod(jsonArrayClass.get(), futemp15, "GetArray", jsonArrayValueField.get());
+	jsonArrayClass->cppFriends.insert("JsonParser");
+	add(jsonArrayClass);
+	jsonArrayClass->setBaseClass(jsonElementClass.get());
+	this->jsonClasses[2] = jsonArrayClass.get();
+	std::shared_ptr<FuClass> jsonStringClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonString");
+	std::shared_ptr<FuField> jsonStringValueField = std::make_shared<FuField>();
+	jsonStringValueField->visibility = FuVisibility::internal;
+	jsonStringValueField->type = this->stringStorageType;
+	jsonStringValueField->name = "Value";
+	jsonStringClass->add(jsonStringValueField);
+	addOverrideTrueMethod(jsonStringClass.get(), "IsString");
+	addJsonGetMethod(jsonStringClass.get(), this->stringPtrType, "GetString", jsonStringValueField.get());
+	jsonStringClass->cppFriends.insert("JsonParser");
+	add(jsonStringClass);
+	jsonStringClass->setBaseClass(jsonElementClass.get());
+	this->jsonClasses[3] = jsonStringClass.get();
+	std::shared_ptr<FuClass> jsonNumberClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonNumber");
+	std::shared_ptr<FuField> jsonNumberValueField = std::make_shared<FuField>();
+	jsonNumberValueField->visibility = FuVisibility::internal;
+	jsonNumberValueField->type = this->doubleType;
+	jsonNumberValueField->name = "Value";
+	jsonNumberClass->add(jsonNumberValueField);
+	addOverrideTrueMethod(jsonNumberClass.get(), "IsNumber");
+	addJsonGetMethod(jsonNumberClass.get(), this->doubleType, "GetDouble", jsonNumberValueField.get());
+	jsonNumberClass->cppFriends.insert("JsonParser");
+	add(jsonNumberClass);
+	jsonNumberClass->setBaseClass(jsonElementClass.get());
+	this->jsonClasses[4] = jsonNumberClass.get();
+	std::shared_ptr<FuClass> jsonBooleanClass = FuClass::new_(FuCallType::normal, FuId::none, "JsonBoolean");
+	addOverrideTrueMethod(jsonBooleanClass.get(), "IsBoolean");
+	addFalseMethod(jsonBooleanClass.get(), FuCallType::override_, FuId::none, "GetBoolean");
+	add(jsonBooleanClass);
+	jsonBooleanClass->setBaseClass(jsonElementClass.get());
+	this->jsonClasses[5] = jsonBooleanClass.get();
+	std::shared_ptr<FuClass> jsonTrueClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonTrue");
+	addOverrideTrueMethod(jsonTrueClass.get(), "GetBoolean");
+	add(jsonTrueClass);
+	jsonTrueClass->setBaseClass(jsonBooleanClass.get());
+	this->jsonClasses[6] = jsonTrueClass.get();
+	std::shared_ptr<FuClass> jsonNullClass = FuClass::new_(FuCallType::sealed, FuId::none, "JsonNull");
+	addOverrideTrueMethod(jsonNullClass.get(), "IsNull");
+	add(jsonNullClass);
+	jsonNullClass->setBaseClass(jsonElementClass.get());
+	this->jsonClasses[7] = jsonNullClass.get();
+	std::shared_ptr<FuField> inputField = std::make_shared<FuField>();
+	inputField->visibility = FuVisibility::private_;
+	inputField->type = this->stringPtrType;
+	inputField->name = "Input";
+	jsonParserClass->add(inputField);
+	std::shared_ptr<FuField> offsetField = std::make_shared<FuField>();
+	offsetField->visibility = FuVisibility::private_;
+	offsetField->type = this->nIntType;
+	offsetField->name = "Offset";
+	jsonParserClass->add(offsetField);
+	std::shared_ptr<FuField> inputLengthField = std::make_shared<FuField>();
+	inputLengthField->visibility = FuVisibility::private_;
+	inputLengthField->type = this->nIntType;
+	inputLengthField->name = "InputLength";
+	jsonParserClass->add(inputLengthField);
+	std::shared_ptr<FuMethod> jsonParserSkipWhitespaceMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, this->boolType, FuId::none, "SkipWhitespace", true);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuBlock> whileBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuWhile> futemp16 = std::make_shared<FuWhile>();
+		futemp16->cond = newOffsetLessInputLength(offsetField.get(), inputLengthField.get());
+		futemp16->body = whileBlock;
+		methodBlock->statements.push_back(futemp16);
+		std::shared_ptr<FuSwitch> switch_ = std::make_shared<FuSwitch>();
+		switch_->value = newInputAtOffset(inputField.get(), offsetField.get());
+		switch_->cases.emplace_back();
+		FuCase * kase = &switch_->cases[0];
+		addCaseCharValue(kase, '\t');
+		addCaseCharValue(kase, '\n');
+		addCaseCharValue(kase, '\r');
+		addCaseCharValue(kase, ' ');
+		std::shared_ptr<FuBreak> futemp17 = std::make_shared<FuBreak>();
+		futemp17->loopOrSwitch = switch_.get();
+		kase->body.push_back(futemp17);
+		switch_->defaultBody.push_back(newReturnTrue());
+		whileBlock->statements.push_back(switch_);
+		std::shared_ptr<FuPostfixExpr> futemp18 = std::make_shared<FuPostfixExpr>();
+		futemp18->inner = newSymbolReference(offsetField.get());
+		futemp18->op = FuToken::increment;
+		whileBlock->statements.push_back(futemp18);
+		std::shared_ptr<FuLiteralFalse> futemp19 = std::make_shared<FuLiteralFalse>();
+		futemp19->type = this->boolType;
+		std::shared_ptr<FuReturn> futemp20 = std::make_shared<FuReturn>();
+		futemp20->value = futemp19;
+		methodBlock->statements.push_back(futemp20);
+		jsonParserSkipWhitespaceMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserSkipWhitespaceMethod);
+	std::shared_ptr<FuDynamicPtrType> futemp16 = std::make_shared<FuDynamicPtrType>();
+	futemp16->nullable = true;
+	futemp16->class_ = jsonObjectClass.get();
+	std::shared_ptr<FuMethod> jsonParserParseObjectMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, futemp16, FuId::none, "ParseObject", true);
+	std::shared_ptr<FuDynamicPtrType> futemp17 = std::make_shared<FuDynamicPtrType>();
+	futemp17->nullable = true;
+	futemp17->class_ = jsonStringClass.get();
+	std::shared_ptr<FuMethod> jsonParserParseStringMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, futemp17, FuId::none, "ParseString", true);
+	std::shared_ptr<FuDynamicPtrType> futemp18 = std::make_shared<FuDynamicPtrType>();
+	futemp18->nullable = true;
+	futemp18->class_ = jsonElementClass.get();
+	std::shared_ptr<FuMethod> jsonParserParseWhitespaceAndElementMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, futemp18, FuId::none, "ParseWhitespaceAndElement", true);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuPostfixExpr> futemp19 = std::make_shared<FuPostfixExpr>();
+		futemp19->inner = newSymbolReference(offsetField.get());
+		futemp19->op = FuToken::increment;
+		methodBlock->statements.push_back(futemp19);
+		std::shared_ptr<FuPrefixExpr> futemp20 = std::make_shared<FuPrefixExpr>();
+		futemp20->type = this->boolType;
+		futemp20->op = FuToken::exclamationMark;
+		futemp20->inner = newCall(jsonParserSkipWhitespaceMethod.get());
+		std::shared_ptr<FuIf> futemp21 = std::make_shared<FuIf>();
+		futemp21->cond = futemp20;
+		futemp21->onTrue = newReturnNull();
+		futemp21->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp21);
+		std::shared_ptr<FuVar> resultVar = newDynamicResult(jsonObjectClass.get());
+		methodBlock->statements.push_back(resultVar);
+		methodBlock->add(resultVar);
+		std::shared_ptr<FuBlock> ifBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuLiteralChar> futemp22 = std::make_shared<FuLiteralChar>();
+		futemp22->type = this->intType;
+		futemp22->value = '}';
+		std::shared_ptr<FuBinaryExpr> futemp23 = std::make_shared<FuBinaryExpr>();
+		futemp23->type = this->boolType;
+		futemp23->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp23->op = FuToken::equal;
+		futemp23->right = futemp22;
+		std::shared_ptr<FuIf> futemp24 = std::make_shared<FuIf>();
+		futemp24->cond = futemp23;
+		futemp24->onTrue = ifBlock;
+		futemp24->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp24);
+		std::shared_ptr<FuPostfixExpr> futemp25 = std::make_shared<FuPostfixExpr>();
+		futemp25->inner = newSymbolReference(offsetField.get());
+		futemp25->op = FuToken::increment;
+		ifBlock->statements.push_back(futemp25);
+		std::shared_ptr<FuReturn> futemp26 = std::make_shared<FuReturn>();
+		futemp26->value = newSymbolReference(resultVar.get());
+		ifBlock->statements.push_back(futemp26);
+		std::shared_ptr<FuBlock> whileBlock = std::make_shared<FuBlock>();
+		whileBlock->setCompletesNormally(true);
+		std::shared_ptr<FuLiteralChar> futemp27 = std::make_shared<FuLiteralChar>();
+		futemp27->type = this->intType;
+		futemp27->value = '"';
+		std::shared_ptr<FuBinaryExpr> futemp28 = std::make_shared<FuBinaryExpr>();
+		futemp28->type = this->boolType;
+		futemp28->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp28->op = FuToken::equal;
+		futemp28->right = futemp27;
+		std::shared_ptr<FuWhile> futemp29 = std::make_shared<FuWhile>();
+		futemp29->cond = futemp28;
+		futemp29->body = whileBlock;
+		methodBlock->statements.push_back(futemp29);
+		std::shared_ptr<FuDynamicPtrType> futemp30 = std::make_shared<FuDynamicPtrType>();
+		futemp30->nullable = true;
+		futemp30->class_ = jsonStringClass.get();
+		std::shared_ptr<FuVar> keyVar = FuVar::new_(futemp30, "key", newCall(jsonParserParseStringMethod.get()));
+		whileBlock->statements.push_back(keyVar);
+		whileBlock->add(keyVar);
+		std::shared_ptr<FuLiteralNull> futemp31 = std::make_shared<FuLiteralNull>();
+		futemp31->type = this->nullType;
+		std::shared_ptr<FuBinaryExpr> futemp32 = std::make_shared<FuBinaryExpr>();
+		futemp32->type = this->boolType;
+		futemp32->left = newSymbolReference(keyVar.get());
+		futemp32->op = FuToken::equal;
+		futemp32->right = futemp31;
+		std::shared_ptr<FuPrefixExpr> futemp33 = std::make_shared<FuPrefixExpr>();
+		futemp33->type = this->boolType;
+		futemp33->op = FuToken::exclamationMark;
+		futemp33->inner = newCall(jsonParserSkipWhitespaceMethod.get());
+		std::shared_ptr<FuLiteralChar> futemp34 = std::make_shared<FuLiteralChar>();
+		futemp34->type = this->intType;
+		futemp34->value = ':';
+		std::shared_ptr<FuBinaryExpr> futemp35 = std::make_shared<FuBinaryExpr>();
+		futemp35->type = this->boolType;
+		futemp35->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp35->op = FuToken::notEqual;
+		futemp35->right = futemp34;
+		std::shared_ptr<FuBinaryExpr> futemp36 = std::make_shared<FuBinaryExpr>();
+		futemp36->type = this->boolType;
+		futemp36->left = futemp33;
+		futemp36->op = FuToken::condOr;
+		futemp36->right = futemp35;
+		std::shared_ptr<FuBinaryExpr> futemp37 = std::make_shared<FuBinaryExpr>();
+		futemp37->type = this->boolType;
+		futemp37->left = futemp32;
+		futemp37->op = FuToken::condOr;
+		futemp37->right = futemp36;
+		std::shared_ptr<FuIf> futemp38 = std::make_shared<FuIf>();
+		futemp38->cond = futemp37;
+		futemp38->onTrue = newReturnNull();
+		futemp38->onFalse = nullptr;
+		whileBlock->statements.push_back(futemp38);
+		std::shared_ptr<FuPostfixExpr> futemp39 = std::make_shared<FuPostfixExpr>();
+		futemp39->inner = newSymbolReference(offsetField.get());
+		futemp39->op = FuToken::increment;
+		whileBlock->statements.push_back(futemp39);
+		std::shared_ptr<FuDynamicPtrType> futemp40 = std::make_shared<FuDynamicPtrType>();
+		futemp40->nullable = true;
+		futemp40->class_ = jsonElementClass.get();
+		std::shared_ptr<FuVar> valueVar = FuVar::new_(futemp40, "value", newCall(jsonParserParseWhitespaceAndElementMethod.get()));
+		whileBlock->statements.push_back(valueVar);
+		whileBlock->add(valueVar);
+		std::shared_ptr<FuLiteralNull> futemp41 = std::make_shared<FuLiteralNull>();
+		futemp41->type = this->nullType;
+		std::shared_ptr<FuBinaryExpr> futemp42 = std::make_shared<FuBinaryExpr>();
+		futemp42->type = this->boolType;
+		futemp42->left = newSymbolReference(valueVar.get());
+		futemp42->op = FuToken::equal;
+		futemp42->right = futemp41;
+		std::shared_ptr<FuPrefixExpr> futemp43 = std::make_shared<FuPrefixExpr>();
+		futemp43->type = this->boolType;
+		futemp43->op = FuToken::exclamationMark;
+		futemp43->inner = newCall(jsonParserSkipWhitespaceMethod.get());
+		std::shared_ptr<FuBinaryExpr> futemp44 = std::make_shared<FuBinaryExpr>();
+		futemp44->type = this->boolType;
+		futemp44->left = futemp42;
+		futemp44->op = FuToken::condOr;
+		futemp44->right = futemp43;
+		std::shared_ptr<FuIf> futemp45 = std::make_shared<FuIf>();
+		futemp45->cond = futemp44;
+		futemp45->onTrue = newReturnNull();
+		futemp45->onFalse = nullptr;
+		whileBlock->statements.push_back(futemp45);
+		std::shared_ptr<FuBinaryExpr> futemp46 = std::make_shared<FuBinaryExpr>();
+		futemp46->type = jsonElementPtr;
+		futemp46->left = newMemberReference(newSymbolReference(resultVar.get()), jsonObjectValueField.get());
+		futemp46->op = FuToken::leftBracket;
+		futemp46->right = newMemberReference(newSymbolReference(keyVar.get()), jsonStringValueField.get());
+		std::shared_ptr<FuBinaryExpr> futemp47 = std::make_shared<FuBinaryExpr>();
+		futemp47->type = jsonElementPtr;
+		futemp47->left = futemp46;
+		futemp47->op = FuToken::assign;
+		futemp47->right = newSymbolReference(valueVar.get());
+		whileBlock->statements.push_back(futemp47);
+		std::shared_ptr<FuPostfixExpr> futemp48 = std::make_shared<FuPostfixExpr>();
+		futemp48->type = this->nIntType;
+		futemp48->inner = newSymbolReference(offsetField.get());
+		futemp48->op = FuToken::increment;
+		std::shared_ptr<FuBinaryExpr> futemp49 = std::make_shared<FuBinaryExpr>();
+		futemp49->type = this->intType;
+		futemp49->left = newSymbolReference(inputField.get());
+		futemp49->op = FuToken::leftBracket;
+		futemp49->right = futemp48;
+		std::shared_ptr<FuSwitch> switch_ = std::make_shared<FuSwitch>();
+		switch_->value = futemp49;
+		switch_->cases.emplace_back();
+		addCaseCharValue(&switch_->cases[0], ',');
+		std::shared_ptr<FuBreak> futemp50 = std::make_shared<FuBreak>();
+		futemp50->loopOrSwitch = switch_.get();
+		switch_->cases[0].body.push_back(futemp50);
+		switch_->cases.emplace_back();
+		addCaseCharValue(&switch_->cases[1], '}');
+		std::shared_ptr<FuReturn> futemp51 = std::make_shared<FuReturn>();
+		futemp51->value = newSymbolReference(resultVar.get());
+		switch_->cases[1].body.push_back(futemp51);
+		switch_->defaultBody.push_back(newReturnNull());
+		whileBlock->statements.push_back(switch_);
+		std::shared_ptr<FuPrefixExpr> futemp52 = std::make_shared<FuPrefixExpr>();
+		futemp52->type = this->boolType;
+		futemp52->op = FuToken::exclamationMark;
+		futemp52->inner = newCall(jsonParserSkipWhitespaceMethod.get());
+		std::shared_ptr<FuIf> futemp53 = std::make_shared<FuIf>();
+		futemp53->cond = futemp52;
+		futemp53->onTrue = newReturnNull();
+		futemp53->onFalse = nullptr;
+		whileBlock->statements.push_back(futemp53);
+		methodBlock->statements.push_back(newReturnNull());
+		jsonParserParseObjectMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseObjectMethod);
+	std::shared_ptr<FuDynamicPtrType> futemp19 = std::make_shared<FuDynamicPtrType>();
+	futemp19->nullable = true;
+	futemp19->class_ = jsonArrayClass.get();
+	std::shared_ptr<FuMethod> jsonParserParseArrayMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, futemp19, FuId::none, "ParseArray", true);
+	std::shared_ptr<FuDynamicPtrType> futemp20 = std::make_shared<FuDynamicPtrType>();
+	futemp20->nullable = true;
+	futemp20->class_ = jsonElementClass.get();
+	std::shared_ptr<FuMethod> jsonParserParseElementMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, futemp20, FuId::none, "ParseElement", true);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuPostfixExpr> futemp21 = std::make_shared<FuPostfixExpr>();
+		futemp21->inner = newSymbolReference(offsetField.get());
+		futemp21->op = FuToken::increment;
+		methodBlock->statements.push_back(futemp21);
+		std::shared_ptr<FuPrefixExpr> futemp22 = std::make_shared<FuPrefixExpr>();
+		futemp22->type = this->boolType;
+		futemp22->op = FuToken::exclamationMark;
+		futemp22->inner = newCall(jsonParserSkipWhitespaceMethod.get());
+		std::shared_ptr<FuIf> futemp23 = std::make_shared<FuIf>();
+		futemp23->cond = futemp22;
+		futemp23->onTrue = newReturnNull();
+		futemp23->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp23);
+		std::shared_ptr<FuVar> resultVar = newDynamicResult(jsonArrayClass.get());
+		methodBlock->statements.push_back(resultVar);
+		methodBlock->add(resultVar);
+		std::shared_ptr<FuBlock> ifBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuLiteralChar> futemp24 = std::make_shared<FuLiteralChar>();
+		futemp24->type = this->intType;
+		futemp24->value = ']';
+		std::shared_ptr<FuBinaryExpr> futemp25 = std::make_shared<FuBinaryExpr>();
+		futemp25->type = this->boolType;
+		futemp25->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp25->op = FuToken::equal;
+		futemp25->right = futemp24;
+		std::shared_ptr<FuIf> futemp26 = std::make_shared<FuIf>();
+		futemp26->cond = futemp25;
+		futemp26->onTrue = ifBlock;
+		futemp26->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp26);
+		std::shared_ptr<FuPostfixExpr> futemp27 = std::make_shared<FuPostfixExpr>();
+		futemp27->inner = newSymbolReference(offsetField.get());
+		futemp27->op = FuToken::increment;
+		ifBlock->statements.push_back(futemp27);
+		std::shared_ptr<FuReturn> futemp28 = std::make_shared<FuReturn>();
+		futemp28->value = newSymbolReference(resultVar.get());
+		ifBlock->statements.push_back(futemp28);
+		std::shared_ptr<FuBlock> doWhileBlock = std::make_shared<FuBlock>();
+		doWhileBlock->setCompletesNormally(true);
+		std::shared_ptr<FuDoWhile> futemp29 = std::make_shared<FuDoWhile>();
+		futemp29->body = doWhileBlock;
+		futemp29->cond = newCall(jsonParserSkipWhitespaceMethod.get());
+		methodBlock->statements.push_back(futemp29);
+		std::shared_ptr<FuDynamicPtrType> futemp30 = std::make_shared<FuDynamicPtrType>();
+		futemp30->nullable = true;
+		futemp30->class_ = jsonElementClass.get();
+		std::shared_ptr<FuVar> elementVar = FuVar::new_(futemp30, "element", newCall(jsonParserParseElementMethod.get()));
+		doWhileBlock->statements.push_back(elementVar);
+		doWhileBlock->add(elementVar);
+		std::shared_ptr<FuLiteralNull> futemp31 = std::make_shared<FuLiteralNull>();
+		futemp31->type = this->nullType;
+		std::shared_ptr<FuBinaryExpr> futemp32 = std::make_shared<FuBinaryExpr>();
+		futemp32->type = this->boolType;
+		futemp32->left = newSymbolReference(elementVar.get());
+		futemp32->op = FuToken::equal;
+		futemp32->right = futemp31;
+		std::shared_ptr<FuPrefixExpr> futemp33 = std::make_shared<FuPrefixExpr>();
+		futemp33->type = this->boolType;
+		futemp33->op = FuToken::exclamationMark;
+		futemp33->inner = newCall(jsonParserSkipWhitespaceMethod.get());
+		std::shared_ptr<FuBinaryExpr> futemp34 = std::make_shared<FuBinaryExpr>();
+		futemp34->type = this->boolType;
+		futemp34->left = futemp32;
+		futemp34->op = FuToken::condOr;
+		futemp34->right = futemp33;
+		std::shared_ptr<FuIf> futemp35 = std::make_shared<FuIf>();
+		futemp35->cond = futemp34;
+		futemp35->onTrue = newReturnNull();
+		futemp35->onFalse = nullptr;
+		doWhileBlock->statements.push_back(futemp35);
+		std::shared_ptr<FuCallExpr> addCall = std::make_shared<FuCallExpr>();
+		addCall->type = this->voidType;
+		addCall->method = newMemberReference(newMemberReference(newSymbolReference(resultVar.get()), jsonArrayValueField.get()), listAddMethod.get());
+		addCall->arguments.push_back(newSymbolReference(elementVar.get()));
+		doWhileBlock->statements.push_back(addCall);
+		std::shared_ptr<FuPostfixExpr> futemp36 = std::make_shared<FuPostfixExpr>();
+		futemp36->type = this->nIntType;
+		futemp36->inner = newSymbolReference(offsetField.get());
+		futemp36->op = FuToken::increment;
+		std::shared_ptr<FuBinaryExpr> futemp37 = std::make_shared<FuBinaryExpr>();
+		futemp37->type = this->intType;
+		futemp37->left = newSymbolReference(inputField.get());
+		futemp37->op = FuToken::leftBracket;
+		futemp37->right = futemp36;
+		std::shared_ptr<FuSwitch> switch_ = std::make_shared<FuSwitch>();
+		switch_->value = futemp37;
+		switch_->cases.emplace_back();
+		addCaseCharValue(&switch_->cases[0], ',');
+		std::shared_ptr<FuBreak> futemp38 = std::make_shared<FuBreak>();
+		futemp38->loopOrSwitch = switch_.get();
+		switch_->cases[0].body.push_back(futemp38);
+		switch_->cases.emplace_back();
+		addCaseCharValue(&switch_->cases[1], ']');
+		std::shared_ptr<FuReturn> futemp39 = std::make_shared<FuReturn>();
+		futemp39->value = newSymbolReference(resultVar.get());
+		switch_->cases[1].body.push_back(futemp39);
+		switch_->defaultBody.push_back(newReturnNull());
+		doWhileBlock->statements.push_back(switch_);
+		methodBlock->statements.push_back(newReturnNull());
+		jsonParserParseArrayMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseArrayMethod);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuPostfixExpr> futemp21 = std::make_shared<FuPostfixExpr>();
+		futemp21->inner = newSymbolReference(offsetField.get());
+		futemp21->op = FuToken::increment;
+		methodBlock->statements.push_back(futemp21);
+		std::shared_ptr<FuStorageType> futemp22 = std::make_shared<FuStorageType>();
+		futemp22->class_ = stringWriterClass.get();
+		std::shared_ptr<FuVar> resultVar = FuVar::new_(futemp22, "result");
+		methodBlock->statements.push_back(resultVar);
+		methodBlock->add(resultVar);
+		std::shared_ptr<FuVar> startOffsetVar = FuVar::new_(this->nIntType, "startOffset", newSymbolReference(offsetField.get()));
+		methodBlock->statements.push_back(startOffsetVar);
+		methodBlock->add(startOffsetVar);
+		std::shared_ptr<FuBlock> whileBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuWhile> while_ = std::make_shared<FuWhile>();
+		while_->cond = newOffsetLessInputLength(offsetField.get(), inputLengthField.get());
+		while_->body = whileBlock;
+		std::shared_ptr<FuSwitch> switch_ = std::make_shared<FuSwitch>();
+		switch_->value = newInputAtOffset(inputField.get(), offsetField.get());
+		switch_->cases.emplace_back();
+		for (int i = 0; i < 32; i++)
+			switch_->cases[0].values.push_back(newLiteralLong(i));
+		switch_->cases[0].body.push_back(newReturnNull());
+		switch_->cases.emplace_back();
+		addCaseCharValue(&switch_->cases[1], '"');
+		switch_->cases[1].body.push_back(newWriteJsonStringPart(inputField.get(), stringSubstringMethod.get(), startOffsetVar.get(), offsetField.get(), resultVar.get(), textWriterWriteMethod.get()));
+		std::shared_ptr<FuAggregateInitializer> init = std::make_shared<FuAggregateInitializer>();
+		std::shared_ptr<FuBinaryExpr> futemp23 = std::make_shared<FuBinaryExpr>();
+		futemp23->left = newSymbolReference(jsonStringValueField.get());
+		futemp23->op = FuToken::assign;
+		futemp23->right = newMethodCall(resultVar.get(), stringWriterToStringMethod.get());
+		init->items.push_back(futemp23);
+		std::shared_ptr<FuDynamicPtrType> futemp24 = std::make_shared<FuDynamicPtrType>();
+		futemp24->class_ = jsonStringClass.get();
+		std::shared_ptr<FuPrefixExpr> futemp25 = std::make_shared<FuPrefixExpr>();
+		futemp25->type = futemp24;
+		futemp25->op = FuToken::new_;
+		futemp25->inner = init;
+		std::shared_ptr<FuReturn> futemp26 = std::make_shared<FuReturn>();
+		futemp26->value = futemp25;
+		switch_->cases[1].body.push_back(futemp26);
+		switch_->cases.emplace_back();
+		addCaseCharValue(&switch_->cases[2], '\\');
+		switch_->cases[2].body.push_back(newWriteJsonStringPart(inputField.get(), stringSubstringMethod.get(), startOffsetVar.get(), offsetField.get(), resultVar.get(), textWriterWriteMethod.get()));
+		std::shared_ptr<FuBinaryExpr> futemp27 = std::make_shared<FuBinaryExpr>();
+		futemp27->type = this->boolType;
+		futemp27->left = newSymbolReference(offsetField.get());
+		futemp27->op = FuToken::greaterOrEqual;
+		futemp27->right = newSymbolReference(inputLengthField.get());
+		std::shared_ptr<FuIf> futemp28 = std::make_shared<FuIf>();
+		futemp28->cond = futemp27;
+		futemp28->onTrue = newReturnNull();
+		futemp28->onFalse = nullptr;
+		switch_->cases[2].body.push_back(futemp28);
+		std::shared_ptr<FuSwitch> switch2 = std::make_shared<FuSwitch>();
+		switch2->value = newInputAtOffset(inputField.get(), offsetField.get());
+		switch2->cases.emplace_back();
+		addCaseCharValue(&switch2->cases[0], '"');
+		addCaseCharValue(&switch2->cases[0], '\\');
+		addCaseCharValue(&switch2->cases[0], '/');
+		std::shared_ptr<FuPostfixExpr> futemp29 = std::make_shared<FuPostfixExpr>();
+		futemp29->type = this->nIntType;
+		futemp29->inner = newSymbolReference(offsetField.get());
+		futemp29->op = FuToken::increment;
+		std::shared_ptr<FuBinaryExpr> futemp30 = std::make_shared<FuBinaryExpr>();
+		futemp30->type = this->nIntType;
+		futemp30->left = newSymbolReference(startOffsetVar.get());
+		futemp30->op = FuToken::assign;
+		futemp30->right = futemp29;
+		switch2->cases[0].body.push_back(futemp30);
+		std::shared_ptr<FuContinue> futemp31 = std::make_shared<FuContinue>();
+		futemp31->loop = while_.get();
+		switch2->cases[0].body.push_back(futemp31);
+		addJsonEscape(switch2.get(), 'b', resultVar.get(), textWriterWriteCharMethod.get(), newLiteralLong(8));
+		addJsonEscape(switch2.get(), 'f', resultVar.get(), textWriterWriteCharMethod.get(), newLiteralLong(12));
+		std::shared_ptr<FuLiteralChar> futemp32 = std::make_shared<FuLiteralChar>();
+		futemp32->type = this->intType;
+		futemp32->value = '\n';
+		addJsonEscape(switch2.get(), 'n', resultVar.get(), textWriterWriteCharMethod.get(), futemp32);
+		std::shared_ptr<FuLiteralChar> futemp33 = std::make_shared<FuLiteralChar>();
+		futemp33->type = this->intType;
+		futemp33->value = '\r';
+		addJsonEscape(switch2.get(), 'r', resultVar.get(), textWriterWriteCharMethod.get(), futemp33);
+		std::shared_ptr<FuLiteralChar> futemp34 = std::make_shared<FuLiteralChar>();
+		futemp34->type = this->intType;
+		futemp34->value = '\t';
+		addJsonEscape(switch2.get(), 't', resultVar.get(), textWriterWriteCharMethod.get(), futemp34);
+		switch2->cases.emplace_back();
+		addCaseCharValue(&switch2->cases[6], 'u');
+		std::shared_ptr<FuBinaryExpr> futemp35 = std::make_shared<FuBinaryExpr>();
+		futemp35->type = this->nIntType;
+		futemp35->left = newSymbolReference(offsetField.get());
+		futemp35->op = FuToken::plus;
+		futemp35->right = newLiteralLong(5);
+		std::shared_ptr<FuBinaryExpr> futemp36 = std::make_shared<FuBinaryExpr>();
+		futemp36->type = this->boolType;
+		futemp36->left = futemp35;
+		futemp36->op = FuToken::greaterOrEqual;
+		futemp36->right = newSymbolReference(inputLengthField.get());
+		std::shared_ptr<FuIf> futemp37 = std::make_shared<FuIf>();
+		futemp37->cond = futemp36;
+		futemp37->onTrue = newReturnNull();
+		futemp37->onFalse = nullptr;
+		switch2->cases[6].body.push_back(futemp37);
+		std::shared_ptr<FuVar> cVar = FuVar::new_(this->intType, "c");
+		switch2->cases[6].body.push_back(cVar);
+		std::shared_ptr<FuCallExpr> substringCall = newMethodCall(inputField.get(), stringSubstringMethod.get());
+		std::shared_ptr<FuBinaryExpr> futemp38 = std::make_shared<FuBinaryExpr>();
+		futemp38->type = this->nIntType;
+		futemp38->left = newSymbolReference(offsetField.get());
+		futemp38->op = FuToken::plus;
+		futemp38->right = newLiteralLong(1);
+		substringCall->arguments.push_back(futemp38);
+		substringCall->arguments.push_back(newLiteralLong(4));
+		std::shared_ptr<FuCallExpr> tryParseCall = newMethodCall(cVar.get(), intTryParseMethod.get());
+		tryParseCall->arguments.push_back(substringCall);
+		tryParseCall->arguments.push_back(newLiteralLong(16));
+		std::shared_ptr<FuPrefixExpr> futemp39 = std::make_shared<FuPrefixExpr>();
+		futemp39->type = this->boolType;
+		futemp39->op = FuToken::exclamationMark;
+		futemp39->inner = tryParseCall;
+		std::shared_ptr<FuIf> futemp40 = std::make_shared<FuIf>();
+		futemp40->cond = futemp39;
+		futemp40->onTrue = newReturnNull();
+		futemp40->onFalse = nullptr;
+		switch2->cases[6].body.push_back(futemp40);
+		std::shared_ptr<FuCallExpr> writeCodePointCall = newMethodCall(resultVar.get(), textWriterWriteCodePointMethod.get());
+		writeCodePointCall->arguments.push_back(newSymbolReference(cVar.get()));
+		switch2->cases[6].body.push_back(writeCodePointCall);
+		std::shared_ptr<FuBinaryExpr> futemp41 = std::make_shared<FuBinaryExpr>();
+		futemp41->left = newSymbolReference(offsetField.get());
+		futemp41->op = FuToken::addAssign;
+		futemp41->right = newLiteralLong(4);
+		switch2->cases[6].body.push_back(futemp41);
+		std::shared_ptr<FuBreak> futemp42 = std::make_shared<FuBreak>();
+		futemp42->loopOrSwitch = switch2.get();
+		switch2->cases[6].body.push_back(futemp42);
+		switch2->defaultBody.push_back(newReturnNull());
+		switch_->cases[2].body.push_back(switch2);
+		std::shared_ptr<FuPrefixExpr> futemp43 = std::make_shared<FuPrefixExpr>();
+		futemp43->type = this->nIntType;
+		futemp43->op = FuToken::increment;
+		futemp43->inner = newSymbolReference(offsetField.get());
+		std::shared_ptr<FuBinaryExpr> futemp44 = std::make_shared<FuBinaryExpr>();
+		futemp44->type = this->nIntType;
+		futemp44->left = newSymbolReference(startOffsetVar.get());
+		futemp44->op = FuToken::assign;
+		futemp44->right = futemp43;
+		switch_->cases[2].body.push_back(futemp44);
+		std::shared_ptr<FuBreak> futemp45 = std::make_shared<FuBreak>();
+		futemp45->loopOrSwitch = switch_.get();
+		switch_->cases[2].body.push_back(futemp45);
+		std::shared_ptr<FuPostfixExpr> futemp46 = std::make_shared<FuPostfixExpr>();
+		futemp46->inner = newSymbolReference(offsetField.get());
+		futemp46->op = FuToken::increment;
+		switch_->defaultBody.push_back(futemp46);
+		std::shared_ptr<FuBreak> futemp47 = std::make_shared<FuBreak>();
+		futemp47->loopOrSwitch = switch_.get();
+		switch_->defaultBody.push_back(futemp47);
+		whileBlock->statements.push_back(switch_);
+		methodBlock->statements.push_back(while_);
+		methodBlock->statements.push_back(newReturnNull());
+		jsonParserParseStringMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseStringMethod);
+	std::shared_ptr<FuMethod> jsonParserSeeDigitMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, this->boolType, FuId::none, "SeeDigit", false);
+	std::shared_ptr<FuLiteralChar> futemp21 = std::make_shared<FuLiteralChar>();
+	futemp21->type = this->intType;
+	futemp21->value = '0';
+	std::shared_ptr<FuBinaryExpr> futemp22 = std::make_shared<FuBinaryExpr>();
+	futemp22->type = this->boolType;
+	futemp22->left = newInputAtOffset(inputField.get(), offsetField.get());
+	futemp22->op = FuToken::greaterOrEqual;
+	futemp22->right = futemp21;
+	std::shared_ptr<FuBinaryExpr> futemp23 = std::make_shared<FuBinaryExpr>();
+	futemp23->type = this->boolType;
+	futemp23->left = newOffsetLessInputLength(offsetField.get(), inputLengthField.get());
+	futemp23->op = FuToken::condAnd;
+	futemp23->right = futemp22;
+	std::shared_ptr<FuLiteralChar> futemp24 = std::make_shared<FuLiteralChar>();
+	futemp24->type = this->intType;
+	futemp24->value = '9';
+	std::shared_ptr<FuBinaryExpr> futemp25 = std::make_shared<FuBinaryExpr>();
+	futemp25->type = this->boolType;
+	futemp25->left = newInputAtOffset(inputField.get(), offsetField.get());
+	futemp25->op = FuToken::lessOrEqual;
+	futemp25->right = futemp24;
+	std::shared_ptr<FuBinaryExpr> futemp26 = std::make_shared<FuBinaryExpr>();
+	futemp26->type = this->boolType;
+	futemp26->left = futemp23;
+	futemp26->op = FuToken::condAnd;
+	futemp26->right = futemp25;
+	std::shared_ptr<FuReturn> futemp27 = std::make_shared<FuReturn>();
+	futemp27->value = futemp26;
+	jsonParserSeeDigitMethod->body = futemp27;
+	jsonParserClass->add(jsonParserSeeDigitMethod);
+	std::shared_ptr<FuMethod> jsonParserParseDigitsMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, this->voidType, FuId::none, "ParseDigits", true);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuPostfixExpr> futemp28 = std::make_shared<FuPostfixExpr>();
+		futemp28->inner = newSymbolReference(offsetField.get());
+		futemp28->op = FuToken::increment;
+		std::shared_ptr<FuWhile> while_ = std::make_shared<FuWhile>();
+		while_->cond = newCall(jsonParserSeeDigitMethod.get());
+		while_->body = futemp28;
+		methodBlock->statements.push_back(while_);
+		jsonParserParseDigitsMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseDigitsMethod);
+	std::shared_ptr<FuDynamicPtrType> futemp28 = std::make_shared<FuDynamicPtrType>();
+	futemp28->nullable = true;
+	futemp28->class_ = jsonNumberClass.get();
+	std::shared_ptr<FuMethod> jsonParserParseNumberMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, futemp28, FuId::none, "ParseNumber", true);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuVar> startOffsetVar = FuVar::new_(this->nIntType, "startOffset", newSymbolReference(offsetField.get()));
+		methodBlock->statements.push_back(startOffsetVar);
+		methodBlock->add(startOffsetVar);
+		std::shared_ptr<FuLiteralChar> futemp29 = std::make_shared<FuLiteralChar>();
+		futemp29->type = this->intType;
+		futemp29->value = '-';
+		std::shared_ptr<FuBinaryExpr> futemp30 = std::make_shared<FuBinaryExpr>();
+		futemp30->type = this->boolType;
+		futemp30->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp30->op = FuToken::equal;
+		futemp30->right = futemp29;
+		std::shared_ptr<FuPostfixExpr> futemp31 = std::make_shared<FuPostfixExpr>();
+		futemp31->inner = newSymbolReference(offsetField.get());
+		futemp31->op = FuToken::increment;
+		std::shared_ptr<FuIf> futemp32 = std::make_shared<FuIf>();
+		futemp32->cond = futemp30;
+		futemp32->onTrue = futemp31;
+		futemp32->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp32);
+		methodBlock->statements.push_back(newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod.get()));
+		std::shared_ptr<FuPostfixExpr> futemp33 = std::make_shared<FuPostfixExpr>();
+		futemp33->inner = newSymbolReference(offsetField.get());
+		futemp33->op = FuToken::increment;
+		std::shared_ptr<FuBinaryExpr> futemp34 = std::make_shared<FuBinaryExpr>();
+		futemp34->type = this->intType;
+		futemp34->left = newSymbolReference(inputField.get());
+		futemp34->op = FuToken::leftBracket;
+		futemp34->right = futemp33;
+		std::shared_ptr<FuLiteralChar> futemp35 = std::make_shared<FuLiteralChar>();
+		futemp35->type = this->intType;
+		futemp35->value = '0';
+		std::shared_ptr<FuBinaryExpr> futemp36 = std::make_shared<FuBinaryExpr>();
+		futemp36->type = this->boolType;
+		futemp36->left = futemp34;
+		futemp36->op = FuToken::greater;
+		futemp36->right = futemp35;
+		std::shared_ptr<FuIf> futemp37 = std::make_shared<FuIf>();
+		futemp37->cond = futemp36;
+		futemp37->onTrue = newCall(jsonParserParseDigitsMethod.get());
+		methodBlock->statements.push_back(futemp37);
+		std::shared_ptr<FuBlock> ifBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuLiteralChar> futemp38 = std::make_shared<FuLiteralChar>();
+		futemp38->type = this->intType;
+		futemp38->value = '.';
+		std::shared_ptr<FuBinaryExpr> futemp39 = std::make_shared<FuBinaryExpr>();
+		futemp39->type = this->boolType;
+		futemp39->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp39->op = FuToken::equal;
+		futemp39->right = futemp38;
+		std::shared_ptr<FuBinaryExpr> futemp40 = std::make_shared<FuBinaryExpr>();
+		futemp40->type = this->boolType;
+		futemp40->left = newOffsetLessInputLength(offsetField.get(), inputLengthField.get());
+		futemp40->op = FuToken::condAnd;
+		futemp40->right = futemp39;
+		std::shared_ptr<FuIf> futemp41 = std::make_shared<FuIf>();
+		futemp41->cond = futemp40;
+		futemp41->onTrue = ifBlock;
+		futemp41->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp41);
+		std::shared_ptr<FuPostfixExpr> futemp42 = std::make_shared<FuPostfixExpr>();
+		futemp42->inner = newSymbolReference(offsetField.get());
+		futemp42->op = FuToken::increment;
+		ifBlock->statements.push_back(futemp42);
+		ifBlock->statements.push_back(newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod.get()));
+		ifBlock->statements.push_back(newCall(jsonParserParseDigitsMethod.get()));
+		std::shared_ptr<FuBlock> if2Block = std::make_shared<FuBlock>();
+		std::shared_ptr<FuBinaryExpr> futemp43 = std::make_shared<FuBinaryExpr>();
+		futemp43->type = this->intType;
+		futemp43->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp43->op = FuToken::or_;
+		futemp43->right = newLiteralLong(32);
+		std::shared_ptr<FuLiteralChar> futemp44 = std::make_shared<FuLiteralChar>();
+		futemp44->type = this->intType;
+		futemp44->value = 'e';
+		std::shared_ptr<FuBinaryExpr> futemp45 = std::make_shared<FuBinaryExpr>();
+		futemp45->type = this->boolType;
+		futemp45->left = futemp43;
+		futemp45->op = FuToken::equal;
+		futemp45->right = futemp44;
+		std::shared_ptr<FuBinaryExpr> futemp46 = std::make_shared<FuBinaryExpr>();
+		futemp46->type = this->boolType;
+		futemp46->left = newOffsetLessInputLength(offsetField.get(), inputLengthField.get());
+		futemp46->op = FuToken::condAnd;
+		futemp46->right = futemp45;
+		std::shared_ptr<FuIf> futemp47 = std::make_shared<FuIf>();
+		futemp47->cond = futemp46;
+		futemp47->onTrue = if2Block;
+		futemp47->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp47);
+		std::shared_ptr<FuPrefixExpr> futemp48 = std::make_shared<FuPrefixExpr>();
+		futemp48->type = this->nIntType;
+		futemp48->op = FuToken::increment;
+		futemp48->inner = newSymbolReference(offsetField.get());
+		std::shared_ptr<FuBinaryExpr> futemp49 = std::make_shared<FuBinaryExpr>();
+		futemp49->type = this->boolType;
+		futemp49->left = futemp48;
+		futemp49->op = FuToken::less;
+		futemp49->right = newSymbolReference(inputLengthField.get());
+		std::shared_ptr<FuLiteralChar> futemp50 = std::make_shared<FuLiteralChar>();
+		futemp50->type = this->intType;
+		futemp50->value = '+';
+		std::shared_ptr<FuBinaryExpr> futemp51 = std::make_shared<FuBinaryExpr>();
+		futemp51->type = this->boolType;
+		futemp51->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp51->op = FuToken::equal;
+		futemp51->right = futemp50;
+		std::shared_ptr<FuLiteralChar> futemp52 = std::make_shared<FuLiteralChar>();
+		futemp52->type = this->intType;
+		futemp52->value = '-';
+		std::shared_ptr<FuBinaryExpr> futemp53 = std::make_shared<FuBinaryExpr>();
+		futemp53->type = this->boolType;
+		futemp53->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp53->op = FuToken::equal;
+		futemp53->right = futemp52;
+		std::shared_ptr<FuBinaryExpr> futemp54 = std::make_shared<FuBinaryExpr>();
+		futemp54->type = this->boolType;
+		futemp54->left = futemp51;
+		futemp54->op = FuToken::condOr;
+		futemp54->right = futemp53;
+		std::shared_ptr<FuBinaryExpr> futemp55 = std::make_shared<FuBinaryExpr>();
+		futemp55->type = this->boolType;
+		futemp55->left = futemp49;
+		futemp55->op = FuToken::condAnd;
+		futemp55->right = futemp54;
+		std::shared_ptr<FuPostfixExpr> futemp56 = std::make_shared<FuPostfixExpr>();
+		futemp56->inner = newSymbolReference(offsetField.get());
+		futemp56->op = FuToken::increment;
+		std::shared_ptr<FuIf> futemp57 = std::make_shared<FuIf>();
+		futemp57->cond = futemp55;
+		futemp57->onTrue = futemp56;
+		futemp57->onFalse = nullptr;
+		if2Block->statements.push_back(futemp57);
+		if2Block->statements.push_back(newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod.get()));
+		if2Block->statements.push_back(newCall(jsonParserParseDigitsMethod.get()));
+		std::shared_ptr<FuVar> dVar = FuVar::new_(this->doubleType, "d");
+		methodBlock->statements.push_back(dVar);
+		methodBlock->add(dVar);
+		std::shared_ptr<FuCallExpr> substringCall = newMethodCall(inputField.get(), stringSubstringMethod.get());
+		substringCall->arguments.push_back(newSymbolReference(startOffsetVar.get()));
+		std::shared_ptr<FuBinaryExpr> futemp58 = std::make_shared<FuBinaryExpr>();
+		futemp58->type = this->nIntType;
+		futemp58->left = newSymbolReference(offsetField.get());
+		futemp58->op = FuToken::minus;
+		futemp58->right = newSymbolReference(startOffsetVar.get());
+		substringCall->arguments.push_back(futemp58);
+		std::shared_ptr<FuCallExpr> tryParseCall = newMethodCall(dVar.get(), doubleTryParseMethod.get());
+		tryParseCall->arguments.push_back(substringCall);
+		std::shared_ptr<FuPrefixExpr> futemp59 = std::make_shared<FuPrefixExpr>();
+		futemp59->type = this->boolType;
+		futemp59->op = FuToken::exclamationMark;
+		futemp59->inner = tryParseCall;
+		std::shared_ptr<FuIf> futemp60 = std::make_shared<FuIf>();
+		futemp60->cond = futemp59;
+		futemp60->onTrue = newReturnNull();
+		futemp60->onFalse = nullptr;
+		methodBlock->statements.push_back(futemp60);
+		std::shared_ptr<FuAggregateInitializer> init = std::make_shared<FuAggregateInitializer>();
+		std::shared_ptr<FuBinaryExpr> futemp61 = std::make_shared<FuBinaryExpr>();
+		futemp61->left = newSymbolReference(jsonNumberValueField.get());
+		futemp61->op = FuToken::assign;
+		futemp61->right = newSymbolReference(dVar.get());
+		init->items.push_back(futemp61);
+		std::shared_ptr<FuDynamicPtrType> futemp62 = std::make_shared<FuDynamicPtrType>();
+		futemp62->class_ = jsonNumberClass.get();
+		std::shared_ptr<FuPrefixExpr> futemp63 = std::make_shared<FuPrefixExpr>();
+		futemp63->type = futemp62;
+		futemp63->op = FuToken::new_;
+		futemp63->inner = init;
+		std::shared_ptr<FuReturn> futemp64 = std::make_shared<FuReturn>();
+		futemp64->value = futemp63;
+		methodBlock->statements.push_back(futemp64);
+		jsonParserParseNumberMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseNumberMethod);
+	std::shared_ptr<FuVar> sParameter = FuVar::new_(this->stringPtrType, "s");
+	std::shared_ptr<FuMethod> jsonParserParseKeywordMethod = FuMethod::new_(jsonParserClass.get(), FuVisibility::private_, FuCallType::normal, this->boolType, FuId::none, "ParseKeyword", true, sParameter);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuBlock> foreachBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuForeach> loop = std::make_shared<FuForeach>();
+		loop->collection = newSymbolReference(sParameter.get());
+		loop->body = foreachBlock;
+		std::shared_ptr<FuVar> cVar = FuVar::new_(this->intType, "c");
+		loop->add(cVar);
+		std::shared_ptr<FuPrefixExpr> futemp29 = std::make_shared<FuPrefixExpr>();
+		futemp29->type = this->nIntType;
+		futemp29->op = FuToken::increment;
+		futemp29->inner = newSymbolReference(offsetField.get());
+		std::shared_ptr<FuBinaryExpr> futemp30 = std::make_shared<FuBinaryExpr>();
+		futemp30->type = this->boolType;
+		futemp30->left = futemp29;
+		futemp30->op = FuToken::greaterOrEqual;
+		futemp30->right = newSymbolReference(inputLengthField.get());
+		std::shared_ptr<FuBinaryExpr> futemp31 = std::make_shared<FuBinaryExpr>();
+		futemp31->type = this->boolType;
+		futemp31->left = newInputAtOffset(inputField.get(), offsetField.get());
+		futemp31->op = FuToken::notEqual;
+		futemp31->right = newSymbolReference(cVar.get());
+		std::shared_ptr<FuBinaryExpr> futemp32 = std::make_shared<FuBinaryExpr>();
+		futemp32->type = this->boolType;
+		futemp32->left = futemp30;
+		futemp32->op = FuToken::condOr;
+		futemp32->right = futemp31;
+		std::shared_ptr<FuIf> futemp33 = std::make_shared<FuIf>();
+		futemp33->cond = futemp32;
+		futemp33->onTrue = newReturnFalse();
+		futemp33->onFalse = nullptr;
+		foreachBlock->statements.push_back(futemp33);
+		methodBlock->statements.push_back(loop);
+		std::shared_ptr<FuPostfixExpr> futemp34 = std::make_shared<FuPostfixExpr>();
+		futemp34->inner = newSymbolReference(offsetField.get());
+		futemp34->op = FuToken::increment;
+		methodBlock->statements.push_back(futemp34);
+		methodBlock->statements.push_back(newReturnTrue());
+		jsonParserParseKeywordMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseKeywordMethod);
+	{
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuSwitch> switch_ = std::make_shared<FuSwitch>();
+		switch_->value = newInputAtOffset(inputField.get(), offsetField.get());
+		addParseJsonType(switch_.get(), '{', jsonParserParseObjectMethod.get());
+		addParseJsonType(switch_.get(), '[', jsonParserParseArrayMethod.get());
+		addParseJsonType(switch_.get(), '"', jsonParserParseStringMethod.get());
+		addParseJsonType(switch_.get(), '-', jsonParserParseNumberMethod.get());
+		addParseJsonKeyword(switch_.get(), "true", jsonParserParseKeywordMethod.get(), jsonTrueClass.get());
+		addParseJsonKeyword(switch_.get(), "false", jsonParserParseKeywordMethod.get(), jsonBooleanClass.get());
+		addParseJsonKeyword(switch_.get(), "null", jsonParserParseKeywordMethod.get(), jsonNullClass.get());
+		switch_->defaultBody.push_back(newReturnNull());
+		methodBlock->statements.push_back(switch_);
+		jsonParserParseElementMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserParseElementMethod);
+	std::shared_ptr<FuLiteralNull> futemp29 = std::make_shared<FuLiteralNull>();
+	futemp29->type = this->nullType;
+	std::shared_ptr<FuSelectExpr> futemp30 = std::make_shared<FuSelectExpr>();
+	futemp30->cond = newCall(jsonParserSkipWhitespaceMethod.get());
+	futemp30->onTrue = newCall(jsonParserParseElementMethod.get());
+	futemp30->onFalse = futemp29;
+	std::shared_ptr<FuReturn> futemp31 = std::make_shared<FuReturn>();
+	futemp31->value = futemp30;
+	jsonParserParseWhitespaceAndElementMethod->body = futemp31;
+	jsonParserClass->add(jsonParserParseWhitespaceAndElementMethod);
+	{
+		std::shared_ptr<FuVar> sParam = FuVar::new_(this->stringPtrType, "s");
+		jsonParserTryParseMethod->parameters.add(sParam);
+		std::shared_ptr<FuBlock> methodBlock = std::make_shared<FuBlock>();
+		std::shared_ptr<FuBinaryExpr> futemp32 = std::make_shared<FuBinaryExpr>();
+		futemp32->type = this->stringPtrType;
+		futemp32->left = newSymbolReference(inputField.get());
+		futemp32->op = FuToken::assign;
+		futemp32->right = newSymbolReference(sParam.get());
+		methodBlock->statements.push_back(futemp32);
+		std::shared_ptr<FuBinaryExpr> futemp33 = std::make_shared<FuBinaryExpr>();
+		futemp33->type = this->nIntType;
+		futemp33->left = newSymbolReference(offsetField.get());
+		futemp33->op = FuToken::assign;
+		futemp33->right = newLiteralLong(0);
+		methodBlock->statements.push_back(futemp33);
+		std::shared_ptr<FuBinaryExpr> futemp34 = std::make_shared<FuBinaryExpr>();
+		futemp34->type = this->nIntType;
+		futemp34->left = newSymbolReference(inputLengthField.get());
+		futemp34->op = FuToken::assign;
+		futemp34->right = newMemberReference(newSymbolReference(sParam.get()), stringLengthProperty.get());
+		methodBlock->statements.push_back(futemp34);
+		std::shared_ptr<FuDynamicPtrType> futemp35 = std::make_shared<FuDynamicPtrType>();
+		futemp35->nullable = true;
+		futemp35->class_ = jsonElementClass.get();
+		std::shared_ptr<FuVar> resultVar = FuVar::new_(futemp35, "result", newCall(jsonParserParseWhitespaceAndElementMethod.get()));
+		methodBlock->statements.push_back(resultVar);
+		std::shared_ptr<FuLiteralNull> futemp36 = std::make_shared<FuLiteralNull>();
+		futemp36->type = this->nullType;
+		std::shared_ptr<FuSelectExpr> futemp37 = std::make_shared<FuSelectExpr>();
+		futemp37->cond = newCall(jsonParserSkipWhitespaceMethod.get());
+		futemp37->onTrue = futemp36;
+		futemp37->onFalse = newSymbolReference(resultVar.get());
+		std::shared_ptr<FuReturn> futemp38 = std::make_shared<FuReturn>();
+		futemp38->value = futemp37;
+		methodBlock->statements.push_back(futemp38);
+		jsonParserTryParseMethod->body = methodBlock;
+	}
+	jsonParserClass->add(jsonParserTryParseMethod);
+	jsonParserClass->cppFriends.insert("JsonElement");
+	add(jsonParserClass);
+	this->jsonClasses[8] = jsonParserClass.get();
 	std::shared_ptr<FuNumericType> numericType = std::make_shared<FuNumericType>();
 	numericType->id = FuId::numericType;
 	numericType->name = "numeric";
@@ -3172,6 +4134,226 @@ void FuSystem::addMinMaxValue(FuIntegerType * target, int64_t min, int64_t max) 
 {
 	target->add(newConstLong("MinValue", min));
 	target->add(newConstLong("MaxValue", max));
+}
+
+std::shared_ptr<FuReturn> FuSystem::newReturnFalse() const
+{
+	std::shared_ptr<FuLiteralFalse> futemp0 = std::make_shared<FuLiteralFalse>();
+	futemp0->type = this->boolType;
+	std::shared_ptr<FuReturn> futemp1 = std::make_shared<FuReturn>();
+	futemp1->value = futemp0;
+	return futemp1;
+}
+
+std::shared_ptr<FuReturn> FuSystem::newReturnTrue() const
+{
+	std::shared_ptr<FuLiteralTrue> futemp0 = std::make_shared<FuLiteralTrue>();
+	futemp0->type = this->boolType;
+	std::shared_ptr<FuReturn> futemp1 = std::make_shared<FuReturn>();
+	futemp1->value = futemp0;
+	return futemp1;
+}
+
+std::shared_ptr<FuReturn> FuSystem::newReturnNull() const
+{
+	std::shared_ptr<FuLiteralNull> futemp0 = std::make_shared<FuLiteralNull>();
+	futemp0->type = this->nullType;
+	std::shared_ptr<FuReturn> futemp1 = std::make_shared<FuReturn>();
+	futemp1->value = futemp0;
+	return futemp1;
+}
+
+void FuSystem::addFalseMethod(FuClass * klass, FuCallType callType, FuId id, std::string_view name) const
+{
+	std::shared_ptr<FuMethod> method = FuMethod::new_(klass, FuVisibility::public_, callType, this->boolType, id, name, false);
+	method->body = newReturnFalse();
+	klass->add(method);
+}
+
+void FuSystem::addVirtualAssertFalseMethod(FuClass * klass, std::shared_ptr<FuType> type, FuId id, std::string_view name) const
+{
+	std::shared_ptr<FuMethod> method = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::virtual_, type, id, name, false);
+	std::shared_ptr<FuBlock> block = std::make_shared<FuBlock>();
+	std::shared_ptr<FuLiteralFalse> futemp0 = std::make_shared<FuLiteralFalse>();
+	futemp0->type = this->boolType;
+	std::shared_ptr<FuAssert> futemp1 = std::make_shared<FuAssert>();
+	futemp1->cond = futemp0;
+	block->statements.push_back(futemp1);
+	method->body = block;
+	klass->add(method);
+}
+
+void FuSystem::addOverrideTrueMethod(FuClass * klass, std::string_view name) const
+{
+	std::shared_ptr<FuMethod> method = FuMethod::new_(klass, FuVisibility::public_, FuCallType::override_, this->boolType, FuId::none, name, false);
+	method->body = newReturnTrue();
+	klass->add(method);
+}
+
+std::shared_ptr<FuSymbolReference> FuSystem::newSymbolReference(FuSymbol * symbol)
+{
+	std::shared_ptr<FuSymbolReference> futemp0 = std::make_shared<FuSymbolReference>();
+	futemp0->type = symbol->type;
+	futemp0->name = symbol->name;
+	futemp0->symbol = symbol;
+	return futemp0;
+}
+
+std::shared_ptr<FuSymbolReference> FuSystem::newMemberReference(std::shared_ptr<FuSymbolReference> left, FuSymbol * member)
+{
+	std::shared_ptr<FuSymbolReference> futemp0 = std::make_shared<FuSymbolReference>();
+	futemp0->left = left;
+	futemp0->type = member->type;
+	futemp0->name = member->name;
+	futemp0->symbol = member;
+	return futemp0;
+}
+
+std::shared_ptr<FuCallExpr> FuSystem::newCall(FuMethod * method) const
+{
+	std::shared_ptr<FuCallExpr> futemp0 = std::make_shared<FuCallExpr>();
+	futemp0->type = method->type;
+	futemp0->method = newSymbolReference(method);
+	return futemp0;
+}
+
+std::shared_ptr<FuCallExpr> FuSystem::newMethodCall(FuSymbol * obj, FuMethod * method) const
+{
+	std::shared_ptr<FuCallExpr> futemp0 = std::make_shared<FuCallExpr>();
+	futemp0->type = method->type;
+	futemp0->method = newMemberReference(newSymbolReference(obj), method);
+	return futemp0;
+}
+
+void FuSystem::addJsonGetMethod(FuClass * klass, std::shared_ptr<FuType> type, std::string_view name, FuField * valueField) const
+{
+	std::shared_ptr<FuMethod> method = FuMethod::new_(klass, FuVisibility::public_, FuCallType::override_, type, FuId::none, name, false);
+	std::shared_ptr<FuReturn> futemp0 = std::make_shared<FuReturn>();
+	futemp0->value = newSymbolReference(valueField);
+	method->body = futemp0;
+	klass->add(method);
+}
+
+std::shared_ptr<FuBinaryExpr> FuSystem::newOffsetLessInputLength(FuSymbol * offsetField, FuSymbol * inputLengthField) const
+{
+	std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
+	futemp0->type = this->boolType;
+	futemp0->left = newSymbolReference(offsetField);
+	futemp0->op = FuToken::less;
+	futemp0->right = newSymbolReference(inputLengthField);
+	return futemp0;
+}
+
+std::shared_ptr<FuBinaryExpr> FuSystem::newInputAtOffset(FuSymbol * inputField, FuSymbol * offsetField) const
+{
+	std::shared_ptr<FuBinaryExpr> futemp0 = std::make_shared<FuBinaryExpr>();
+	futemp0->type = this->intType;
+	futemp0->left = newSymbolReference(inputField);
+	futemp0->op = FuToken::leftBracket;
+	futemp0->right = newSymbolReference(offsetField);
+	return futemp0;
+}
+
+void FuSystem::addCaseCharValue(FuCase * kase, int value) const
+{
+	std::shared_ptr<FuLiteralChar> futemp0 = std::make_shared<FuLiteralChar>();
+	futemp0->type = this->intType;
+	futemp0->value = value;
+	kase->values.push_back(futemp0);
+}
+
+std::shared_ptr<FuVar> FuSystem::newDynamicResult(const FuClass * klass) const
+{
+	std::shared_ptr<FuDynamicPtrType> type = std::make_shared<FuDynamicPtrType>();
+	type->class_ = klass;
+	std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
+	futemp0->type = type;
+	futemp0->op = FuToken::new_;
+	futemp0->inner = nullptr;
+	return FuVar::new_(type, "result", futemp0);
+}
+
+std::shared_ptr<FuCallExpr> FuSystem::newWriteJsonStringPart(FuField * inputField, FuMethod * stringSubstringMethod, FuVar * startOffsetVar, FuField * offsetField, FuVar * resultVar, FuMethod * textWriterWriteMethod) const
+{
+	std::shared_ptr<FuCallExpr> substringCall = newMethodCall(inputField, stringSubstringMethod);
+	substringCall->arguments.push_back(newSymbolReference(startOffsetVar));
+	std::shared_ptr<FuPostfixExpr> futemp0 = std::make_shared<FuPostfixExpr>();
+	futemp0->type = this->nIntType;
+	futemp0->inner = newSymbolReference(offsetField);
+	futemp0->op = FuToken::increment;
+	std::shared_ptr<FuBinaryExpr> futemp1 = std::make_shared<FuBinaryExpr>();
+	futemp1->type = this->nIntType;
+	futemp1->left = futemp0;
+	futemp1->op = FuToken::minus;
+	futemp1->right = newSymbolReference(startOffsetVar);
+	substringCall->arguments.push_back(futemp1);
+	std::shared_ptr<FuCallExpr> writeCall = newMethodCall(resultVar, textWriterWriteMethod);
+	writeCall->arguments.push_back(substringCall);
+	return writeCall;
+}
+
+void FuSystem::addJsonEscape(FuSwitch * switch2, int c, FuVar * resultVar, FuMethod * textWriterWriteCharMethod, std::shared_ptr<FuLiteralLong> literal) const
+{
+	switch2->cases.emplace_back();
+	FuCase * kase = &static_cast<FuCase &>(switch2->cases.back());
+	addCaseCharValue(kase, c);
+	std::shared_ptr<FuCallExpr> call = newMethodCall(resultVar, textWriterWriteCharMethod);
+	call->arguments.push_back(literal);
+	kase->body.push_back(call);
+	std::shared_ptr<FuBreak> futemp0 = std::make_shared<FuBreak>();
+	futemp0->loopOrSwitch = switch2;
+	kase->body.push_back(futemp0);
+}
+
+std::shared_ptr<FuIf> FuSystem::newIfNotSeeDigitReturnNull(FuMethod * seeDigitMethod) const
+{
+	std::shared_ptr<FuPrefixExpr> futemp0 = std::make_shared<FuPrefixExpr>();
+	futemp0->type = this->boolType;
+	futemp0->op = FuToken::exclamationMark;
+	futemp0->inner = newCall(seeDigitMethod);
+	std::shared_ptr<FuIf> futemp1 = std::make_shared<FuIf>();
+	futemp1->cond = futemp0;
+	futemp1->onTrue = newReturnNull();
+	futemp1->onFalse = nullptr;
+	return futemp1;
+}
+
+void FuSystem::addParseJsonType(FuSwitch * switch_, int c, FuMethod * method) const
+{
+	switch_->cases.emplace_back();
+	FuCase * kase = &static_cast<FuCase &>(switch_->cases.back());
+	addCaseCharValue(kase, c);
+	if (c == '-') {
+		for (c = '0'; c <= '9'; c++)
+			addCaseCharValue(kase, c);
+	}
+	std::shared_ptr<FuReturn> futemp0 = std::make_shared<FuReturn>();
+	futemp0->value = newCall(method);
+	kase->body.push_back(futemp0);
+}
+
+void FuSystem::addParseJsonKeyword(FuSwitch * switch_, std::string_view keyword, FuMethod * parseKeywordMethod, const FuClass * klass) const
+{
+	switch_->cases.emplace_back();
+	FuCase * kase = &static_cast<FuCase &>(switch_->cases.back());
+	addCaseCharValue(kase, keyword[0]);
+	std::shared_ptr<FuCallExpr> call = newCall(parseKeywordMethod);
+	call->arguments.push_back(newLiteralString(keyword.substr(1)));
+	std::shared_ptr<FuDynamicPtrType> futemp0 = std::make_shared<FuDynamicPtrType>();
+	futemp0->class_ = klass;
+	std::shared_ptr<FuPrefixExpr> futemp1 = std::make_shared<FuPrefixExpr>();
+	futemp1->type = futemp0;
+	futemp1->op = FuToken::new_;
+	futemp1->inner = nullptr;
+	std::shared_ptr<FuLiteralNull> futemp2 = std::make_shared<FuLiteralNull>();
+	futemp2->type = this->nullType;
+	std::shared_ptr<FuSelectExpr> futemp3 = std::make_shared<FuSelectExpr>();
+	futemp3->cond = call;
+	futemp3->onTrue = futemp1;
+	futemp3->onFalse = futemp2;
+	std::shared_ptr<FuReturn> futemp4 = std::make_shared<FuReturn>();
+	futemp4->value = futemp3;
+	kase->body.push_back(futemp4);
 }
 
 std::shared_ptr<FuSystem> FuSystem::new_()
@@ -10177,6 +11359,7 @@ void GenC::writeClassType(const FuClassType * klass, bool space)
 {
 	switch (klass->class_->id) {
 	case FuId::none:
+	case FuId::jsonElementClass:
 		if (!dynamic_cast<const FuReadWriteClassType *>(klass))
 			write("const ");
 		writeName(klass->class_);
@@ -10439,6 +11622,7 @@ void GenC::writeListFree(const FuClassType * elementType)
 	switch (elementType->class_->id) {
 	case FuId::none:
 	case FuId::arrayPtrClass:
+	case FuId::jsonElementClass:
 		if (dynamic_cast<const FuDynamicPtrType *>(elementType)) {
 			this->sharedRelease = true;
 			addListFree(FuId::none);
@@ -10621,20 +11805,18 @@ void GenC::writeDictionaryDestroy(const FuType * type)
 		write("free");
 	else if (const FuOwningType *owning = dynamic_cast<const FuOwningType *>(type))
 		do {
-			if (owning->class_->id == FuId::none) {
-				if (dynamic_cast<const FuStorageType *>(type)) {
-					if (needsDestructor(owning->class_)) {
-						write("(GDestroyNotify) ");
-						writeName(owning->class_);
-						write("_Delete");
-					}
-					else
-						write("free");
-					break;
-				}
-			}
-			else
+			if (owning->class_->id != FuId::none && owning->class_->id != FuId::jsonElementClass)
 				write("(GDestroyNotify) ");
+			else if (dynamic_cast<const FuStorageType *>(type)) {
+				if (needsDestructor(owning->class_)) {
+					write("(GDestroyNotify) ");
+					writeName(owning->class_);
+					write("_Delete");
+				}
+				else
+					write("free");
+				break;
+			}
 			writeDestructMethodName(owning);
 		}
 		while (false);
@@ -12263,6 +13445,32 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::matchGetCapture:
 		writeCall("g_match_info_fetch", obj, (*args)[0].get());
 		break;
+	case FuId::jsonElementParse:
+	case FuId::jsonElementIsObject:
+	case FuId::jsonElementIsArray:
+	case FuId::jsonElementIsString:
+	case FuId::jsonElementIsNumber:
+	case FuId::jsonElementIsBoolean:
+	case FuId::jsonElementIsNull:
+	case FuId::jsonElementGetObject:
+	case FuId::jsonElementGetArray:
+	case FuId::jsonElementGetString:
+	case FuId::jsonElementGetDouble:
+	case FuId::jsonElementGetBoolean:
+		this->hasJsonElement = true;
+		include("errno.h");
+		include("limits.h");
+		includeStdBool();
+		includeStdDef();
+		include("string.h");
+		this->stringSubstring = true;
+		this->sharedMake = true;
+		this->sharedAddRef = true;
+		this->intFunctions.insert(FuId::intTryParse);
+		this->doubleTryParse = true;
+		this->listFrees.insert(FuId::none);
+		writeCCall(obj, method, args);
+		break;
 	case FuId::mathMethod:
 	case FuId::mathLog2:
 	case FuId::mathSqrt:
@@ -13387,7 +14595,16 @@ void GenC::writeIntLibrary(std::string_view klassName, std::string_view type, co
 	}
 }
 
-void GenC::writeLibrary()
+void GenC::writeClassCode(const FuClass * klass)
+{
+	this->currentClass = klass;
+	writeConstructor(klass);
+	writeDestructor(klass);
+	writeNewDelete(klass, true);
+	writeMethods(klass);
+}
+
+void GenC::writeLibrary(const FuProgram * program)
 {
 	writeIntLibrary("Int", "int", &this->intFunctions);
 	writeIntLibrary("NInt", "ptrdiff_t", &this->nIntFunctions);
@@ -13751,6 +14968,14 @@ void GenC::writeLibrary()
 		writeLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
 		closeBlock();
 	}
+	if (this->hasJsonElement) {
+		for (const FuClass * klass : program->system->jsonClasses)
+			writeTypedef(klass);
+		for (const FuClass * klass : program->system->jsonClasses)
+			writeClassInternal(klass);
+		for (const FuClass * klass : program->system->jsonClasses)
+			writeClassCode(klass);
+	}
 }
 
 void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources)
@@ -13831,22 +15056,18 @@ void GenC::writeProgram(const FuProgram * program, std::string_view outputFile, 
 	this->treeCompareInteger = false;
 	this->treeCompareString = false;
 	this->dateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
+	this->hasJsonElement = false;
 	this->compares.clear();
 	this->contains.clear();
 	openStringWriter();
 	for (const FuClass * klass : program->classes)
 		writeClass(klass, program);
 	writeResources(&program->resources);
-	for (const FuClass * klass : program->classes) {
-		this->currentClass = klass;
-		writeConstructor(klass);
-		writeDestructor(klass);
-		writeNewDelete(klass, true);
-		writeMethods(klass);
-	}
+	for (const FuClass * klass : program->classes)
+		writeClassCode(klass);
 	include("stdlib.h");
 	createImplementationFile(program, outputFile, ".h");
-	writeLibrary();
+	writeLibrary(program);
 	writeRegexOptionsEnum(program);
 	writeTypedefs(program, false);
 	closeStringWriter();
@@ -15370,6 +16591,31 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		startMethodCall(obj);
 		writeCall("str", (*args)[0].get());
 		break;
+	case FuId::jsonElementParse:
+	case FuId::jsonElementIsObject:
+	case FuId::jsonElementIsArray:
+	case FuId::jsonElementIsString:
+	case FuId::jsonElementIsNumber:
+	case FuId::jsonElementIsBoolean:
+	case FuId::jsonElementIsNull:
+	case FuId::jsonElementGetObject:
+	case FuId::jsonElementGetArray:
+	case FuId::jsonElementGetString:
+	case FuId::jsonElementGetDouble:
+	case FuId::jsonElementGetBoolean:
+		this->hasJsonElement = true;
+		include("charconv");
+		include("sstream");
+		include("string_view");
+		this->numberTryParse = true;
+		obj->accept(this, FuPriority::primary);
+		if (method->callType == FuCallType::static_)
+			write("::");
+		else
+			writeMemberOp(obj, nullptr);
+		writeName(method);
+		writeCoercedArgsInParentheses(method, args);
+		break;
 	case FuId::mathMethod:
 	case FuId::mathAbs:
 	case FuId::mathIsFinite:
@@ -16149,6 +17395,13 @@ void GenCpp::writeMethod(const FuMethod * method)
 	writeBody(method);
 }
 
+void GenCpp::writeForwardClass(const FuClass * klass)
+{
+	write("class ");
+	write(klass->name);
+	writeCharLine(';');
+}
+
 void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * resources, bool define)
 {
 	if (std::ssize(*resources) == 0)
@@ -16183,6 +17436,7 @@ void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile
 {
 	this->writtenTypes.clear();
 	this->inHeaderFile = true;
+	this->hasJsonElement = false;
 	this->hasPriorityQueue = false;
 	this->usingStringViewLiterals = false;
 	this->hasEnumFlags = false;
@@ -16194,13 +17448,12 @@ void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile
 	openNamespace(namespace_);
 	writeRegexOptionsEnum(program);
 	for (const FuSymbol * type = program->first; type != nullptr; type = type->next) {
-		if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type))
+		if (const FuClass *klass = dynamic_cast<const FuClass *>(type))
+			writeForwardClass(klass);
+		else if (const FuEnum *enu = dynamic_cast<const FuEnum *>(type))
 			writeEnum(enu);
-		else {
-			write("class ");
-			write(type->name);
-			writeCharLine(';');
-		}
+		else
+			std::abort();
 	}
 	for (const FuClass * klass : program->classes)
 		writeClass(klass, program);
@@ -16336,6 +17589,14 @@ void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile
 		writeLine("bool operator<(const FuPriorityQueueEntry &that) const { return that.priority < priority; }");
 		this->indent--;
 		writeLine("};");
+	}
+	if (this->hasJsonElement) {
+		for (const FuClass * klass : program->system->jsonClasses)
+			writeForwardClass(klass);
+		for (const FuClass * klass : program->system->jsonClasses)
+			writeClassInternal(klass);
+		for (const FuClass * klass : program->system->jsonClasses)
+			writeMethods(klass);
 	}
 	closeStringWriter();
 	closeFile();
@@ -19813,6 +21074,24 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 	case FuId::matchGetCapture:
 		writeMethodCall(obj, "group", (*args)[0].get());
 		break;
+	case FuId::jsonElementParse:
+	case FuId::jsonElementIsObject:
+	case FuId::jsonElementIsArray:
+	case FuId::jsonElementIsString:
+	case FuId::jsonElementIsNumber:
+	case FuId::jsonElementIsBoolean:
+	case FuId::jsonElementIsNull:
+	case FuId::jsonElementGetObject:
+	case FuId::jsonElementGetArray:
+	case FuId::jsonElementGetString:
+	case FuId::jsonElementGetDouble:
+	case FuId::jsonElementGetBoolean:
+		this->hasJsonElement = true;
+		obj->accept(this, FuPriority::primary);
+		writeChar('.');
+		writeName(method);
+		writeCoercedArgsInParentheses(method, args);
+		break;
 	case FuId::mathMethod:
 	case FuId::mathSqrt:
 		if (type->id == FuId::floatType)
@@ -20363,6 +21642,12 @@ void GenJava::writePriorityQueue()
 	closeFile();
 }
 
+void GenJava::writeJsonElement(const FuProgram * program)
+{
+	for (const FuClass * klass : program->system->jsonClasses)
+		writeClass(klass, program);
+}
+
 void GenJava::writeResources()
 {
 	createJavaFile("FuResource");
@@ -20405,9 +21690,12 @@ void GenJava::writeProgram(const FuProgram * program, std::string_view outputFil
 	this->outputFile = outputFile;
 	this->namespace_ = namespace_;
 	this->hasPriorityQueue = false;
+	this->hasJsonElement = false;
 	writeTypes(program);
 	if (this->hasPriorityQueue)
 		writePriorityQueue();
+	if (this->hasJsonElement)
+		writeJsonElement(program);
 	if (std::ssize(program->resources) > 0)
 		writeResources();
 }

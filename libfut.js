@@ -3045,7 +3045,7 @@ export class FuMethod extends FuMethodBase
 
 	static new(klass, visibility, callType, type, id, name, isMutator, param0 = null, param1 = null, param2 = null, param3 = null)
 	{
-		let result = Object.assign(new FuMethod(), { visibility: visibility, callType: callType, type: type, id: id, name: name });
+		let result = Object.assign(new FuMethod(), { visibility: visibility, callType: callType, type: type, id: id, name: name, isLive: true });
 		if (callType != FuCallType.STATIC)
 			result.addThis(klass, isMutator);
 		if (param0 != null) {
@@ -3211,6 +3211,13 @@ export class FuClass extends FuContainerType
 	hasBaseClass()
 	{
 		return this.baseClass.name.length > 0;
+	}
+
+	setBaseClass(baseClass)
+	{
+		this.parent = baseClass;
+		this.baseClass.name = baseClass.name;
+		this.baseClass.symbol = baseClass;
 	}
 
 	addsVirtualMethods()
@@ -3546,7 +3553,8 @@ export class FuSystem extends FuScope
 		basePtr.id = FuId.BASE_PTR;
 		this.add(basePtr);
 		this.#addMinMaxValue(this.intType, -2147483648n, 2147483647n);
-		this.intType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.INT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n))));
+		let intTryParseMethod = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.INT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "radix", this.newLiteralLong(0n)));
+		this.intType.add(intTryParseMethod);
 		this.add(this.intType);
 		this.#uIntType.name = "uint";
 		this.add(this.#uIntType);
@@ -3568,17 +3576,20 @@ export class FuSystem extends FuScope
 		this.add(ushortType);
 		this.floatType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.FLOAT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
 		this.add(this.floatType);
-		this.doubleType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.DOUBLE_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
+		let doubleTryParseMethod = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.DOUBLE_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value"));
+		this.doubleType.add(doubleTryParseMethod);
 		this.add(this.doubleType);
 		this.add(this.boolType);
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_CONTAINS, "Contains", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_ENDS_WITH, "EndsWith", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.nIntType, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.nIntType, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.add(FuProperty.new(this.nIntType, FuId.STRING_LENGTH, "Length"));
+		let stringLengthProperty = FuProperty.new(this.nIntType, FuId.STRING_LENGTH, "Length");
+		this.#stringClass.add(stringLengthProperty);
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_REPLACE, "Replace", false, FuVar.new(this.stringPtrType, "oldValue"), FuVar.new(this.stringPtrType, "newValue"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_STARTS_WITH, "StartsWith", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.nIntType, "offset"), FuVar.new(this.nIntType, "length", this.newLiteralLong(-1n)));
+		let stringSubstringMethod = FuMethod.new(this.#stringClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.stringStorageType, FuId.STRING_SUBSTRING, "Substring", false, FuVar.new(this.nIntType, "offset"), FuVar.new(this.nIntType, "length", this.newLiteralLong(-1n)));
+		this.#stringClass.add(stringSubstringMethod);
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_TO_LOWER, "ToLower", false);
 		this.#stringClass.addMethod(this.stringStorageType, FuId.STRING_TO_UPPER, "ToUpper", false);
 		this.stringPtrType.class = this.#stringClass;
@@ -3603,7 +3614,8 @@ export class FuSystem extends FuScope
 		let typeParam0NotFinal = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0_NOT_FINAL, name: "T" });
 		let typeParam0Predicate = Object.assign(new FuType(), { id: FuId.TYPE_PARAM0_PREDICATE, name: "Predicate<T>" });
 		let listClass = this.#addCollection(FuId.LIST_CLASS, "List", 1, FuId.LIST_CLEAR, FuId.LIST_COUNT);
-		listClass.addMethod(this.voidType, FuId.LIST_ADD, "Add", true, FuVar.new(typeParam0NotFinal, "value"));
+		let listAddMethod = FuMethod.new(listClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.LIST_ADD, "Add", true, FuVar.new(typeParam0NotFinal, "value"));
+		listClass.add(listAddMethod);
 		listClass.addMethod(this.voidType, FuId.LIST_ADD_RANGE, "AddRange", true, FuVar.new(Object.assign(new FuClassType(), { class: listClass, typeArg0: this.#typeParam0 }), "source"));
 		listClass.addMethod(this.boolType, FuId.LIST_ALL, "All", false, FuVar.new(typeParam0Predicate, "predicate"));
 		listClass.addMethod(this.boolType, FuId.LIST_ANY, "Any", false, FuVar.new(typeParam0Predicate, "predicate"));
@@ -3634,9 +3646,12 @@ export class FuSystem extends FuScope
 		this.#addDictionary(FuId.ORDERED_DICTIONARY_CLASS, "OrderedDictionary", FuId.ORDERED_DICTIONARY_CLEAR, FuId.ORDERED_DICTIONARY_CONTAINS_KEY, FuId.ORDERED_DICTIONARY_COUNT, FuId.ORDERED_DICTIONARY_REMOVE);
 		let textWriterClass = FuClass.new(FuCallType.NORMAL, FuId.TEXT_WRITER_CLASS, "TextWriter");
 		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_FLUSH, "Flush", true);
-		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE, "Write", true, FuVar.new(this.printableType, "value"));
-		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_CHAR, "WriteChar", true, FuVar.new(this.intType, "c"));
-		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_CODE_POINT, "WriteCodePoint", true, FuVar.new(this.intType, "c"));
+		let textWriterWriteMethod = FuMethod.new(textWriterClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.TEXT_WRITER_WRITE, "Write", true, FuVar.new(this.printableType, "value"));
+		textWriterClass.add(textWriterWriteMethod);
+		let textWriterWriteCharMethod = FuMethod.new(textWriterClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.TEXT_WRITER_WRITE_CHAR, "WriteChar", true, FuVar.new(this.intType, "c"));
+		textWriterClass.add(textWriterWriteCharMethod);
+		let textWriterWriteCodePointMethod = FuMethod.new(textWriterClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.TEXT_WRITER_WRITE_CODE_POINT, "WriteCodePoint", true, FuVar.new(this.intType, "c"));
+		textWriterClass.add(textWriterWriteCodePointMethod);
 		textWriterClass.addMethod(this.voidType, FuId.TEXT_WRITER_WRITE_LINE, "WriteLine", true, FuVar.new(this.printableType, "value", this.newLiteralString("")));
 		this.add(textWriterClass);
 		let consoleClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Console");
@@ -3649,7 +3664,8 @@ export class FuSystem extends FuScope
 		this.add(consoleClass);
 		let stringWriterClass = FuClass.new(FuCallType.SEALED, FuId.STRING_WRITER_CLASS, "StringWriter");
 		stringWriterClass.addMethod(this.voidType, FuId.STRING_WRITER_CLEAR, "Clear", true);
-		stringWriterClass.addMethod(this.stringPtrType, FuId.STRING_WRITER_TO_STRING, "ToString", false);
+		let stringWriterToStringMethod = FuMethod.new(stringWriterClass, FuVisibility.PUBLIC, FuCallType.NORMAL, this.stringPtrType, FuId.STRING_WRITER_TO_STRING, "ToString", false);
+		stringWriterClass.add(stringWriterToStringMethod);
 		this.add(stringWriterClass);
 		stringWriterClass.parent = textWriterClass;
 		let bitConverterClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "BitConverter");
@@ -3698,21 +3714,352 @@ export class FuSystem extends FuScope
 		matchClass.add(FuProperty.new(this.nIntType, FuId.MATCH_LENGTH, "Length"));
 		matchClass.add(FuProperty.new(this.stringStorageType, FuId.MATCH_VALUE, "Value"));
 		this.add(matchClass);
-		let jsonElementClass = FuClass.new(FuCallType.SEALED, FuId.JSON_ELEMENT_CLASS, "JsonElement");
+		let jsonElementClass = FuClass.new(FuCallType.ABSTRACT, FuId.JSON_ELEMENT_CLASS, "JsonElement");
 		let jsonElementPtr = Object.assign(new FuDynamicPtrType(), { class: jsonElementClass });
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, jsonElementPtr, FuId.JSON_ELEMENT_PARSE, "Parse", false, FuVar.new(this.stringPtrType, "value")));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_OBJECT, "IsObject", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_ARRAY, "IsArray", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_STRING, "IsString", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_NUMBER, "IsNumber", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_BOOLEAN, "IsBoolean", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_IS_NULL, "IsNull", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: dictionaryClass, typeArg0: this.stringStorageType, typeArg1: jsonElementPtr }), FuId.JSON_ELEMENT_GET_OBJECT, "GetObject", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: listClass, typeArg0: jsonElementPtr }), FuId.JSON_ELEMENT_GET_ARRAY, "GetArray", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.stringPtrType, FuId.JSON_ELEMENT_GET_STRING, "GetString", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.doubleType, FuId.JSON_ELEMENT_GET_DOUBLE, "GetDouble", false));
-		jsonElementClass.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.JSON_ELEMENT_GET_BOOLEAN, "GetBoolean", false));
+		this.#addFalseMethod(jsonElementClass, FuCallType.VIRTUAL, FuId.JSON_ELEMENT_IS_OBJECT, "IsObject");
+		this.#addFalseMethod(jsonElementClass, FuCallType.VIRTUAL, FuId.JSON_ELEMENT_IS_ARRAY, "IsArray");
+		this.#addFalseMethod(jsonElementClass, FuCallType.VIRTUAL, FuId.JSON_ELEMENT_IS_STRING, "IsString");
+		this.#addFalseMethod(jsonElementClass, FuCallType.VIRTUAL, FuId.JSON_ELEMENT_IS_NUMBER, "IsNumber");
+		this.#addFalseMethod(jsonElementClass, FuCallType.VIRTUAL, FuId.JSON_ELEMENT_IS_BOOLEAN, "IsBoolean");
+		this.#addFalseMethod(jsonElementClass, FuCallType.VIRTUAL, FuId.JSON_ELEMENT_IS_NULL, "IsNull");
+		this.#addVirtualAssertFalseMethod(jsonElementClass, Object.assign(new FuClassType(), { class: dictionaryClass, typeArg0: this.stringStorageType, typeArg1: jsonElementPtr }), FuId.JSON_ELEMENT_GET_OBJECT, "GetObject");
+		this.#addVirtualAssertFalseMethod(jsonElementClass, Object.assign(new FuClassType(), { class: listClass, typeArg0: jsonElementPtr }), FuId.JSON_ELEMENT_GET_ARRAY, "GetArray");
+		this.#addVirtualAssertFalseMethod(jsonElementClass, this.stringPtrType, FuId.JSON_ELEMENT_GET_STRING, "GetString");
+		this.#addVirtualAssertFalseMethod(jsonElementClass, this.doubleType, FuId.JSON_ELEMENT_GET_DOUBLE, "GetDouble");
+		this.#addVirtualAssertFalseMethod(jsonElementClass, this.boolType, FuId.JSON_ELEMENT_GET_BOOLEAN, "GetBoolean");
+		let jsonElementParseMethod = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.STATIC, jsonElementPtr, FuId.JSON_ELEMENT_PARSE, "Parse", false);
+		let jsonParserClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonParser");
+		let jsonParserTryParseMethod = FuMethod.new(null, FuVisibility.INTERNAL, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonElementClass }), FuId.NONE, "TryParse", true);
+		{
+			let sParam = FuVar.new(this.stringPtrType, "s");
+			jsonElementParseMethod.parameters.add(sParam);
+			let methodBlock = new FuBlock();
+			let parserVar = FuVar.new(Object.assign(new FuStorageType(), { class: jsonParserClass }), "parser");
+			methodBlock.statements.push(parserVar);
+			methodBlock.add(parserVar);
+			let call = this.#newMethodCall(parserVar, jsonParserTryParseMethod);
+			call.arguments_.push(FuSystem.#newSymbolReference(sParam));
+			methodBlock.statements.push(Object.assign(new FuReturn(), { value: call }));
+			jsonElementParseMethod.body = methodBlock;
+		}
+		jsonElementClass.add(jsonElementParseMethod);
 		this.add(jsonElementClass);
+		this.jsonClasses[0] = jsonElementClass;
+		let jsonObjectClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonObject");
+		let jsonObjectValueField = Object.assign(new FuField(), { visibility: FuVisibility.INTERNAL, type: Object.assign(new FuStorageType(), { class: dictionaryClass, typeArg0: this.stringStorageType, typeArg1: jsonElementPtr }), name: "Value" });
+		jsonObjectClass.add(jsonObjectValueField);
+		this.#addOverrideTrueMethod(jsonObjectClass, "IsObject");
+		this.#addJsonGetMethod(jsonObjectClass, Object.assign(new FuClassType(), { class: dictionaryClass, typeArg0: this.stringStorageType, typeArg1: jsonElementPtr }), "GetObject", jsonObjectValueField);
+		jsonObjectClass.cppFriends.add("JsonParser");
+		this.add(jsonObjectClass);
+		jsonObjectClass.setBaseClass(jsonElementClass);
+		this.jsonClasses[1] = jsonObjectClass;
+		let jsonArrayClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonArray");
+		let jsonArrayValueField = Object.assign(new FuField(), { visibility: FuVisibility.INTERNAL, type: Object.assign(new FuStorageType(), { class: listClass, typeArg0: jsonElementPtr }), name: "Value" });
+		jsonArrayClass.add(jsonArrayValueField);
+		this.#addOverrideTrueMethod(jsonArrayClass, "IsArray");
+		this.#addJsonGetMethod(jsonArrayClass, Object.assign(new FuClassType(), { class: listClass, typeArg0: jsonElementPtr }), "GetArray", jsonArrayValueField);
+		jsonArrayClass.cppFriends.add("JsonParser");
+		this.add(jsonArrayClass);
+		jsonArrayClass.setBaseClass(jsonElementClass);
+		this.jsonClasses[2] = jsonArrayClass;
+		let jsonStringClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonString");
+		let jsonStringValueField = Object.assign(new FuField(), { visibility: FuVisibility.INTERNAL, type: this.stringStorageType, name: "Value" });
+		jsonStringClass.add(jsonStringValueField);
+		this.#addOverrideTrueMethod(jsonStringClass, "IsString");
+		this.#addJsonGetMethod(jsonStringClass, this.stringPtrType, "GetString", jsonStringValueField);
+		jsonStringClass.cppFriends.add("JsonParser");
+		this.add(jsonStringClass);
+		jsonStringClass.setBaseClass(jsonElementClass);
+		this.jsonClasses[3] = jsonStringClass;
+		let jsonNumberClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonNumber");
+		let jsonNumberValueField = Object.assign(new FuField(), { visibility: FuVisibility.INTERNAL, type: this.doubleType, name: "Value" });
+		jsonNumberClass.add(jsonNumberValueField);
+		this.#addOverrideTrueMethod(jsonNumberClass, "IsNumber");
+		this.#addJsonGetMethod(jsonNumberClass, this.doubleType, "GetDouble", jsonNumberValueField);
+		jsonNumberClass.cppFriends.add("JsonParser");
+		this.add(jsonNumberClass);
+		jsonNumberClass.setBaseClass(jsonElementClass);
+		this.jsonClasses[4] = jsonNumberClass;
+		let jsonBooleanClass = FuClass.new(FuCallType.NORMAL, FuId.NONE, "JsonBoolean");
+		this.#addOverrideTrueMethod(jsonBooleanClass, "IsBoolean");
+		this.#addFalseMethod(jsonBooleanClass, FuCallType.OVERRIDE, FuId.NONE, "GetBoolean");
+		this.add(jsonBooleanClass);
+		jsonBooleanClass.setBaseClass(jsonElementClass);
+		this.jsonClasses[5] = jsonBooleanClass;
+		let jsonTrueClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonTrue");
+		this.#addOverrideTrueMethod(jsonTrueClass, "GetBoolean");
+		this.add(jsonTrueClass);
+		jsonTrueClass.setBaseClass(jsonBooleanClass);
+		this.jsonClasses[6] = jsonTrueClass;
+		let jsonNullClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "JsonNull");
+		this.#addOverrideTrueMethod(jsonNullClass, "IsNull");
+		this.add(jsonNullClass);
+		jsonNullClass.setBaseClass(jsonElementClass);
+		this.jsonClasses[7] = jsonNullClass;
+		let inputField = Object.assign(new FuField(), { visibility: FuVisibility.PRIVATE, type: this.stringPtrType, name: "Input" });
+		jsonParserClass.add(inputField);
+		let offsetField = Object.assign(new FuField(), { visibility: FuVisibility.PRIVATE, type: this.nIntType, name: "Offset" });
+		jsonParserClass.add(offsetField);
+		let inputLengthField = Object.assign(new FuField(), { visibility: FuVisibility.PRIVATE, type: this.nIntType, name: "InputLength" });
+		jsonParserClass.add(inputLengthField);
+		let jsonParserSkipWhitespaceMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, this.boolType, FuId.NONE, "SkipWhitespace", true);
+		{
+			let methodBlock = new FuBlock();
+			let whileBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuWhile(), { cond: this.#newOffsetLessInputLength(offsetField, inputLengthField), body: whileBlock }));
+			let switch_ = Object.assign(new FuSwitch(), { value: this.#newInputAtOffset(inputField, offsetField) });
+			switch_.cases.push(new FuCase());
+			let kase = switch_.cases[0];
+			this.#addCaseCharValue(kase, 9);
+			this.#addCaseCharValue(kase, 10);
+			this.#addCaseCharValue(kase, 13);
+			this.#addCaseCharValue(kase, 32);
+			kase.body.push(Object.assign(new FuBreak(), { loopOrSwitch: switch_ }));
+			switch_.defaultBody.push(this.#newReturnTrue());
+			whileBlock.statements.push(switch_);
+			whileBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			methodBlock.statements.push(Object.assign(new FuReturn(), { value: Object.assign(new FuLiteralFalse(), { type: this.boolType }) }));
+			jsonParserSkipWhitespaceMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserSkipWhitespaceMethod);
+		let jsonParserParseObjectMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonObjectClass }), FuId.NONE, "ParseObject", true);
+		let jsonParserParseStringMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonStringClass }), FuId.NONE, "ParseString", true);
+		let jsonParserParseWhitespaceAndElementMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonElementClass }), FuId.NONE, "ParseWhitespaceAndElement", true);
+		{
+			let methodBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(jsonParserSkipWhitespaceMethod) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let resultVar = this.#newDynamicResult(jsonObjectClass);
+			methodBlock.statements.push(resultVar);
+			methodBlock.add(resultVar);
+			let ifBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 125n }) }), onTrue: ifBlock, onFalse: null }));
+			ifBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			ifBlock.statements.push(Object.assign(new FuReturn(), { value: FuSystem.#newSymbolReference(resultVar) }));
+			let whileBlock = new FuBlock();
+			whileBlock.setCompletesNormally(true);
+			methodBlock.statements.push(Object.assign(new FuWhile(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 34n }) }), body: whileBlock }));
+			let keyVar = FuVar.new(Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonStringClass }), "key", this.#newCall(jsonParserParseStringMethod));
+			whileBlock.statements.push(keyVar);
+			whileBlock.add(keyVar);
+			whileBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: FuSystem.#newSymbolReference(keyVar), op: FuToken.EQUAL, right: Object.assign(new FuLiteralNull(), { type: this.nullType }) }), op: FuToken.COND_OR, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(jsonParserSkipWhitespaceMethod) }), op: FuToken.COND_OR, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.NOT_EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 58n }) }) }) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			whileBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			let valueVar = FuVar.new(Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonElementClass }), "value", this.#newCall(jsonParserParseWhitespaceAndElementMethod));
+			whileBlock.statements.push(valueVar);
+			whileBlock.add(valueVar);
+			whileBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: FuSystem.#newSymbolReference(valueVar), op: FuToken.EQUAL, right: Object.assign(new FuLiteralNull(), { type: this.nullType }) }), op: FuToken.COND_OR, right: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(jsonParserSkipWhitespaceMethod) }) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			whileBlock.statements.push(Object.assign(new FuBinaryExpr(), { type: jsonElementPtr, left: Object.assign(new FuBinaryExpr(), { type: jsonElementPtr, left: FuSystem.#newMemberReference(FuSystem.#newSymbolReference(resultVar), jsonObjectValueField), op: FuToken.LEFT_BRACKET, right: FuSystem.#newMemberReference(FuSystem.#newSymbolReference(keyVar), jsonStringValueField) }), op: FuToken.ASSIGN, right: FuSystem.#newSymbolReference(valueVar) }));
+			let switch_ = Object.assign(new FuSwitch(), { value: Object.assign(new FuBinaryExpr(), { type: this.intType, left: FuSystem.#newSymbolReference(inputField), op: FuToken.LEFT_BRACKET, right: Object.assign(new FuPostfixExpr(), { type: this.nIntType, inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }) }) });
+			switch_.cases.push(new FuCase());
+			this.#addCaseCharValue(switch_.cases[0], 44);
+			switch_.cases[0].body.push(Object.assign(new FuBreak(), { loopOrSwitch: switch_ }));
+			switch_.cases.push(new FuCase());
+			this.#addCaseCharValue(switch_.cases[1], 125);
+			switch_.cases[1].body.push(Object.assign(new FuReturn(), { value: FuSystem.#newSymbolReference(resultVar) }));
+			switch_.defaultBody.push(this.#newReturnNull());
+			whileBlock.statements.push(switch_);
+			whileBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(jsonParserSkipWhitespaceMethod) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			methodBlock.statements.push(this.#newReturnNull());
+			jsonParserParseObjectMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseObjectMethod);
+		let jsonParserParseArrayMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonArrayClass }), FuId.NONE, "ParseArray", true);
+		let jsonParserParseElementMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonElementClass }), FuId.NONE, "ParseElement", true);
+		{
+			let methodBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(jsonParserSkipWhitespaceMethod) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let resultVar = this.#newDynamicResult(jsonArrayClass);
+			methodBlock.statements.push(resultVar);
+			methodBlock.add(resultVar);
+			let ifBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 93n }) }), onTrue: ifBlock, onFalse: null }));
+			ifBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			ifBlock.statements.push(Object.assign(new FuReturn(), { value: FuSystem.#newSymbolReference(resultVar) }));
+			let doWhileBlock = new FuBlock();
+			doWhileBlock.setCompletesNormally(true);
+			methodBlock.statements.push(Object.assign(new FuDoWhile(), { body: doWhileBlock, cond: this.#newCall(jsonParserSkipWhitespaceMethod) }));
+			let elementVar = FuVar.new(Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonElementClass }), "element", this.#newCall(jsonParserParseElementMethod));
+			doWhileBlock.statements.push(elementVar);
+			doWhileBlock.add(elementVar);
+			doWhileBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: FuSystem.#newSymbolReference(elementVar), op: FuToken.EQUAL, right: Object.assign(new FuLiteralNull(), { type: this.nullType }) }), op: FuToken.COND_OR, right: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(jsonParserSkipWhitespaceMethod) }) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let addCall = Object.assign(new FuCallExpr(), { type: this.voidType, method: FuSystem.#newMemberReference(FuSystem.#newMemberReference(FuSystem.#newSymbolReference(resultVar), jsonArrayValueField), listAddMethod) });
+			addCall.arguments_.push(FuSystem.#newSymbolReference(elementVar));
+			doWhileBlock.statements.push(addCall);
+			let switch_ = Object.assign(new FuSwitch(), { value: Object.assign(new FuBinaryExpr(), { type: this.intType, left: FuSystem.#newSymbolReference(inputField), op: FuToken.LEFT_BRACKET, right: Object.assign(new FuPostfixExpr(), { type: this.nIntType, inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }) }) });
+			switch_.cases.push(new FuCase());
+			this.#addCaseCharValue(switch_.cases[0], 44);
+			switch_.cases[0].body.push(Object.assign(new FuBreak(), { loopOrSwitch: switch_ }));
+			switch_.cases.push(new FuCase());
+			this.#addCaseCharValue(switch_.cases[1], 93);
+			switch_.cases[1].body.push(Object.assign(new FuReturn(), { value: FuSystem.#newSymbolReference(resultVar) }));
+			switch_.defaultBody.push(this.#newReturnNull());
+			doWhileBlock.statements.push(switch_);
+			methodBlock.statements.push(this.#newReturnNull());
+			jsonParserParseArrayMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseArrayMethod);
+		{
+			let methodBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			let resultVar = FuVar.new(Object.assign(new FuStorageType(), { class: stringWriterClass }), "result");
+			methodBlock.statements.push(resultVar);
+			methodBlock.add(resultVar);
+			let startOffsetVar = FuVar.new(this.nIntType, "startOffset", FuSystem.#newSymbolReference(offsetField));
+			methodBlock.statements.push(startOffsetVar);
+			methodBlock.add(startOffsetVar);
+			let whileBlock = new FuBlock();
+			let while_ = Object.assign(new FuWhile(), { cond: this.#newOffsetLessInputLength(offsetField, inputLengthField), body: whileBlock });
+			let switch_ = Object.assign(new FuSwitch(), { value: this.#newInputAtOffset(inputField, offsetField) });
+			switch_.cases.push(new FuCase());
+			for (let i = 0; i < 32; i++)
+				switch_.cases[0].values.push(this.newLiteralLong(BigInt(i)));
+			switch_.cases[0].body.push(this.#newReturnNull());
+			switch_.cases.push(new FuCase());
+			this.#addCaseCharValue(switch_.cases[1], 34);
+			switch_.cases[1].body.push(this.#newWriteJsonStringPart(inputField, stringSubstringMethod, startOffsetVar, offsetField, resultVar, textWriterWriteMethod));
+			let init = new FuAggregateInitializer();
+			init.items.push(Object.assign(new FuBinaryExpr(), { left: FuSystem.#newSymbolReference(jsonStringValueField), op: FuToken.ASSIGN, right: this.#newMethodCall(resultVar, stringWriterToStringMethod) }));
+			switch_.cases[1].body.push(Object.assign(new FuReturn(), { value: Object.assign(new FuPrefixExpr(), { type: Object.assign(new FuDynamicPtrType(), { class: jsonStringClass }), op: FuToken.NEW, inner: init }) }));
+			switch_.cases.push(new FuCase());
+			this.#addCaseCharValue(switch_.cases[2], 92);
+			switch_.cases[2].body.push(this.#newWriteJsonStringPart(inputField, stringSubstringMethod, startOffsetVar, offsetField, resultVar, textWriterWriteMethod));
+			switch_.cases[2].body.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: FuSystem.#newSymbolReference(offsetField), op: FuToken.GREATER_OR_EQUAL, right: FuSystem.#newSymbolReference(inputLengthField) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let switch2 = Object.assign(new FuSwitch(), { value: this.#newInputAtOffset(inputField, offsetField) });
+			switch2.cases.push(new FuCase());
+			this.#addCaseCharValue(switch2.cases[0], 34);
+			this.#addCaseCharValue(switch2.cases[0], 92);
+			this.#addCaseCharValue(switch2.cases[0], 47);
+			switch2.cases[0].body.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(startOffsetVar), op: FuToken.ASSIGN, right: Object.assign(new FuPostfixExpr(), { type: this.nIntType, inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }) }));
+			switch2.cases[0].body.push(Object.assign(new FuContinue(), { loop: while_ }));
+			this.#addJsonEscape(switch2, 98, resultVar, textWriterWriteCharMethod, this.newLiteralLong(8n));
+			this.#addJsonEscape(switch2, 102, resultVar, textWriterWriteCharMethod, this.newLiteralLong(12n));
+			this.#addJsonEscape(switch2, 110, resultVar, textWriterWriteCharMethod, Object.assign(new FuLiteralChar(), { type: this.intType, value: 10n }));
+			this.#addJsonEscape(switch2, 114, resultVar, textWriterWriteCharMethod, Object.assign(new FuLiteralChar(), { type: this.intType, value: 13n }));
+			this.#addJsonEscape(switch2, 116, resultVar, textWriterWriteCharMethod, Object.assign(new FuLiteralChar(), { type: this.intType, value: 9n }));
+			switch2.cases.push(new FuCase());
+			this.#addCaseCharValue(switch2.cases[6], 117);
+			switch2.cases[6].body.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(offsetField), op: FuToken.PLUS, right: this.newLiteralLong(5n) }), op: FuToken.GREATER_OR_EQUAL, right: FuSystem.#newSymbolReference(inputLengthField) }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let cVar = FuVar.new(this.intType, "c");
+			switch2.cases[6].body.push(cVar);
+			let substringCall = this.#newMethodCall(inputField, stringSubstringMethod);
+			substringCall.arguments_.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(offsetField), op: FuToken.PLUS, right: this.newLiteralLong(1n) }));
+			substringCall.arguments_.push(this.newLiteralLong(4n));
+			let tryParseCall = this.#newMethodCall(cVar, intTryParseMethod);
+			tryParseCall.arguments_.push(substringCall);
+			tryParseCall.arguments_.push(this.newLiteralLong(16n));
+			switch2.cases[6].body.push(Object.assign(new FuIf(), { cond: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: tryParseCall }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let writeCodePointCall = this.#newMethodCall(resultVar, textWriterWriteCodePointMethod);
+			writeCodePointCall.arguments_.push(FuSystem.#newSymbolReference(cVar));
+			switch2.cases[6].body.push(writeCodePointCall);
+			switch2.cases[6].body.push(Object.assign(new FuBinaryExpr(), { left: FuSystem.#newSymbolReference(offsetField), op: FuToken.ADD_ASSIGN, right: this.newLiteralLong(4n) }));
+			switch2.cases[6].body.push(Object.assign(new FuBreak(), { loopOrSwitch: switch2 }));
+			switch2.defaultBody.push(this.#newReturnNull());
+			switch_.cases[2].body.push(switch2);
+			switch_.cases[2].body.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(startOffsetVar), op: FuToken.ASSIGN, right: Object.assign(new FuPrefixExpr(), { type: this.nIntType, op: FuToken.INCREMENT, inner: FuSystem.#newSymbolReference(offsetField) }) }));
+			switch_.cases[2].body.push(Object.assign(new FuBreak(), { loopOrSwitch: switch_ }));
+			switch_.defaultBody.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			switch_.defaultBody.push(Object.assign(new FuBreak(), { loopOrSwitch: switch_ }));
+			whileBlock.statements.push(switch_);
+			methodBlock.statements.push(while_);
+			methodBlock.statements.push(this.#newReturnNull());
+			jsonParserParseStringMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseStringMethod);
+		let jsonParserSeeDigitMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, this.boolType, FuId.NONE, "SeeDigit", false);
+		jsonParserSeeDigitMethod.body = Object.assign(new FuReturn(), { value: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newOffsetLessInputLength(offsetField, inputLengthField), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.GREATER_OR_EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 48n }) }) }), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.LESS_OR_EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 57n }) }) }) });
+		jsonParserClass.add(jsonParserSeeDigitMethod);
+		let jsonParserParseDigitsMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, this.voidType, FuId.NONE, "ParseDigits", true);
+		{
+			let methodBlock = new FuBlock();
+			let while_ = Object.assign(new FuWhile(), { cond: this.#newCall(jsonParserSeeDigitMethod), body: Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }) });
+			methodBlock.statements.push(while_);
+			jsonParserParseDigitsMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseDigitsMethod);
+		let jsonParserParseNumberMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonNumberClass }), FuId.NONE, "ParseNumber", true);
+		{
+			let methodBlock = new FuBlock();
+			let startOffsetVar = FuVar.new(this.nIntType, "startOffset", FuSystem.#newSymbolReference(offsetField));
+			methodBlock.statements.push(startOffsetVar);
+			methodBlock.add(startOffsetVar);
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 45n }) }), onTrue: Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }), onFalse: null }));
+			methodBlock.statements.push(this.#newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.intType, left: FuSystem.#newSymbolReference(inputField), op: FuToken.LEFT_BRACKET, right: Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }) }), op: FuToken.GREATER, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 48n }) }), onTrue: this.#newCall(jsonParserParseDigitsMethod) }));
+			let ifBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newOffsetLessInputLength(offsetField, inputLengthField), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 46n }) }) }), onTrue: ifBlock, onFalse: null }));
+			ifBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			ifBlock.statements.push(this.#newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
+			ifBlock.statements.push(this.#newCall(jsonParserParseDigitsMethod));
+			let if2Block = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newOffsetLessInputLength(offsetField, inputLengthField), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.intType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.OR, right: this.newLiteralLong(32n) }), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 101n }) }) }), onTrue: if2Block, onFalse: null }));
+			if2Block.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuPrefixExpr(), { type: this.nIntType, op: FuToken.INCREMENT, inner: FuSystem.#newSymbolReference(offsetField) }), op: FuToken.LESS, right: FuSystem.#newSymbolReference(inputLengthField) }), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 43n }) }), op: FuToken.COND_OR, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 45n }) }) }) }), onTrue: Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }), onFalse: null }));
+			if2Block.statements.push(this.#newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
+			if2Block.statements.push(this.#newCall(jsonParserParseDigitsMethod));
+			let dVar = FuVar.new(this.doubleType, "d");
+			methodBlock.statements.push(dVar);
+			methodBlock.add(dVar);
+			let substringCall = this.#newMethodCall(inputField, stringSubstringMethod);
+			substringCall.arguments_.push(FuSystem.#newSymbolReference(startOffsetVar));
+			substringCall.arguments_.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(offsetField), op: FuToken.MINUS, right: FuSystem.#newSymbolReference(startOffsetVar) }));
+			let tryParseCall = this.#newMethodCall(dVar, doubleTryParseMethod);
+			tryParseCall.arguments_.push(substringCall);
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: tryParseCall }), onTrue: this.#newReturnNull(), onFalse: null }));
+			let init = new FuAggregateInitializer();
+			init.items.push(Object.assign(new FuBinaryExpr(), { left: FuSystem.#newSymbolReference(jsonNumberValueField), op: FuToken.ASSIGN, right: FuSystem.#newSymbolReference(dVar) }));
+			methodBlock.statements.push(Object.assign(new FuReturn(), { value: Object.assign(new FuPrefixExpr(), { type: Object.assign(new FuDynamicPtrType(), { class: jsonNumberClass }), op: FuToken.NEW, inner: init }) }));
+			jsonParserParseNumberMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseNumberMethod);
+		let sParameter = FuVar.new(this.stringPtrType, "s");
+		let jsonParserParseKeywordMethod = FuMethod.new(jsonParserClass, FuVisibility.PRIVATE, FuCallType.NORMAL, this.boolType, FuId.NONE, "ParseKeyword", true, sParameter);
+		{
+			let methodBlock = new FuBlock();
+			let foreachBlock = new FuBlock();
+			let loop = Object.assign(new FuForeach(), { collection: FuSystem.#newSymbolReference(sParameter), body: foreachBlock });
+			let cVar = FuVar.new(this.intType, "c");
+			loop.add(cVar);
+			foreachBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuPrefixExpr(), { type: this.nIntType, op: FuToken.INCREMENT, inner: FuSystem.#newSymbolReference(offsetField) }), op: FuToken.GREATER_OR_EQUAL, right: FuSystem.#newSymbolReference(inputLengthField) }), op: FuToken.COND_OR, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.NOT_EQUAL, right: FuSystem.#newSymbolReference(cVar) }) }), onTrue: this.#newReturnFalse(), onFalse: null }));
+			methodBlock.statements.push(loop);
+			methodBlock.statements.push(Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }));
+			methodBlock.statements.push(this.#newReturnTrue());
+			jsonParserParseKeywordMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseKeywordMethod);
+		{
+			let methodBlock = new FuBlock();
+			let switch_ = Object.assign(new FuSwitch(), { value: this.#newInputAtOffset(inputField, offsetField) });
+			this.#addParseJsonType(switch_, 123, jsonParserParseObjectMethod);
+			this.#addParseJsonType(switch_, 91, jsonParserParseArrayMethod);
+			this.#addParseJsonType(switch_, 34, jsonParserParseStringMethod);
+			this.#addParseJsonType(switch_, 45, jsonParserParseNumberMethod);
+			this.#addParseJsonKeyword(switch_, "true", jsonParserParseKeywordMethod, jsonTrueClass);
+			this.#addParseJsonKeyword(switch_, "false", jsonParserParseKeywordMethod, jsonBooleanClass);
+			this.#addParseJsonKeyword(switch_, "null", jsonParserParseKeywordMethod, jsonNullClass);
+			switch_.defaultBody.push(this.#newReturnNull());
+			methodBlock.statements.push(switch_);
+			jsonParserParseElementMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserParseElementMethod);
+		jsonParserParseWhitespaceAndElementMethod.body = Object.assign(new FuReturn(), { value: Object.assign(new FuSelectExpr(), { cond: this.#newCall(jsonParserSkipWhitespaceMethod), onTrue: this.#newCall(jsonParserParseElementMethod), onFalse: Object.assign(new FuLiteralNull(), { type: this.nullType }) }) });
+		jsonParserClass.add(jsonParserParseWhitespaceAndElementMethod);
+		{
+			let sParam = FuVar.new(this.stringPtrType, "s");
+			jsonParserTryParseMethod.parameters.add(sParam);
+			let methodBlock = new FuBlock();
+			methodBlock.statements.push(Object.assign(new FuBinaryExpr(), { type: this.stringPtrType, left: FuSystem.#newSymbolReference(inputField), op: FuToken.ASSIGN, right: FuSystem.#newSymbolReference(sParam) }));
+			methodBlock.statements.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(offsetField), op: FuToken.ASSIGN, right: this.newLiteralLong(0n) }));
+			methodBlock.statements.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: FuSystem.#newSymbolReference(inputLengthField), op: FuToken.ASSIGN, right: FuSystem.#newMemberReference(FuSystem.#newSymbolReference(sParam), stringLengthProperty) }));
+			let resultVar = FuVar.new(Object.assign(new FuDynamicPtrType(), { nullable: true, class: jsonElementClass }), "result", this.#newCall(jsonParserParseWhitespaceAndElementMethod));
+			methodBlock.statements.push(resultVar);
+			methodBlock.statements.push(Object.assign(new FuReturn(), { value: Object.assign(new FuSelectExpr(), { cond: this.#newCall(jsonParserSkipWhitespaceMethod), onTrue: Object.assign(new FuLiteralNull(), { type: this.nullType }), onFalse: FuSystem.#newSymbolReference(resultVar) }) }));
+			jsonParserTryParseMethod.body = methodBlock;
+		}
+		jsonParserClass.add(jsonParserTryParseMethod);
+		jsonParserClass.cppFriends.add("JsonElement");
+		this.add(jsonParserClass);
+		this.jsonClasses[8] = jsonParserClass;
 		let numericType = Object.assign(new FuNumericType(), { id: FuId.NUMERIC_TYPE, name: "numeric" });
 		let floatingType = Object.assign(new FuFloatingType(), { id: FuId.FLOATING_TYPE, name: "float" });
 		let floatIntType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_INT_TYPE, name: "float" });
@@ -3779,6 +4126,7 @@ export class FuSystem extends FuScope
 	exceptionClass = FuClass.new(FuCallType.NORMAL, FuId.EXCEPTION_CLASS, "Exception");
 	regexOptionsEnum;
 	lockPtrType = new FuReadWriteClassType();
+	jsonClasses = new Array(9);
 
 	newLiteralLong(value, loc = 0)
 	{
@@ -3869,6 +4217,140 @@ export class FuSystem extends FuScope
 	{
 		target.add(this.#newConstLong("MinValue", min));
 		target.add(this.#newConstLong("MaxValue", max));
+	}
+
+	#newReturnFalse()
+	{
+		return Object.assign(new FuReturn(), { value: Object.assign(new FuLiteralFalse(), { type: this.boolType }) });
+	}
+
+	#newReturnTrue()
+	{
+		return Object.assign(new FuReturn(), { value: Object.assign(new FuLiteralTrue(), { type: this.boolType }) });
+	}
+
+	#newReturnNull()
+	{
+		return Object.assign(new FuReturn(), { value: Object.assign(new FuLiteralNull(), { type: this.nullType }) });
+	}
+
+	#addFalseMethod(klass, callType, id, name)
+	{
+		let method = FuMethod.new(klass, FuVisibility.PUBLIC, callType, this.boolType, id, name, false);
+		method.body = this.#newReturnFalse();
+		klass.add(method);
+	}
+
+	#addVirtualAssertFalseMethod(klass, type, id, name)
+	{
+		let method = FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.VIRTUAL, type, id, name, false);
+		let block = new FuBlock();
+		block.statements.push(Object.assign(new FuAssert(), { cond: Object.assign(new FuLiteralFalse(), { type: this.boolType }) }));
+		method.body = block;
+		klass.add(method);
+	}
+
+	#addOverrideTrueMethod(klass, name)
+	{
+		let method = FuMethod.new(klass, FuVisibility.PUBLIC, FuCallType.OVERRIDE, this.boolType, FuId.NONE, name, false);
+		method.body = this.#newReturnTrue();
+		klass.add(method);
+	}
+
+	static #newSymbolReference(symbol)
+	{
+		return Object.assign(new FuSymbolReference(), { type: symbol.type, name: symbol.name, symbol: symbol });
+	}
+
+	static #newMemberReference(left, member)
+	{
+		return Object.assign(new FuSymbolReference(), { left: left, type: member.type, name: member.name, symbol: member });
+	}
+
+	#newCall(method)
+	{
+		return Object.assign(new FuCallExpr(), { type: method.type, method: FuSystem.#newSymbolReference(method) });
+	}
+
+	#newMethodCall(obj, method)
+	{
+		return Object.assign(new FuCallExpr(), { type: method.type, method: FuSystem.#newMemberReference(FuSystem.#newSymbolReference(obj), method) });
+	}
+
+	#addJsonGetMethod(klass, type, name, valueField)
+	{
+		let method = FuMethod.new(klass, FuVisibility.PUBLIC, FuCallType.OVERRIDE, type, FuId.NONE, name, false);
+		method.body = Object.assign(new FuReturn(), { value: FuSystem.#newSymbolReference(valueField) });
+		klass.add(method);
+	}
+
+	#newOffsetLessInputLength(offsetField, inputLengthField)
+	{
+		return Object.assign(new FuBinaryExpr(), { type: this.boolType, left: FuSystem.#newSymbolReference(offsetField), op: FuToken.LESS, right: FuSystem.#newSymbolReference(inputLengthField) });
+	}
+
+	#newInputAtOffset(inputField, offsetField)
+	{
+		return Object.assign(new FuBinaryExpr(), { type: this.intType, left: FuSystem.#newSymbolReference(inputField), op: FuToken.LEFT_BRACKET, right: FuSystem.#newSymbolReference(offsetField) });
+	}
+
+	#addCaseCharValue(kase, value)
+	{
+		kase.values.push(Object.assign(new FuLiteralChar(), { type: this.intType, value: BigInt(value) }));
+	}
+
+	#newDynamicResult(klass)
+	{
+		let type = Object.assign(new FuDynamicPtrType(), { class: klass });
+		return FuVar.new(type, "result", Object.assign(new FuPrefixExpr(), { type: type, op: FuToken.NEW, inner: null }));
+	}
+
+	#newWriteJsonStringPart(inputField, stringSubstringMethod, startOffsetVar, offsetField, resultVar, textWriterWriteMethod)
+	{
+		let substringCall = this.#newMethodCall(inputField, stringSubstringMethod);
+		substringCall.arguments_.push(FuSystem.#newSymbolReference(startOffsetVar));
+		substringCall.arguments_.push(Object.assign(new FuBinaryExpr(), { type: this.nIntType, left: Object.assign(new FuPostfixExpr(), { type: this.nIntType, inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }), op: FuToken.MINUS, right: FuSystem.#newSymbolReference(startOffsetVar) }));
+		let writeCall = this.#newMethodCall(resultVar, textWriterWriteMethod);
+		writeCall.arguments_.push(substringCall);
+		return writeCall;
+	}
+
+	#addJsonEscape(switch2, c, resultVar, textWriterWriteCharMethod, literal)
+	{
+		switch2.cases.push(new FuCase());
+		let kase = switch2.cases.at(-1);
+		this.#addCaseCharValue(kase, c);
+		let call = this.#newMethodCall(resultVar, textWriterWriteCharMethod);
+		call.arguments_.push(literal);
+		kase.body.push(call);
+		kase.body.push(Object.assign(new FuBreak(), { loopOrSwitch: switch2 }));
+	}
+
+	#newIfNotSeeDigitReturnNull(seeDigitMethod)
+	{
+		return Object.assign(new FuIf(), { cond: Object.assign(new FuPrefixExpr(), { type: this.boolType, op: FuToken.EXCLAMATION_MARK, inner: this.#newCall(seeDigitMethod) }), onTrue: this.#newReturnNull(), onFalse: null });
+	}
+
+	#addParseJsonType(switch_, c, method)
+	{
+		switch_.cases.push(new FuCase());
+		let kase = switch_.cases.at(-1);
+		this.#addCaseCharValue(kase, c);
+		if (c == 45) {
+			for (c = 48; c <= 57; c++)
+				this.#addCaseCharValue(kase, c);
+		}
+		kase.body.push(Object.assign(new FuReturn(), { value: this.#newCall(method) }));
+	}
+
+	#addParseJsonKeyword(switch_, keyword, parseKeywordMethod, klass)
+	{
+		switch_.cases.push(new FuCase());
+		let kase = switch_.cases.at(-1);
+		this.#addCaseCharValue(kase, keyword.charCodeAt(0));
+		let call = this.#newCall(parseKeywordMethod);
+		call.arguments_.push(this.newLiteralString(keyword.substring(1)));
+		kase.body.push(Object.assign(new FuReturn(), { value: Object.assign(new FuSelectExpr(), { cond: call, onTrue: Object.assign(new FuPrefixExpr(), { type: Object.assign(new FuDynamicPtrType(), { class: klass }), op: FuToken.NEW, inner: null }), onFalse: Object.assign(new FuLiteralNull(), { type: this.nullType }) }) }));
 	}
 
 	static new()
@@ -10122,6 +10604,7 @@ export class GenCCppD extends GenTyped
 
 export class GenCCpp extends GenCCppD
 {
+	hasJsonElement;
 
 	writeDocCode(s)
 	{
@@ -10875,6 +11358,7 @@ export class GenC extends GenCCpp
 	{
 		switch (klass.class.id) {
 		case FuId.NONE:
+		case FuId.JSON_ELEMENT_CLASS:
 			if (!(klass instanceof FuReadWriteClassType))
 				this.write("const ");
 			this.writeName(klass.class);
@@ -11142,6 +11626,7 @@ export class GenC extends GenCCpp
 		switch (elementType.class.id) {
 		case FuId.NONE:
 		case FuId.ARRAY_PTR_CLASS:
+		case FuId.JSON_ELEMENT_CLASS:
 			if (elementType instanceof FuDynamicPtrType) {
 				this.#sharedRelease = true;
 				this.#addListFree(FuId.NONE);
@@ -11329,20 +11814,18 @@ export class GenC extends GenCCpp
 				this.write("free");
 			else if (type instanceof FuOwningType) {
 				const owning = type;
-				if (owning.class.id == FuId.NONE) {
-					if (type instanceof FuStorageType) {
-						if (GenC.#needsDestructor(owning.class)) {
-							this.write("(GDestroyNotify) ");
-							this.writeName(owning.class);
-							this.write("_Delete");
-						}
-						else
-							this.write("free");
-						break fuswitch0;
-					}
-				}
-				else
+				if (owning.class.id != FuId.NONE && owning.class.id != FuId.JSON_ELEMENT_CLASS)
 					this.write("(GDestroyNotify) ");
+				else if (type instanceof FuStorageType) {
+					if (GenC.#needsDestructor(owning.class)) {
+						this.write("(GDestroyNotify) ");
+						this.writeName(owning.class);
+						this.write("_Delete");
+					}
+					else
+						this.write("free");
+					break fuswitch0;
+				}
 				this.#writeDestructMethodName(owning);
 			}
 			else
@@ -12973,6 +13456,32 @@ export class GenC extends GenCCpp
 		case FuId.MATCH_GET_CAPTURE:
 			this.writeCall("g_match_info_fetch", obj, args[0]);
 			break;
+		case FuId.JSON_ELEMENT_PARSE:
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+		case FuId.JSON_ELEMENT_IS_STRING:
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+		case FuId.JSON_ELEMENT_IS_NULL:
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+		case FuId.JSON_ELEMENT_GET_STRING:
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			this.hasJsonElement = true;
+			this.include("errno.h");
+			this.include("limits.h");
+			this.includeStdBool();
+			this.includeStdDef();
+			this.include("string.h");
+			this.#stringSubstring = true;
+			this.#sharedMake = true;
+			this.#sharedAddRef = true;
+			this.#intFunctions.add(FuId.INT_TRY_PARSE);
+			this.#doubleTryParse = true;
+			this.#listFrees.add(FuId.NONE);
+			this.writeCCall(obj, method, args);
+			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_LOG2:
 		case FuId.MATH_SQRT:
@@ -14108,7 +14617,16 @@ export class GenC extends GenCCpp
 		}
 	}
 
-	#writeLibrary()
+	#writeClassCode(klass)
+	{
+		this.currentClass = klass;
+		this.writeConstructor(klass);
+		this.writeDestructor(klass);
+		this.#writeNewDelete(klass, true);
+		this.writeMethods(klass);
+	}
+
+	#writeLibrary(program)
 	{
 		this.#writeIntLibrary("Int", "int", this.#intFunctions);
 		this.#writeIntLibrary("NInt", "ptrdiff_t", this.#nIntFunctions);
@@ -14472,6 +14990,14 @@ export class GenC extends GenCCpp
 			this.writeLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
 			this.closeBlock();
 		}
+		if (this.hasJsonElement) {
+			for (const klass of program.system.jsonClasses)
+				this.#writeTypedef(klass);
+			for (const klass of program.system.jsonClasses)
+				this.writeClassInternal(klass);
+			for (const klass of program.system.jsonClasses)
+				this.#writeClassCode(klass);
+		}
 	}
 
 	writeResources(resources)
@@ -14552,22 +15078,18 @@ export class GenC extends GenCCpp
 		this.#treeCompareInteger = false;
 		this.#treeCompareString = false;
 		this.#dateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
+		this.hasJsonElement = false;
 		this.#compares.clear();
 		this.#contains.clear();
 		this.openStringWriter();
 		for (const klass of program.classes)
 			this.writeClass(klass, program);
 		this.writeResources(program.resources);
-		for (const klass of program.classes) {
-			this.currentClass = klass;
-			this.writeConstructor(klass);
-			this.writeDestructor(klass);
-			this.#writeNewDelete(klass, true);
-			this.writeMethods(klass);
-		}
+		for (const klass of program.classes)
+			this.#writeClassCode(klass);
 		this.include("stdlib.h");
 		this.createImplementationFile(program, outputFile, ".h");
-		this.#writeLibrary();
+		this.#writeLibrary(program);
 		this.writeRegexOptionsEnum(program);
 		this.writeTypedefs(program, false);
 		this.closeStringWriter();
@@ -16217,6 +16739,31 @@ export class GenCpp extends GenCCpp
 			this.#startMethodCall(obj);
 			this.writeCall("str", args[0]);
 			break;
+		case FuId.JSON_ELEMENT_PARSE:
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+		case FuId.JSON_ELEMENT_IS_STRING:
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+		case FuId.JSON_ELEMENT_IS_NULL:
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+		case FuId.JSON_ELEMENT_GET_STRING:
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			this.hasJsonElement = true;
+			this.include("charconv");
+			this.include("sstream");
+			this.include("string_view");
+			this.#numberTryParse = true;
+			obj.accept(this, FuPriority.PRIMARY);
+			if (method.callType == FuCallType.STATIC)
+				this.write("::");
+			else
+				this.writeMemberOp(obj, null);
+			this.writeName(method);
+			this.writeCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_ABS:
 		case FuId.MATH_IS_FINITE:
@@ -17031,6 +17578,13 @@ export class GenCpp extends GenCCpp
 		this.writeBody(method);
 	}
 
+	#writeForwardClass(klass)
+	{
+		this.write("class ");
+		this.write(klass.name);
+		this.writeCharLine(59);
+	}
+
 	#writeResources(resources, define)
 	{
 		if (Object.keys(resources).length == 0)
@@ -17065,6 +17619,7 @@ export class GenCpp extends GenCCpp
 	{
 		this.writtenTypes.clear();
 		this.inHeaderFile = true;
+		this.hasJsonElement = false;
 		this.#hasPriorityQueue = false;
 		this.#usingStringViewLiterals = false;
 		this.#hasEnumFlags = false;
@@ -17076,14 +17631,16 @@ export class GenCpp extends GenCCpp
 		this.#openNamespace(namespace);
 		this.writeRegexOptionsEnum(program);
 		for (let type = program.first; type != null; type = type.next) {
-			let enu;
-			if ((enu = type) instanceof FuEnum)
-				this.writeEnum(enu);
-			else {
-				this.write("class ");
-				this.write(type.name);
-				this.writeCharLine(59);
+			if (type instanceof FuClass) {
+				const klass = type;
+				this.#writeForwardClass(klass);
 			}
+			else if (type instanceof FuEnum) {
+				const enu = type;
+				this.writeEnum(enu);
+			}
+			else
+				throw new Error();
 		}
 		for (const klass of program.classes)
 			this.writeClass(klass, program);
@@ -17219,6 +17776,14 @@ export class GenCpp extends GenCCpp
 			this.writeLine("bool operator<(const FuPriorityQueueEntry &that) const { return that.priority < priority; }");
 			this.indent--;
 			this.writeLine("};");
+		}
+		if (this.hasJsonElement) {
+			for (const klass of program.system.jsonClasses)
+				this.#writeForwardClass(klass);
+			for (const klass of program.system.jsonClasses)
+				this.writeClassInternal(klass);
+			for (const klass of program.system.jsonClasses)
+				this.writeMethods(klass);
 		}
 		this.closeStringWriter();
 		this.closeFile();
@@ -20037,6 +20602,7 @@ export class GenJava extends GenTyped
 	#outputFile;
 	#namespace;
 	#hasPriorityQueue;
+	#hasJsonElement;
 
 	getTargetName()
 	{
@@ -21041,6 +21607,24 @@ export class GenJava extends GenTyped
 		case FuId.MATCH_GET_CAPTURE:
 			this.writeMethodCall(obj, "group", args[0]);
 			break;
+		case FuId.JSON_ELEMENT_PARSE:
+		case FuId.JSON_ELEMENT_IS_OBJECT:
+		case FuId.JSON_ELEMENT_IS_ARRAY:
+		case FuId.JSON_ELEMENT_IS_STRING:
+		case FuId.JSON_ELEMENT_IS_NUMBER:
+		case FuId.JSON_ELEMENT_IS_BOOLEAN:
+		case FuId.JSON_ELEMENT_IS_NULL:
+		case FuId.JSON_ELEMENT_GET_OBJECT:
+		case FuId.JSON_ELEMENT_GET_ARRAY:
+		case FuId.JSON_ELEMENT_GET_STRING:
+		case FuId.JSON_ELEMENT_GET_DOUBLE:
+		case FuId.JSON_ELEMENT_GET_BOOLEAN:
+			this.#hasJsonElement = true;
+			obj.accept(this, FuPriority.PRIMARY);
+			this.writeChar(46);
+			this.writeName(method);
+			this.writeCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_SQRT:
 			if (type.id == FuId.FLOAT_TYPE)
@@ -21596,6 +22180,12 @@ export class GenJava extends GenTyped
 		this.closeFile();
 	}
 
+	#writeJsonElement(program)
+	{
+		for (const klass of program.system.jsonClasses)
+			this.writeClass(klass, program);
+	}
+
 	#writeResources()
 	{
 		this.#createJavaFile("FuResource");
@@ -21638,9 +22228,12 @@ export class GenJava extends GenTyped
 		this.#outputFile = outputFile;
 		this.#namespace = namespace;
 		this.#hasPriorityQueue = false;
+		this.#hasJsonElement = false;
 		this.writeTypes(program);
 		if (this.#hasPriorityQueue)
 			this.#writePriorityQueue();
+		if (this.#hasJsonElement)
+			this.#writeJsonElement(program);
 		if (Object.keys(program.resources).length > 0)
 			this.#writeResources();
 	}

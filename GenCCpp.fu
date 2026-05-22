@@ -20,6 +20,8 @@
 
 public abstract class GenCCpp : GenCCppD
 {
+	protected bool HasJsonElement;
+
 	protected override void WriteDocCode!(string s)
 	{
 		if (s == "null")

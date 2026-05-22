@@ -23,6 +23,7 @@ public class GenJava : GenTyped
 	string OutputFile;
 	string Namespace;
 	bool HasPriorityQueue;
+	bool HasJsonElement;
 
 	protected override string GetTargetName() => "Java";
 
@@ -1023,6 +1024,24 @@ public class GenJava : GenTyped
 		case FuId.MatchGetCapture:
 			WriteMethodCall(obj, "group", args[0]);
 			break;
+		case FuId.JsonElementParse:
+		case FuId.JsonElementIsObject:
+		case FuId.JsonElementIsArray:
+		case FuId.JsonElementIsString:
+		case FuId.JsonElementIsNumber:
+		case FuId.JsonElementIsBoolean:
+		case FuId.JsonElementIsNull:
+		case FuId.JsonElementGetObject:
+		case FuId.JsonElementGetArray:
+		case FuId.JsonElementGetString:
+		case FuId.JsonElementGetDouble:
+		case FuId.JsonElementGetBoolean:
+			this.HasJsonElement = true;
+			obj.Accept(this, FuPriority.Primary);
+			WriteChar('.');
+			WriteName(method);
+			WriteCoercedArgsInParentheses(method, args);
+			break;
 		case FuId.MathMethod:
 		case FuId.MathSqrt:
 			if (type.Id == FuId.FloatType)
@@ -1571,6 +1590,12 @@ public class GenJava : GenTyped
 		CloseFile();
 	}
 
+	void WriteJsonElement!(FuProgram program)
+	{
+		foreach (FuClass klass in program.System.JsonClasses)
+			WriteClass(klass, program);
+	}
+
 	void WriteResources!()
 	{
 		CreateJavaFile("FuResource");
@@ -1613,9 +1638,12 @@ public class GenJava : GenTyped
 		this.OutputFile = outputFile;
 		this.Namespace = namespace;
 		this.HasPriorityQueue = false;
+		this.HasJsonElement = false;
 		WriteTypes(program);
 		if (this.HasPriorityQueue)
 			WritePriorityQueue();
+		if (this.HasJsonElement)
+			WriteJsonElement(program);
 		if (program.Resources.Count > 0)
 			WriteResources();
 	}

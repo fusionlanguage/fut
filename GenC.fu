@@ -480,6 +480,7 @@ public class GenC : GenCCpp
 	{
 		switch (klass.Class.Id) {
 		case FuId.None:
+		case FuId.JsonElementClass:
 			if (!(klass is FuReadWriteClassType))
 				Write("const ");
 			WriteName(klass.Class);
@@ -737,6 +738,7 @@ public class GenC : GenCCpp
 		switch (elementType.Class.Id) {
 		case FuId.None:
 		case FuId.ArrayPtrClass:
+		case FuId.JsonElementClass:
 			if (elementType is FuDynamicPtrType) {
 				this.SharedRelease = true;
 				AddListFree(FuId.None);
@@ -918,20 +920,18 @@ public class GenC : GenCCpp
 			Write("free");
 			break;
 		case FuOwningType owning:
-			if (owning.Class.Id == FuId.None) {
-				if (type is FuStorageType) {
-					if (NeedsDestructor(owning.Class)) {
-						Write("(GDestroyNotify) ");
-						WriteName(owning.Class);
-						Write("_Delete"); // TODO: emit
-					}
-					else
-						Write("free");
-					break;
-				}
-			}
-			else
+			if (owning.Class.Id != FuId.None && owning.Class.Id != FuId.JsonElementClass)
 				Write("(GDestroyNotify) ");
+			else if (type is FuStorageType) {
+				if (NeedsDestructor(owning.Class)) {
+					Write("(GDestroyNotify) ");
+					WriteName(owning.Class);
+					Write("_Delete"); // TODO: emit
+				}
+				else
+					Write("free");
+				break;
+			}
 			WriteDestructMethodName(owning);
 			break;
 		default:
@@ -2551,6 +2551,32 @@ public class GenC : GenCCpp
 		case FuId.MatchGetCapture:
 			WriteCall("g_match_info_fetch", obj, args[0]);
 			break;
+		case FuId.JsonElementParse:
+		case FuId.JsonElementIsObject:
+		case FuId.JsonElementIsArray:
+		case FuId.JsonElementIsString:
+		case FuId.JsonElementIsNumber:
+		case FuId.JsonElementIsBoolean:
+		case FuId.JsonElementIsNull:
+		case FuId.JsonElementGetObject:
+		case FuId.JsonElementGetArray:
+		case FuId.JsonElementGetString:
+		case FuId.JsonElementGetDouble:
+		case FuId.JsonElementGetBoolean:
+			this.HasJsonElement = true;
+			Include("errno.h");
+			Include("limits.h");
+			IncludeStdBool();
+			IncludeStdDef();
+			Include("string.h");
+			this.StringSubstring = true;
+			this.SharedMake = true;
+			this.SharedAddRef = true;
+			this.IntFunctions.Add(FuId.IntTryParse);
+			this.DoubleTryParse = true;
+			this.ListFrees.Add(FuId.None);
+			WriteCCall(obj, method, args);
+			break;
 		case FuId.MathMethod:
 		case FuId.MathLog2:
 		case FuId.MathSqrt:
@@ -3678,7 +3704,16 @@ public class GenC : GenCCpp
 		}
 	}
 
-	void WriteLibrary!()
+	void WriteClassCode!(FuClass klass)
+	{
+		this.CurrentClass = klass;
+		WriteConstructor(klass);
+		WriteDestructor(klass);
+		WriteNewDelete(klass, true);
+		WriteMethods(klass);
+	}
+
+	void WriteLibrary!(FuProgram program)
 	{
 		WriteIntLibrary("Int", "int", this.IntFunctions);
 		WriteIntLibrary("NInt", "ptrdiff_t", this.NIntFunctions);
@@ -4043,6 +4078,14 @@ public class GenC : GenCCpp
 			WriteLine("return (int64_t) tv.tv_sec * 1000 + tv.tv_usec / 1000;");
 			CloseBlock();
 		}
+		if (this.HasJsonElement) {
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteTypedef(klass);
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteClassInternal(klass);
+			foreach (FuClass klass in program.System.JsonClasses)
+				WriteClassCode(klass);
+		}
 	}
 
 	protected void WriteResources!(SortedDictionary<string(), List<byte>()> resources)
@@ -4124,23 +4167,19 @@ public class GenC : GenCCpp
 		this.TreeCompareInteger = false;
 		this.TreeCompareString = false;
 		this.DateTimeOffsetUtcNowToUnixTimeMilliseconds = false;
+		this.HasJsonElement = false;
 		this.Compares.Clear();
 		this.Contains.Clear();
 		OpenStringWriter();
 		foreach (FuClass klass in program.Classes)
 			WriteClass(klass, program);
 		WriteResources(program.Resources);
-		foreach (FuClass klass in program.Classes) {
-			this.CurrentClass = klass;
-			WriteConstructor(klass);
-			WriteDestructor(klass);
-			WriteNewDelete(klass, true);
-			WriteMethods(klass);
-		}
+		foreach (FuClass klass in program.Classes)
+			WriteClassCode(klass);
 
 		Include("stdlib.h");
 		CreateImplementationFile(program, outputFile, ".h");
-		WriteLibrary();
+		WriteLibrary(program);
 		WriteRegexOptionsEnum(program);
 		WriteTypedefs(program, false);
 		CloseStringWriter();
