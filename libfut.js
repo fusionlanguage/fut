@@ -3156,7 +3156,7 @@ class FuMethodGroup extends FuMember
 
 export class FuContainerType extends FuType
 {
-	isPublic;
+	isPublic = false;
 	startLine;
 	startColumn;
 	endLine;

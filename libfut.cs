@@ -2989,7 +2989,7 @@ namespace Fusion
 	public abstract class FuContainerType : FuType
 	{
 
-		internal bool IsPublic;
+		internal bool IsPublic = false;
 
 		internal int StartLine;
 

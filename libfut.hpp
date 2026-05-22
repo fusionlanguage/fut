@@ -1920,7 +1920,7 @@ public:
 protected:
 	FuContainerType() = default;
 private: // internal
-	bool isPublic;
+	bool isPublic = false;
 	int startLine;
 	int startColumn;
 	int endLine;
