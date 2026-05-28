@@ -10071,7 +10071,9 @@ namespace Fusion
 
 		internal override void VisitLiteralLong(long i)
 		{
-			if (i == -9223372036854775808)
+			if (i == -2147483648)
+				Write("(-2147483647 - 1)");
+			else if (i == -9223372036854775808)
 				Write("(-9223372036854775807 - 1)");
 			else
 				base.VisitLiteralLong(i);

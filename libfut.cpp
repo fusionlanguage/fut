@@ -2815,7 +2815,7 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuSymbol> basePtr = FuVar::new_(nullptr, "base");
 	basePtr->id = FuId::basePtr;
 	add(basePtr);
-	addMinMaxValue(this->intType.get(), -2147483648, 2147483647);
+	addMinMaxValue(this->intType.get(), (-2147483647 - 1), 2147483647);
 	std::shared_ptr<FuMethod> intTryParseMethod = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::intTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0)));
 	this->intType->add(intTryParseMethod);
 	add(this->intType);
@@ -4026,7 +4026,7 @@ FuSystem::FuSystem()
 
 std::shared_ptr<FuLiteralLong> FuSystem::newLiteralLong(int64_t value, int loc) const
 {
-	std::shared_ptr<FuType> type = value >= -2147483648 && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
+	std::shared_ptr<FuType> type = value >= (-2147483647 - 1) && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
 	std::shared_ptr<FuLiteralLong> futemp0 = std::make_shared<FuLiteralLong>();
 	futemp0->loc = loc;
 	futemp0->type = type;
@@ -6130,7 +6130,7 @@ std::shared_ptr<FuType> FuSema::getNumericType(const FuExpr * left, const FuExpr
 
 int FuSema::saturatedNeg(int a)
 {
-	if (a == -2147483648)
+	if (a == (-2147483647 - 1))
 		return 2147483647;
 	return -a;
 }
@@ -6138,12 +6138,12 @@ int FuSema::saturatedNeg(int a)
 int FuSema::saturatedAdd(int a, int b)
 {
 	int64_t c = a;
-	return static_cast<int>(std::clamp(c + b, static_cast<int64_t>(-2147483648), static_cast<int64_t>(2147483647)));
+	return static_cast<int>(std::clamp(c + b, static_cast<int64_t>((-2147483647 - 1)), static_cast<int64_t>(2147483647)));
 }
 
 int FuSema::saturatedSub(int a, int b)
 {
-	if (b == -2147483648)
+	if (b == (-2147483647 - 1))
 		return a < 0 ? a ^ b : 2147483647;
 	return saturatedAdd(a, -b);
 }
@@ -6152,9 +6152,9 @@ int FuSema::saturatedMul(int a, int b)
 {
 	if (a == 0 || b == 0)
 		return 0;
-	if (a == -2147483648)
+	if (a == (-2147483647 - 1))
 		return b >> 31 ^ a;
-	if (b == -2147483648)
+	if (b == (-2147483647 - 1))
 		return a >> 31 ^ b;
 	if (2147483647 / std::abs(a) < std::abs(b))
 		return (a ^ b) >> 31 ^ 2147483647;
@@ -6163,7 +6163,7 @@ int FuSema::saturatedMul(int a, int b)
 
 int FuSema::saturatedDiv(int a, int b)
 {
-	if (a == -2147483648 && b == -1)
+	if (a == (-2147483647 - 1) && b == -1)
 		return 2147483647;
 	return a / b;
 }
@@ -7955,7 +7955,7 @@ int FuSema::foldConstInt(std::shared_ptr<FuExpr> expr)
 {
 	if (std::shared_ptr<FuLiteralLong>literal = std::dynamic_pointer_cast<FuLiteralLong>(foldConst(expr))) {
 		int64_t l = literal->value;
-		if (l < -2147483648 || l > 2147483647) {
+		if (l < (-2147483647 - 1) || l > 2147483647) {
 			reportError(expr.get(), "Only 32-bit ranges supported");
 			return 0;
 		}
@@ -10671,7 +10671,9 @@ void GenTyped::writeExceptionConstructor(const FuClass * klass, std::string_view
 
 void GenCCppD::visitLiteralLong(int64_t i)
 {
-	if (i == (-9223372036854775807 - 1))
+	if (i == (-2147483647 - 1))
+		write("(-2147483647 - 1)");
+	else if (i == (-9223372036854775807 - 1))
 		write("(-9223372036854775807 - 1)");
 	else
 		GenBase::visitLiteralLong(i);
@@ -20165,7 +20167,7 @@ std::string_view GenJava::getTargetName() const
 void GenJava::visitLiteralLong(int64_t value)
 {
 	GenBase::visitLiteralLong(value);
-	if (value < -2147483648 || value > 2147483647)
+	if (value < (-2147483647 - 1) || value > 2147483647)
 		writeChar('L');
 }
 

@@ -10567,7 +10567,9 @@ export class GenCCppD extends GenTyped
 
 	visitLiteralLong(i)
 	{
-		if (i == -9223372036854775808)
+		if (i == -2147483648)
+			this.write("(-2147483647 - 1)");
+		else if (i == -9223372036854775808)
 			this.write("(-9223372036854775807 - 1)");
 		else
 			super.visitLiteralLong(i);

@@ -22,7 +22,9 @@ public abstract class GenCCppD : GenTyped
 {
 	internal override void VisitLiteralLong!(long i)
 	{
-		if (i == long.MinValue)
+		if (i == int.MinValue)
+			Write("(-2147483647 - 1)");
+		else if (i == long.MinValue)
 			Write("(-9223372036854775807 - 1)");
 		else
 			base.VisitLiteralLong(i);

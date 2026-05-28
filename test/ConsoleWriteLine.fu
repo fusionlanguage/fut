@@ -20,6 +20,8 @@ public static class Test
 		ba[0] = 33;
 		Console.WriteLine(ba[0]);
 		Console.WriteLine($"ba[0]={ba[0]}");
+		int one = 1;
+		Console.WriteLine(int.MinValue << one);
 		return true;
 	}
 }
