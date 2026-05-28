@@ -316,7 +316,7 @@ public abstract class FuVisitor
 	internal abstract void VisitLiteralNull!();
 	internal abstract void VisitLiteralFalse!();
 	internal abstract void VisitLiteralTrue!();
-	internal abstract void VisitLiteralLong!(long value);
+	internal abstract void VisitLiteralLong!(long value, FuPriority parent);
 	internal abstract void VisitLiteralChar!(int value);
 	internal abstract void VisitLiteralDouble!(double value);
 	internal abstract void VisitLiteralString!(string value);
@@ -464,7 +464,7 @@ class FuLiteralLong : FuLiteral
 	public override bool IsLiteralZero() => this.Value == 0;
 	public override int IntValue() => this.Value;
 	public override bool IsDefaultValue() => this.Value == 0;
-	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralLong(this.Value); }
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralLong(this.Value, parent); }
 	public override string() GetLiteralString() => $"{this.Value}";
 	public override string() ToString() => $"{this.Value}";
 }

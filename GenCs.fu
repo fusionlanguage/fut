@@ -106,7 +106,7 @@ public class GenCs : GenTyped
 			WriteChar('_');
 			Write(symbol.Name);
 			if (konst.InMethodIndex > 0)
-				VisitLiteralLong(konst.InMethodIndex);
+				VisitLiteralLong(konst.InMethodIndex, FuPriority.Primary);
 			return;
 		}
 		Write(symbol.Name);
@@ -325,13 +325,13 @@ public class GenCs : GenTyped
 				part.Argument.Accept(this, FuPriority.SelectCond);
 			if (part.WidthExpr != null) {
 				WriteChar(',');
-				VisitLiteralLong(part.Width);
+				VisitLiteralLong(part.Width, FuPriority.Argument);
 			}
 			if (part.Format != ' ' && part.Format != 'U' && part.Format != 'u') {
 				WriteChar(':');
 				WriteChar(part.Format);
 				if (part.Precision >= 0)
-					VisitLiteralLong(part.Precision);
+					VisitLiteralLong(part.Precision, FuPriority.Argument);
 			}
 			WriteChar('}');
 		}
@@ -572,7 +572,7 @@ public class GenCs : GenTyped
 				if (args.Count == 1) {
 					// .NET Framework compatibility
 					Write(", 0, ");
-					WriteArrayStorageLength(obj);
+					WriteArrayStorageLength(obj, FuPriority.Argument);
 				}
 			}
 			else {

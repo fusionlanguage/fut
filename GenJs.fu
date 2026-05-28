@@ -230,20 +230,20 @@ public class GenJsNoModule : GenBase
 						case 'E':
 							Write(".toExponential(");
 							if (part.Precision >= 0)
-								VisitLiteralLong(part.Precision);
+								VisitLiteralLong(part.Precision, FuPriority.Argument);
 							Write(").toUpperCase()");
 							break;
 						case 'e':
 							Write(".toExponential(");
 							if (part.Precision >= 0)
-								VisitLiteralLong(part.Precision);
+								VisitLiteralLong(part.Precision, FuPriority.Argument);
 							WriteChar(')');
 							break;
 						case 'F':
 						case 'f':
 							Write(".toFixed(");
 							if (part.Precision >= 0)
-								VisitLiteralLong(part.Precision);
+								VisitLiteralLong(part.Precision, FuPriority.Argument);
 							WriteChar(')');
 							break;
 						case 'X':
@@ -263,7 +263,7 @@ public class GenJsNoModule : GenBase
 							case 'X':
 							case 'x':
 								Write(".padStart(");
-								VisitLiteralLong(part.Precision);
+								VisitLiteralLong(part.Precision, FuPriority.Argument);
 								Write(", \"0\")");
 								break;
 							default:
@@ -274,12 +274,12 @@ public class GenJsNoModule : GenBase
 				}
 				if (part.Width > 0) {
 					Write(".padStart(");
-					VisitLiteralLong(part.Width);
+					VisitLiteralLong(part.Width, FuPriority.Argument);
 					WriteChar(')');
 				}
 				else if (part.Width < 0) {
 					Write(".padEnd(");
-					VisitLiteralLong(-part.Width);
+					VisitLiteralLong(-part.Width, FuPriority.Argument);
 					WriteChar(')');
 				}
 			}
@@ -1279,7 +1279,7 @@ public class GenJsNoModule : GenBase
 			if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreak(kase.Body))
 			 || FuSwitch.HasEarlyBreak(statement.DefaultBody)) {
 				Write("fuswitch");
-				VisitLiteralLong(this.SwitchesWithGoto.Count);
+				VisitLiteralLong(this.SwitchesWithGoto.Count, FuPriority.Primary);
 				this.SwitchesWithGoto.Add(statement);
 				Write(": ");
 				OpenBlock();
@@ -1311,7 +1311,7 @@ public class GenJsNoModule : GenBase
 		WriteDoc(konst.Documentation);
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" : ");
-		VisitLiteralLong(konst.Value.IntValue());
+		VisitLiteralLong(konst.Value.IntValue(), FuPriority.Argument);
 	}
 
 	protected override void WriteEnum!(FuEnum enu)

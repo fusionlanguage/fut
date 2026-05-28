@@ -103,7 +103,7 @@ public abstract class GenBase : FuVisitor
 		Write("true");
 	}
 
-	internal override void VisitLiteralLong!(long i)
+	internal override void VisitLiteralLong!(long i, FuPriority parent)
 	{
 		this.Writer.Write(i);
 	}
@@ -253,7 +253,7 @@ public abstract class GenBase : FuVisitor
 		WriteUppercaseWithUnderscores(konst.Name);
 		if (konst.InMethodIndex > 0) {
 			WriteChar('_');
-			VisitLiteralLong(konst.InMethodIndex);
+			VisitLiteralLong(konst.InMethodIndex, FuPriority.Primary);
 		}
 	}
 
@@ -506,7 +506,7 @@ public abstract class GenBase : FuVisitor
 		int i = 0;
 		foreach (byte b in content) {
 			WriteComma(i++);
-			VisitLiteralLong(b);
+			VisitLiteralLong(b, FuPriority.Argument);
 		}
 	}
 
@@ -533,10 +533,10 @@ public abstract class GenBase : FuVisitor
 	protected virtual void WritePrintfWidth!(FuInterpolatedPart part)
 	{
 		if (part.WidthExpr != null)
-			VisitLiteralLong(part.Width);
+			VisitLiteralLong(part.Width, FuPriority.Primary);
 		if (part.Precision >= 0) {
 			WriteChar('.');
-			VisitLiteralLong(part.Precision);
+			VisitLiteralLong(part.Precision, FuPriority.Primary);
 		}
 	}
 
@@ -593,16 +593,16 @@ public abstract class GenBase : FuVisitor
 			if (part.Width >= 0) {
 				if (!(part.Argument.Type is FuNumericType))
 					WriteChar('>');
-				VisitLiteralLong(part.Width);
+				VisitLiteralLong(part.Width, FuPriority.Primary);
 			}
 			else {
 				WriteChar('<');
-				VisitLiteralLong(-part.Width);
+				VisitLiteralLong(-part.Width, FuPriority.Primary);
 			}
 		}
 		if (part.Precision >= 0) {
 			WriteChar(part.Argument.Type is FuIntegerType ? '0' : '.');
-			VisitLiteralLong(part.Precision);
+			VisitLiteralLong(part.Precision, FuPriority.Primary);
 		}
 		switch (part.Format) {
 		case ' ':
@@ -893,7 +893,7 @@ public abstract class GenBase : FuVisitor
 		WriteLocalName(def, FuPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
-			VisitLiteralLong(i);
+			VisitLiteralLong(i, FuPriority.Primary);
 			WriteChar(']');
 		}
 	}
@@ -903,13 +903,13 @@ public abstract class GenBase : FuVisitor
 		Write("for (");
 		Write(intString);
 		Write(" _i");
-		VisitLiteralLong(nesting);
+		VisitLiteralLong(nesting, FuPriority.Primary);
 		Write(" = 0; _i");
-		VisitLiteralLong(nesting);
+		VisitLiteralLong(nesting, FuPriority.Primary);
 		Write(" < ");
-		VisitLiteralLong(count);
+		VisitLiteralLong(count, FuPriority.Rel);
 		Write("; _i");
-		VisitLiteralLong(nesting);
+		VisitLiteralLong(nesting, FuPriority.Primary);
 		Write("++) ");
 		OpenBlock();
 	}
@@ -917,7 +917,7 @@ public abstract class GenBase : FuVisitor
 	protected void WriteTemporaryName!(int id)
 	{
 		Write("futemp");
-		VisitLiteralLong(id);
+		VisitLiteralLong(id, FuPriority.Primary);
 	}
 
 	protected bool TryWriteTemporary!(FuExpr expr)
@@ -1015,7 +1015,7 @@ public abstract class GenBase : FuVisitor
 				return;
 			}
 			if (right is FuLiteralLong rightLiteral) {
-				VisitLiteralLong(leftValue + rightLiteral.Value);
+				VisitLiteralLong(leftValue + rightLiteral.Value, FuPriority.Argument);
 				return;
 			}
 		}
@@ -1676,7 +1676,7 @@ public abstract class GenBase : FuVisitor
 			int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
 			if (gotoId >= 0) {
 				StartBreakGoto();
-				VisitLiteralLong(gotoId);
+				VisitLiteralLong(gotoId, FuPriority.Primary);
 				WriteCharLine(';');
 				return;
 			}

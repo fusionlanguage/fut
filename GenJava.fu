@@ -27,9 +27,9 @@ public class GenJava : GenTyped
 
 	protected override string GetTargetName() => "Java";
 
-	internal override void VisitLiteralLong!(long value)
+	internal override void VisitLiteralLong!(long value, FuPriority parent)
 	{
-		base.VisitLiteralLong(value);
+		base.VisitLiteralLong(value, parent);
 		if (value < int.MinValue || value > int.MaxValue)
 			WriteChar('L');
 	}
@@ -71,7 +71,7 @@ public class GenJava : GenTyped
 	{
 		if (part.Precision >= 0 && part.Argument.Type is FuIntegerType) {
 			WriteChar('0');
-			VisitLiteralLong(part.Precision);
+			VisitLiteralLong(part.Precision, FuPriority.Primary);
 		}
 		else
 			base.WritePrintfWidth(part);
@@ -385,7 +385,7 @@ public class GenJava : GenTyped
 		Write("FuResource.getByteArray(");
 		VisitLiteralString(name);
 		Write(", ");
-		VisitLiteralLong(length);
+		VisitLiteralLong(length, FuPriority.Argument);
 		WriteChar(')');
 	}
 
@@ -501,7 +501,7 @@ public class GenJava : GenTyped
 			assert expr.Left is FuBinaryExpr indexing;
 			WriteIndexingInternal(indexing); // omit "& 0xff"
 			Write(" & ");
-			VisitLiteralLong(0xff & rightLiteral.Value);
+			VisitLiteralLong(0xff & rightLiteral.Value, FuPriority.And);
 			if (parent > FuPriority.CondAnd && parent != FuPriority.And)
 				WriteChar(')');
 		}
@@ -1334,7 +1334,7 @@ public class GenJava : GenTyped
 			if (statement.Cases.Any(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body))
 			 || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
 				Write("fuswitch");
-				VisitLiteralLong(this.SwitchesWithGoto.Count);
+				VisitLiteralLong(this.SwitchesWithGoto.Count, FuPriority.Primary);
 				Write(": ");
 				this.SwitchesWithGoto.Add(statement);
 				WriteSwitchAsIfs(statement, false);
@@ -1363,7 +1363,7 @@ public class GenJava : GenTyped
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
 		if (konst.Value is FuImplicitEnumValue imp)
-			VisitLiteralLong(imp.Value);
+			VisitLiteralLong(imp.Value, FuPriority.Primary);
 		else
 			konst.Value.Accept(this, FuPriority.Argument);
 		WriteCharLine(';');

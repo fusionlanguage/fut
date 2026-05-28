@@ -695,7 +695,7 @@ private: // internal
 	virtual void visitLiteralNull() = 0;
 	virtual void visitLiteralFalse() = 0;
 	virtual void visitLiteralTrue() = 0;
-	virtual void visitLiteralLong(int64_t value) = 0;
+	virtual void visitLiteralLong(int64_t value, FuPriority parent) = 0;
 	virtual void visitLiteralChar(int value) = 0;
 	virtual void visitLiteralDouble(double value) = 0;
 	virtual void visitLiteralString(std::string_view value) = 0;
@@ -2678,7 +2678,7 @@ private: // internal
 	void visitLiteralNull() override;
 	void visitLiteralFalse() override;
 	void visitLiteralTrue() override;
-	void visitLiteralLong(int64_t i) override;
+	void visitLiteralLong(int64_t i, FuPriority parent) override;
 	void visitLiteralChar(int c) override;
 	void visitLiteralDouble(double value) override;
 	void visitLiteralString(std::string_view value) override;
@@ -2745,7 +2745,7 @@ protected:
 	virtual void writeType(const FuType * type, bool promote) = 0;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
 	void writeTypeAndName(const FuNamedValue * value) override;
-	void writeArrayStorageLength(const FuExpr * expr);
+	void writeArrayStorageLength(const FuExpr * expr, FuPriority parent);
 	void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) override;
 	int getOneAscii(const FuExpr * expr) const;
 	void writeCharMethodCall(const FuExpr * obj, std::string_view method, const FuExpr * arg);
@@ -2775,7 +2775,7 @@ protected:
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeSwitchAsIfsWithGoto(const FuSwitch * statement);
 private: // internal
-	void visitLiteralLong(int64_t i) override;
+	void visitLiteralLong(int64_t i, FuPriority parent) override;
 	void visitConst(const FuConst * statement) override;
 	friend GenC;
 	friend GenCCpp;
@@ -3355,7 +3355,7 @@ protected:
 	void writeMethod(const FuMethod * method) override;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 private: // internal
-	void visitLiteralLong(int64_t value) override;
+	void visitLiteralLong(int64_t value, FuPriority parent) override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent) override;
 	void visitPostfixExpr(const FuPostfixExpr * expr, FuPriority parent) override;

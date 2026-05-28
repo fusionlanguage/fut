@@ -1395,7 +1395,7 @@ public class GenPy : GenPySwift
 	void WriteInclusiveLimit!(FuExpr limit, int increment, string incrementString)
 	{
 		if (limit is FuLiteralLong literal)
-			VisitLiteralLong(literal.Value + increment);
+			VisitLiteralLong(literal.Value + increment, FuPriority.Argument);
 		else {
 			limit.Accept(this, FuPriority.Add);
 			Write(incrementString);
@@ -1425,7 +1425,7 @@ public class GenPy : GenPySwift
 		}
 		if (rangeStep != 1) {
 			Write(", ");
-			VisitLiteralLong(rangeStep);
+			VisitLiteralLong(rangeStep, FuPriority.Argument);
 		}
 		WriteChar(')');
 	}
@@ -1566,7 +1566,7 @@ public class GenPy : GenPySwift
 	{
 		WriteUppercaseWithUnderscores(konst.Name);
 		Write(" = ");
-		VisitLiteralLong(konst.Value.IntValue());
+		VisitLiteralLong(konst.Value.IntValue(), FuPriority.Argument);
 		WriteNewLine();
 		WriteDoc(konst.Documentation);
 	}

@@ -431,7 +431,7 @@ public class GenD : GenCCppD
 					WriteElementType(klass.GetElementType());
 				WriteChar('[');
 				if (klass.Id != FuId.MainArgsType && klass is FuArrayStorageType arrayStorage)
-					VisitLiteralLong(arrayStorage.Length);
+					VisitLiteralLong(arrayStorage.Length, FuPriority.Argument);
 				WriteChar(']');
 				break;
 			case FuId.ListClass:

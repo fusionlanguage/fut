@@ -99,7 +99,7 @@ public abstract class GenCCpp : GenCCppD
 	{
 		Write("argv[");
 		if (index is FuLiteralLong literal)
-			VisitLiteralLong(1 + literal.Value);
+			VisitLiteralLong(1 + literal.Value, FuPriority.Argument);
 		else {
 			Write("1 + ");
 			index.Accept(this, FuPriority.Add);

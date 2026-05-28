@@ -1586,7 +1586,7 @@ namespace Fusion
 
 		internal abstract void VisitLiteralTrue();
 
-		internal abstract void VisitLiteralLong(long value);
+		internal abstract void VisitLiteralLong(long value, FuPriority parent);
 
 		internal abstract void VisitLiteralChar(int value);
 
@@ -1830,7 +1830,7 @@ namespace Fusion
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
-			visitor.VisitLiteralLong(this.Value);
+			visitor.VisitLiteralLong(this.Value, parent);
 		}
 
 		public override string GetLiteralString() => $"{this.Value}";
@@ -7681,7 +7681,7 @@ namespace Fusion
 			Write("true");
 		}
 
-		internal override void VisitLiteralLong(long i)
+		internal override void VisitLiteralLong(long i, FuPriority parent)
 		{
 			this.Writer.Write(i);
 		}
@@ -7843,7 +7843,7 @@ namespace Fusion
 			WriteUppercaseWithUnderscores(konst.Name);
 			if (konst.InMethodIndex > 0) {
 				WriteChar('_');
-				VisitLiteralLong(konst.InMethodIndex);
+				VisitLiteralLong(konst.InMethodIndex, FuPriority.Primary);
 			}
 		}
 
@@ -8096,7 +8096,7 @@ namespace Fusion
 			int i = 0;
 			foreach (int b in content) {
 				WriteComma(i++);
-				VisitLiteralLong(b);
+				VisitLiteralLong(b, FuPriority.Argument);
 			}
 		}
 
@@ -8123,10 +8123,10 @@ namespace Fusion
 		protected virtual void WritePrintfWidth(FuInterpolatedPart part)
 		{
 			if (part.WidthExpr != null)
-				VisitLiteralLong(part.Width);
+				VisitLiteralLong(part.Width, FuPriority.Primary);
 			if (part.Precision >= 0) {
 				WriteChar('.');
-				VisitLiteralLong(part.Precision);
+				VisitLiteralLong(part.Precision, FuPriority.Primary);
 			}
 		}
 
@@ -8182,16 +8182,16 @@ namespace Fusion
 				if (part.Width >= 0) {
 					if (!(part.Argument.Type is FuNumericType))
 						WriteChar('>');
-					VisitLiteralLong(part.Width);
+					VisitLiteralLong(part.Width, FuPriority.Primary);
 				}
 				else {
 					WriteChar('<');
-					VisitLiteralLong(-part.Width);
+					VisitLiteralLong(-part.Width, FuPriority.Primary);
 				}
 			}
 			if (part.Precision >= 0) {
 				WriteChar(part.Argument.Type is FuIntegerType ? '0' : '.');
-				VisitLiteralLong(part.Precision);
+				VisitLiteralLong(part.Precision, FuPriority.Primary);
 			}
 			switch (part.Format) {
 			case ' ':
@@ -8482,7 +8482,7 @@ namespace Fusion
 			WriteLocalName(def, FuPriority.Primary);
 			for (int i = 0; i < nesting; i++) {
 				Write("[_i");
-				VisitLiteralLong(i);
+				VisitLiteralLong(i, FuPriority.Primary);
 				WriteChar(']');
 			}
 		}
@@ -8492,13 +8492,13 @@ namespace Fusion
 			Write("for (");
 			Write(intString);
 			Write(" _i");
-			VisitLiteralLong(nesting);
+			VisitLiteralLong(nesting, FuPriority.Primary);
 			Write(" = 0; _i");
-			VisitLiteralLong(nesting);
+			VisitLiteralLong(nesting, FuPriority.Primary);
 			Write(" < ");
-			VisitLiteralLong(count);
+			VisitLiteralLong(count, FuPriority.Rel);
 			Write("; _i");
-			VisitLiteralLong(nesting);
+			VisitLiteralLong(nesting, FuPriority.Primary);
 			Write("++) ");
 			OpenBlock();
 		}
@@ -8506,7 +8506,7 @@ namespace Fusion
 		protected void WriteTemporaryName(int id)
 		{
 			Write("futemp");
-			VisitLiteralLong(id);
+			VisitLiteralLong(id, FuPriority.Primary);
 		}
 
 		protected bool TryWriteTemporary(FuExpr expr)
@@ -8602,7 +8602,7 @@ namespace Fusion
 					return;
 				}
 				if (right is FuLiteralLong rightLiteral) {
-					VisitLiteralLong(leftValue + rightLiteral.Value);
+					VisitLiteralLong(leftValue + rightLiteral.Value, FuPriority.Argument);
 					return;
 				}
 			}
@@ -9260,7 +9260,7 @@ namespace Fusion
 				int gotoId = this.SwitchesWithGoto.IndexOf(switchStatement);
 				if (gotoId >= 0) {
 					StartBreakGoto();
-					VisitLiteralLong(gotoId);
+					VisitLiteralLong(gotoId, FuPriority.Primary);
 					WriteCharLine(';');
 					return;
 				}
@@ -9834,10 +9834,10 @@ namespace Fusion
 			Write(" }");
 		}
 
-		protected void WriteArrayStorageLength(FuExpr expr)
+		protected void WriteArrayStorageLength(FuExpr expr, FuPriority parent)
 		{
 			FuArrayStorageType array = (FuArrayStorageType) expr.Type;
-			VisitLiteralLong(array.Length);
+			VisitLiteralLong(array.Length, parent);
 		}
 
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
@@ -10009,7 +10009,7 @@ namespace Fusion
 				if (expr is FuCallExpr call && call.Method.Symbol.Id == FuId.MathTruncate) {
 					expr = call.Arguments[0];
 					if (expr is FuLiteralDouble literal) {
-						VisitLiteralLong((long) literal.Value);
+						VisitLiteralLong((long) literal.Value, parent);
 						return;
 					}
 				}
@@ -10069,14 +10069,24 @@ namespace Fusion
 	public abstract class GenCCppD : GenTyped
 	{
 
-		internal override void VisitLiteralLong(long i)
+		internal override void VisitLiteralLong(long i, FuPriority parent)
 		{
-			if (i == -2147483648)
-				Write("(-2147483647 - 1)");
-			else if (i == -9223372036854775808)
-				Write("(-9223372036854775807 - 1)");
+			if (i == -2147483648) {
+				if (parent > FuPriority.Add)
+					WriteChar('(');
+				Write("-2147483647 - 1");
+				if (parent > FuPriority.Add)
+					WriteChar(')');
+			}
+			else if (i == -9223372036854775808) {
+				if (parent > FuPriority.Add)
+					WriteChar('(');
+				Write("-9223372036854775807 - 1");
+				if (parent > FuPriority.Add)
+					WriteChar(')');
+			}
 			else
-				base.VisitLiteralLong(i);
+				base.VisitLiteralLong(i, parent);
 		}
 
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
@@ -10100,7 +10110,7 @@ namespace Fusion
 				this.SwitchesWithGoto.Add(statement);
 				WriteSwitchAsIfs(statement, false);
 				Write("fuafterswitch");
-				VisitLiteralLong(gotoId);
+				VisitLiteralLong(gotoId, FuPriority.Primary);
 				WriteLine(": ;");
 			}
 			else
@@ -10190,7 +10200,7 @@ namespace Fusion
 		{
 			Write("argv[");
 			if (index is FuLiteralLong literal)
-				VisitLiteralLong(1 + literal.Value);
+				VisitLiteralLong(1 + literal.Value, FuPriority.Argument);
 			else {
 				Write("1 + ");
 				index.Accept(this, FuPriority.Add);
@@ -10798,7 +10808,7 @@ namespace Fusion
 			Write("FuMatch_GetPos(");
 			expr.Left.Accept(this, FuPriority.Argument);
 			Write(", ");
-			VisitLiteralLong(which);
+			VisitLiteralLong(which, FuPriority.Argument);
 			WriteChar(')');
 		}
 
@@ -10998,7 +11008,7 @@ namespace Fusion
 				FuType elementType = type.AsClassType().GetElementType();
 				if (type is FuArrayStorageType arrayStorage) {
 					WriteChar('[');
-					VisitLiteralLong(arrayStorage.Length);
+					VisitLiteralLong(arrayStorage.Length, FuPriority.Argument);
 					WriteChar(']');
 				}
 				else if (elementType is FuArrayStorageType)
@@ -11750,13 +11760,13 @@ namespace Fusion
 			while (type is FuArrayStorageType array) {
 				IncludeStdDef();
 				Write("for (ptrdiff_t _i");
-				VisitLiteralLong(nesting);
+				VisitLiteralLong(nesting, FuPriority.Primary);
 				Write(" = ");
-				VisitLiteralLong(array.Length - 1);
+				VisitLiteralLong(array.Length - 1, FuPriority.Argument);
 				Write("; _i");
-				VisitLiteralLong(nesting);
+				VisitLiteralLong(nesting, FuPriority.Primary);
 				Write(" >= 0; _i");
-				VisitLiteralLong(nesting);
+				VisitLiteralLong(nesting, FuPriority.Primary);
 				WriteLine("--)");
 				this.Indent++;
 				nesting++;
@@ -11767,7 +11777,7 @@ namespace Fusion
 			WriteLocalName(symbol, FuPriority.Primary);
 			for (int i = 0; i < nesting; i++) {
 				Write("[_i");
-				VisitLiteralLong(i);
+				VisitLiteralLong(i, FuPriority.Primary);
 				WriteChar(']');
 			}
 			if (klass.Class.Id == FuId.QueueClass && HasDictionaryDestroy(klass.GetElementType())) {
@@ -11791,7 +11801,7 @@ namespace Fusion
 
 		void WriteRangeThrowReturnValue(FuRangeType range)
 		{
-			VisitLiteralLong(range.Min - 1);
+			VisitLiteralLong(range.Min - 1, FuPriority.Equality);
 		}
 
 		void WriteThrowReturnValue(FuType type, bool include)
@@ -11995,7 +12005,7 @@ namespace Fusion
 			Write(", ");
 			VisitLiteralString(literal);
 			Write(", ");
-			VisitLiteralLong(literal.Length);
+			VisitLiteralLong(literal.Length, FuPriority.Argument);
 			WriteChar(')');
 			Write(GetEqOp(not));
 			WriteChar('0');
@@ -12034,7 +12044,7 @@ namespace Fusion
 								WriteChar('(');
 							lengthExpr.Accept(this, FuPriority.Equality);
 							Write(" != ");
-							VisitLiteralLong(rightLength);
+							VisitLiteralLong(rightLength, FuPriority.Equality);
 							if (rightLength > 0) {
 								Write(" || ");
 								WriteSubstringEqual(call, rightValue, FuPriority.CondOr, true);
@@ -12047,7 +12057,7 @@ namespace Fusion
 								WriteChar('(');
 							lengthExpr.Accept(this, FuPriority.Equality);
 							Write(" == ");
-							VisitLiteralLong(rightLength);
+							VisitLiteralLong(rightLength, FuPriority.Equality);
 							if (rightLength > 0) {
 								Write(" && ");
 								WriteSubstringEqual(call, rightValue, FuPriority.CondAnd, false);
@@ -12095,7 +12105,7 @@ namespace Fusion
 			Write(args.Count != 1 && GetTypeId(args[2].Type, true) == FuId.IntType ? "int" : "size_t");
 			Write(" _i = 0; _i < ");
 			if (args.Count == 1)
-				WriteArrayStorageLength(obj);
+				WriteArrayStorageLength(obj, FuPriority.Rel);
 			else
 				args[2].Accept(this, FuPriority.Rel);
 			WriteLine("; _i++)");
@@ -12115,7 +12125,7 @@ namespace Fusion
 			if (elementType is FuStorageType storage && NeedsConstructor(storage.Class)) {
 				WriteName(storage.Class);
 				Write("_Construct(&futemp");
-				VisitLiteralLong(id);
+				VisitLiteralLong(id, FuPriority.Primary);
 				WriteLine(");");
 			}
 			Write(function);
@@ -12126,7 +12136,7 @@ namespace Fusion
 				args[0].Accept(this, FuPriority.Argument);
 			}
 			Write(", futemp");
-			VisitLiteralLong(id);
+			VisitLiteralLong(id, FuPriority.Primary);
 			WriteChar(')');
 			this.CurrentTemporaries[id] = elementType;
 		}
@@ -12561,7 +12571,7 @@ namespace Fusion
 					WriteArrayPtrAdd(obj, args[1]);
 				Write(", ");
 				if (args.Count == 1)
-					WriteArrayStorageLength(obj);
+					WriteArrayStorageLength(obj, FuPriority.Argument);
 				else
 					args[2].Accept(this, FuPriority.Argument);
 				WriteSizeofCompare(elementType);
@@ -12574,7 +12584,7 @@ namespace Fusion
 				StartArrayContains(obj);
 				obj.Accept(this, FuPriority.Argument);
 				Write(", ");
-				WriteArrayStorageLength(obj);
+				WriteArrayStorageLength(obj, FuPriority.Argument);
 				Write(", ");
 				WriteUnstorage(args[0]);
 				WriteChar(')');
@@ -12628,7 +12638,7 @@ namespace Fusion
 				Write("qsort(");
 				WriteArrayPtr(obj, FuPriority.Argument);
 				Write(", ");
-				WriteArrayStorageLength(obj);
+				WriteArrayStorageLength(obj, FuPriority.Argument);
 				WriteSizeofCompare(obj.Type.AsClassType().GetElementType());
 				break;
 			case FuId.ArraySortPart:
@@ -13320,7 +13330,7 @@ namespace Fusion
 						WriteCamelCaseNotKeyword(element);
 						Write(" < ");
 						FuArrayStorageType array = (FuArrayStorageType) klass;
-						VisitLiteralLong(array.Length);
+						VisitLiteralLong(array.Length, FuPriority.Rel);
 					}
 					Write("; ");
 					WriteCamelCaseNotKeyword(element);
@@ -14473,7 +14483,7 @@ namespace Fusion
 				WriteChar(' ');
 				WriteResource(name, -1);
 				WriteChar('[');
-				VisitLiteralLong(content.Count);
+				VisitLiteralLong(content.Count, FuPriority.Argument);
 				WriteLine("] = {");
 				WriteChar('\t');
 				WriteBytes(content);
@@ -15187,7 +15197,7 @@ namespace Fusion
 			WriteType(elementType, false);
 			if (klass is FuArrayStorageType arrayStorage) {
 				Write(", ");
-				VisitLiteralLong(arrayStorage.Length);
+				VisitLiteralLong(arrayStorage.Length, FuPriority.Argument);
 			}
 			else if (klass.Class.TypeParameterCount == 2) {
 				Write(", ");
@@ -17026,7 +17036,7 @@ namespace Fusion
 				Include("array");
 				Include("cstdint");
 				Write("const std::array<uint8_t, ");
-				VisitLiteralLong(content.Count);
+				VisitLiteralLong(content.Count, FuPriority.Argument);
 				Write("> ");
 				WriteResourceName(name);
 				if (define) {
@@ -17305,7 +17315,7 @@ namespace Fusion
 				WriteChar('_');
 				Write(symbol.Name);
 				if (konst.InMethodIndex > 0)
-					VisitLiteralLong(konst.InMethodIndex);
+					VisitLiteralLong(konst.InMethodIndex, FuPriority.Primary);
 				return;
 			}
 			Write(symbol.Name);
@@ -17524,13 +17534,13 @@ namespace Fusion
 					part.Argument.Accept(this, FuPriority.SelectCond);
 				if (part.WidthExpr != null) {
 					WriteChar(',');
-					VisitLiteralLong(part.Width);
+					VisitLiteralLong(part.Width, FuPriority.Argument);
 				}
 				if (part.Format != ' ' && part.Format != 'U' && part.Format != 'u') {
 					WriteChar(':');
 					WriteChar(part.Format);
 					if (part.Precision >= 0)
-						VisitLiteralLong(part.Precision);
+						VisitLiteralLong(part.Precision, FuPriority.Argument);
 				}
 				WriteChar('}');
 			}
@@ -17770,7 +17780,7 @@ namespace Fusion
 					obj.Accept(this, FuPriority.Argument);
 					if (args.Count == 1) {
 						Write(", 0, ");
-						WriteArrayStorageLength(obj);
+						WriteArrayStorageLength(obj, FuPriority.Argument);
 					}
 				}
 				else {
@@ -18689,7 +18699,7 @@ namespace Fusion
 						WriteElementType(klass.GetElementType());
 					WriteChar('[');
 					if (klass.Id != FuId.MainArgsType && klass is FuArrayStorageType arrayStorage)
-						VisitLiteralLong(arrayStorage.Length);
+						VisitLiteralLong(arrayStorage.Length, FuPriority.Argument);
 					WriteChar(']');
 					break;
 				case FuId.ListClass:
@@ -19990,9 +20000,9 @@ namespace Fusion
 
 		protected override string GetTargetName() => "Java";
 
-		internal override void VisitLiteralLong(long value)
+		internal override void VisitLiteralLong(long value, FuPriority parent)
 		{
-			base.VisitLiteralLong(value);
+			base.VisitLiteralLong(value, parent);
 			if (value < -2147483648 || value > 2147483647)
 				WriteChar('L');
 		}
@@ -20034,7 +20044,7 @@ namespace Fusion
 		{
 			if (part.Precision >= 0 && part.Argument.Type is FuIntegerType) {
 				WriteChar('0');
-				VisitLiteralLong(part.Precision);
+				VisitLiteralLong(part.Precision, FuPriority.Primary);
 			}
 			else
 				base.WritePrintfWidth(part);
@@ -20345,7 +20355,7 @@ namespace Fusion
 			Write("FuResource.getByteArray(");
 			VisitLiteralString(name);
 			Write(", ");
-			VisitLiteralLong(length);
+			VisitLiteralLong(length, FuPriority.Argument);
 			WriteChar(')');
 		}
 
@@ -20456,7 +20466,7 @@ namespace Fusion
 				FuBinaryExpr indexing = (FuBinaryExpr) expr.Left;
 				WriteIndexingInternal(indexing);
 				Write(" & ");
-				VisitLiteralLong(255 & rightLiteral.Value);
+				VisitLiteralLong(255 & rightLiteral.Value, FuPriority.And);
 				if (parent > FuPriority.CondAnd && parent != FuPriority.And)
 					WriteChar(')');
 			}
@@ -21274,7 +21284,7 @@ namespace Fusion
 			if (!statement.IsTypeMatching() && statement.HasWhen()) {
 				if (statement.Cases.Exists(kase => FuSwitch.HasEarlyBreakAndContinue(kase.Body)) || FuSwitch.HasEarlyBreakAndContinue(statement.DefaultBody)) {
 					Write("fuswitch");
-					VisitLiteralLong(this.SwitchesWithGoto.Count);
+					VisitLiteralLong(this.SwitchesWithGoto.Count, FuPriority.Primary);
 					Write(": ");
 					this.SwitchesWithGoto.Add(statement);
 					WriteSwitchAsIfs(statement, false);
@@ -21303,7 +21313,7 @@ namespace Fusion
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
 			if (konst.Value is FuImplicitEnumValue imp)
-				VisitLiteralLong(imp.Value);
+				VisitLiteralLong(imp.Value, FuPriority.Primary);
 			else
 				konst.Value.Accept(this, FuPriority.Argument);
 			WriteCharLine(';');
@@ -21796,20 +21806,20 @@ namespace Fusion
 							case 'E':
 								Write(".toExponential(");
 								if (part.Precision >= 0)
-									VisitLiteralLong(part.Precision);
+									VisitLiteralLong(part.Precision, FuPriority.Argument);
 								Write(").toUpperCase()");
 								break;
 							case 'e':
 								Write(".toExponential(");
 								if (part.Precision >= 0)
-									VisitLiteralLong(part.Precision);
+									VisitLiteralLong(part.Precision, FuPriority.Argument);
 								WriteChar(')');
 								break;
 							case 'F':
 							case 'f':
 								Write(".toFixed(");
 								if (part.Precision >= 0)
-									VisitLiteralLong(part.Precision);
+									VisitLiteralLong(part.Precision, FuPriority.Argument);
 								WriteChar(')');
 								break;
 							case 'X':
@@ -21829,7 +21839,7 @@ namespace Fusion
 								case 'X':
 								case 'x':
 									Write(".padStart(");
-									VisitLiteralLong(part.Precision);
+									VisitLiteralLong(part.Precision, FuPriority.Argument);
 									Write(", \"0\")");
 									break;
 								default:
@@ -21840,12 +21850,12 @@ namespace Fusion
 					}
 					if (part.Width > 0) {
 						Write(".padStart(");
-						VisitLiteralLong(part.Width);
+						VisitLiteralLong(part.Width, FuPriority.Argument);
 						WriteChar(')');
 					}
 					else if (part.Width < 0) {
 						Write(".padEnd(");
-						VisitLiteralLong(-part.Width);
+						VisitLiteralLong(-part.Width, FuPriority.Argument);
 						WriteChar(')');
 					}
 				}
@@ -22838,7 +22848,7 @@ namespace Fusion
 			if (statement.IsTypeMatching() || statement.HasWhen()) {
 				if (statement.Cases.Exists(kase => FuSwitch.HasEarlyBreak(kase.Body)) || FuSwitch.HasEarlyBreak(statement.DefaultBody)) {
 					Write("fuswitch");
-					VisitLiteralLong(this.SwitchesWithGoto.Count);
+					VisitLiteralLong(this.SwitchesWithGoto.Count, FuPriority.Primary);
 					this.SwitchesWithGoto.Add(statement);
 					Write(": ");
 					OpenBlock();
@@ -22870,7 +22880,7 @@ namespace Fusion
 			WriteDoc(konst.Documentation);
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" : ");
-			VisitLiteralLong(konst.Value.IntValue());
+			VisitLiteralLong(konst.Value.IntValue(), FuPriority.Argument);
 		}
 
 		protected override void WriteEnum(FuEnum enu)
@@ -23932,7 +23942,7 @@ namespace Fusion
 				WriteCamelCase(konst.InMethod.Name);
 				WritePascalCase(symbol.Name);
 				if (konst.InMethodIndex > 0)
-					VisitLiteralLong(konst.InMethodIndex);
+					VisitLiteralLong(konst.InMethodIndex, FuPriority.Primary);
 				break;
 			case FuVar:
 			case FuMember:
@@ -24415,7 +24425,7 @@ namespace Fusion
 					Write("](repeating: ");
 					WriteCoerced(array.GetElementType(), args[0], FuPriority.Argument);
 					Write(", count: ");
-					VisitLiteralLong(array.Length);
+					VisitLiteralLong(array.Length, FuPriority.Argument);
 					WriteChar(')');
 				}
 				else {
@@ -24449,7 +24459,7 @@ namespace Fusion
 			case FuId.ArraySortAll:
 				WritePostfix(obj, "[0..<");
 				FuArrayStorageType array3 = (FuArrayStorageType) obj.Type;
-				VisitLiteralLong(array3.Length);
+				VisitLiteralLong(array3.Length, FuPriority.Primary);
 				Write("].sort()");
 				break;
 			case FuId.ArraySortPart:
@@ -24794,7 +24804,7 @@ namespace Fusion
 				Write("](repeating: ");
 				WriteDefaultValue(array.GetElementType());
 				Write(", count: ");
-				VisitLiteralLong(array.Length);
+				VisitLiteralLong(array.Length, FuPriority.Argument);
 				WriteChar(')');
 			}
 		}
@@ -25331,7 +25341,7 @@ namespace Fusion
 					throw new NotImplementedException();
 				}
 				Write(", by: ");
-				VisitLiteralLong(rangeStep);
+				VisitLiteralLong(rangeStep, FuPriority.Argument);
 				WriteChar(')');
 			}
 		}
@@ -25496,7 +25506,7 @@ namespace Fusion
 				Write("[]");
 			else {
 				Write("rawValue: ");
-				VisitLiteralLong(i);
+				VisitLiteralLong(i, FuPriority.Argument);
 			}
 			WriteCharLine(')');
 		}
@@ -25537,7 +25547,7 @@ namespace Fusion
 							WriteName(konst);
 							if (!(konst.Value is FuImplicitEnumValue)) {
 								Write(" = ");
-								VisitLiteralLong(i);
+								VisitLiteralLong(i, FuPriority.Argument);
 							}
 							valueToConst[i] = konst;
 						}
@@ -27241,7 +27251,7 @@ namespace Fusion
 		void WriteInclusiveLimit(FuExpr limit, int increment, string incrementString)
 		{
 			if (limit is FuLiteralLong literal)
-				VisitLiteralLong(literal.Value + increment);
+				VisitLiteralLong(literal.Value + increment, FuPriority.Argument);
 			else {
 				limit.Accept(this, FuPriority.Add);
 				Write(incrementString);
@@ -27271,7 +27281,7 @@ namespace Fusion
 			}
 			if (rangeStep != 1) {
 				Write(", ");
-				VisitLiteralLong(rangeStep);
+				VisitLiteralLong(rangeStep, FuPriority.Argument);
 			}
 			WriteChar(')');
 		}
@@ -27408,7 +27418,7 @@ namespace Fusion
 		{
 			WriteUppercaseWithUnderscores(konst.Name);
 			Write(" = ");
-			VisitLiteralLong(konst.Value.IntValue());
+			VisitLiteralLong(konst.Value.IntValue(), FuPriority.Argument);
 			WriteNewLine();
 			WriteDoc(konst.Documentation);
 		}

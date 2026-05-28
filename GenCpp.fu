@@ -266,7 +266,7 @@ public class GenCpp : GenCCpp
 		WriteType(elementType, false);
 		if (klass is FuArrayStorageType arrayStorage) {
 			Write(", ");
-			VisitLiteralLong(arrayStorage.Length);
+			VisitLiteralLong(arrayStorage.Length, FuPriority.Argument);
 		}
 		else if (klass.Class.TypeParameterCount == 2) {
 			Write(", ");
@@ -2128,7 +2128,7 @@ public class GenCpp : GenCCpp
 			Include("array");
 			Include("cstdint");
 			Write("const std::array<uint8_t, ");
-			VisitLiteralLong(content.Count);
+			VisitLiteralLong(content.Count, FuPriority.Argument);
 			Write("> ");
 			WriteResourceName(name);
 			if (define) {

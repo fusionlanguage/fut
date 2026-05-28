@@ -390,7 +390,7 @@ public class GenC : GenCCpp
 		Write("FuMatch_GetPos(");
 		expr.Left.Accept(this, FuPriority.Argument);
 		Write(", ");
-		VisitLiteralLong(which);
+		VisitLiteralLong(which, FuPriority.Argument);
 		WriteChar(')');
 	}
 
@@ -591,7 +591,7 @@ public class GenC : GenCCpp
 			FuType elementType = type.AsClassType().GetElementType();
 			if (type is FuArrayStorageType arrayStorage) {
 				WriteChar('[');
-				VisitLiteralLong(arrayStorage.Length);
+				VisitLiteralLong(arrayStorage.Length, FuPriority.Argument);
 				WriteChar(']');
 			}
 			else if (elementType is FuArrayStorageType)
@@ -1359,13 +1359,13 @@ public class GenC : GenCCpp
 		while (type is FuArrayStorageType array) {
 			IncludeStdDef();
 			Write("for (ptrdiff_t _i");
-			VisitLiteralLong(nesting);
+			VisitLiteralLong(nesting, FuPriority.Primary);
 			Write(" = ");
-			VisitLiteralLong(array.Length - 1);
+			VisitLiteralLong(array.Length - 1, FuPriority.Argument);
 			Write("; _i");
-			VisitLiteralLong(nesting);
+			VisitLiteralLong(nesting, FuPriority.Primary);
 			Write(" >= 0; _i");
-			VisitLiteralLong(nesting);
+			VisitLiteralLong(nesting, FuPriority.Primary);
 			WriteLine("--)");
 			this.Indent++;
 			nesting++;
@@ -1376,7 +1376,7 @@ public class GenC : GenCCpp
 		WriteLocalName(symbol, FuPriority.Primary);
 		for (int i = 0; i < nesting; i++) {
 			Write("[_i");
-			VisitLiteralLong(i);
+			VisitLiteralLong(i, FuPriority.Primary);
 			WriteChar(']');
 		}
 		if (klass.Class.Id == FuId.QueueClass && HasDictionaryDestroy(klass.GetElementType())) {
@@ -1400,7 +1400,7 @@ public class GenC : GenCCpp
 
 	void WriteRangeThrowReturnValue!(FuRangeType range)
 	{
-		VisitLiteralLong(range.Min - 1);
+		VisitLiteralLong(range.Min - 1, FuPriority.Equality);
 	}
 
 	void WriteThrowReturnValue!(FuType type, bool include)
@@ -1604,7 +1604,7 @@ public class GenC : GenCCpp
 		Write(", ");
 		VisitLiteralString(literal);
 		Write(", ");
-		VisitLiteralLong(literal.Length);
+		VisitLiteralLong(literal.Length, FuPriority.Argument);
 		WriteChar(')');
 		Write(GetEqOp(not));
 		WriteChar('0');
@@ -1643,7 +1643,7 @@ public class GenC : GenCCpp
 							WriteChar('(');
 						lengthExpr.Accept(this, FuPriority.Equality);
 						Write(" != ");
-						VisitLiteralLong(rightLength);
+						VisitLiteralLong(rightLength, FuPriority.Equality);
 						if (rightLength > 0) {
 							Write(" || ");
 							WriteSubstringEqual(call, rightValue, FuPriority.CondOr, true);
@@ -1656,7 +1656,7 @@ public class GenC : GenCCpp
 							WriteChar('(');
 						lengthExpr.Accept(this, FuPriority.Equality);
 						Write(" == ");
-						VisitLiteralLong(rightLength);
+						VisitLiteralLong(rightLength, FuPriority.Equality);
 						if (rightLength > 0) {
 							Write(" && ");
 							WriteSubstringEqual(call, rightValue, FuPriority.CondAnd, false);
@@ -1704,7 +1704,7 @@ public class GenC : GenCCpp
 		Write(args.Count != 1 && GetTypeId(args[2].Type, true) == FuId.IntType ? "int" : "size_t");
 		Write(" _i = 0; _i < ");
 		if (args.Count == 1)
-			WriteArrayStorageLength(obj);
+			WriteArrayStorageLength(obj, FuPriority.Rel);
 		else
 			args[2].Accept(this, FuPriority.Rel); // FIXME: side effect in every iteration
 		WriteLine("; _i++)");
@@ -1725,7 +1725,7 @@ public class GenC : GenCCpp
 		if (elementType is FuStorageType storage && NeedsConstructor(storage.Class)) {
 			WriteName(storage.Class);
 			Write("_Construct(&futemp");
-			VisitLiteralLong(id);
+			VisitLiteralLong(id, FuPriority.Primary);
 			WriteLine(");");
 		}
 		Write(function);
@@ -1736,7 +1736,7 @@ public class GenC : GenCCpp
 			args[0].Accept(this, FuPriority.Argument);
 		}
 		Write(", futemp");
-		VisitLiteralLong(id);
+		VisitLiteralLong(id, FuPriority.Primary);
 		WriteChar(')');
 		this.CurrentTemporaries[id] = elementType;
 	}
@@ -2171,7 +2171,7 @@ public class GenC : GenCCpp
 				WriteArrayPtrAdd(obj, args[1]);
 			Write(", ");
 			if (args.Count == 1)
-				WriteArrayStorageLength(obj);
+				WriteArrayStorageLength(obj, FuPriority.Argument);
 			else
 				args[2].Accept(this, FuPriority.Argument);
 			WriteSizeofCompare(elementType);
@@ -2184,7 +2184,7 @@ public class GenC : GenCCpp
 			StartArrayContains(obj);
 			obj.Accept(this, FuPriority.Argument);
 			Write(", ");
-			WriteArrayStorageLength(obj);
+			WriteArrayStorageLength(obj, FuPriority.Argument);
 			Write(", ");
 			WriteUnstorage(args[0]);
 			WriteChar(')');
@@ -2239,7 +2239,7 @@ public class GenC : GenCCpp
 			Write("qsort(");
 			WriteArrayPtr(obj, FuPriority.Argument);
 			Write(", ");
-			WriteArrayStorageLength(obj);
+			WriteArrayStorageLength(obj, FuPriority.Argument);
 			WriteSizeofCompare(obj.Type.AsClassType().GetElementType());
 			break;
 		case FuId.ArraySortPart:
@@ -2933,7 +2933,7 @@ public class GenC : GenCCpp
 					WriteCamelCaseNotKeyword(element);
 					Write(" < ");
 					assert klass is FuArrayStorageType array;
-					VisitLiteralLong(array.Length);
+					VisitLiteralLong(array.Length, FuPriority.Rel);
 				}
 				Write("; ");
 				WriteCamelCaseNotKeyword(element);
@@ -4099,7 +4099,7 @@ public class GenC : GenCCpp
 			WriteChar(' ');
 			WriteResource(name, -1);
 			WriteChar('[');
-			VisitLiteralLong(content.Count);
+			VisitLiteralLong(content.Count, FuPriority.Argument);
 			WriteLine("] = {");
 			WriteChar('\t');
 			WriteBytes(content);

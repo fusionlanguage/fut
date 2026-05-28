@@ -43,10 +43,10 @@ public abstract class GenTyped : GenBase
 		Write(" }");
 	}
 
-	protected void WriteArrayStorageLength!(FuExpr expr)
+	protected void WriteArrayStorageLength!(FuExpr expr, FuPriority parent)
 	{
 		assert expr.Type is FuArrayStorageType array;
-		VisitLiteralLong(array.Length);
+		VisitLiteralLong(array.Length, parent);
 	}
 
 	protected override void WriteNewArray!(FuType elementType, FuExpr lengthExpr, FuPriority parent)
@@ -220,7 +220,7 @@ public abstract class GenTyped : GenBase
 			if (expr is FuCallExpr call && call.Method.Symbol.Id == FuId.MathTruncate) {
 				expr = call.Arguments[0];
 				if (expr is FuLiteralDouble literal) {
-					VisitLiteralLong(Math.Truncate(literal.Value)); // TODO: range check
+					VisitLiteralLong(Math.Truncate(literal.Value), parent); // TODO: range check
 					return;
 				}
 			}

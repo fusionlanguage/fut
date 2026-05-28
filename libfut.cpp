@@ -1366,7 +1366,7 @@ bool FuLiteralLong::isDefaultValue() const
 
 void FuLiteralLong::accept(FuVisitor * visitor, FuPriority parent) const
 {
-	visitor->visitLiteralLong(this->value);
+	visitor->visitLiteralLong(this->value, parent);
 }
 
 std::string FuLiteralLong::getLiteralString() const
@@ -2815,7 +2815,7 @@ FuSystem::FuSystem()
 	std::shared_ptr<FuSymbol> basePtr = FuVar::new_(nullptr, "base");
 	basePtr->id = FuId::basePtr;
 	add(basePtr);
-	addMinMaxValue(this->intType.get(), (-2147483647 - 1), 2147483647);
+	addMinMaxValue(this->intType.get(), -2147483647 - 1, 2147483647);
 	std::shared_ptr<FuMethod> intTryParseMethod = FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::intTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0)));
 	this->intType->add(intTryParseMethod);
 	add(this->intType);
@@ -2823,7 +2823,7 @@ FuSystem::FuSystem()
 	add(this->uIntType);
 	this->nIntType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::nIntTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
 	add(this->nIntType);
-	addMinMaxValue(this->longType.get(), (-9223372036854775807 - 1), 9223372036854775807);
+	addMinMaxValue(this->longType.get(), -9223372036854775807 - 1, 9223372036854775807);
 	this->longType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::longTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "radix", newLiteralLong(0))));
 	add(this->longType);
 	this->byteType->name = "byte";
@@ -4026,7 +4026,7 @@ FuSystem::FuSystem()
 
 std::shared_ptr<FuLiteralLong> FuSystem::newLiteralLong(int64_t value, int loc) const
 {
-	std::shared_ptr<FuType> type = value >= (-2147483647 - 1) && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
+	std::shared_ptr<FuType> type = value >= -2147483647 - 1 && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
 	std::shared_ptr<FuLiteralLong> futemp0 = std::make_shared<FuLiteralLong>();
 	futemp0->loc = loc;
 	futemp0->type = type;
@@ -6130,7 +6130,7 @@ std::shared_ptr<FuType> FuSema::getNumericType(const FuExpr * left, const FuExpr
 
 int FuSema::saturatedNeg(int a)
 {
-	if (a == (-2147483647 - 1))
+	if (a == -2147483647 - 1)
 		return 2147483647;
 	return -a;
 }
@@ -6138,12 +6138,12 @@ int FuSema::saturatedNeg(int a)
 int FuSema::saturatedAdd(int a, int b)
 {
 	int64_t c = a;
-	return static_cast<int>(std::clamp(c + b, static_cast<int64_t>((-2147483647 - 1)), static_cast<int64_t>(2147483647)));
+	return static_cast<int>(std::clamp(c + b, static_cast<int64_t>(-2147483647 - 1), static_cast<int64_t>(2147483647)));
 }
 
 int FuSema::saturatedSub(int a, int b)
 {
-	if (b == (-2147483647 - 1))
+	if (b == -2147483647 - 1)
 		return a < 0 ? a ^ b : 2147483647;
 	return saturatedAdd(a, -b);
 }
@@ -6152,9 +6152,9 @@ int FuSema::saturatedMul(int a, int b)
 {
 	if (a == 0 || b == 0)
 		return 0;
-	if (a == (-2147483647 - 1))
+	if (a == -2147483647 - 1)
 		return b >> 31 ^ a;
-	if (b == (-2147483647 - 1))
+	if (b == -2147483647 - 1)
 		return a >> 31 ^ b;
 	if (2147483647 / std::abs(a) < std::abs(b))
 		return (a ^ b) >> 31 ^ 2147483647;
@@ -6163,7 +6163,7 @@ int FuSema::saturatedMul(int a, int b)
 
 int FuSema::saturatedDiv(int a, int b)
 {
-	if (a == (-2147483647 - 1) && b == -1)
+	if (a == -2147483647 - 1 && b == -1)
 		return 2147483647;
 	return a / b;
 }
@@ -7955,7 +7955,7 @@ int FuSema::foldConstInt(std::shared_ptr<FuExpr> expr)
 {
 	if (std::shared_ptr<FuLiteralLong>literal = std::dynamic_pointer_cast<FuLiteralLong>(foldConst(expr))) {
 		int64_t l = literal->value;
-		if (l < (-2147483647 - 1) || l > 2147483647) {
+		if (l < -2147483647 - 1 || l > 2147483647) {
 			reportError(expr.get(), "Only 32-bit ranges supported");
 			return 0;
 		}
@@ -8306,7 +8306,7 @@ void GenBase::visitLiteralTrue()
 	write("true");
 }
 
-void GenBase::visitLiteralLong(int64_t i)
+void GenBase::visitLiteralLong(int64_t i, FuPriority parent)
 {
 	*this->writer << i;
 }
@@ -8471,7 +8471,7 @@ void GenBase::writeUppercaseConstName(const FuConst * konst)
 	writeUppercaseWithUnderscores(konst->name);
 	if (konst->inMethodIndex > 0) {
 		writeChar('_');
-		visitLiteralLong(konst->inMethodIndex);
+		visitLiteralLong(konst->inMethodIndex, FuPriority::primary);
 	}
 }
 
@@ -8715,7 +8715,7 @@ void GenBase::writeBytes(const std::vector<uint8_t> * content)
 	int i = 0;
 	for (int b : *content) {
 		writeComma(i++);
-		visitLiteralLong(b);
+		visitLiteralLong(b, FuPriority::argument);
 	}
 }
 
@@ -8743,10 +8743,10 @@ void GenBase::writeDoubling(std::string_view s, int doubled)
 void GenBase::writePrintfWidth(const FuInterpolatedPart * part)
 {
 	if (part->widthExpr != nullptr)
-		visitLiteralLong(part->width);
+		visitLiteralLong(part->width, FuPriority::primary);
 	if (part->precision >= 0) {
 		writeChar('.');
-		visitLiteralLong(part->precision);
+		visitLiteralLong(part->precision, FuPriority::primary);
 	}
 }
 
@@ -8802,16 +8802,16 @@ void GenBase::writePyFormat(const FuInterpolatedPart * part)
 		if (part->width >= 0) {
 			if (!dynamic_cast<const FuNumericType *>(part->argument->type.get()))
 				writeChar('>');
-			visitLiteralLong(part->width);
+			visitLiteralLong(part->width, FuPriority::primary);
 		}
 		else {
 			writeChar('<');
-			visitLiteralLong(-part->width);
+			visitLiteralLong(-part->width, FuPriority::primary);
 		}
 	}
 	if (part->precision >= 0) {
 		writeChar(dynamic_cast<const FuIntegerType *>(part->argument->type.get()) ? '0' : '.');
-		visitLiteralLong(part->precision);
+		visitLiteralLong(part->precision, FuPriority::primary);
 	}
 	switch (part->format) {
 	case ' ':
@@ -9095,7 +9095,7 @@ void GenBase::writeArrayElement(const FuNamedValue * def, int nesting)
 	writeLocalName(def, FuPriority::primary);
 	for (int i = 0; i < nesting; i++) {
 		write("[_i");
-		visitLiteralLong(i);
+		visitLiteralLong(i, FuPriority::primary);
 		writeChar(']');
 	}
 }
@@ -9105,13 +9105,13 @@ void GenBase::openLoop(std::string_view intString, int nesting, int count)
 	write("for (");
 	write(intString);
 	write(" _i");
-	visitLiteralLong(nesting);
+	visitLiteralLong(nesting, FuPriority::primary);
 	write(" = 0; _i");
-	visitLiteralLong(nesting);
+	visitLiteralLong(nesting, FuPriority::primary);
 	write(" < ");
-	visitLiteralLong(count);
+	visitLiteralLong(count, FuPriority::rel);
 	write("; _i");
-	visitLiteralLong(nesting);
+	visitLiteralLong(nesting, FuPriority::primary);
 	write("++) ");
 	openBlock();
 }
@@ -9119,7 +9119,7 @@ void GenBase::openLoop(std::string_view intString, int nesting, int count)
 void GenBase::writeTemporaryName(int id)
 {
 	write("futemp");
-	visitLiteralLong(id);
+	visitLiteralLong(id, FuPriority::primary);
 }
 
 bool GenBase::tryWriteTemporary(const FuExpr * expr)
@@ -9225,7 +9225,7 @@ void GenBase::writeAdd(const FuExpr * left, const FuExpr * right)
 			return;
 		}
 		if (const FuLiteralLong *rightLiteral = dynamic_cast<const FuLiteralLong *>(right)) {
-			visitLiteralLong(leftValue + rightLiteral->value);
+			visitLiteralLong(leftValue + rightLiteral->value, FuPriority::argument);
 			return;
 		}
 	}
@@ -9866,7 +9866,7 @@ void GenBase::visitBreak(const FuBreak * statement)
 		int gotoId = static_cast<int>([](const std::vector<const FuSwitch *> &v, const FuSwitch * value) { auto i = std::find(v.begin(), v.end(), value); return i == v.end() ? -1 : i - v.begin(); }(this->switchesWithGoto, switchStatement));
 		if (gotoId >= 0) {
 			startBreakGoto();
-			visitLiteralLong(gotoId);
+			visitLiteralLong(gotoId, FuPriority::primary);
 			writeCharLine(';');
 			return;
 		}
@@ -10427,10 +10427,10 @@ void GenTyped::visitAggregateInitializer(const FuAggregateInitializer * expr)
 	write(" }");
 }
 
-void GenTyped::writeArrayStorageLength(const FuExpr * expr)
+void GenTyped::writeArrayStorageLength(const FuExpr * expr, FuPriority parent)
 {
 	const FuArrayStorageType * array = static_cast<const FuArrayStorageType *>(expr->type.get());
-	visitLiteralLong(array->length);
+	visitLiteralLong(array->length, parent);
 }
 
 void GenTyped::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
@@ -10613,7 +10613,7 @@ void GenTyped::writeCoercedInternal(const FuType * type, const FuExpr * expr, Fu
 		if ((call = dynamic_cast<const FuCallExpr *>(expr)) && call->method->symbol->id == FuId::mathTruncate) {
 			expr = call->arguments[0].get();
 			if (const FuLiteralDouble *literal = dynamic_cast<const FuLiteralDouble *>(expr)) {
-				visitLiteralLong(static_cast<int64_t>(literal->value));
+				visitLiteralLong(static_cast<int64_t>(literal->value), parent);
 				return;
 			}
 		}
@@ -10669,14 +10669,24 @@ void GenTyped::writeExceptionConstructor(const FuClass * klass, std::string_view
 	writeLine(s);
 }
 
-void GenCCppD::visitLiteralLong(int64_t i)
+void GenCCppD::visitLiteralLong(int64_t i, FuPriority parent)
 {
-	if (i == (-2147483647 - 1))
-		write("(-2147483647 - 1)");
-	else if (i == (-9223372036854775807 - 1))
-		write("(-9223372036854775807 - 1)");
+	if (i == -2147483647 - 1) {
+		if (parent > FuPriority::add)
+			writeChar('(');
+		write("-2147483647 - 1");
+		if (parent > FuPriority::add)
+			writeChar(')');
+	}
+	else if (i == -9223372036854775807 - 1) {
+		if (parent > FuPriority::add)
+			writeChar('(');
+		write("-9223372036854775807 - 1");
+		if (parent > FuPriority::add)
+			writeChar(')');
+	}
 	else
-		GenBase::visitLiteralLong(i);
+		GenBase::visitLiteralLong(i, parent);
 }
 
 void GenCCppD::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
@@ -10700,7 +10710,7 @@ void GenCCppD::writeSwitchAsIfsWithGoto(const FuSwitch * statement)
 		this->switchesWithGoto.push_back(statement);
 		writeSwitchAsIfs(statement, false);
 		write("fuafterswitch");
-		visitLiteralLong(gotoId);
+		visitLiteralLong(gotoId, FuPriority::primary);
 		writeLine(": ;");
 	}
 	else
@@ -10779,7 +10789,7 @@ void GenCCpp::writeArgsIndexing(const FuExpr * index)
 {
 	write("argv[");
 	if (const FuLiteralLong *literal = dynamic_cast<const FuLiteralLong *>(index))
-		visitLiteralLong(1 + literal->value);
+		visitLiteralLong(1 + literal->value, FuPriority::argument);
 	else {
 		write("1 + ");
 		index->accept(this, FuPriority::add);
@@ -11267,7 +11277,7 @@ void GenC::writeMatchProperty(const FuSymbolReference * expr, int which)
 	write("FuMatch_GetPos(");
 	expr->left->accept(this, FuPriority::argument);
 	write(", ");
-	visitLiteralLong(which);
+	visitLiteralLong(which, FuPriority::argument);
 	writeChar(')');
 }
 
@@ -11470,7 +11480,7 @@ void GenC::endDefinition(const FuType * type)
 		const FuType * elementType = type->asClassType()->getElementType().get();
 		if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(type)) {
 			writeChar('[');
-			visitLiteralLong(arrayStorage->length);
+			visitLiteralLong(arrayStorage->length, FuPriority::argument);
 			writeChar(']');
 		}
 		else if (dynamic_cast<const FuArrayStorageType *>(elementType))
@@ -12235,13 +12245,13 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 	while (const FuArrayStorageType *array = dynamic_cast<const FuArrayStorageType *>(type)) {
 		includeStdDef();
 		write("for (ptrdiff_t _i");
-		visitLiteralLong(nesting);
+		visitLiteralLong(nesting, FuPriority::primary);
 		write(" = ");
-		visitLiteralLong(array->length - 1);
+		visitLiteralLong(array->length - 1, FuPriority::argument);
 		write("; _i");
-		visitLiteralLong(nesting);
+		visitLiteralLong(nesting, FuPriority::primary);
 		write(" >= 0; _i");
-		visitLiteralLong(nesting);
+		visitLiteralLong(nesting, FuPriority::primary);
 		writeLine("--)");
 		this->indent++;
 		nesting++;
@@ -12252,7 +12262,7 @@ void GenC::writeDestruct(const FuSymbol * symbol)
 	writeLocalName(symbol, FuPriority::primary);
 	for (int i = 0; i < nesting; i++) {
 		write("[_i");
-		visitLiteralLong(i);
+		visitLiteralLong(i, FuPriority::primary);
 		writeChar(']');
 	}
 	if (klass->class_->id == FuId::queueClass && hasDictionaryDestroy(klass->getElementType().get())) {
@@ -12276,7 +12286,7 @@ void GenC::writeDestructAll(const FuVar * exceptVar)
 
 void GenC::writeRangeThrowReturnValue(const FuRangeType * range)
 {
-	visitLiteralLong(range->min - 1);
+	visitLiteralLong(range->min - 1, FuPriority::equality);
 }
 
 void GenC::writeThrowReturnValue(const FuType * type, bool include)
@@ -12485,7 +12495,7 @@ void GenC::writeSubstringEqual(const FuCallExpr * call, std::string_view literal
 	write(", ");
 	visitLiteralString(literal);
 	write(", ");
-	visitLiteralLong(std::ssize(literal));
+	visitLiteralLong(std::ssize(literal), FuPriority::argument);
 	writeChar(')');
 	write(getEqOp(not_));
 	writeChar('0');
@@ -12525,7 +12535,7 @@ void GenC::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pare
 						writeChar('(');
 					lengthExpr->accept(this, FuPriority::equality);
 					write(" != ");
-					visitLiteralLong(rightLength);
+					visitLiteralLong(rightLength, FuPriority::equality);
 					if (rightLength > 0) {
 						write(" || ");
 						writeSubstringEqual(call, rightValue, FuPriority::condOr, true);
@@ -12538,7 +12548,7 @@ void GenC::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority pare
 						writeChar('(');
 					lengthExpr->accept(this, FuPriority::equality);
 					write(" == ");
-					visitLiteralLong(rightLength);
+					visitLiteralLong(rightLength, FuPriority::equality);
 					if (rightLength > 0) {
 						write(" && ");
 						writeSubstringEqual(call, rightValue, FuPriority::condAnd, false);
@@ -12586,7 +12596,7 @@ void GenC::writeArrayFill(const FuExpr * obj, const std::vector<std::shared_ptr<
 	write(std::ssize(*args) != 1 && getTypeId((*args)[2]->type.get(), true) == FuId::intType ? "int" : "size_t");
 	write(" _i = 0; _i < ");
 	if (std::ssize(*args) == 1)
-		writeArrayStorageLength(obj);
+		writeArrayStorageLength(obj, FuPriority::rel);
 	else
 		(*args)[2]->accept(this, FuPriority::rel);
 	writeLine("; _i++)");
@@ -12607,7 +12617,7 @@ void GenC::writeListAddInsert(const FuExpr * obj, bool insert, std::string_view 
 	if ((storage = dynamic_cast<const FuStorageType *>(elementType)) && needsConstructor(storage->class_)) {
 		writeName(storage->class_);
 		write("_Construct(&futemp");
-		visitLiteralLong(id);
+		visitLiteralLong(id, FuPriority::primary);
 		writeLine(");");
 	}
 	write(function);
@@ -12618,7 +12628,7 @@ void GenC::writeListAddInsert(const FuExpr * obj, bool insert, std::string_view 
 		(*args)[0]->accept(this, FuPriority::argument);
 	}
 	write(", futemp");
-	visitLiteralLong(id);
+	visitLiteralLong(id, FuPriority::primary);
 	writeChar(')');
 	this->currentTemporaries[id] = elementType;
 }
@@ -13055,7 +13065,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 				writeArrayPtrAdd(obj, (*args)[1].get());
 			write(", ");
 			if (std::ssize(*args) == 1)
-				writeArrayStorageLength(obj);
+				writeArrayStorageLength(obj, FuPriority::argument);
 			else
 				(*args)[2]->accept(this, FuPriority::argument);
 			writeSizeofCompare(elementType);
@@ -13069,7 +13079,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		startArrayContains(obj);
 		obj->accept(this, FuPriority::argument);
 		write(", ");
-		writeArrayStorageLength(obj);
+		writeArrayStorageLength(obj, FuPriority::argument);
 		write(", ");
 		writeUnstorage((*args)[0].get());
 		writeChar(')');
@@ -13128,7 +13138,7 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		write("qsort(");
 		writeArrayPtr(obj, FuPriority::argument);
 		write(", ");
-		writeArrayStorageLength(obj);
+		writeArrayStorageLength(obj, FuPriority::argument);
 		writeSizeofCompare(obj->type->asClassType()->getElementType().get());
 		break;
 	case FuId::arraySortPart:
@@ -13832,7 +13842,7 @@ void GenC::visitForeach(const FuForeach * statement)
 				writeCamelCaseNotKeyword(element);
 				write(" < ");
 				const FuArrayStorageType * array = static_cast<const FuArrayStorageType *>(klass);
-				visitLiteralLong(array->length);
+				visitLiteralLong(array->length, FuPriority::rel);
 			}
 			write("; ");
 			writeCamelCaseNotKeyword(element);
@@ -14991,7 +15001,7 @@ void GenC::writeResources(const std::map<std::string, std::vector<uint8_t>> * re
 		writeChar(' ');
 		writeResource(name, -1);
 		writeChar('[');
-		visitLiteralLong(std::ssize(content));
+		visitLiteralLong(std::ssize(content), FuPriority::argument);
 		writeLine("] = {");
 		writeChar('\t');
 		writeBytes(&content);
@@ -15578,7 +15588,7 @@ void GenCpp::writeCollectionType(const FuClassType * klass)
 	writeType(elementType, false);
 	if (const FuArrayStorageType *arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)) {
 		write(", ");
-		visitLiteralLong(arrayStorage->length);
+		visitLiteralLong(arrayStorage->length, FuPriority::argument);
 	}
 	else if (klass->class_->typeParameterCount == 2) {
 		write(", ");
@@ -17419,7 +17429,7 @@ void GenCpp::writeResources(const std::map<std::string, std::vector<uint8_t>> * 
 		include("array");
 		include("cstdint");
 		write("const std::array<uint8_t, ");
-		visitLiteralLong(std::ssize(content));
+		visitLiteralLong(std::ssize(content), FuPriority::argument);
 		write("> ");
 		writeResourceName(name);
 		if (define) {
@@ -17685,7 +17695,7 @@ void GenCs::writeName(const FuSymbol * symbol)
 		writeChar('_');
 		write(symbol->name);
 		if (konst->inMethodIndex > 0)
-			visitLiteralLong(konst->inMethodIndex);
+			visitLiteralLong(konst->inMethodIndex, FuPriority::primary);
 		return;
 	}
 	write(symbol->name);
@@ -17868,13 +17878,13 @@ void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 			part.argument->accept(this, FuPriority::selectCond);
 		if (part.widthExpr != nullptr) {
 			writeChar(',');
-			visitLiteralLong(part.width);
+			visitLiteralLong(part.width, FuPriority::argument);
 		}
 		if (part.format != ' ' && part.format != 'U' && part.format != 'u') {
 			writeChar(':');
 			writeChar(part.format);
 			if (part.precision >= 0)
-				visitLiteralLong(part.precision);
+				visitLiteralLong(part.precision, FuPriority::argument);
 		}
 		writeChar('}');
 	}
@@ -18123,7 +18133,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 				obj->accept(this, FuPriority::argument);
 				if (std::ssize(*args) == 1) {
 					write(", 0, ");
-					writeArrayStorageLength(obj);
+					writeArrayStorageLength(obj, FuPriority::argument);
 				}
 			}
 			else {
@@ -18865,7 +18875,7 @@ void GenD::writeType(const FuType * type, bool promote)
 			{
 				const FuArrayStorageType * arrayStorage;
 				if (klass->id != FuId::mainArgsType && (arrayStorage = dynamic_cast<const FuArrayStorageType *>(klass)))
-					visitLiteralLong(arrayStorage->length);
+					visitLiteralLong(arrayStorage->length, FuPriority::argument);
 				writeChar(']');
 				break;
 			}
@@ -20164,10 +20174,10 @@ std::string_view GenJava::getTargetName() const
 	return "Java";
 }
 
-void GenJava::visitLiteralLong(int64_t value)
+void GenJava::visitLiteralLong(int64_t value, FuPriority parent)
 {
-	GenBase::visitLiteralLong(value);
-	if (value < (-2147483647 - 1) || value > 2147483647)
+	GenBase::visitLiteralLong(value, parent);
+	if (value < -2147483647 - 1 || value > 2147483647)
 		writeChar('L');
 }
 
@@ -20211,7 +20221,7 @@ void GenJava::writePrintfWidth(const FuInterpolatedPart * part)
 {
 	if (part->precision >= 0 && dynamic_cast<const FuIntegerType *>(part->argument->type.get())) {
 		writeChar('0');
-		visitLiteralLong(part->precision);
+		visitLiteralLong(part->precision, FuPriority::primary);
 	}
 	else
 		GenBase::writePrintfWidth(part);
@@ -20436,7 +20446,7 @@ void GenJava::writeResource(std::string_view name, int length)
 	write("FuResource.getByteArray(");
 	visitLiteralString(name);
 	write(", ");
-	visitLiteralLong(length);
+	visitLiteralLong(length, FuPriority::argument);
 	writeChar(')');
 }
 
@@ -20559,7 +20569,7 @@ void GenJava::writeAnd(const FuBinaryExpr * expr, FuPriority parent)
 		const FuBinaryExpr * indexing = static_cast<const FuBinaryExpr *>(expr->left.get());
 		writeIndexingInternal(indexing);
 		write(" & ");
-		visitLiteralLong(255 & rightLiteral->value);
+		visitLiteralLong(255 & rightLiteral->value, FuPriority::and_);
 		if (parent > FuPriority::condAnd && parent != FuPriority::and_)
 			writeChar(')');
 	}
@@ -21393,7 +21403,7 @@ void GenJava::visitSwitch(const FuSwitch * statement)
 	if (!statement->isTypeMatching() && statement->hasWhen()) {
 		if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreakAndContinue(&kase.body); }) || FuSwitch::hasEarlyBreakAndContinue(&statement->defaultBody)) {
 			write("fuswitch");
-			visitLiteralLong(std::ssize(this->switchesWithGoto));
+			visitLiteralLong(std::ssize(this->switchesWithGoto), FuPriority::primary);
 			write(": ");
 			this->switchesWithGoto.push_back(statement);
 			writeSwitchAsIfs(statement, false);
@@ -21422,7 +21432,7 @@ void GenJava::visitEnumValue(const FuConst * konst, const FuConst * previous)
 	writeUppercaseWithUnderscores(konst->name);
 	write(" = ");
 	if (const FuImplicitEnumValue *imp = dynamic_cast<const FuImplicitEnumValue *>(konst->value.get()))
-		visitLiteralLong(imp->value);
+		visitLiteralLong(imp->value, FuPriority::primary);
 	else
 		konst->value->accept(this, FuPriority::argument);
 	writeCharLine(';');
@@ -21878,20 +21888,20 @@ void GenJsNoModule::visitInterpolatedString(const FuInterpolatedString * expr, F
 					case 'E':
 						write(".toExponential(");
 						if (part.precision >= 0)
-							visitLiteralLong(part.precision);
+							visitLiteralLong(part.precision, FuPriority::argument);
 						write(").toUpperCase()");
 						break;
 					case 'e':
 						write(".toExponential(");
 						if (part.precision >= 0)
-							visitLiteralLong(part.precision);
+							visitLiteralLong(part.precision, FuPriority::argument);
 						writeChar(')');
 						break;
 					case 'F':
 					case 'f':
 						write(".toFixed(");
 						if (part.precision >= 0)
-							visitLiteralLong(part.precision);
+							visitLiteralLong(part.precision, FuPriority::argument);
 						writeChar(')');
 						break;
 					case 'X':
@@ -21911,7 +21921,7 @@ void GenJsNoModule::visitInterpolatedString(const FuInterpolatedString * expr, F
 						case 'X':
 						case 'x':
 							write(".padStart(");
-							visitLiteralLong(part.precision);
+							visitLiteralLong(part.precision, FuPriority::argument);
 							write(", \"0\")");
 							break;
 						default:
@@ -21922,12 +21932,12 @@ void GenJsNoModule::visitInterpolatedString(const FuInterpolatedString * expr, F
 			}
 			if (part.width > 0) {
 				write(".padStart(");
-				visitLiteralLong(part.width);
+				visitLiteralLong(part.width, FuPriority::argument);
 				writeChar(')');
 			}
 			else if (part.width < 0) {
 				write(".padEnd(");
-				visitLiteralLong(-part.width);
+				visitLiteralLong(-part.width, FuPriority::argument);
 				writeChar(')');
 			}
 		}
@@ -22920,7 +22930,7 @@ void GenJsNoModule::visitSwitch(const FuSwitch * statement)
 	if (statement->isTypeMatching() || statement->hasWhen()) {
 		if (std::any_of(statement->cases.begin(), statement->cases.end(), [](const FuCase &kase) { return FuSwitch::hasEarlyBreak(&kase.body); }) || FuSwitch::hasEarlyBreak(&statement->defaultBody)) {
 			write("fuswitch");
-			visitLiteralLong(std::ssize(this->switchesWithGoto));
+			visitLiteralLong(std::ssize(this->switchesWithGoto), FuPriority::primary);
 			this->switchesWithGoto.push_back(statement);
 			write(": ");
 			openBlock();
@@ -22952,7 +22962,7 @@ void GenJsNoModule::visitEnumValue(const FuConst * konst, const FuConst * previo
 	writeDoc(konst->documentation.get());
 	writeUppercaseWithUnderscores(konst->name);
 	write(" : ");
-	visitLiteralLong(konst->value->intValue());
+	visitLiteralLong(konst->value->intValue(), FuPriority::argument);
 }
 
 void GenJsNoModule::writeEnum(const FuEnum * enu)
@@ -23881,7 +23891,7 @@ void GenSwift::writeName(const FuSymbol * symbol)
 		writeCamelCase(konst->inMethod->name);
 		writePascalCase(symbol->name);
 		if (konst->inMethodIndex > 0)
-			visitLiteralLong(konst->inMethodIndex);
+			visitLiteralLong(konst->inMethodIndex, FuPriority::primary);
 	}
 	else if (dynamic_cast<const FuVar *>(symbol) || dynamic_cast<const FuMember *>(symbol))
 		writeCamelCaseNotKeyword(symbol->name);
@@ -24374,7 +24384,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 				write("](repeating: ");
 				writeCoerced(array->getElementType().get(), (*args)[0].get(), FuPriority::argument);
 				write(", count: ");
-				visitLiteralLong(array->length);
+				visitLiteralLong(array->length, FuPriority::argument);
 				writeChar(')');
 			}
 			else {
@@ -24413,7 +24423,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writePostfix(obj, "[0..<");
 		{
 			const FuArrayStorageType * array3 = static_cast<const FuArrayStorageType *>(obj->type.get());
-			visitLiteralLong(array3->length);
+			visitLiteralLong(array3->length, FuPriority::primary);
 			write("].sort()");
 			break;
 		}
@@ -24761,7 +24771,7 @@ void GenSwift::writeNewArrayStorage(const FuArrayStorageType * array)
 		write("](repeating: ");
 		writeDefaultValue(array->getElementType().get());
 		write(", count: ");
-		visitLiteralLong(array->length);
+		visitLiteralLong(array->length, FuPriority::argument);
 		writeChar(')');
 	}
 }
@@ -25287,7 +25297,7 @@ void GenSwift::writeForRange(const FuVar * indVar, const FuBinaryExpr * cond, in
 			std::abort();
 		}
 		write(", by: ");
-		visitLiteralLong(rangeStep);
+		visitLiteralLong(rangeStep, FuPriority::argument);
 		writeChar(')');
 	}
 }
@@ -25452,7 +25462,7 @@ void GenSwift::visitEnumValue(const FuConst * konst, const FuConst * previous)
 		write("[]");
 	else {
 		write("rawValue: ");
-		visitLiteralLong(i);
+		visitLiteralLong(i, FuPriority::argument);
 	}
 	writeCharLine(')');
 }
@@ -25493,7 +25503,7 @@ void GenSwift::writeEnum(const FuEnum * enu)
 					writeName(konst);
 					if (!dynamic_cast<const FuImplicitEnumValue *>(konst->value.get())) {
 						write(" = ");
-						visitLiteralLong(i);
+						visitLiteralLong(i, FuPriority::argument);
 					}
 					valueToConst[i] = konst;
 				}
@@ -27123,7 +27133,7 @@ std::string_view GenPy::getIfNot() const
 void GenPy::writeInclusiveLimit(const FuExpr * limit, int increment, std::string_view incrementString)
 {
 	if (const FuLiteralLong *literal = dynamic_cast<const FuLiteralLong *>(limit))
-		visitLiteralLong(literal->value + increment);
+		visitLiteralLong(literal->value + increment, FuPriority::argument);
 	else {
 		limit->accept(this, FuPriority::add);
 		write(incrementString);
@@ -27153,7 +27163,7 @@ void GenPy::writeForRange(const FuVar * indVar, const FuBinaryExpr * cond, int64
 	}
 	if (rangeStep != 1) {
 		write(", ");
-		visitLiteralLong(rangeStep);
+		visitLiteralLong(rangeStep, FuPriority::argument);
 	}
 	writeChar(')');
 }
@@ -27290,7 +27300,7 @@ void GenPy::visitEnumValue(const FuConst * konst, const FuConst * previous)
 {
 	writeUppercaseWithUnderscores(konst->name);
 	write(" = ");
-	visitLiteralLong(konst->value->intValue());
+	visitLiteralLong(konst->value->intValue(), FuPriority::argument);
 	writeNewLine();
 	writeDoc(konst->documentation.get());
 }
