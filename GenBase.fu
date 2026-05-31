@@ -1035,7 +1035,7 @@ public abstract class GenBase : FuVisitor
 		WriteAdd(startIndex, length); // FIXME: side effect
 	}
 
-	static bool IsBitOp(FuPriority parent)
+	protected static bool NeedAddParentheses(FuPriority parent)
 	{
 		switch (parent) {
 		case FuPriority.Or:
@@ -1044,7 +1044,7 @@ public abstract class GenBase : FuVisitor
 		case FuPriority.Shift:
 			return true;
 		default:
-			return false;
+			return parent > FuPriority.Add;
 		}
 	}
 
@@ -1142,10 +1142,10 @@ public abstract class GenBase : FuVisitor
 	{
 		switch (expr.Op) {
 		case FuToken.Plus:
-			WriteBinaryExpr(expr, parent > FuPriority.Add || IsBitOp(parent), FuPriority.Add, " + ", FuPriority.Add);
+			WriteBinaryExpr(expr, NeedAddParentheses(parent), FuPriority.Add, " + ", FuPriority.Add);
 			break;
 		case FuToken.Minus:
-			WriteBinaryExpr(expr, parent > FuPriority.Add || IsBitOp(parent), FuPriority.Add, " - ", FuPriority.Mul);
+			WriteBinaryExpr(expr, NeedAddParentheses(parent), FuPriority.Add, " - ", FuPriority.Mul);
 			break;
 		case FuToken.Asterisk:
 			WriteBinaryExpr(expr, parent > FuPriority.Mul, FuPriority.Mul, " * ", FuPriority.Primary);

@@ -9077,7 +9077,7 @@ export class GenBase extends FuVisitor
 		this.writeAdd(startIndex, length);
 	}
 
-	static #isBitOp(parent)
+	static needAddParentheses(parent)
 	{
 		switch (parent) {
 		case FuPriority.OR:
@@ -9086,7 +9086,7 @@ export class GenBase extends FuVisitor
 		case FuPriority.SHIFT:
 			return true;
 		default:
-			return false;
+			return parent > FuPriority.ADD;
 		}
 	}
 
@@ -9190,10 +9190,10 @@ export class GenBase extends FuVisitor
 	{
 		switch (expr.op) {
 		case FuToken.PLUS:
-			this.writeBinaryExpr(expr, parent > FuPriority.ADD || GenBase.#isBitOp(parent), FuPriority.ADD, " + ", FuPriority.ADD);
+			this.writeBinaryExpr(expr, GenBase.needAddParentheses(parent), FuPriority.ADD, " + ", FuPriority.ADD);
 			break;
 		case FuToken.MINUS:
-			this.writeBinaryExpr(expr, parent > FuPriority.ADD || GenBase.#isBitOp(parent), FuPriority.ADD, " - ", FuPriority.MUL);
+			this.writeBinaryExpr(expr, GenBase.needAddParentheses(parent), FuPriority.ADD, " - ", FuPriority.MUL);
 			break;
 		case FuToken.ASTERISK:
 			this.writeBinaryExpr(expr, parent > FuPriority.MUL, FuPriority.MUL, " * ", FuPriority.PRIMARY);
@@ -10568,17 +10568,17 @@ export class GenCCppD extends GenTyped
 	visitLiteralLong(i, parent)
 	{
 		if (i == -2147483648) {
-			if (parent > FuPriority.ADD)
+			if (GenCCppD.needAddParentheses(parent))
 				this.writeChar(40);
 			this.write("-2147483647 - 1");
-			if (parent > FuPriority.ADD)
+			if (GenCCppD.needAddParentheses(parent))
 				this.writeChar(41);
 		}
 		else if (i == -9223372036854775808) {
-			if (parent > FuPriority.ADD)
+			if (GenCCppD.needAddParentheses(parent))
 				this.writeChar(40);
 			this.write("-9223372036854775807 - 1");
-			if (parent > FuPriority.ADD)
+			if (GenCCppD.needAddParentheses(parent))
 				this.writeChar(41);
 		}
 		else

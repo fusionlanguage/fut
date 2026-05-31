@@ -23,17 +23,17 @@ public abstract class GenCCppD : GenTyped
 	internal override void VisitLiteralLong!(long i, FuPriority parent)
 	{
 		if (i == int.MinValue) {
-			if (parent > FuPriority.Add)
+			if (NeedAddParentheses(parent))
 				WriteChar('(');
 			Write("-2147483647 - 1");
-			if (parent > FuPriority.Add)
+			if (NeedAddParentheses(parent))
 				WriteChar(')');
 		}
 		else if (i == long.MinValue) {
-			if (parent > FuPriority.Add)
+			if (NeedAddParentheses(parent))
 				WriteChar('(');
 			Write("-9223372036854775807 - 1");
-			if (parent > FuPriority.Add)
+			if (NeedAddParentheses(parent))
 				WriteChar(')');
 		}
 		else

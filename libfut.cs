@@ -8622,7 +8622,7 @@ namespace Fusion
 			WriteAdd(startIndex, length);
 		}
 
-		static bool IsBitOp(FuPriority parent)
+		protected static bool NeedAddParentheses(FuPriority parent)
 		{
 			switch (parent) {
 			case FuPriority.Or:
@@ -8631,7 +8631,7 @@ namespace Fusion
 			case FuPriority.Shift:
 				return true;
 			default:
-				return false;
+				return parent > FuPriority.Add;
 			}
 		}
 
@@ -8729,10 +8729,10 @@ namespace Fusion
 		{
 			switch (expr.Op) {
 			case FuToken.Plus:
-				WriteBinaryExpr(expr, parent > FuPriority.Add || IsBitOp(parent), FuPriority.Add, " + ", FuPriority.Add);
+				WriteBinaryExpr(expr, NeedAddParentheses(parent), FuPriority.Add, " + ", FuPriority.Add);
 				break;
 			case FuToken.Minus:
-				WriteBinaryExpr(expr, parent > FuPriority.Add || IsBitOp(parent), FuPriority.Add, " - ", FuPriority.Mul);
+				WriteBinaryExpr(expr, NeedAddParentheses(parent), FuPriority.Add, " - ", FuPriority.Mul);
 				break;
 			case FuToken.Asterisk:
 				WriteBinaryExpr(expr, parent > FuPriority.Mul, FuPriority.Mul, " * ", FuPriority.Primary);
@@ -10072,17 +10072,17 @@ namespace Fusion
 		internal override void VisitLiteralLong(long i, FuPriority parent)
 		{
 			if (i == -2147483648) {
-				if (parent > FuPriority.Add)
+				if (NeedAddParentheses(parent))
 					WriteChar('(');
 				Write("-2147483647 - 1");
-				if (parent > FuPriority.Add)
+				if (NeedAddParentheses(parent))
 					WriteChar(')');
 			}
 			else if (i == -9223372036854775808) {
-				if (parent > FuPriority.Add)
+				if (NeedAddParentheses(parent))
 					WriteChar('(');
 				Write("-9223372036854775807 - 1");
-				if (parent > FuPriority.Add)
+				if (NeedAddParentheses(parent))
 					WriteChar(')');
 			}
 			else

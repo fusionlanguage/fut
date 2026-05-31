@@ -2579,6 +2579,7 @@ protected:
 	void startAdd(const FuExpr * expr);
 	void writeAdd(const FuExpr * left, const FuExpr * right);
 	void writeStartEnd(const FuExpr * startIndex, const FuExpr * length);
+	static bool needAddParentheses(FuPriority parent);
 	virtual void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary);
 	void writeBinaryExpr(const FuBinaryExpr * expr, bool parentheses, FuPriority left, std::string_view op, FuPriority right);
 	void writeBinaryExpr2(const FuBinaryExpr * expr, FuPriority parent, FuPriority child, std::string_view op);
@@ -2731,7 +2732,6 @@ private:
 	static int getPrintfFormat(const FuType * type, int format);
 	static const FuAggregateInitializer * getAggregateInitializer(const FuNamedValue * def);
 	void writeAggregateInitField(const FuExpr * obj, const FuExpr * item);
-	static bool isBitOp(FuPriority parent);
 	void startIfWhile(const FuExpr * expr);
 	void writeIf(const FuIf * statement);
 };

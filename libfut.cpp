@@ -9245,7 +9245,7 @@ void GenBase::writeStartEnd(const FuExpr * startIndex, const FuExpr * length)
 	writeAdd(startIndex, length);
 }
 
-bool GenBase::isBitOp(FuPriority parent)
+bool GenBase::needAddParentheses(FuPriority parent)
 {
 	switch (parent) {
 	case FuPriority::or_:
@@ -9254,7 +9254,7 @@ bool GenBase::isBitOp(FuPriority parent)
 	case FuPriority::shift:
 		return true;
 	default:
-		return false;
+		return parent > FuPriority::add;
 	}
 }
 
@@ -9353,10 +9353,10 @@ void GenBase::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 {
 	switch (expr->op) {
 	case FuToken::plus:
-		writeBinaryExpr(expr, parent > FuPriority::add || isBitOp(parent), FuPriority::add, " + ", FuPriority::add);
+		writeBinaryExpr(expr, needAddParentheses(parent), FuPriority::add, " + ", FuPriority::add);
 		break;
 	case FuToken::minus:
-		writeBinaryExpr(expr, parent > FuPriority::add || isBitOp(parent), FuPriority::add, " - ", FuPriority::mul);
+		writeBinaryExpr(expr, needAddParentheses(parent), FuPriority::add, " - ", FuPriority::mul);
 		break;
 	case FuToken::asterisk:
 		writeBinaryExpr(expr, parent > FuPriority::mul, FuPriority::mul, " * ", FuPriority::primary);
@@ -10672,17 +10672,17 @@ void GenTyped::writeExceptionConstructor(const FuClass * klass, std::string_view
 void GenCCppD::visitLiteralLong(int64_t i, FuPriority parent)
 {
 	if (i == -2147483647 - 1) {
-		if (parent > FuPriority::add)
+		if (needAddParentheses(parent))
 			writeChar('(');
 		write("-2147483647 - 1");
-		if (parent > FuPriority::add)
+		if (needAddParentheses(parent))
 			writeChar(')');
 	}
 	else if (i == -9223372036854775807 - 1) {
-		if (parent > FuPriority::add)
+		if (needAddParentheses(parent))
 			writeChar('(');
 		write("-9223372036854775807 - 1");
-		if (parent > FuPriority::add)
+		if (needAddParentheses(parent))
 			writeChar(')');
 	}
 	else
