@@ -1,6 +1,6 @@
 // SymbolReferenceVisitor.fu - visitor of symbol references
 //
-// Copyright (C) 2024-2025  Piotr Fusik
+// Copyright (C) 2024-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -164,7 +164,7 @@ public abstract class FuSymbolReferenceVisitor : FuVisitor
 	{
 	}
 
-	internal override void VisitLiteralLong!(long value)
+	internal override void VisitLiteralLong!(long value, FuPriority parent)
 	{
 	}
 
