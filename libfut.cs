@@ -6636,6 +6636,8 @@ namespace Fusion
 				}
 				expr.Type = type;
 			}
+			if (method.Id == FuId.EnumToInt && symbol.Left.IsConst(false))
+				return ToLiteralLong(expr, symbol.Left.IntValue());
 			return expr;
 		}
 

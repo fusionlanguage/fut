@@ -8,6 +8,9 @@ public static class Test
 {
 	public static bool Run()
 	{
-		return Number.One.ToInt() == 1 && Number.Five.ToInt() == 5;
+		Number one = Number.One;
+		int[Number.One.ToInt()] a;
+		a[0] = 42;
+		return one.ToInt() == 1 && Number.Five.ToInt() == 5 && a[0] == 42;
 	}
 }

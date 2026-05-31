@@ -7033,6 +7033,8 @@ export class FuSema
 			}
 			expr.type = type;
 		}
+		if (method.id == FuId.ENUM_TO_INT && symbol.left.isConst(false))
+			return this.#toLiteralLong(expr, BigInt(symbol.left.intValue()));
 		return expr;
 	}
 

@@ -7281,6 +7281,8 @@ std::shared_ptr<FuExpr> FuSema::resolveCallWithArguments(std::shared_ptr<FuCallE
 		}
 		expr->type = type;
 	}
+	if (method->id == FuId::enumToInt && symbol->left->isConst(false))
+		return toLiteralLong(expr.get(), symbol->left->intValue());
 	return expr;
 }
 
