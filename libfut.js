@@ -22537,7 +22537,10 @@ export class GenJsNoModule extends GenBase
 			else {
 				let konst;
 				if ((konst = symbol) instanceof FuConst) {
-					konst.value.accept(this, parent);
+					if (konst.value instanceof FuImplicitEnumValue)
+						this.writeUppercaseWithUnderscores(konst.name);
+					else
+						konst.value.accept(this, parent);
 					return;
 				}
 				else

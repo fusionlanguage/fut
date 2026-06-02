@@ -21959,7 +21959,10 @@ void GenJsNoModule::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 		else if (this->currentMethod != nullptr)
 			write(this->currentMethod->parent->name);
 		else if (const FuConst *konst = dynamic_cast<const FuConst *>(symbol)) {
-			konst->value->accept(this, parent);
+			if (dynamic_cast<const FuImplicitEnumValue *>(konst->value.get()))
+				writeUppercaseWithUnderscores(konst->name);
+			else
+				konst->value->accept(this, parent);
 			return;
 		}
 		else

@@ -21877,7 +21877,10 @@ namespace Fusion
 				else if (this.CurrentMethod != null)
 					Write(this.CurrentMethod.Parent.Name);
 				else if (symbol is FuConst konst) {
-					konst.Value.Accept(this, parent);
+					if (konst.Value is FuImplicitEnumValue)
+						WriteUppercaseWithUnderscores(konst.Name);
+					else
+						konst.Value.Accept(this, parent);
 					return;
 				}
 				else
