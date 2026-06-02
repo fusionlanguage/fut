@@ -2,6 +2,11 @@ public static class Test
 {
 	static bool Eq(int x, int y) => x == y;
 
+	static void Abort()
+	{
+		// it should be std::abort() in C++, not this
+	}
+
 	public static bool Run()
 	{
 		int i = 5;
