@@ -31,13 +31,13 @@ public class GenTs : GenJs
 
 	public GenTs WithGenFullCode!()
 	{
-		GenFullCode = true;
+		this.GenFullCode = true;
 		return this;
 	}
 
 	internal override void VisitEnumValue!(FuConst konst, FuConst? previous)
 	{
-		WriteEnumValue(konst);
+		WriteEnumValue(konst, this.GenFullCode);
 		WriteCharLine(',');
 	}
 

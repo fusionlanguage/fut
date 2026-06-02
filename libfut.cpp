@@ -10319,11 +10319,11 @@ void GenBase::writePublic(const FuContainerType * container)
 		write("public ");
 }
 
-void GenBase::writeEnumValue(const FuConst * konst)
+void GenBase::writeEnumValue(const FuConst * konst, bool withValue)
 {
 	writeDoc(konst->documentation.get());
 	writeName(konst);
-	if (!dynamic_cast<const FuImplicitEnumValue *>(konst->value.get())) {
+	if (withValue && !dynamic_cast<const FuImplicitEnumValue *>(konst->value.get())) {
 		write(" = ");
 		konst->value->accept(this, FuPriority::argument);
 	}
@@ -10333,7 +10333,7 @@ void GenBase::visitEnumValue(const FuConst * konst, const FuConst * previous)
 {
 	if (previous != nullptr)
 		writeCharLine(',');
-	writeEnumValue(konst);
+	writeEnumValue(konst, true);
 }
 
 void GenBase::writeRegexOptionsEnum(const FuProgram * program)
@@ -23173,7 +23173,7 @@ const GenTs * GenTs::withGenFullCode()
 
 void GenTs::visitEnumValue(const FuConst * konst, const FuConst * previous)
 {
-	writeEnumValue(konst);
+	writeEnumValue(konst, this->genFullCode);
 	writeCharLine(',');
 }
 

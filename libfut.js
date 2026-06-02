@@ -10192,11 +10192,11 @@ export class GenBase extends FuVisitor
 			this.write("public ");
 	}
 
-	writeEnumValue(konst)
+	writeEnumValue(konst, withValue)
 	{
 		this.writeDoc(konst.documentation);
 		this.writeName(konst);
-		if (!(konst.value instanceof FuImplicitEnumValue)) {
+		if (withValue && !(konst.value instanceof FuImplicitEnumValue)) {
 			this.write(" = ");
 			konst.value.accept(this, FuPriority.ARGUMENT);
 		}
@@ -10206,7 +10206,7 @@ export class GenBase extends FuVisitor
 	{
 		if (previous != null)
 			this.writeCharLine(44);
-		this.writeEnumValue(konst);
+		this.writeEnumValue(konst, true);
 	}
 
 	writeRegexOptionsEnum(program)
@@ -23764,7 +23764,7 @@ export class GenTs extends GenJs
 
 	visitEnumValue(konst, previous)
 	{
-		this.writeEnumValue(konst);
+		this.writeEnumValue(konst, this.#genFullCode);
 		this.writeCharLine(44);
 	}
 

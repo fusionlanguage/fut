@@ -2663,7 +2663,7 @@ protected:
 	virtual bool isShortMethod(const FuMethod * method) const;
 	void writeBody(const FuMethod * method);
 	void writePublic(const FuContainerType * container);
-	void writeEnumValue(const FuConst * konst);
+	void writeEnumValue(const FuConst * konst, bool withValue);
 	virtual void writeEnum(const FuEnum * enu) = 0;
 	virtual void writeRegexOptionsEnum(const FuProgram * program);
 	void startClass(const FuClass * klass, std::string_view suffix, std::string_view extendsClause);

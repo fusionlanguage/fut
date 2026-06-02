@@ -9699,11 +9699,11 @@ namespace Fusion
 				Write("public ");
 		}
 
-		protected void WriteEnumValue(FuConst konst)
+		protected void WriteEnumValue(FuConst konst, bool withValue)
 		{
 			WriteDoc(konst.Documentation);
 			WriteName(konst);
-			if (!(konst.Value is FuImplicitEnumValue)) {
+			if (withValue && !(konst.Value is FuImplicitEnumValue)) {
 				Write(" = ");
 				konst.Value.Accept(this, FuPriority.Argument);
 			}
@@ -9713,7 +9713,7 @@ namespace Fusion
 		{
 			if (previous != null)
 				WriteCharLine(',');
-			WriteEnumValue(konst);
+			WriteEnumValue(konst, true);
 		}
 
 		protected abstract void WriteEnum(FuEnum enu);
@@ -23100,7 +23100,7 @@ namespace Fusion
 
 		internal override void VisitEnumValue(FuConst konst, FuConst previous)
 		{
-			WriteEnumValue(konst);
+			WriteEnumValue(konst, this.GenFullCode);
 			WriteCharLine(',');
 		}
 
