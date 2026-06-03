@@ -24151,12 +24151,12 @@ namespace Fusion
 				expr.Accept(this, parent);
 		}
 
-		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
+		void WriteInterpolatedString(FuInterpolatedString expr, bool newLine)
 		{
 			if (expr.Parts.Exists(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
 				Include("Foundation");
 				Write("String(format: ");
-				WritePrintf(expr, false);
+				WritePrintf(expr, newLine);
 			}
 			else {
 				WriteChar('"');
@@ -24167,8 +24167,15 @@ namespace Fusion
 					WriteChar(')');
 				}
 				Write(expr.Suffix);
+				if (newLine)
+					Write("\\n");
 				WriteChar('"');
 			}
+		}
+
+		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
+		{
+			WriteInterpolatedString(expr, false);
 		}
 
 		static bool IsIntIndexing(FuExpr expr)
@@ -24610,9 +24617,19 @@ namespace Fusion
 					if (args.Count == 0)
 						Write("putc(10");
 					else {
-						Write("fputs(\"\\(");
-						WriteUnwrapped(args[0], FuPriority.Primary, true);
-						Write(")\\n\"");
+						Write("fputs(");
+						if (args[0] is FuLiteralString literal) {
+							WriteChar('"');
+							Write(literal.Value);
+							Write("\\n\"");
+						}
+						else if (args[0] is FuInterpolatedString interpolated)
+							WriteInterpolatedString(interpolated, true);
+						else {
+							Write("\"\\(");
+							WriteUnwrapped(args[0], FuPriority.Primary, true);
+							Write(")\\n\"");
+						}
 					}
 					Write(", ");
 					obj.Accept(this, FuPriority.Argument);

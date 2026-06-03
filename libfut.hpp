@@ -1074,6 +1074,7 @@ private: // internal
 	friend GenC;
 	friend GenCpp;
 	friend GenJsNoModule;
+	friend GenSwift;
 };
 
 class FuInterpolatedPart
@@ -3656,6 +3657,7 @@ private:
 	void writeType(const FuType * type);
 	void writePromotedType(const FuType * type);
 	void writeUnwrapped(const FuExpr * expr, FuPriority parent, bool substringOk);
+	void writeInterpolatedString(const FuInterpolatedString * expr, bool newLine);
 	static bool isIntIndexing(const FuExpr * expr);
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRange(const FuExpr * startIndex, const FuExpr * length);

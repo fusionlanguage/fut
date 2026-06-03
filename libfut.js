@@ -24830,12 +24830,12 @@ export class GenSwift extends GenPySwift
 		}
 	}
 
-	visitInterpolatedString(expr, parent)
+	#writeInterpolatedString(expr, newLine)
 	{
 		if (expr.parts.some(part => part.widthExpr != null || part.format != 32 || part.precision >= 0)) {
 			this.include("Foundation");
 			this.write("String(format: ");
-			this.writePrintf(expr, false);
+			this.writePrintf(expr, newLine);
 		}
 		else {
 			this.writeChar(34);
@@ -24846,8 +24846,15 @@ export class GenSwift extends GenPySwift
 				this.writeChar(41);
 			}
 			this.write(expr.suffix);
+			if (newLine)
+				this.write("\\n");
 			this.writeChar(34);
 		}
+	}
+
+	visitInterpolatedString(expr, parent)
+	{
+		this.#writeInterpolatedString(expr, false);
 	}
 
 	static #isIntIndexing(expr)
@@ -25296,9 +25303,23 @@ export class GenSwift extends GenPySwift
 				if (args.length == 0)
 					this.write("putc(10");
 				else {
-					this.write("fputs(\"\\(");
-					this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
-					this.write(")\\n\"");
+					this.write("fputs(");
+					let literal;
+					if ((literal = args[0]) instanceof FuLiteralString) {
+						this.writeChar(34);
+						this.write(literal.value);
+						this.write("\\n\"");
+					}
+					else {
+						let interpolated;
+						if ((interpolated = args[0]) instanceof FuInterpolatedString)
+							this.#writeInterpolatedString(interpolated, true);
+						else {
+							this.write("\"\\(");
+							this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
+							this.write(")\\n\"");
+						}
+					}
 				}
 				this.write(", ");
 				obj.accept(this, FuPriority.ARGUMENT);

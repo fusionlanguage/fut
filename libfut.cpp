@@ -24107,12 +24107,12 @@ void GenSwift::writeUnwrapped(const FuExpr * expr, FuPriority parent, bool subst
 	}
 }
 
-void GenSwift::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
+void GenSwift::writeInterpolatedString(const FuInterpolatedString * expr, bool newLine)
 {
 	if (std::any_of(expr->parts.begin(), expr->parts.end(), [](const FuInterpolatedPart &part) { return part.widthExpr != nullptr || part.format != ' ' || part.precision >= 0; })) {
 		include("Foundation");
 		write("String(format: ");
-		writePrintf(expr, false);
+		writePrintf(expr, newLine);
 	}
 	else {
 		writeChar('"');
@@ -24123,8 +24123,15 @@ void GenSwift::visitInterpolatedString(const FuInterpolatedString * expr, FuPrio
 			writeChar(')');
 		}
 		write(expr->suffix);
+		if (newLine)
+			write("\\n");
 		writeChar('"');
 	}
+}
+
+void GenSwift::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
+{
+	writeInterpolatedString(expr, false);
 }
 
 bool GenSwift::isIntIndexing(const FuExpr * expr)
@@ -24581,9 +24588,19 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 			if (std::ssize(*args) == 0)
 				write("putc(10");
 			else {
-				write("fputs(\"\\(");
-				writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
-				write(")\\n\"");
+				write("fputs(");
+				if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>((*args)[0].get())) {
+					writeChar('"');
+					write(literal->value);
+					write("\\n\"");
+				}
+				else if (const FuInterpolatedString *interpolated = dynamic_cast<const FuInterpolatedString *>((*args)[0].get()))
+					writeInterpolatedString(interpolated, true);
+				else {
+					write("\"\\(");
+					writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
+					write(")\\n\"");
+				}
 			}
 			write(", ");
 			obj->accept(this, FuPriority::argument);
