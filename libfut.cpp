@@ -25565,7 +25565,7 @@ void GenSwift::writeField(const FuField * field)
 	if ((klass = dynamic_cast<const FuClassType *>(field->type.get())) && klass->class_->id != FuId::stringClass && !dynamic_cast<const FuOwningType *>(klass))
 		write("unowned ");
 	writeVar(field);
-	if (field->value == nullptr && (dynamic_cast<const FuNumericType *>(field->type.get()) || dynamic_cast<const FuEnum *>(field->type.get()) || field->type->id == FuId::stringStorageType)) {
+	if (field->value == nullptr && !field->type->nullable && (dynamic_cast<const FuNumericType *>(field->type.get()) || dynamic_cast<const FuEnum *>(field->type.get()) || dynamic_cast<const FuStringType *>(field->type.get()))) {
 		write(" = ");
 		writeDefaultValue(field->type.get());
 	}

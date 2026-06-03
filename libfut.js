@@ -26299,7 +26299,7 @@ export class GenSwift extends GenPySwift
 		if ((klass = field.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && !(klass instanceof FuOwningType))
 			this.write("unowned ");
 		this.writeVar(field);
-		if (field.value == null && (field.type instanceof FuNumericType || field.type instanceof FuEnum || field.type.id == FuId.STRING_STORAGE_TYPE)) {
+		if (field.value == null && !field.type.nullable && (field.type instanceof FuNumericType || field.type instanceof FuEnum || field.type instanceof FuStringType)) {
 			this.write(" = ");
 			this.#writeDefaultValue(field.type);
 		}

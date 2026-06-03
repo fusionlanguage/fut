@@ -1835,7 +1835,7 @@ public class GenSwift : GenPySwift
 		if (field.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && !(klass is FuOwningType))
 			Write("unowned ");
 		WriteVar(field);
-		if (field.Value == null && (field.Type is FuNumericType || field.Type is FuEnum || field.Type.Id == FuId.StringStorageType)) {
+		if (field.Value == null && !field.Type.Nullable && (field.Type is FuNumericType || field.Type is FuEnum || field.Type is FuStringType)) {
 			Write(" = ");
 			WriteDefaultValue(field.Type);
 		}

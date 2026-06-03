@@ -1,9 +1,15 @@
 public class Test
 {
+	string F;
+
 	public static bool Run()
 	{
 		string? s = "foo";
 		string n = s;
-		return n == "foo";
+		Test() o;
+		string n2;
+		n2 = "bar";
+		o.F = n2;
+		return n == "foo" && o.F == n2;
 	}
 }
