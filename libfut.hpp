@@ -2601,6 +2601,7 @@ protected:
 	virtual void writeStringLength(const FuExpr * expr) = 0;
 	virtual void writeArrayLength(const FuExpr * expr, FuPriority parent);
 	static bool isReferenceTo(const FuExpr * expr, FuId id);
+	static bool isConsoleStream(const FuExpr * expr);
 	bool writeJavaMatchProperty(const FuSymbolReference * expr, FuPriority parent);
 	virtual void writeCharAt(const FuBinaryExpr * expr) = 0;
 	virtual void writeNotPromoted(const FuType * type, const FuExpr * expr);
@@ -3658,7 +3659,6 @@ private:
 	static bool isIntIndexing(const FuExpr * expr);
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeRange(const FuExpr * startIndex, const FuExpr * length);
-	bool isConsoleStreamWrite(const FuExpr * obj);
 	void writeToTextWriter(const FuExpr * obj);
 	void writeUnicodeScalar(const FuExpr * expr);
 	bool addVar(std::string_view name);

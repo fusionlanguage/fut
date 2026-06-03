@@ -8845,6 +8845,8 @@ namespace Fusion
 
 		protected static bool IsReferenceTo(FuExpr expr, FuId id) => expr is FuSymbolReference symbol && symbol.Symbol.Id == id;
 
+		protected static bool IsConsoleStream(FuExpr expr) => expr is FuSymbolReference symbol && (symbol.Symbol.Id == FuId.ConsoleError || symbol.Symbol.Id == FuId.ConsoleOut);
+
 		protected bool WriteJavaMatchProperty(FuSymbolReference expr, FuPriority parent)
 		{
 			switch (expr.Symbol.Id) {
@@ -20813,7 +20815,7 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.TextWriterWrite:
-				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+				if (IsConsoleStream(obj)) {
 					obj.Accept(this, FuPriority.Primary);
 					WriteWrite(method, args, false);
 				}
@@ -20831,7 +20833,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteChar:
-				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut))
+				if (IsConsoleStream(obj))
 					WriteCharMethodCall(obj, "print", args[0]);
 				else if (obj.Type.AsClassType().Class.Id == FuId.StringWriterClass)
 					WriteCharMethodCall(obj, "append", args[0]);
@@ -20843,7 +20845,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteCodePoint:
-				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+				if (IsConsoleStream(obj)) {
 					WriteMethodCall(obj, "print(Character.toChars", args[0]);
 					WriteChar(')');
 				}
@@ -20859,7 +20861,7 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteLine:
-				if (IsReferenceTo(obj, FuId.ConsoleError) || IsReferenceTo(obj, FuId.ConsoleOut)) {
+				if (IsConsoleStream(obj)) {
 					obj.Accept(this, FuPriority.Primary);
 					WriteWrite(method, args, true);
 				}
@@ -24271,21 +24273,6 @@ namespace Fusion
 				WriteCoerced(type, value, FuPriority.Argument);
 		}
 
-		bool IsConsoleStreamWrite(FuExpr obj)
-		{
-			if (IsReferenceTo(obj, FuId.ConsoleError)) {
-				Include("Foundation");
-				Write("FileHandle.standardError.write(Data(");
-				return true;
-			}
-			if (IsReferenceTo(obj, FuId.ConsoleOut)) {
-				Include("Foundation");
-				Write("FileHandle.standardOutput.write(Data(");
-				return true;
-			}
-			return false;
-		}
-
 		void WriteToTextWriter(FuExpr obj)
 		{
 			Write("to: &");
@@ -24579,12 +24566,15 @@ namespace Fusion
 				WriteCall("fflush", obj);
 				break;
 			case FuId.TextWriterWrite:
-				if (IsConsoleStreamWrite(obj)) {
+				if (IsConsoleStream(obj)) {
+					Write("fputs(");
 					if (args[0].Type is FuStringType)
 						WriteUnwrapped(args[0], FuPriority.Primary, true);
 					else
 						WriteCall("String", args[0]);
-					Write(".utf8))");
+					Write(", ");
+					obj.Accept(this, FuPriority.Argument);
+					WriteChar(')');
 				}
 				else {
 					if (args[0].Type is FuStringType) {
@@ -24602,9 +24592,12 @@ namespace Fusion
 				break;
 			case FuId.TextWriterWriteChar:
 			case FuId.TextWriterWriteCodePoint:
-				if (IsConsoleStreamWrite(obj)) {
+				if (IsConsoleStream(obj)) {
+					Write("fputs(String(");
 					WriteUnicodeScalar(args[0]);
-					Write(".utf8))");
+					Write("), ");
+					obj.Accept(this, FuPriority.Argument);
+					WriteChar(')');
 				}
 				else {
 					WriteUnicodeScalar(args[0]);
@@ -24613,15 +24606,17 @@ namespace Fusion
 				}
 				break;
 			case FuId.TextWriterWriteLine:
-				if (IsConsoleStreamWrite(obj)) {
+				if (IsConsoleStream(obj)) {
 					if (args.Count == 0)
-						Write("[ 10 ]");
+						Write("putc(10");
 					else {
-						Write("\"\\(");
+						Write("fputs(\"\\(");
 						WriteUnwrapped(args[0], FuPriority.Primary, true);
-						Write(")\\n\".utf8");
+						Write(")\\n\"");
 					}
-					Write("))");
+					Write(", ");
+					obj.Accept(this, FuPriority.Argument);
+					WriteChar(')');
 				}
 				else {
 					if (args.Count == 0)

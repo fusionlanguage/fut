@@ -9308,6 +9308,12 @@ export class GenBase extends FuVisitor
 		return (symbol = expr) instanceof FuSymbolReference && symbol.symbol.id == id;
 	}
 
+	static isConsoleStream(expr)
+	{
+		let symbol;
+		return (symbol = expr) instanceof FuSymbolReference && (symbol.symbol.id == FuId.CONSOLE_ERROR || symbol.symbol.id == FuId.CONSOLE_OUT);
+	}
+
 	writeJavaMatchProperty(expr, parent)
 	{
 		switch (expr.symbol.id) {
@@ -21449,7 +21455,7 @@ export class GenJava extends GenTyped
 			this.writeChar(41);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+			if (GenJava.isConsoleStream(obj)) {
 				obj.accept(this, FuPriority.PRIMARY);
 				this.#writeWrite(method, args, false);
 			}
@@ -21467,7 +21473,7 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT))
+			if (GenJava.isConsoleStream(obj))
 				this.writeCharMethodCall(obj, "print", args[0]);
 			else if (obj.type.asClassType().class.id == FuId.STRING_WRITER_CLASS)
 				this.writeCharMethodCall(obj, "append", args[0]);
@@ -21479,7 +21485,7 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+			if (GenJava.isConsoleStream(obj)) {
 				this.writeMethodCall(obj, "print(Character.toChars", args[0]);
 				this.writeChar(41);
 			}
@@ -21495,7 +21501,7 @@ export class GenJava extends GenTyped
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
-			if (GenJava.isReferenceTo(obj, FuId.CONSOLE_ERROR) || GenJava.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
+			if (GenJava.isConsoleStream(obj)) {
 				obj.accept(this, FuPriority.PRIMARY);
 				this.#writeWrite(method, args, true);
 			}
@@ -24951,21 +24957,6 @@ export class GenSwift extends GenPySwift
 			this.writeCoerced(type, value, FuPriority.ARGUMENT);
 	}
 
-	#isConsoleStreamWrite(obj)
-	{
-		if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_ERROR)) {
-			this.include("Foundation");
-			this.write("FileHandle.standardError.write(Data(");
-			return true;
-		}
-		if (GenSwift.isReferenceTo(obj, FuId.CONSOLE_OUT)) {
-			this.include("Foundation");
-			this.write("FileHandle.standardOutput.write(Data(");
-			return true;
-		}
-		return false;
-	}
-
 	#writeToTextWriter(obj)
 	{
 		this.write("to: &");
@@ -25261,12 +25252,15 @@ export class GenSwift extends GenPySwift
 			this.writeCall("fflush", obj);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
-			if (this.#isConsoleStreamWrite(obj)) {
+			if (GenSwift.isConsoleStream(obj)) {
+				this.write("fputs(");
 				if (args[0].type instanceof FuStringType)
 					this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
 				else
 					this.writeCall("String", args[0]);
-				this.write(".utf8))");
+				this.write(", ");
+				obj.accept(this, FuPriority.ARGUMENT);
+				this.writeChar(41);
 			}
 			else {
 				if (args[0].type instanceof FuStringType) {
@@ -25284,9 +25278,12 @@ export class GenSwift extends GenPySwift
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
-			if (this.#isConsoleStreamWrite(obj)) {
+			if (GenSwift.isConsoleStream(obj)) {
+				this.write("fputs(String(");
 				this.#writeUnicodeScalar(args[0]);
-				this.write(".utf8))");
+				this.write("), ");
+				obj.accept(this, FuPriority.ARGUMENT);
+				this.writeChar(41);
 			}
 			else {
 				this.#writeUnicodeScalar(args[0]);
@@ -25295,15 +25292,17 @@ export class GenSwift extends GenPySwift
 			}
 			break;
 		case FuId.TEXT_WRITER_WRITE_LINE:
-			if (this.#isConsoleStreamWrite(obj)) {
+			if (GenSwift.isConsoleStream(obj)) {
 				if (args.length == 0)
-					this.write("[ 10 ]");
+					this.write("putc(10");
 				else {
-					this.write("\"\\(");
+					this.write("fputs(\"\\(");
 					this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
-					this.write(")\\n\".utf8");
+					this.write(")\\n\"");
 				}
-				this.write("))");
+				this.write(", ");
+				obj.accept(this, FuPriority.ARGUMENT);
+				this.writeChar(41);
 			}
 			else {
 				if (args.length == 0)

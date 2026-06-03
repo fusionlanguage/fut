@@ -1259,6 +1259,8 @@ public abstract class GenBase : FuVisitor
 
 	protected static bool IsReferenceTo(FuExpr expr, FuId id) => expr is FuSymbolReference symbol && symbol.Symbol.Id == id;
 
+	protected static bool IsConsoleStream(FuExpr expr) => expr is FuSymbolReference symbol && (symbol.Symbol.Id == FuId.ConsoleError || symbol.Symbol.Id == FuId.ConsoleOut);
+
 	protected bool WriteJavaMatchProperty!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {

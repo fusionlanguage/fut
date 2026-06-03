@@ -9467,6 +9467,12 @@ bool GenBase::isReferenceTo(const FuExpr * expr, FuId id)
 	return (symbol = dynamic_cast<const FuSymbolReference *>(expr)) && symbol->symbol->id == id;
 }
 
+bool GenBase::isConsoleStream(const FuExpr * expr)
+{
+	const FuSymbolReference * symbol;
+	return (symbol = dynamic_cast<const FuSymbolReference *>(expr)) && (symbol->symbol->id == FuId::consoleError || symbol->symbol->id == FuId::consoleOut);
+}
+
 bool GenBase::writeJavaMatchProperty(const FuSymbolReference * expr, FuPriority parent)
 {
 	switch (expr->symbol->id) {
@@ -20919,7 +20925,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		writeChar(')');
 		break;
 	case FuId::textWriterWrite:
-		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut)) {
+		if (isConsoleStream(obj)) {
 			obj->accept(this, FuPriority::primary);
 			writeWrite(method, args, false);
 		}
@@ -20937,7 +20943,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		}
 		break;
 	case FuId::textWriterWriteChar:
-		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut))
+		if (isConsoleStream(obj))
 			writeCharMethodCall(obj, "print", (*args)[0].get());
 		else if (obj->type->asClassType()->class_->id == FuId::stringWriterClass)
 			writeCharMethodCall(obj, "append", (*args)[0].get());
@@ -20949,7 +20955,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		}
 		break;
 	case FuId::textWriterWriteCodePoint:
-		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut)) {
+		if (isConsoleStream(obj)) {
 			writeMethodCall(obj, "print(Character.toChars", (*args)[0].get());
 			writeChar(')');
 		}
@@ -20965,7 +20971,7 @@ void GenJava::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMet
 		}
 		break;
 	case FuId::textWriterWriteLine:
-		if (isReferenceTo(obj, FuId::consoleError) || isReferenceTo(obj, FuId::consoleOut)) {
+		if (isConsoleStream(obj)) {
 			obj->accept(this, FuPriority::primary);
 			writeWrite(method, args, true);
 		}
@@ -24228,21 +24234,6 @@ void GenSwift::writeElementCoerced(const FuType * type, const FuExpr * value)
 		writeCoerced(type, value, FuPriority::argument);
 }
 
-bool GenSwift::isConsoleStreamWrite(const FuExpr * obj)
-{
-	if (isReferenceTo(obj, FuId::consoleError)) {
-		include("Foundation");
-		write("FileHandle.standardError.write(Data(");
-		return true;
-	}
-	if (isReferenceTo(obj, FuId::consoleOut)) {
-		include("Foundation");
-		write("FileHandle.standardOutput.write(Data(");
-		return true;
-	}
-	return false;
-}
-
 void GenSwift::writeToTextWriter(const FuExpr * obj)
 {
 	write("to: &");
@@ -24546,12 +24537,15 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writeCall("fflush", obj);
 		break;
 	case FuId::textWriterWrite:
-		if (isConsoleStreamWrite(obj)) {
+		if (isConsoleStream(obj)) {
+			write("fputs(");
 			if (dynamic_cast<const FuStringType *>((*args)[0]->type.get()))
 				writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
 			else
 				writeCall("String", (*args)[0].get());
-			write(".utf8))");
+			write(", ");
+			obj->accept(this, FuPriority::argument);
+			writeChar(')');
 		}
 		else {
 			if (dynamic_cast<const FuStringType *>((*args)[0]->type.get())) {
@@ -24569,9 +24563,12 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		break;
 	case FuId::textWriterWriteChar:
 	case FuId::textWriterWriteCodePoint:
-		if (isConsoleStreamWrite(obj)) {
+		if (isConsoleStream(obj)) {
+			write("fputs(String(");
 			writeUnicodeScalar((*args)[0].get());
-			write(".utf8))");
+			write("), ");
+			obj->accept(this, FuPriority::argument);
+			writeChar(')');
 		}
 		else {
 			writeUnicodeScalar((*args)[0].get());
@@ -24580,15 +24577,17 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		}
 		break;
 	case FuId::textWriterWriteLine:
-		if (isConsoleStreamWrite(obj)) {
+		if (isConsoleStream(obj)) {
 			if (std::ssize(*args) == 0)
-				write("[ 10 ]");
+				write("putc(10");
 			else {
-				write("\"\\(");
+				write("fputs(\"\\(");
 				writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
-				write(")\\n\".utf8");
+				write(")\\n\"");
 			}
-			write("))");
+			write(", ");
+			obj->accept(this, FuPriority::argument);
+			writeChar(')');
 		}
 		else {
 			if (std::ssize(*args) == 0)
