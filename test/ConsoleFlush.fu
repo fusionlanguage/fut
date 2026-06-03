@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		Console.Out.Write("Hello, "); //FAIL: cl
-		Console.Out.Flush(); //FAIL: swift TODO
+		Console.Out.Flush();
 		Console.Error.Write("World!");
 		Console.Error.Flush();
 		return true;

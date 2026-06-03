@@ -24898,6 +24898,14 @@ export class GenSwift extends GenPySwift
 	visitSymbolReference(expr, parent)
 	{
 		switch (expr.symbol.id) {
+		case FuId.CONSOLE_ERROR:
+			this.include("Foundation");
+			this.write("stderr");
+			break;
+		case FuId.CONSOLE_OUT:
+			this.include("Foundation");
+			this.write("stdout");
+			break;
 		case FuId.MATH_NA_N:
 			this.write("Float.nan");
 			break;
@@ -25248,6 +25256,9 @@ export class GenSwift extends GenPySwift
 			this.writePostfix(obj, ".removeValue(forKey: ");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
+			break;
+		case FuId.TEXT_WRITER_FLUSH:
+			this.writeCall("fflush", obj);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
 			if (this.#isConsoleStreamWrite(obj)) {

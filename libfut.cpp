@@ -24175,6 +24175,14 @@ void GenSwift::writeCharAt(const FuBinaryExpr * expr)
 void GenSwift::visitSymbolReference(const FuSymbolReference * expr, FuPriority parent)
 {
 	switch (expr->symbol->id) {
+	case FuId::consoleError:
+		include("Foundation");
+		write("stderr");
+		break;
+	case FuId::consoleOut:
+		include("Foundation");
+		write("stdout");
+		break;
 	case FuId::mathNaN:
 		write("Float.nan");
 		break;
@@ -24533,6 +24541,9 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writePostfix(obj, ".removeValue(forKey: ");
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
+		break;
+	case FuId::textWriterFlush:
+		writeCall("fflush", obj);
 		break;
 	case FuId::textWriterWrite:
 		if (isConsoleStreamWrite(obj)) {

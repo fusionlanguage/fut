@@ -24221,6 +24221,14 @@ namespace Fusion
 		internal override void VisitSymbolReference(FuSymbolReference expr, FuPriority parent)
 		{
 			switch (expr.Symbol.Id) {
+			case FuId.ConsoleError:
+				Include("Foundation");
+				Write("stderr");
+				break;
+			case FuId.ConsoleOut:
+				Include("Foundation");
+				Write("stdout");
+				break;
 			case FuId.MathNaN:
 				Write("Float.nan");
 				break;
@@ -24566,6 +24574,9 @@ namespace Fusion
 				WritePostfix(obj, ".removeValue(forKey: ");
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
+				break;
+			case FuId.TextWriterFlush:
+				WriteCall("fflush", obj);
 				break;
 			case FuId.TextWriterWrite:
 				if (IsConsoleStreamWrite(obj)) {
