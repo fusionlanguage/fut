@@ -22539,7 +22539,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeNewRegex(args, 0);
 		break;
 	case FuId::regexEscape:
-		writePostfix((*args)[0].get(), ".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
+		writeCall("RegExp.escape", (*args)[0].get());
 		break;
 	case FuId::regexIsMatchStr:
 		writeNewRegex(args, 1);

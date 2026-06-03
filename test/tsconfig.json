@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2022",
+    "target": "es2025",
     "noEmit": true,
     "strictNullChecks": false,
     "forceConsistentCasingInFileNames": true,

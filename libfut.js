@@ -23117,7 +23117,7 @@ export class GenJsNoModule extends GenBase
 			this.#writeNewRegex(args, 0);
 			break;
 		case FuId.REGEX_ESCAPE:
-			this.writePostfix(args[0], ".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
+			this.writeCall("RegExp.escape", args[0]);
 			break;
 		case FuId.REGEX_IS_MATCH_STR:
 			this.#writeNewRegex(args, 1);

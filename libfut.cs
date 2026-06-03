@@ -22447,7 +22447,7 @@ namespace Fusion
 				WriteNewRegex(args, 0);
 				break;
 			case FuId.RegexEscape:
-				WritePostfix(args[0], ".replace(/[-\\/\\\\^$*+?.()|[\\]{}]/g, '\\\\$&')");
+				WriteCall("RegExp.escape", args[0]);
 				break;
 			case FuId.RegexIsMatchStr:
 				WriteNewRegex(args, 1);
