@@ -23312,9 +23312,16 @@ namespace Fusion
 			WriteVisibility(field.Visibility);
 			if (field.Type.IsFinal() && !field.IsAssignableStorage())
 				Write("readonly ");
-			WriteTypeAndName(field);
-			if (this.GenFullCode)
-				WriteVarInit(field);
+			if (!field.Type.IsFinal() && field.Value == null) {
+				WriteName(field);
+				Write("!: ");
+				WriteType(field.Type);
+			}
+			else {
+				WriteTypeAndName(field);
+				if (this.GenFullCode)
+					WriteVarInit(field);
+			}
 			WriteCharLine(';');
 		}
 
