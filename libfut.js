@@ -23972,14 +23972,14 @@ export class GenTs extends GenJs
 	{
 		this.writeDoc(field.documentation);
 		this.#writeVisibility(field.visibility);
-		if (field.type.isFinal() && !field.isAssignableStorage())
-			this.write("readonly ");
-		if (!field.type.isFinal() && field.value == null) {
+		if (field.value == null && !field.type.isFinal()) {
 			this.writeName(field);
 			this.write("!: ");
 			this.#writeType(field.type);
 		}
 		else {
+			if (field.type.isFinal() && !field.isAssignableStorage())
+				this.write("readonly ");
 			this.writeTypeAndName(field);
 			if (this.#genFullCode)
 				this.writeVarInit(field);

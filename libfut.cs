@@ -23310,14 +23310,14 @@ namespace Fusion
 		{
 			WriteDoc(field.Documentation);
 			WriteVisibility(field.Visibility);
-			if (field.Type.IsFinal() && !field.IsAssignableStorage())
-				Write("readonly ");
-			if (!field.Type.IsFinal() && field.Value == null) {
+			if (field.Value == null && !field.Type.IsFinal()) {
 				WriteName(field);
 				Write("!: ");
 				WriteType(field.Type);
 			}
 			else {
+				if (field.Type.IsFinal() && !field.IsAssignableStorage())
+					Write("readonly ");
 				WriteTypeAndName(field);
 				if (this.GenFullCode)
 					WriteVarInit(field);

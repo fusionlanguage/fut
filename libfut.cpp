@@ -23375,14 +23375,14 @@ void GenTs::writeField(const FuField * field)
 {
 	writeDoc(field->documentation.get());
 	writeVisibility(field->visibility);
-	if (field->type->isFinal() && !field->isAssignableStorage())
-		write("readonly ");
-	if (!field->type->isFinal() && field->value == nullptr) {
+	if (field->value == nullptr && !field->type->isFinal()) {
 		writeName(field);
 		write("!: ");
 		writeType(field->type.get());
 	}
 	else {
+		if (field->type->isFinal() && !field->isAssignableStorage())
+			write("readonly ");
 		writeTypeAndName(field);
 		if (this->genFullCode)
 			writeVarInit(field);
