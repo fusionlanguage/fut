@@ -18,8 +18,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./libfut.js";
 
 class FileGenHost extends FuConsoleHost
