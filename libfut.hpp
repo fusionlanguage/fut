@@ -3650,6 +3650,8 @@ private:
 	std::vector<std::unordered_set<std::string_view>> varsAtIndent;
 	std::vector<bool> varBytesAtIndent;
 	void writeCamelCaseNotKeyword(std::string_view name);
+	static bool isUninitializedField(const FuSymbol * symbol);
+	static bool isNullableInSwift(const FuExpr * expr);
 	void openIndexing(const FuExpr * collection);
 	static bool isArrayRef(const FuArrayStorageType * array);
 	void writeArrayRef(const FuType * elementType);

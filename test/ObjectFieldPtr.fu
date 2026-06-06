@@ -1,0 +1,23 @@
+class Foo
+{
+	internal int X;
+}
+
+public class Test
+{
+	Foo F;
+	int[] A;
+
+	public static bool Run()
+	{
+		Foo() f;
+		f.X = 42;
+		int[2] a;
+		a[1] = 5;
+		Test() o;
+		o.F = f;
+		o.A = a;
+		Foo p = o.F;
+		return o.F.X == 42 && o.F == p && o.A[1] == 5;
+	}
+}

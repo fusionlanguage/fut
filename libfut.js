@@ -24659,9 +24659,22 @@ export class GenSwift extends GenPySwift
 		super.writeLocalName(symbol, parent);
 	}
 
+	static #isUninitializedField(symbol)
+	{
+		let field;
+		let klass;
+		return (field = symbol) instanceof FuField && field.value == null && (klass = field.type) instanceof FuClassType && !field.type.nullable && !field.type.isFinal() && klass.class.id != FuId.STRING_CLASS;
+	}
+
+	static #isNullableInSwift(expr)
+	{
+		let symbol;
+		return expr.type.nullable || ((symbol = expr) instanceof FuSymbolReference && GenSwift.#isUninitializedField(symbol.symbol));
+	}
+
 	writeMemberOp(left, symbol)
 	{
-		if (left.type != null && left.type.nullable)
+		if (left.type != null && GenSwift.#isNullableInSwift(left))
 			this.writeChar(33);
 		this.writeChar(46);
 	}
@@ -24669,7 +24682,7 @@ export class GenSwift extends GenPySwift
 	#openIndexing(collection)
 	{
 		collection.accept(this, FuPriority.PRIMARY);
-		if (collection.type.nullable)
+		if (GenSwift.#isNullableInSwift(collection))
 			this.writeChar(33);
 		this.writeChar(91);
 	}
@@ -24824,7 +24837,7 @@ export class GenSwift extends GenPySwift
 
 	#writeUnwrapped(expr, parent, substringOk)
 	{
-		if (expr.type.nullable) {
+		if (GenSwift.#isNullableInSwift(expr)) {
 			expr.accept(this, FuPriority.PRIMARY);
 			this.writeChar(33);
 		}
@@ -25918,6 +25931,8 @@ export class GenSwift extends GenPySwift
 			let local;
 			this.write(((array = def.type) instanceof FuArrayStorageType ? GenSwift.#isArrayRef(array) : (stg = def.type) instanceof FuStorageType ? stg.class.typeParameterCount == 0 && !def.isAssignableStorage() && stg.class.id != FuId.STRING_WRITER_CLASS : (local = def) instanceof FuVar && !local.isAssigned) ? "let " : "var ");
 			super.writeVar(def);
+			if (GenSwift.#isUninitializedField(def))
+				this.writeChar(63);
 		}
 		else {
 			this.writeName(def);
