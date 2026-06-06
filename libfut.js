@@ -24659,22 +24659,9 @@ export class GenSwift extends GenPySwift
 		super.writeLocalName(symbol, parent);
 	}
 
-	static #isUninitializedField(symbol)
-	{
-		let field;
-		let klass;
-		return (field = symbol) instanceof FuField && field.value == null && (klass = field.type) instanceof FuClassType && !field.type.nullable && !field.type.isFinal() && klass.class.id != FuId.STRING_CLASS;
-	}
-
-	static #isNullableInSwift(expr)
-	{
-		let symbol;
-		return expr.type.nullable || ((symbol = expr) instanceof FuSymbolReference && GenSwift.#isUninitializedField(symbol.symbol));
-	}
-
 	writeMemberOp(left, symbol)
 	{
-		if (left.type != null && GenSwift.#isNullableInSwift(left))
+		if (left.type != null && left.type.nullable)
 			this.writeChar(33);
 		this.writeChar(46);
 	}
@@ -24682,7 +24669,7 @@ export class GenSwift extends GenPySwift
 	#openIndexing(collection)
 	{
 		collection.accept(this, FuPriority.PRIMARY);
-		if (GenSwift.#isNullableInSwift(collection))
+		if (collection.type.nullable)
 			this.writeChar(33);
 		this.writeChar(91);
 	}
@@ -24837,7 +24824,7 @@ export class GenSwift extends GenPySwift
 
 	#writeUnwrapped(expr, parent, substringOk)
 	{
-		if (GenSwift.#isNullableInSwift(expr)) {
+		if (expr.type.nullable) {
 			expr.accept(this, FuPriority.PRIMARY);
 			this.writeChar(33);
 		}
@@ -25931,8 +25918,6 @@ export class GenSwift extends GenPySwift
 			let local;
 			this.write(((array = def.type) instanceof FuArrayStorageType ? GenSwift.#isArrayRef(array) : (stg = def.type) instanceof FuStorageType ? stg.class.typeParameterCount == 0 && !def.isAssignableStorage() && stg.class.id != FuId.STRING_WRITER_CLASS : (local = def) instanceof FuVar && !local.isAssigned) ? "let " : "var ");
 			super.writeVar(def);
-			if (GenSwift.#isUninitializedField(def))
-				this.writeChar(63);
 		}
 		else {
 			this.writeName(def);
@@ -26352,14 +26337,18 @@ export class GenSwift extends GenPySwift
 		if ((klass = field.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS && !(klass instanceof FuOwningType))
 			this.write("unowned ");
 		this.writeVar(field);
-		if (field.value == null && !field.type.nullable && (field.type instanceof FuNumericType || field.type instanceof FuEnum || field.type instanceof FuStringType)) {
-			this.write(" = ");
-			this.#writeDefaultValue(field.type);
-		}
-		else if (field.isAssignableStorage()) {
+		if (field.isAssignableStorage()) {
 			this.write(" = ");
 			this.writeName(field.type.asClassType().class);
 			this.write("()");
+		}
+		else if (field.value == null && !field.type.nullable && !field.type.isFinal()) {
+			if (field.type instanceof FuNumericType || field.type instanceof FuEnum || field.type instanceof FuStringType) {
+				this.write(" = ");
+				this.#writeDefaultValue(field.type);
+			}
+			else if (field.type instanceof FuClassType)
+				this.writeChar(33);
 		}
 		this.writeNewLine();
 	}

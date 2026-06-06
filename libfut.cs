@@ -23988,13 +23988,9 @@ namespace Fusion
 			base.WriteLocalName(symbol, parent);
 		}
 
-		static bool IsUninitializedField(FuSymbol symbol) => symbol is FuField field && field.Value == null && field.Type is FuClassType klass && !field.Type.Nullable && !field.Type.IsFinal() && klass.Class.Id != FuId.StringClass;
-
-		static bool IsNullableInSwift(FuExpr expr) => expr.Type.Nullable || (expr is FuSymbolReference symbol && IsUninitializedField(symbol.Symbol));
-
 		protected override void WriteMemberOp(FuExpr left, FuSymbolReference symbol)
 		{
-			if (left.Type != null && IsNullableInSwift(left))
+			if (left.Type != null && left.Type.Nullable)
 				WriteChar('!');
 			WriteChar('.');
 		}
@@ -24002,7 +23998,7 @@ namespace Fusion
 		void OpenIndexing(FuExpr collection)
 		{
 			collection.Accept(this, FuPriority.Primary);
-			if (IsNullableInSwift(collection))
+			if (collection.Type.Nullable)
 				WriteChar('!');
 			WriteChar('[');
 		}
@@ -24152,7 +24148,7 @@ namespace Fusion
 
 		void WriteUnwrapped(FuExpr expr, FuPriority parent, bool substringOk)
 		{
-			if (IsNullableInSwift(expr)) {
+			if (expr.Type.Nullable) {
 				expr.Accept(this, FuPriority.Primary);
 				WriteChar('!');
 			}
@@ -25233,8 +25229,6 @@ namespace Fusion
 			if (def is FuField || AddVar(def.Name)) {
 				Write((def.Type is FuArrayStorageType array ? IsArrayRef(array) : def.Type is FuStorageType stg ? stg.Class.TypeParameterCount == 0 && !def.IsAssignableStorage() && stg.Class.Id != FuId.StringWriterClass : def is FuVar local && !local.IsAssigned) ? "let " : "var ");
 				base.WriteVar(def);
-				if (IsUninitializedField(def))
-					WriteChar('?');
 			}
 			else {
 				WriteName(def);
@@ -25644,14 +25638,25 @@ namespace Fusion
 			if (field.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && !(klass is FuOwningType))
 				Write("unowned ");
 			WriteVar(field);
-			if (field.Value == null && !field.Type.Nullable && (field.Type is FuNumericType || field.Type is FuEnum || field.Type is FuStringType)) {
-				Write(" = ");
-				WriteDefaultValue(field.Type);
-			}
-			else if (field.IsAssignableStorage()) {
+			if (field.IsAssignableStorage()) {
 				Write(" = ");
 				WriteName(field.Type.AsClassType().Class);
 				Write("()");
+			}
+			else if (field.Value == null && !field.Type.Nullable && !field.Type.IsFinal()) {
+				switch (field.Type) {
+				case FuNumericType:
+				case FuEnum:
+				case FuStringType:
+					Write(" = ");
+					WriteDefaultValue(field.Type);
+					break;
+				case FuClassType:
+					WriteChar('!');
+					break;
+				default:
+					break;
+				}
 			}
 			WriteNewLine();
 		}

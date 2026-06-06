@@ -23938,22 +23938,9 @@ void GenSwift::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 	GenPySwift::writeLocalName(symbol, parent);
 }
 
-bool GenSwift::isUninitializedField(const FuSymbol * symbol)
-{
-	const FuField * field;
-	const FuClassType * klass;
-	return (field = dynamic_cast<const FuField *>(symbol)) && field->value == nullptr && (klass = dynamic_cast<const FuClassType *>(field->type.get())) && !field->type->nullable && !field->type->isFinal() && klass->class_->id != FuId::stringClass;
-}
-
-bool GenSwift::isNullableInSwift(const FuExpr * expr)
-{
-	const FuSymbolReference * symbol;
-	return expr->type->nullable || ((symbol = dynamic_cast<const FuSymbolReference *>(expr)) && isUninitializedField(symbol->symbol));
-}
-
 void GenSwift::writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol)
 {
-	if (left->type != nullptr && isNullableInSwift(left))
+	if (left->type != nullptr && left->type->nullable)
 		writeChar('!');
 	writeChar('.');
 }
@@ -23961,7 +23948,7 @@ void GenSwift::writeMemberOp(const FuExpr * left, const FuSymbolReference * symb
 void GenSwift::openIndexing(const FuExpr * collection)
 {
 	collection->accept(this, FuPriority::primary);
-	if (isNullableInSwift(collection))
+	if (collection->type->nullable)
 		writeChar('!');
 	writeChar('[');
 }
@@ -24114,7 +24101,7 @@ void GenSwift::visitLiteralNull()
 
 void GenSwift::writeUnwrapped(const FuExpr * expr, FuPriority parent, bool substringOk)
 {
-	if (isNullableInSwift(expr)) {
+	if (expr->type->nullable) {
 		expr->accept(this, FuPriority::primary);
 		writeChar('!');
 	}
@@ -25195,8 +25182,6 @@ void GenSwift::writeVar(const FuNamedValue * def)
 		const FuVar * local;
 		write(((array = dynamic_cast<const FuArrayStorageType *>(def->type.get())) ? isArrayRef(array) : (stg = dynamic_cast<const FuStorageType *>(def->type.get())) ? stg->class_->typeParameterCount == 0 && !def->isAssignableStorage() && stg->class_->id != FuId::stringWriterClass : (local = dynamic_cast<const FuVar *>(def)) && !local->isAssigned) ? "let " : "var ");
 		GenBase::writeVar(def);
-		if (isUninitializedField(def))
-			writeChar('?');
 	}
 	else {
 		writeName(def);
@@ -25614,9 +25599,13 @@ void GenSwift::writeField(const FuField * field)
 	if ((klass = dynamic_cast<const FuClassType *>(field->type.get())) && klass->class_->id != FuId::stringClass && !dynamic_cast<const FuOwningType *>(klass))
 		write("unowned ");
 	writeVar(field);
-	if (field->value == nullptr && !field->type->nullable && (dynamic_cast<const FuNumericType *>(field->type.get()) || dynamic_cast<const FuEnum *>(field->type.get()) || dynamic_cast<const FuStringType *>(field->type.get()))) {
-		write(" = ");
-		writeDefaultValue(field->type.get());
+	if (field->value == nullptr && !field->type->nullable && !field->type->isFinal()) {
+		if (dynamic_cast<const FuNumericType *>(field->type.get()) || dynamic_cast<const FuEnum *>(field->type.get()) || dynamic_cast<const FuStringType *>(field->type.get())) {
+			write(" = ");
+			writeDefaultValue(field->type.get());
+		}
+		else if (dynamic_cast<const FuClassType *>(field->type.get()))
+			writeChar('!');
 	}
 	else if (field->isAssignableStorage()) {
 		write(" = ");
