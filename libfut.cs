@@ -25638,12 +25638,7 @@ namespace Fusion
 			if (field.Type is FuClassType klass && klass.Class.Id != FuId.StringClass && !(klass is FuOwningType))
 				Write("unowned ");
 			WriteVar(field);
-			if (field.IsAssignableStorage()) {
-				Write(" = ");
-				WriteName(field.Type.AsClassType().Class);
-				Write("()");
-			}
-			else if (field.Value == null && !field.Type.Nullable && !field.Type.IsFinal()) {
+			if (field.Value == null && !field.Type.Nullable) {
 				switch (field.Type) {
 				case FuNumericType:
 				case FuEnum:
@@ -25652,12 +25647,15 @@ namespace Fusion
 					WriteDefaultValue(field.Type);
 					break;
 				case FuClassType:
-					WriteChar('!');
+					if (!field.Type.IsFinal())
+						WriteChar('!');
 					break;
 				default:
 					break;
 				}
 			}
+			else if (field.IsAssignableStorage())
+				WriteChar('!');
 			WriteNewLine();
 		}
 
