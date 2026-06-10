@@ -13894,8 +13894,8 @@ export class GenC extends GenCCpp
 				this.writePostfix(statement.collection, "->data, ");
 				for (; elementType.isArray(); elementType = elementType.asClassType().getElementType())
 					this.writeChar(42);
-				let klass;
-				if ((klass = elementType) instanceof FuClassType && (klass.class.id == FuId.LIST_CLASS || !(elementType instanceof FuStorageType)))
+				let elementClass;
+				if ((elementClass = elementType) instanceof FuClassType && (elementClass.class.id == FuId.LIST_CLASS || !(elementType instanceof FuStorageType)))
 					this.write("* const ");
 				this.write("*fuend = ");
 				this.writeCamelCaseNotKeyword(element);

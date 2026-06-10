@@ -13883,8 +13883,8 @@ void GenC::visitForeach(const FuForeach * statement)
 				writePostfix(statement->collection.get(), "->data, ");
 				for (; elementType->isArray(); elementType = elementType->asClassType()->getElementType().get())
 					writeChar('*');
-				const FuClassType * klass;
-				if ((klass = dynamic_cast<const FuClassType *>(elementType)) && (klass->class_->id == FuId::listClass || !dynamic_cast<const FuStorageType *>(elementType)))
+				const FuClassType * elementClass;
+				if ((elementClass = dynamic_cast<const FuClassType *>(elementType)) && (elementClass->class_->id == FuId::listClass || !dynamic_cast<const FuStorageType *>(elementType)))
 					write("* const ");
 				write("*fuend = ");
 				writeCamelCaseNotKeyword(element);

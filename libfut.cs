@@ -13365,7 +13365,7 @@ namespace Fusion
 					WritePostfix(statement.Collection, "->data, ");
 					for (; elementType.IsArray(); elementType = elementType.AsClassType().GetElementType())
 						WriteChar('*');
-					if (elementType is FuClassType klass && (klass.Class.Id == FuId.ListClass || !(elementType is FuStorageType)))
+					if (elementType is FuClassType elementClass && (elementClass.Class.Id == FuId.ListClass || !(elementType is FuStorageType)))
 						Write("* const ");
 					Write("*fuend = ");
 					WriteCamelCaseNotKeyword(element);
