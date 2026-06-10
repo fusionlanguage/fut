@@ -1,0 +1,23 @@
+public class Test
+{
+	int Foo;
+
+	public static bool Run()
+	{
+		List<List<int>()>() lol; //FAIL: cl
+		lol.Add();
+		lol[0].Add(1);
+		lol[0].Add(2);
+		lol[0].Add(3);
+		lol.Add();
+		lol[1].Add(15);
+		lol[1].Add(5);
+		lol[1].Add(10);
+		int sum = 0;
+		foreach (List<int> list in lol) { //FAIL: c TODO
+			foreach (int value in list)
+				sum += value;
+		}
+		return sum == 6 + 30;
+	}
+}

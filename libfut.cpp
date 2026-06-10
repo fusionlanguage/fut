@@ -17007,23 +17007,15 @@ void GenCpp::visitForeach(const FuForeach * statement)
 			writeCamelCaseNotKeyword(statement->getValueVar()->name);
 			writeChar(']');
 		}
-		else {
-			if (const FuStorageType *storage = dynamic_cast<const FuStorageType *>(collectionType->getElementType().get())) {
-				if (!dynamic_cast<const FuReadWriteClassType *>(element->type.get()))
-					write("const ");
-				write(storage->class_->name);
-				write(" &");
-				writeCamelCaseNotKeyword(element->name);
-			}
-			else if (const FuDynamicPtrType *dynamic = dynamic_cast<const FuDynamicPtrType *>(collectionType->getElementType().get())) {
+		else if (const FuOwningType *owning = dynamic_cast<const FuOwningType *>(collectionType->getElementType().get())) {
+			if (dynamic_cast<const FuDynamicPtrType *>(collectionType->getElementType().get()) || !dynamic_cast<const FuReadWriteClassType *>(element->type.get()))
 				write("const ");
-				writeType(dynamic, true);
-				write(" &");
-				writeCamelCaseNotKeyword(element->name);
-			}
-			else
-				writeTypeAndName(element);
+			writeType(owning, true);
+			write(" &");
+			writeCamelCaseNotKeyword(element->name);
 		}
+		else
+			writeTypeAndName(element);
 		write(" : ");
 		if (collectionType->id == FuId::mainArgsType) {
 			include("span");

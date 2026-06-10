@@ -1680,26 +1680,15 @@ public class GenCpp : GenCCpp
 				WriteCamelCaseNotKeyword(statement.GetValueVar().Name);
 				WriteChar(']');
 			}
-			else {
-				switch (collectionType.GetElementType()) {
-				case FuStorageType storage:
-					if (!(element.Type is FuReadWriteClassType))
-						Write("const ");
-					Write(storage.Class.Name);
-					Write(" &");
-					WriteCamelCaseNotKeyword(element.Name);
-					break;
-				case FuDynamicPtrType dynamic:
+			else if (collectionType.GetElementType() is FuOwningType owning) {
+				if (collectionType.GetElementType() is FuDynamicPtrType || !(element.Type is FuReadWriteClassType))
 					Write("const ");
-					WriteType(dynamic, true);
-					Write(" &");
-					WriteCamelCaseNotKeyword(element.Name);
-					break;
-				default:
-					WriteTypeAndName(element);
-					break;
-				}
+				WriteType(owning, true);
+				Write(" &");
+				WriteCamelCaseNotKeyword(element.Name);
 			}
+			else
+				WriteTypeAndName(element);
 			Write(" : ");
 			if (collectionType.Id == FuId.MainArgsType) {
 				Include("span");

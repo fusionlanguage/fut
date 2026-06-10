@@ -17172,18 +17172,11 @@ export class GenCpp extends GenCCpp
 				this.writeChar(93);
 			}
 			else {
-				if (collectionType.getElementType() instanceof FuStorageType) {
-					const storage = collectionType.getElementType();
-					if (!(element.type instanceof FuReadWriteClassType))
+				let owning;
+				if ((owning = collectionType.getElementType()) instanceof FuOwningType) {
+					if (collectionType.getElementType() instanceof FuDynamicPtrType || !(element.type instanceof FuReadWriteClassType))
 						this.write("const ");
-					this.write(storage.class.name);
-					this.write(" &");
-					this.#writeCamelCaseNotKeyword(element.name);
-				}
-				else if (collectionType.getElementType() instanceof FuDynamicPtrType) {
-					const dynamic = collectionType.getElementType();
-					this.write("const ");
-					this.writeType(dynamic, true);
+					this.writeType(owning, true);
 					this.write(" &");
 					this.#writeCamelCaseNotKeyword(element.name);
 				}
