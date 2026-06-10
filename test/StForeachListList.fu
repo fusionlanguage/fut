@@ -14,7 +14,7 @@ public class Test
 		lol[1].Add(5);
 		lol[1].Add(10);
 		int sum = 0;
-		foreach (List<int> list in lol) { //FAIL: c TODO
+		foreach (List<int> list in lol) {
 			foreach (int value in list)
 				sum += value;
 		}

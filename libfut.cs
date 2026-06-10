@@ -10777,7 +10777,7 @@ namespace Fusion
 				FuClassType klass = (FuClassType) forEach.Collection.Type;
 				switch (klass.Class.Id) {
 				case FuId.StringClass:
-				case FuId.ListClass when !(klass.GetElementType() is FuStorageType):
+				case FuId.ListClass when !(klass.GetElementType() is FuStorageType) || (klass.GetElementType() is FuClassType elementClass && elementClass.Class.Id == FuId.ListClass):
 					if (parent == FuPriority.Primary)
 						WriteChar('(');
 					WriteChar('*');

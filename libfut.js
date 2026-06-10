@@ -11250,7 +11250,8 @@ export class GenC extends GenCCpp
 		let forEach;
 		if ((forEach = symbol.parent) instanceof FuForeach) {
 			let klass = forEach.collection.type;
-			if (klass.class.id == FuId.STRING_CLASS || (klass.class.id == FuId.LIST_CLASS && !(klass.getElementType() instanceof FuStorageType))) {
+			let elementClass;
+			if (klass.class.id == FuId.STRING_CLASS || (klass.class.id == FuId.LIST_CLASS && (!(klass.getElementType() instanceof FuStorageType) || ((elementClass = klass.getElementType()) instanceof FuClassType && elementClass.class.id == FuId.LIST_CLASS)))) {
 				if (parent == FuPriority.PRIMARY)
 					this.writeChar(40);
 				this.writeChar(42);

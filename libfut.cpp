@@ -11251,7 +11251,8 @@ void GenC::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 {
 	if (const FuForeach *forEach = dynamic_cast<const FuForeach *>(symbol->parent)) {
 		const FuClassType * klass = static_cast<const FuClassType *>(forEach->collection->type.get());
-		if (klass->class_->id == FuId::stringClass || (klass->class_->id == FuId::listClass && !dynamic_cast<const FuStorageType *>(klass->getElementType().get()))) {
+		const FuClassType * elementClass;
+		if (klass->class_->id == FuId::stringClass || (klass->class_->id == FuId::listClass && (!dynamic_cast<const FuStorageType *>(klass->getElementType().get()) || ((elementClass = dynamic_cast<const FuClassType *>(klass->getElementType().get())) && elementClass->class_->id == FuId::listClass)))) {
 			if (parent == FuPriority::primary)
 				writeChar('(');
 			writeChar('*');
