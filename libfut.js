@@ -7504,7 +7504,8 @@ export class FuSema
 		this.#openScope(statement);
 		let element = statement.getVar();
 		this.#resolveType(element);
-		if (this.#visitExpr(statement.collection) != this.#poison) {
+		statement.collection = this.#visitExpr(statement.collection);
+		if (statement.collection != this.#poison) {
 			let klass;
 			if ((klass = statement.collection.type) instanceof FuClassType) {
 				switch (klass.class.id) {

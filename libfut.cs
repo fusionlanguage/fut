@@ -7066,7 +7066,8 @@ namespace Fusion
 			OpenScope(statement);
 			FuVar element = statement.GetVar();
 			ResolveType(element);
-			if (VisitExpr(statement.Collection) != this.Poison) {
+			statement.Collection = VisitExpr(statement.Collection);
+			if (statement.Collection != this.Poison) {
 				if (statement.Collection.Type is FuClassType klass) {
 					switch (klass.Class.Id) {
 					case FuId.StringClass:

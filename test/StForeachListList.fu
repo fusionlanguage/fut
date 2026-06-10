@@ -18,6 +18,8 @@ public class Test
 			foreach (int value in list)
 				sum += value;
 		}
-		return sum == 6 + 30;
+		foreach (int value in lol[0])
+			sum += value;
+		return sum == 6 + 30 + 6;
 	}
 }

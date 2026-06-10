@@ -7728,7 +7728,8 @@ void FuSema::visitForeach(FuForeach * statement)
 	openScope(statement);
 	FuVar * element = statement->getVar();
 	resolveType(element);
-	if (visitExpr(statement->collection) != this->poison) {
+	statement->collection = visitExpr(statement->collection);
+	if (statement->collection != this->poison) {
 		if (const FuClassType *klass = dynamic_cast<const FuClassType *>(statement->collection->type.get())) {
 			switch (klass->class_->id) {
 			case FuId::stringClass:
