@@ -9886,6 +9886,7 @@ namespace Fusion
 				case FuId.IntType:
 				case FuId.NIntType:
 				case FuId.LongType:
+				case FuId.FloatIntType:
 					return true;
 				default:
 					return false;
@@ -9898,6 +9899,7 @@ namespace Fusion
 				case FuId.IntType:
 				case FuId.NIntType:
 				case FuId.LongType:
+				case FuId.FloatIntType:
 					return true;
 				default:
 					return false;
@@ -9908,6 +9910,7 @@ namespace Fusion
 				case FuId.IntType:
 				case FuId.NIntType:
 				case FuId.LongType:
+				case FuId.FloatIntType:
 					return true;
 				default:
 					return false;
@@ -9918,12 +9921,13 @@ namespace Fusion
 				case FuId.IntType:
 				case FuId.NIntType:
 				case FuId.LongType:
+				case FuId.FloatIntType:
 					return true;
 				default:
 					return false;
 				}
 			case FuId.IntType:
-				return right == FuId.LongType;
+				return right == FuId.LongType || right == FuId.FloatIntType;
 			default:
 				return false;
 			}

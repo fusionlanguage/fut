@@ -10377,6 +10377,7 @@ export class GenTyped extends GenBase
 			case FuId.INT_TYPE:
 			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
+			case FuId.FLOAT_INT_TYPE:
 				return true;
 			default:
 				return false;
@@ -10389,6 +10390,7 @@ export class GenTyped extends GenBase
 			case FuId.INT_TYPE:
 			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
+			case FuId.FLOAT_INT_TYPE:
 				return true;
 			default:
 				return false;
@@ -10399,6 +10401,7 @@ export class GenTyped extends GenBase
 			case FuId.INT_TYPE:
 			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
+			case FuId.FLOAT_INT_TYPE:
 				return true;
 			default:
 				return false;
@@ -10409,12 +10412,13 @@ export class GenTyped extends GenBase
 			case FuId.INT_TYPE:
 			case FuId.N_INT_TYPE:
 			case FuId.LONG_TYPE:
+			case FuId.FLOAT_INT_TYPE:
 				return true;
 			default:
 				return false;
 			}
 		case FuId.INT_TYPE:
-			return right == FuId.LONG_TYPE;
+			return right == FuId.LONG_TYPE || right == FuId.FLOAT_INT_TYPE;
 		default:
 			return false;
 		}

@@ -10487,6 +10487,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		case FuId::intType:
 		case FuId::nIntType:
 		case FuId::longType:
+		case FuId::floatIntType:
 			return true;
 		default:
 			return false;
@@ -10499,6 +10500,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		case FuId::intType:
 		case FuId::nIntType:
 		case FuId::longType:
+		case FuId::floatIntType:
 			return true;
 		default:
 			return false;
@@ -10509,6 +10511,7 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		case FuId::intType:
 		case FuId::nIntType:
 		case FuId::longType:
+		case FuId::floatIntType:
 			return true;
 		default:
 			return false;
@@ -10519,12 +10522,13 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		case FuId::intType:
 		case FuId::nIntType:
 		case FuId::longType:
+		case FuId::floatIntType:
 			return true;
 		default:
 			return false;
 		}
 	case FuId::intType:
-		return right == FuId::longType;
+		return right == FuId::longType || right == FuId::floatIntType;
 	default:
 		return false;
 	}

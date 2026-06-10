@@ -5,7 +5,7 @@ public static class Test
 		List<int>() list; //FAIL: cl
 		list.Add(42);
 		list.Clear();
-		list.Add(1);
+		list.Add(Math.Ceiling(1.0));
 		list.Add(42);
 		list.Add(3);
 		list.RemoveAt(1);
