@@ -12664,6 +12664,17 @@ namespace Fusion
 				else
 					WriteListAddInsert(obj, false, "g_array_append_val", args);
 				break;
+			case FuId.ListAddRange:
+				if (obj.Type.AsClassType().GetElementType() is FuNumericType) {
+					Write("g_array_append_vals(");
+					obj.Accept(this, FuPriority.Argument);
+					Write(", ");
+					WritePostfix(args[0], "->data, ");
+					WritePostfix(args[0], "->len)");
+				}
+				else
+					NotSupported(obj, method.Name);
+				break;
 			case FuId.ListClear:
 			case FuId.StackClear:
 				Write("g_array_set_size(");

@@ -10,7 +10,7 @@ public static class Test
 		List<int>() src;
 		src.Add(3);
 		src.Add(6);
-		dest.AddRange(src); //FAIL: c
+		dest.AddRange(src);
 		Identity(dest).AddRange(src); //FAIL: swift
 		(dest[0] == 5 ? dest : src).AddRange(src);
 		return dest.Count == 8 && dest[0] == 5 && dest[1] == 10

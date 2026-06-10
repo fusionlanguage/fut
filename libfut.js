@@ -13188,6 +13188,17 @@ export class GenC extends GenCCpp
 			else
 				this.#writeListAddInsert(obj, false, "g_array_append_val", args);
 			break;
+		case FuId.LIST_ADD_RANGE:
+			if (obj.type.asClassType().getElementType() instanceof FuNumericType) {
+				this.write("g_array_append_vals(");
+				obj.accept(this, FuPriority.ARGUMENT);
+				this.write(", ");
+				this.writePostfix(args[0], "->data, ");
+				this.writePostfix(args[0], "->len)");
+			}
+			else
+				this.notSupported(obj, method.name);
+			break;
 		case FuId.LIST_CLEAR:
 		case FuId.STACK_CLEAR:
 			this.write("g_array_set_size(");

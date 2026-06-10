@@ -13171,6 +13171,17 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 				writeListAddInsert(obj, false, "g_array_append_val", args);
 			break;
 		}
+	case FuId::listAddRange:
+		if (dynamic_cast<const FuNumericType *>(obj->type->asClassType()->getElementType().get())) {
+			write("g_array_append_vals(");
+			obj->accept(this, FuPriority::argument);
+			write(", ");
+			writePostfix((*args)[0].get(), "->data, ");
+			writePostfix((*args)[0].get(), "->len)");
+		}
+		else
+			notSupported(obj, method->name);
+		break;
 	case FuId::listClear:
 	case FuId::stackClear:
 		write("g_array_set_size(");
