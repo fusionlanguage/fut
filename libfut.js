@@ -24972,10 +24972,12 @@ export class GenSwift extends GenPySwift
 
 	writeElementCoerced(type, value)
 	{
-		if (type.id == FuId.INT_TYPE && !GenSwift.#isIntIndexing(value))
-			this.writeCall("Int32", value);
-		else
+		if (type.id != FuId.INT_TYPE)
 			this.writeCoerced(type, value, FuPriority.ARGUMENT);
+		else if (GenSwift.#isIntIndexing(value))
+			value.accept(this, FuPriority.ARGUMENT);
+		else
+			this.writeCall("Int32", value);
 	}
 
 	#writeToTextWriter(obj)

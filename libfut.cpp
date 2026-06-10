@@ -24248,10 +24248,12 @@ void GenSwift::writeRange(const FuExpr * startIndex, const FuExpr * length)
 
 void GenSwift::writeElementCoerced(const FuType * type, const FuExpr * value)
 {
-	if (type->id == FuId::intType && !isIntIndexing(value))
-		writeCall("Int32", value);
-	else
+	if (type->id != FuId::intType)
 		writeCoerced(type, value, FuPriority::argument);
+	else if (isIntIndexing(value))
+		value->accept(this, FuPriority::argument);
+	else
+		writeCall("Int32", value);
 }
 
 void GenSwift::writeToTextWriter(const FuExpr * obj)

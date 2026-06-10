@@ -24282,10 +24282,12 @@ namespace Fusion
 
 		protected override void WriteElementCoerced(FuType type, FuExpr value)
 		{
-			if (type.Id == FuId.IntType && !IsIntIndexing(value))
-				WriteCall("Int32", value);
-			else
+			if (type.Id != FuId.IntType)
 				WriteCoerced(type, value, FuPriority.Argument);
+			else if (IsIntIndexing(value))
+				value.Accept(this, FuPriority.Argument);
+			else
+				WriteCall("Int32", value);
 		}
 
 		void WriteToTextWriter(FuExpr obj)
