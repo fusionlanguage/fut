@@ -9171,9 +9171,14 @@ export class GenBase extends FuVisitor
 		expr.right.accept(this, FuPriority.ARGUMENT);
 	}
 
+	writeIndexingInfix(collection)
+	{
+	}
+
 	writeIndexing(collection, index)
 	{
 		collection.accept(this, FuPriority.PRIMARY);
+		this.writeIndexingInfix(collection);
 		this.writeChar(91);
 		index.accept(this, FuPriority.ARGUMENT);
 		this.writeChar(93);
@@ -18095,9 +18100,24 @@ export class GenCs extends GenTyped
 				this.write(klass.class.name);
 				break;
 			}
+			if (type.nullable)
+				this.writeChar(63);
 		}
 		else
 			this.write(type.name);
+	}
+
+	writeMemberOp(left, symbol)
+	{
+		if (left.type != null && left.type.nullable)
+			this.writeChar(33);
+		this.writeChar(46);
+	}
+
+	writeIndexingInfix(collection)
+	{
+		if (collection.type.nullable)
+			this.writeChar(33);
 	}
 
 	writeNewWithFields(type, init)
@@ -18112,8 +18132,25 @@ export class GenCs extends GenTyped
 		let range;
 		if (expr instanceof FuLiteralChar && (range = type) instanceof FuRangeType && range.max <= 255)
 			this.writeStaticCast(type, expr);
-		else
+		else {
 			super.writeCoercedLiteral(type, expr);
+			if (expr.type != null && expr.type.nullable && type != null && !type.nullable)
+				this.writeChar(33);
+		}
+	}
+
+	writeStaticCast(type, expr)
+	{
+		super.writeStaticCast(type, expr);
+		if (expr.type.nullable && !type.nullable)
+			this.writeChar(33);
+	}
+
+	writeCoercedInternal(type, expr, parent)
+	{
+		super.writeCoercedInternal(type, expr, parent);
+		if (expr.type.nullable && !type.nullable)
+			this.writeChar(33);
 	}
 
 	isPromoted(expr)
@@ -18309,7 +18346,7 @@ export class GenCs extends GenTyped
 		case FuId.JSON_ELEMENT_GET_BOOLEAN:
 			if (obj != null) {
 				obj.accept(this, FuPriority.PRIMARY);
-				this.writeChar(46);
+				this.writeMemberOp(obj, null);
 			}
 			this.writeName(method);
 			this.writeCoercedArgsInParentheses(method, args);
@@ -18343,7 +18380,7 @@ export class GenCs extends GenTyped
 		case FuId.STRING_INDEX_OF:
 		case FuId.STRING_LAST_INDEX_OF:
 			obj.accept(this, FuPriority.PRIMARY);
-			this.writeChar(46);
+			this.writeMemberOp(obj, null);
 			this.write(method.name);
 			this.writeChar(40);
 			let c = this.getOneAscii(args[0]);
@@ -18463,7 +18500,7 @@ export class GenCs extends GenTyped
 			if (method.id == FuId.CONSOLE_WRITE || method.id == FuId.CONSOLE_WRITE_LINE)
 				this.include("System");
 			obj.accept(this, FuPriority.PRIMARY);
-			this.writeChar(46);
+			this.writeMemberOp(obj, null);
 			this.write(method.name);
 			this.writeChar(40);
 			if (args.length != 0) {
@@ -18515,9 +18552,7 @@ export class GenCs extends GenTyped
 			break;
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
 			this.include("System");
-			obj.accept(this, FuPriority.PRIMARY);
-			this.writeChar(46);
-			this.write(method.name);
+			this.write("Environment.GetEnvironmentVariable");
 			this.writeInParentheses(args);
 			break;
 		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
@@ -18767,6 +18802,8 @@ export class GenCs extends GenTyped
 		if (field.type.isFinal() && !field.isAssignableStorage())
 			this.write("readonly ");
 		this.writeVar(field);
+		if (!field.type.nullable && field.type instanceof FuClassType && (field.type.isFinal() ? field.value instanceof FuLiteralNull && !(field.type instanceof FuArrayStorageType) : field.value == null))
+			this.write(" = null!");
 		this.writeCharLine(59);
 	}
 
@@ -18890,6 +18927,7 @@ export class GenCs extends GenTyped
 		if (namespace.length != 0)
 			this.closeBlock();
 		this.createFile(null, outputFile);
+		this.writeLine("#nullable enable");
 		this.writeIncludes("using ", ";");
 		this.closeStringWriter();
 		this.closeFile();

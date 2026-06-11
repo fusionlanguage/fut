@@ -285,11 +285,26 @@ public class GenCs : GenTyped
 				Write(klass.Class.Name);
 				break;
 			}
+			if (type.Nullable)
+				WriteChar('?');
 			break;
 		default:
 			Write(type.Name);
 			break;
 		}
+	}
+
+	protected override void WriteMemberOp!(FuExpr left, FuSymbolReference? symbol)
+	{
+		if (left.Type != null && left.Type.Nullable)
+			WriteChar('!');
+		WriteChar('.');
+	}
+
+	protected override void WriteIndexingInfix!(FuExpr collection)
+	{
+		if (collection.Type.Nullable)
+			WriteChar('!');
 	}
 
 	protected override void WriteNewWithFields!(FuReadWriteClassType type, FuAggregateInitializer init)
@@ -303,8 +318,25 @@ public class GenCs : GenTyped
 	{
 		if (expr is FuLiteralChar && type is FuRangeType range && range.Max <= 0xff)
 			WriteStaticCast(type, expr);
-		else
+		else {
 			base.WriteCoercedLiteral(type, expr);
+			if (expr.Type != null && expr.Type.Nullable && type != null && !type.Nullable)
+				WriteChar('!');
+		}
+	}
+
+	protected override void WriteStaticCast!(FuType type, FuExpr expr)
+	{
+		base.WriteStaticCast(type, expr);
+		if (expr.Type.Nullable && !type.Nullable)
+			WriteChar('!');
+	}
+
+	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
+	{
+		base.WriteCoercedInternal(type, expr, parent);
+		if (expr.Type.Nullable && !type.Nullable)
+			WriteChar('!');
 	}
 
 	protected override bool IsPromoted(FuExpr expr) => base.IsPromoted(expr) || expr is FuLiteralChar;
@@ -493,7 +525,7 @@ public class GenCs : GenTyped
 		case FuId.JsonElementGetBoolean:
 			if (obj != null) {
 				obj.Accept(this, FuPriority.Primary);
-				WriteChar('.');
+				WriteMemberOp(obj, null);
 			}
 			WriteName(method);
 			WriteCoercedArgsInParentheses(method, args);
@@ -526,7 +558,7 @@ public class GenCs : GenTyped
 		case FuId.StringIndexOf:
 		case FuId.StringLastIndexOf:
 			obj.Accept(this, FuPriority.Primary);
-			WriteChar('.');
+			WriteMemberOp(obj, null);
 			Write(method.Name);
 			WriteChar('(');
 			int c = GetOneAscii(args[0]);
@@ -646,7 +678,7 @@ public class GenCs : GenTyped
 			if (method.Id == FuId.ConsoleWrite || method.Id == FuId.ConsoleWriteLine)
 				Include("System");
 			obj.Accept(this, FuPriority.Primary);
-			WriteChar('.');
+			WriteMemberOp(obj, null);
 			Write(method.Name);
 			WriteChar('(');
 			if (args.Count != 0) {
@@ -697,9 +729,7 @@ public class GenCs : GenTyped
 			break;
 		case FuId.EnvironmentGetEnvironmentVariable:
 			Include("System");
-			obj.Accept(this, FuPriority.Primary);
-			WriteChar('.');
-			Write(method.Name);
+			Write("Environment.GetEnvironmentVariable");
 			WriteInParentheses(args);
 			break;
 		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
@@ -949,6 +979,9 @@ public class GenCs : GenTyped
 		if (field.Type.IsFinal() && !field.IsAssignableStorage())
 			Write("readonly ");
 		WriteVar(field);
+		if (!field.Type.Nullable && field.Type is FuClassType &&
+			(field.Type.IsFinal() ? field.Value is FuLiteralNull  && !(field.Type is FuArrayStorageType): field.Value == null))
+			Write(" = null!");
 		WriteCharLine(';');
 	}
 
@@ -1073,6 +1106,7 @@ public class GenCs : GenTyped
 			CloseBlock();
 
 		CreateFile(null, outputFile);
+		WriteLine("#nullable enable");
 		WriteIncludes("using ", ";");
 		CloseStringWriter();
 		CloseFile();

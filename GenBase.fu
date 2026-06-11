@@ -787,7 +787,7 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
-	protected virtual void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr value)
+	protected virtual void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr? value)
 	{
 		Write(" = ");
 		WriteNewArrayStorage(array);
@@ -1123,9 +1123,14 @@ public abstract class GenBase : FuVisitor
 		expr.Right.Accept(this, FuPriority.Argument);
 	}
 
+	protected virtual void WriteIndexingInfix!(FuExpr collection)
+	{
+	}
+
 	protected void WriteIndexing!(FuExpr collection, FuExpr index)
 	{
 		collection.Accept(this, FuPriority.Primary);
+		WriteIndexingInfix(collection);
 		WriteChar('[');
 		index.Accept(this, FuPriority.Argument);
 		WriteChar(']');

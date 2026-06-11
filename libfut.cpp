@@ -9334,9 +9334,14 @@ void GenBase::writeOpAssignRight(const FuBinaryExpr * expr)
 	expr->right->accept(this, FuPriority::argument);
 }
 
+void GenBase::writeIndexingInfix(const FuExpr * collection)
+{
+}
+
 void GenBase::writeIndexing(const FuExpr * collection, const FuExpr * index)
 {
 	collection->accept(this, FuPriority::primary);
+	writeIndexingInfix(collection);
 	writeChar('[');
 	index->accept(this, FuPriority::argument);
 	writeChar(']');
@@ -17854,9 +17859,24 @@ void GenCs::writeType(const FuType * type, bool promote)
 			write(klass->class_->name);
 			break;
 		}
+		if (type->nullable)
+			writeChar('?');
 	}
 	else
 		write(type->name);
+}
+
+void GenCs::writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol)
+{
+	if (left->type != nullptr && left->type->nullable)
+		writeChar('!');
+	writeChar('.');
+}
+
+void GenCs::writeIndexingInfix(const FuExpr * collection)
+{
+	if (collection->type->nullable)
+		writeChar('!');
 }
 
 void GenCs::writeNewWithFields(const FuReadWriteClassType * type, const FuAggregateInitializer * init)
@@ -17871,8 +17891,25 @@ void GenCs::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 	const FuRangeType * range;
 	if (dynamic_cast<const FuLiteralChar *>(expr) && (range = dynamic_cast<const FuRangeType *>(type)) && range->max <= 255)
 		writeStaticCast(type, expr);
-	else
+	else {
 		GenTyped::writeCoercedLiteral(type, expr);
+		if (expr->type != nullptr && expr->type->nullable && type != nullptr && !type->nullable)
+			writeChar('!');
+	}
+}
+
+void GenCs::writeStaticCast(const FuType * type, const FuExpr * expr)
+{
+	GenTyped::writeStaticCast(type, expr);
+	if (expr->type->nullable && !type->nullable)
+		writeChar('!');
+}
+
+void GenCs::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
+{
+	GenTyped::writeCoercedInternal(type, expr, parent);
+	if (expr->type->nullable && !type->nullable)
+		writeChar('!');
 }
 
 bool GenCs::isPromoted(const FuExpr * expr) const
@@ -18068,7 +18105,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::jsonElementGetBoolean:
 		if (obj != nullptr) {
 			obj->accept(this, FuPriority::primary);
-			writeChar('.');
+			writeMemberOp(obj, nullptr);
 		}
 		writeName(method);
 		writeCoercedArgsInParentheses(method, args);
@@ -18102,7 +18139,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::stringIndexOf:
 	case FuId::stringLastIndexOf:
 		obj->accept(this, FuPriority::primary);
-		writeChar('.');
+		writeMemberOp(obj, nullptr);
 		write(method->name);
 		writeChar('(');
 		{
@@ -18226,7 +18263,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		if (method->id == FuId::consoleWrite || method->id == FuId::consoleWriteLine)
 			include("System");
 		obj->accept(this, FuPriority::primary);
-		writeChar('.');
+		writeMemberOp(obj, nullptr);
 		write(method->name);
 		writeChar('(');
 		if (std::ssize(*args) != 0) {
@@ -18280,9 +18317,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		break;
 	case FuId::environmentGetEnvironmentVariable:
 		include("System");
-		obj->accept(this, FuPriority::primary);
-		writeChar('.');
-		write(method->name);
+		write("Environment.GetEnvironmentVariable");
 		writeInParentheses(args);
 		break;
 	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
@@ -18532,6 +18567,8 @@ void GenCs::writeField(const FuField * field)
 	if (field->type->isFinal() && !field->isAssignableStorage())
 		write("readonly ");
 	writeVar(field);
+	if (!field->type->nullable && dynamic_cast<const FuClassType *>(field->type.get()) && (field->type->isFinal() ? dynamic_cast<const FuLiteralNull *>(field->value.get()) && !dynamic_cast<const FuArrayStorageType *>(field->type.get()) : field->value == nullptr))
+		write(" = null!");
 	writeCharLine(';');
 }
 
@@ -18655,6 +18692,7 @@ void GenCs::writeProgram(const FuProgram * program, std::string_view outputFile,
 	if (!namespace_.empty())
 		closeBlock();
 	createFile(std::string_view(), outputFile);
+	writeLine("#nullable enable");
 	writeIncludes("using ", ";");
 	closeStringWriter();
 	closeFile();

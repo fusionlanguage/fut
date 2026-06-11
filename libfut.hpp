@@ -1659,6 +1659,7 @@ private: // internal
 	friend FuSystem;
 	friend GenC;
 	friend GenCCpp;
+	friend GenCs;
 	friend GenPy;
 	friend GenSwift;
 	friend GenTs;
@@ -2596,6 +2597,7 @@ protected:
 	virtual void writeAssignRight(const FuBinaryExpr * expr);
 	virtual void writeAssign(const FuBinaryExpr * expr, FuPriority parent);
 	virtual void writeOpAssignRight(const FuBinaryExpr * expr);
+	virtual void writeIndexingInfix(const FuExpr * collection);
 	void writeIndexing(const FuExpr * collection, const FuExpr * index);
 	virtual void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent);
 	virtual std::string_view getIsOperator() const;
@@ -3191,8 +3193,12 @@ protected:
 	void writeName(const FuSymbol * symbol) override;
 	int getLiteralChars() const override;
 	void writeType(const FuType * type, bool promote) override;
+	void writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol) override;
+	void writeIndexingInfix(const FuExpr * collection) override;
 	void writeNewWithFields(const FuReadWriteClassType * type, const FuAggregateInitializer * init) override;
 	void writeCoercedLiteral(const FuType * type, const FuExpr * expr) override;
+	void writeStaticCast(const FuType * type, const FuExpr * expr) override;
+	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	bool isPromoted(const FuExpr * expr) const override;
 	void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) override;
 	void writeNew(const FuReadWriteClassType * klass, FuPriority parent) override;

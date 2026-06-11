@@ -828,7 +828,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr value)
+	protected override void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr? value)
 	{
 		switch (value) {
 		case null:

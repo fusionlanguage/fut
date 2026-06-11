@@ -696,7 +696,7 @@ public class GenPy : GenPySwift
 		WritePyNewArray(elementType, null, lengthExpr);
 	}
 
-	protected override void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr value)
+	protected override void WriteArrayStorageInit!(FuArrayStorageType array, FuExpr? value)
 	{
 		Write(" = ");
 		WritePyNewArray(array.GetElementType(), null, array.LengthExpr);

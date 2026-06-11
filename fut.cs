@@ -34,8 +34,8 @@ namespace Fusion
 class FileGenHost : FuConsoleHost
 {
 	readonly List<string> ResourceDirs = new List<string>();
-	string Filename;
-	TextWriter CurrentFile;
+	string Filename = null!;
+	TextWriter CurrentFile = null!;
 
 	public void AddResourceDir(string path) => this.ResourceDirs.Add(path);
 
@@ -54,14 +54,14 @@ class FileGenHost : FuConsoleHost
 
 	internal override int GetResourceLength(string name, FuPrefixExpr expr)
 	{
-		if (!GetResources().TryGetValue(name, out List<byte> content)) {
+		if (!GetResources().TryGetValue(name, out List<byte>? content)) {
 			content = ReadResource(name, expr);
 			GetResources().Add(name, content);
 		}
 		return content.Count;
 	}
 
-	public override TextWriter CreateFile(string directory, string filename)
+	public override TextWriter CreateFile(string? directory, string filename)
 	{
 		if (directory != null)
 			filename = Path.Combine(directory, filename);
@@ -104,7 +104,7 @@ public static class Fut
 		Console.WriteLine("--version  Display version information");
 	}
 
-	static FuProgram ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FuSema sema, FuConsoleHost host)
+	static FuProgram? ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FuSema sema, FuConsoleHost host)
 	{
 		host.Program = new FuProgram { Parent = parent, System = system };
 		foreach (string file in files) {
@@ -138,7 +138,7 @@ public static class Fut
 		case "java":
 			gen = new GenJava();
 			if (!Directory.Exists(outputFile))
-				outputFile = Path.GetDirectoryName(outputFile);
+				outputFile = Path.GetDirectoryName(outputFile)!;
 			break;
 		case "js":
 		case "mjs":
@@ -175,8 +175,8 @@ public static class Fut
 		FuParser parser = new FuParser();
 		List<string> inputFiles = new List<string>();
 		List<string> referencedFiles = new List<string>();
-		string lang = null;
-		string outputFile = null;
+		string? lang = null;
+		string? outputFile = null;
 		string namespace_ = "";
 		for (int i = 0; i < args.Length; i++) {
 			string arg = args[i];
@@ -234,14 +234,14 @@ public static class Fut
 		parser.SetHost(host);
 		sema.SetHost(host);
 		FuSystem system = FuSystem.New();
-		FuScope parent = system;
+		FuScope? parent = system;
 		try {
 			if (referencedFiles.Count > 0) {
 				parent = ParseAndResolve(parser, system, parent, referencedFiles, sema, host);
 				if (parent == null)
 					return 1;
 			}
-			FuProgram program = ParseAndResolve(parser, system, parent, inputFiles, sema, host);
+			FuProgram? program = ParseAndResolve(parser, system, parent, inputFiles, sema, host);
 			if (program == null)
 				return 1;
 
