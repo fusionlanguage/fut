@@ -27,9 +27,13 @@ public static class Test
 		double d = -0.25;
 		ld.Add(d);
 
+		List<long>() ll;
+		ll.Add(Math.Floor(10.3)); //FAIL: js ts TODO
+
 		return list.Count == 3 && list[0] == 5 && list[1] == 3 && list[2] == 200
 			&& a[0] == 2 && a[1] == 3 && a[2] == 2 && a[3] == 3
 			&& lf.Count == 1 && lf[0] == 10.5
-			&& ld.Count == 1 && ld[0] == -0.25;
+			&& ld.Count == 1 && ld[0] == -0.25
+			&& ll.Count == 1 && ll[0] == 10;
 	}
 }

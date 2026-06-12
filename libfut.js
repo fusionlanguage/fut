@@ -10424,6 +10424,8 @@ export class GenTyped extends GenBase
 			}
 		case FuId.INT_TYPE:
 			return right == FuId.LONG_TYPE || right == FuId.FLOAT_INT_TYPE;
+		case FuId.LONG_TYPE:
+			return right == FuId.FLOAT_INT_TYPE;
 		default:
 			return false;
 		}

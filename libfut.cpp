@@ -10534,6 +10534,8 @@ bool GenTyped::isNarrower(FuId left, FuId right)
 		}
 	case FuId::intType:
 		return right == FuId::longType || right == FuId::floatIntType;
+	case FuId::longType:
+		return right == FuId::floatIntType;
 	default:
 		return false;
 	}

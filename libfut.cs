@@ -9934,6 +9934,8 @@ namespace Fusion
 				}
 			case FuId.IntType:
 				return right == FuId.LongType || right == FuId.FloatIntType;
+			case FuId.LongType:
+				return right == FuId.FloatIntType;
 			default:
 				return false;
 			}
