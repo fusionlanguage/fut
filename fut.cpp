@@ -65,6 +65,7 @@ static std::string slurp(std::ifstream &stream)
 class FileGenHost : public FuConsoleHost
 {
 	std::vector<const char *> resourceDirs;
+	std::string outputDirectory;
 	std::string currentFilename;
 	std::ofstream currentFile;
 
@@ -86,6 +87,15 @@ class FileGenHost : public FuConsoleHost
 		}
 		else
 			reportStatementError(expr, std::format("File '{}' not found", name));
+	}
+
+protected:
+	std::string_view toDirectory(std::string_view path) override
+	{
+		if (std::filesystem::is_directory(path))
+			return path;
+		outputDirectory = std::filesystem::path(path).parent_path().string();
+		return outputDirectory;
 	}
 
 public:
@@ -137,49 +147,6 @@ static bool parseAndResolve(FuParser *parser, const std::vector<const char *> &f
 		return false;
 	sema->process();
 	return !host->hasErrors();
-}
-
-static void emit(FuProgram *program, const char *lang, const char *namespace_, const char *outputFile, FileGenHost *host)
-{
-	std::string dir;
-	std::unique_ptr<GenBase> gen;
-	if (strcmp(lang, "c") == 0)
-		gen = std::make_unique<GenC>();
-	else if (strcmp(lang, "cpp") == 0)
-		gen = std::make_unique<GenCpp>();
-	else if (strcmp(lang, "cs") == 0)
-		gen = std::make_unique<GenCs>();
-	else if (strcmp(lang, "d") == 0)
-		gen = std::make_unique<GenD>();
-	else if (strcmp(lang, "java") == 0) {
-		gen = std::make_unique<GenJava>();
-		if (!std::filesystem::is_directory(outputFile)) {
-			dir = std::filesystem::path(outputFile).parent_path().string();
-			outputFile = dir.c_str();
-		}
-	}
-	else if (strcmp(lang, "js") == 0 || strcmp(lang, "mjs") == 0)
-		gen = std::make_unique<GenJs>();
-	else if (strcmp(lang, "py") == 0)
-		gen = std::make_unique<GenPy>();
-	else if (strcmp(lang, "swift") == 0)
-		gen = std::make_unique<GenSwift>();
-	else if (strcmp(lang, "ts") == 0) {
-		std::unique_ptr<GenTs> genTs = std::make_unique<GenTs>();
-		genTs->withGenFullCode();
-		gen = std::move(genTs);
-	}
-	else if (strcmp(lang, "d.ts") == 0)
-		gen = std::make_unique<GenTs>();
-	else if (strcmp(lang, "cl") == 0)
-		gen = std::make_unique<GenCl>();
-	else {
-		std::cerr << "fut: ERROR: Unknown language: " << lang << '\n';
-		host->setErrors(true);
-		return;
-	}
-	gen->setHost(host);
-	gen->writeProgram(program, outputFile, namespace_);
 }
 
 int main(int argc, char **argv)
@@ -262,7 +229,7 @@ int main(int argc, char **argv)
 		return 1;
 
 	if (lang != nullptr) {
-		emit(&program, lang, namespace_, outputFile, &host);
+		host.emit(&program, lang, namespace_, outputFile);
 		return host.hasErrors() ? 1 : 0;
 	}
 	for (size_t i = strlen(outputFile); --i >= 0; ) {
@@ -280,15 +247,15 @@ int main(int argc, char **argv)
 				const char *extEnd = strchr(extBegin, ',');
 				if (extEnd == nullptr)
 					break;
-				std::string outputExt = std::string(extBegin, extEnd);
-				emit(&program, outputExt.c_str(), namespace_, (outputBase + outputExt).c_str(), &host);
+				std::string outputExt { extBegin, extEnd };
+				host.emit(&program, outputExt, namespace_, outputBase + outputExt);
 				if (host.hasErrors()) {
 					host.setErrors(false);
 					exitCode = 1;
 				}
 				extBegin = extEnd + 1;
 			}
-			emit(&program, extBegin, namespace_, (outputBase + extBegin).c_str(), &host);
+			host.emit(&program, extBegin, namespace_, outputBase + extBegin);
 			return host.hasErrors() ? 1 : exitCode;
 		}
 		if (c == '/' || c == '\\' || c == ':')

@@ -2357,12 +2357,15 @@ protected:
 class FuConsoleHost : public GenHost
 {
 public:
+	virtual ~FuConsoleHost() = default;
 	static constexpr std::string_view version = "3.3.4";
 	bool hasErrors() const;
 	void setErrors(bool value);
 	void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) override;
+	void emit(const FuProgram * program, std::string_view lang, std::string_view namespace_, std::string_view outputFile);
 protected:
 	FuConsoleHost() = default;
+	virtual std::string_view toDirectory(std::string_view path) = 0;
 private:
 	bool errors = false;
 };

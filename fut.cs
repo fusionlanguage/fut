@@ -76,6 +76,8 @@ class FileGenHost : FuConsoleHost
 		if (HasErrors())
 			File.Delete(this.Filename);
 	}
+
+	protected override string ToDirectory(string path) => Directory.Exists(path) ? path : Path.GetDirectoryName(path)!;
 }
 
 public static class Fut
@@ -117,55 +119,6 @@ public static class Fut
 		if (host.HasErrors())
 			return null;
 		return host.Program;
-	}
-
-	static void Emit(FuProgram program, string lang, string namespace_, string outputFile, FileGenHost host)
-	{
-		GenBase gen;
-		switch (lang) {
-		case "c":
-			gen = new GenC();
-			break;
-		case "cpp":
-			gen = new GenCpp();
-			break;
-		case "cs":
-			gen = new GenCs();
-			break;
-		case "d":
-			gen = new GenD();
-			break;
-		case "java":
-			gen = new GenJava();
-			if (!Directory.Exists(outputFile))
-				outputFile = Path.GetDirectoryName(outputFile)!;
-			break;
-		case "js":
-		case "mjs":
-			gen = new GenJs();
-			break;
-		case "py":
-			gen = new GenPy();
-			break;
-		case "swift":
-			gen = new GenSwift();
-			break;
-		case "ts":
-			gen = new GenTs().WithGenFullCode();
-			break;
-		case "d.ts":
-			gen = new GenTs();
-			break;
-		case "cl":
-			gen = new GenCl();
-			break;
-		default:
-			Console.Error.WriteLine($"fut: ERROR: Unknown language: {lang}");
-			host.SetErrors(true);
-			return;
-		}
-		gen.SetHost(host);
-		gen.WriteProgram(program, outputFile, namespace_);
 	}
 
 	public static int Main(string[] args)
@@ -246,7 +199,7 @@ public static class Fut
 				return 1;
 
 			if (lang != null) {
-				Emit(program, lang, namespace_, outputFile, host);
+				host.Emit(program, lang, namespace_, outputFile);
 				return host.HasErrors() ? 1 : 0;
 			}
 			for (int i = outputFile.Length; --i >= 0; ) {
@@ -260,7 +213,7 @@ public static class Fut
 					string outputBase = outputFile.Substring(0, i + 1);
 					int exitCode = 0;
 					foreach (string outputExt in outputFile.Substring(i + 1).Split(',')) {
-						Emit(program, outputExt, namespace_, outputBase + outputExt, host);
+						host.Emit(program, outputExt, namespace_, outputBase + outputExt);
 						if (host.HasErrors()) {
 							host.SetErrors(false);
 							exitCode = 1;

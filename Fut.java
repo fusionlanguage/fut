@@ -103,6 +103,12 @@ class FileGenHost extends FuConsoleHost
 		if (hasErrors())
 			filename.delete();
 	}
+
+	protected @Override String toDirectory(String path)
+	{
+		File file = new File(path);
+		return file.isDirectory() ? path : file.getParent();
+	}
 }
 
 public class Fut
@@ -144,56 +150,6 @@ public class Fut
 		if (host.hasErrors())
 			System.exit(1);
 		return host.program;
-	}
-
-	private static void emit(FuProgram program, String lang, String namespace, String outputFile, FileGenHost host)
-	{
-		final GenBase gen;
-		switch (lang) {
-		case "c":
-			gen = new GenC();
-			break;
-		case "cpp":
-			gen = new GenCpp();
-			break;
-		case "cs":
-			gen = new GenCs();
-			break;
-		case "d":
-			gen = new GenD();
-			break;
-		case "java":
-			gen = new GenJava();
-			File outputDir = new File(outputFile);
-			if (!outputDir.isDirectory())
-				outputFile = outputDir.getParent();
-			break;
-		case "js":
-		case "mjs":
-			gen = new GenJs();
-			break;
-		case "py":
-			gen = new GenPy();
-			break;
-		case "swift":
-			gen = new GenSwift();
-			break;
-		case "ts":
-			gen = new GenTs().withGenFullCode();
-			break;
-		case "d.ts":
-			gen = new GenTs();
-			break;
-		case "cl":
-			gen = new GenCl();
-			break;
-		default:
-			System.err.format("fut: ERROR: Unknown language: %s\n", lang);
-			host.setErrors(true);
-			return;
-		}
-		gen.setHost(host);
-		gen.writeProgram(program, outputFile, namespace);
 	}
 
 	public static void main(String[] args)
@@ -269,7 +225,7 @@ public class Fut
 			final FuProgram program = parseAndResolve(parser, system, parent, inputFiles, sema, host);
 
 			if (lang != null) {
-				emit(program, lang, namespace, outputFile, host);
+				host.emit(program, lang, namespace, outputFile);
 				if (host.hasErrors())
 					System.exit(1);
 				return;
@@ -285,7 +241,7 @@ public class Fut
 					String outputBase = outputFile.substring(0, i + 1);
 					boolean error = false;
 					for (String outputExt : outputFile.substring(i + 1).split(",")) {
-						emit(program, outputExt, namespace, outputBase + outputExt, host);
+						host.emit(program, outputExt, namespace, outputBase + outputExt);
 						if (host.hasErrors()) {
 							host.setErrors(false);
 							error = true;

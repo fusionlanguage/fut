@@ -80,6 +80,17 @@ class FileGenHost extends FuConsoleHost
 		else
 			this.#currentFile.close();
 	}
+
+	toDirectory(outputFile)
+	{
+		try {
+			if (fs.lstatSync(outputFile).isDirectory())
+				return outputFile;
+		}
+		catch {
+		}
+		return path.dirname(outputFile);
+	}
 }
 
 function usage()
@@ -123,69 +134,6 @@ function parseAndResolve(parser, system, parent, files, sema, host)
 	return host.program;
 }
 
-function isDirectory(filename)
-{
-	try {
-		return fs.lstatSync(filename).isDirectory();
-	}
-	catch {
-		return false;
-	}
-}
-
-function emit(program, lang, namespace, outputFile, host)
-{
-	let gen;
-	switch (lang) {
-	case "c":
-		gen = new GenC();
-		break;
-	case "cpp":
-		gen = new GenCpp();
-		break;
-	case "cs":
-		gen = new GenCs();
-		break;
-	case "d":
-		gen = new GenD();
-		break;
-	case "java":
-		gen = new GenJava();
-		if (!isDirectory(outputFile))
-			outputFile = path.dirname(outputFile)
-		break;
-	case "js":
-	case "mjs":
-		gen = new GenJs();
-		break;
-	case "py":
-		gen = new GenPy();
-		break;
-	case "swift":
-		gen = new GenSwift();
-		break;
-	case "ts":
-		gen = new GenTs().withGenFullCode();
-		break;
-	case "d.ts":
-		gen = new GenTs();
-		break;
-	case "cl":
-		gen = new GenCl();
-		break;
-	default:
-		console.error(`fut: ERROR: Unknown language: ${lang}`);
-		process.exitCode = 1;
-		return;
-	}
-	gen.setHost(host);
-	gen.writeProgram(program, outputFile, namespace);
-	if (host.hasErrors()) {
-		host.setErrors(false);
-		process.exitCode = 1;
-	}
-}
-
 function emitImplicitLang(program, namespace, outputFile, host)
 {
 	for (let i = outputFile.length; --i >= 0; ) {
@@ -194,8 +142,13 @@ function emitImplicitLang(program, namespace, outputFile, host)
 			if (i >= 2 && /^[.,]d\.ts($|,)/.test(outputFile.slice(i - 2)))
 				continue;
 			const outputBase = outputFile.slice(0, i + 1);
-			for (const outputExt of outputFile.slice(i + 1).split(","))
-				emit(program, outputExt, namespace, outputBase + outputExt, host);
+			for (const outputExt of outputFile.slice(i + 1).split(",")) {
+				host.emit(program, outputExt, namespace, outputBase + outputExt);
+				if (host.hasErrors()) {
+					host.setErrors(false);
+					process.exitCode = 1;
+				}
+			}
 			return;
 		}
 		if (c == "/" || c == "\\" || c == ":")
@@ -273,8 +226,11 @@ try {
 	if (referencedFiles.length > 0)
 		parent = parseAndResolve(parser, system, parent, referencedFiles, sema, host);
 	const program = parseAndResolve(parser, system, parent, inputFiles, sema, host);
-	if (lang != null)
-		emit(program, lang, namespace, outputFile, host);
+	if (lang != null) {
+		host.emit(program, lang, namespace, outputFile);
+		if (host.hasErrors())
+			process.exitCode = 1;
+	}
 	else
 		emitImplicitLang(program, namespace, outputFile, host);
 }

@@ -5557,6 +5557,56 @@ export class FuConsoleHost extends GenHost
 		this.#errors = true;
 		console.error(`${filename}(${line + 1}): ERROR: ${message}`);
 	}
+
+	emit(program, lang, namespace_, outputFile)
+	{
+		let gen;
+		switch (lang) {
+		case "c":
+			gen = new GenC();
+			break;
+		case "cpp":
+			gen = new GenCpp();
+			break;
+		case "cs":
+			gen = new GenCs();
+			break;
+		case "d":
+			gen = new GenD();
+			break;
+		case "java":
+			gen = new GenJava();
+			outputFile = this.toDirectory(outputFile);
+			break;
+		case "js":
+		case "mjs":
+			gen = new GenJs();
+			break;
+		case "py":
+			gen = new GenPy();
+			break;
+		case "swift":
+			gen = new GenSwift();
+			break;
+		case "ts":
+			let genTs = new GenTs();
+			genTs.withGenFullCode();
+			gen = genTs;
+			break;
+		case "d.ts":
+			gen = new GenTs();
+			break;
+		case "cl":
+			gen = new GenCl();
+			break;
+		default:
+			console.error(`fut: ERROR: Unknown language: ${lang}`);
+			this.setErrors(true);
+			return;
+		}
+		gen.setHost(this);
+		gen.writeProgram(program, outputFile, namespace_);
+	}
 }
 
 export class FuSema

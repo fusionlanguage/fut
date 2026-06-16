@@ -5266,6 +5266,58 @@ namespace Fusion
 			this.Errors = true;
 			Console.Error.WriteLine($"{filename}({line + 1}): ERROR: {message}");
 		}
+
+		protected abstract string ToDirectory(string path);
+
+		public void Emit(FuProgram program, string lang, string namespace_, string outputFile)
+		{
+			GenBase gen;
+			switch (lang) {
+			case "c":
+				gen = new GenC();
+				break;
+			case "cpp":
+				gen = new GenCpp();
+				break;
+			case "cs":
+				gen = new GenCs();
+				break;
+			case "d":
+				gen = new GenD();
+				break;
+			case "java":
+				gen = new GenJava();
+				outputFile = ToDirectory(outputFile);
+				break;
+			case "js":
+			case "mjs":
+				gen = new GenJs();
+				break;
+			case "py":
+				gen = new GenPy();
+				break;
+			case "swift":
+				gen = new GenSwift();
+				break;
+			case "ts":
+				GenTs genTs = new GenTs();
+				genTs.WithGenFullCode();
+				gen = genTs;
+				break;
+			case "d.ts":
+				gen = new GenTs();
+				break;
+			case "cl":
+				gen = new GenCl();
+				break;
+			default:
+				Console.Error.WriteLine($"fut: ERROR: Unknown language: {lang}");
+				SetErrors(true);
+				return;
+			}
+			gen.SetHost(this);
+			gen.WriteProgram(program, outputFile, namespace_);
+		}
 	}
 
 	public abstract class FuSemaHost : FuParserHost

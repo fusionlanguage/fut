@@ -5749,6 +5749,45 @@ void FuConsoleHost::reportError(std::string_view filename, int line, int startUt
 	std::cerr << filename << "(" << (line + 1) << "): ERROR: " << message << '\n';
 }
 
+void FuConsoleHost::emit(const FuProgram * program, std::string_view lang, std::string_view namespace_, std::string_view outputFile)
+{
+	std::shared_ptr<GenBase> gen;
+	if (lang == "c")
+		gen = std::make_shared<GenC>();
+	else if (lang == "cpp")
+		gen = std::make_shared<GenCpp>();
+	else if (lang == "cs")
+		gen = std::make_shared<GenCs>();
+	else if (lang == "d")
+		gen = std::make_shared<GenD>();
+	else if (lang == "java") {
+		gen = std::make_shared<GenJava>();
+		outputFile = toDirectory(outputFile);
+	}
+	else if (lang == "js" || lang == "mjs")
+		gen = std::make_shared<GenJs>();
+	else if (lang == "py")
+		gen = std::make_shared<GenPy>();
+	else if (lang == "swift")
+		gen = std::make_shared<GenSwift>();
+	else if (lang == "ts") {
+		std::shared_ptr<GenTs> genTs = std::make_shared<GenTs>();
+		genTs->withGenFullCode();
+		gen = genTs;
+	}
+	else if (lang == "d.ts")
+		gen = std::make_shared<GenTs>();
+	else if (lang == "cl")
+		gen = std::make_shared<GenCl>();
+	else {
+		std::cerr << "fut: ERROR: Unknown language: " << lang << '\n';
+		setErrors(true);
+		return;
+	}
+	gen->setHost(this);
+	gen->writeProgram(program, outputFile, namespace_);
+}
+
 int FuSemaHost::getResourceLength(std::string_view name, const FuPrefixExpr * expr)
 {
 	return 0;
