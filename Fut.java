@@ -113,30 +113,6 @@ class FileGenHost extends FuConsoleHost
 
 public class Fut
 {
-	private static void usage()
-	{
-		System.out.println("Usage: java -jar fut.jar [OPTIONS] -o FILE INPUT.fu");
-		System.out.println("Options:");
-		System.out.println("-l c       Translate to C");
-		System.out.println("-l cpp     Translate to C++");
-		System.out.println("-l cs      Translate to C#");
-		System.out.println("-l d       Translate to D");
-		System.out.println("-l java    Translate to Java");
-		System.out.println("-l js      Translate to JavaScript");
-		System.out.println("-l py      Translate to Python");
-		System.out.println("-l swift   Translate to Swift");
-		System.out.println("-l ts      Translate to TypeScript");
-		System.out.println("-l d.ts    Translate to TypeScript declarations");
-		System.out.println("-l cl      Translate to OpenCL C");
-		System.out.println("-o FILE    Write to the specified file");
-		System.out.println("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
-		System.out.println("-D NAME    Define conditional compilation symbol");
-		System.out.println("-r FILE.fu Read the specified source file but don't emit code");
-		System.out.println("-I DIR     Add directory to resource search path");
-		System.out.println("--help     Display this information");
-		System.out.println("--version  Display version information");
-	}
-
 	private static FuProgram parseAndResolve(FuParser parser, FuSystem system, FuScope parent, ArrayList<String> files, FuSema sema, FuConsoleHost host) throws IOException
 	{
 		new FuProgram().init(parent, system, host);
@@ -167,7 +143,7 @@ public class Fut
 			if (!arg.startsWith("-"))
 				inputFiles.add(arg);
 			else if (arg.equals("--help")) {
-				usage();
+				FuConsoleHost.usage("java -jar fut.jar");
 				return;
 			}
 			else if (arg.equals("--version")) {
@@ -210,7 +186,7 @@ public class Fut
 			}
 		}
 		if (outputFile == null || inputFiles.size() == 0) {
-			usage();
+			FuConsoleHost.usage("java -jar fut.jar");
 			System.exit(1);
 		}
 

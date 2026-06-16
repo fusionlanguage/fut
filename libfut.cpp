@@ -5733,6 +5733,30 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 	}
 }
 
+void FuConsoleHost::usage(std::string_view app)
+{
+	std::cout << "Usage: " << app << " [OPTIONS] -o FILE INPUT.fu\n";
+	std::cout << "Options:\n";
+	std::cout << "-l c       Translate to C\n";
+	std::cout << "-l cpp     Translate to C++\n";
+	std::cout << "-l cs      Translate to C#\n";
+	std::cout << "-l d       Translate to D\n";
+	std::cout << "-l java    Translate to Java\n";
+	std::cout << "-l js      Translate to JavaScript\n";
+	std::cout << "-l py      Translate to Python\n";
+	std::cout << "-l swift   Translate to Swift\n";
+	std::cout << "-l ts      Translate to TypeScript\n";
+	std::cout << "-l d.ts    Translate to TypeScript declarations\n";
+	std::cout << "-l cl      Translate to OpenCL C\n";
+	std::cout << "-o FILE    Write to the specified file\n";
+	std::cout << "-n NAME    Specify C++/C# namespace, Java package or C name prefix\n";
+	std::cout << "-D NAME    Define conditional compilation symbol\n";
+	std::cout << "-r FILE.fu Read the specified source file but don't emit code\n";
+	std::cout << "-I DIR     Add directory to resource search path\n";
+	std::cout << "--help     Display this information\n";
+	std::cout << "--version  Display version information\n";
+}
+
 bool FuConsoleHost::hasErrors() const
 {
 	return this->errors;

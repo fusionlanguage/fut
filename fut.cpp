@@ -30,31 +30,6 @@
 
 #include "libfut.hpp"
 
-static void usage()
-{
-	std::cout <<
-		"Usage: fut [OPTIONS] -o FILE INPUT.fu\n"
-		"Options:\n"
-		"-l c       Translate to C\n"
-		"-l cpp     Translate to C++\n"
-		"-l cs      Translate to C#\n"
-		"-l d       Translate to D\n"
-		"-l java    Translate to Java\n"
-		"-l js      Translate to JavaScript\n"
-		"-l py      Translate to Python\n"
-		"-l swift   Translate to Swift\n"
-		"-l ts      Translate to TypeScript\n"
-		"-l d.ts    Translate to TypeScript declarations\n"
-		"-l cl      Translate to OpenCL C\n"
-		"-o FILE    Write to the specified file\n"
-		"-n NAME    Specify C++/C# namespace, Java package or C name prefix\n"
-		"-D NAME    Define conditional compilation symbol\n"
-		"-r FILE.fu Read the specified source file but don't emit code\n"
-		"-I DIR     Add directory to resource search path\n"
-		"--help     Display this information\n"
-		"--version  Display version information\n";
-}
-
 static std::string slurp(std::ifstream &stream)
 {
 	std::ostringstream oss;
@@ -163,7 +138,7 @@ int main(int argc, char **argv)
 		if (arg[0] != '-')
 			inputFiles.push_back(arg);
 		else if (strcmp(arg, "--help") == 0) {
-			usage();
+			FuConsoleHost::usage("fut");
 			return 0;
 		}
 		else if (strcmp(arg, "--version") == 0) {
@@ -207,7 +182,7 @@ int main(int argc, char **argv)
 		}
 	}
 	if (outputFile == nullptr || inputFiles.empty()) {
-		usage();
+		FuConsoleHost::usage("fut");
 		return 1;
 	}
 

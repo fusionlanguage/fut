@@ -82,30 +82,6 @@ class FileGenHost : FuConsoleHost
 
 public static class Fut
 {
-	static void Usage()
-	{
-		Console.WriteLine("Usage: fut [OPTIONS] -o FILE INPUT.fu");
-		Console.WriteLine("Options:");
-		Console.WriteLine("-l c       Translate to C");
-		Console.WriteLine("-l cpp     Translate to C++");
-		Console.WriteLine("-l cs      Translate to C#");
-		Console.WriteLine("-l d       Translate to D");
-		Console.WriteLine("-l java    Translate to Java");
-		Console.WriteLine("-l js      Translate to JavaScript");
-		Console.WriteLine("-l py      Translate to Python");
-		Console.WriteLine("-l swift   Translate to Swift");
-		Console.WriteLine("-l ts      Translate to TypeScript");
-		Console.WriteLine("-l d.ts    Translate to TypeScript declarations");
-		Console.WriteLine("-l cl      Translate to OpenCL C");
-		Console.WriteLine("-o FILE    Write to the specified file");
-		Console.WriteLine("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
-		Console.WriteLine("-D NAME    Define conditional compilation symbol");
-		Console.WriteLine("-r FILE.fu Read the specified source file but don't emit code");
-		Console.WriteLine("-I DIR     Add directory to resource search path");
-		Console.WriteLine("--help     Display this information");
-		Console.WriteLine("--version  Display version information");
-	}
-
 	static FuProgram? ParseAndResolve(FuParser parser, FuSystem system, FuScope parent, List<string> files, FuSema sema, FuConsoleHost host)
 	{
 		host.Program = new FuProgram { Parent = parent, System = system };
@@ -136,7 +112,7 @@ public static class Fut
 			if (arg.Length < 2 || arg[0] != '-')
 				inputFiles.Add(arg);
 			else if (arg == "--help") {
-				Usage();
+				FuConsoleHost.Usage("fut");
 				return 0;
 			}
 			else if (arg == "--version") {
@@ -179,7 +155,7 @@ public static class Fut
 			}
 		}
 		if (outputFile == null || inputFiles.Count == 0) {
-			Usage();
+			FuConsoleHost.Usage("fut");
 			return 1;
 		}
 

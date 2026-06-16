@@ -2359,6 +2359,7 @@ class FuConsoleHost : public GenHost
 public:
 	virtual ~FuConsoleHost() = default;
 	static constexpr std::string_view version = "3.3.4";
+	static void usage(std::string_view app);
 	bool hasErrors() const;
 	void setErrors(bool value);
 	void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) override;

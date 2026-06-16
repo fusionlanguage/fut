@@ -5540,6 +5540,30 @@ export class FuConsoleHost extends GenHost
 {
 
 	static VERSION = "3.3.4";
+
+	static usage(app)
+	{
+		console.log(`Usage: ${app} [OPTIONS] -o FILE INPUT.fu`);
+		console.log("Options:");
+		console.log("-l c       Translate to C");
+		console.log("-l cpp     Translate to C++");
+		console.log("-l cs      Translate to C#");
+		console.log("-l d       Translate to D");
+		console.log("-l java    Translate to Java");
+		console.log("-l js      Translate to JavaScript");
+		console.log("-l py      Translate to Python");
+		console.log("-l swift   Translate to Swift");
+		console.log("-l ts      Translate to TypeScript");
+		console.log("-l d.ts    Translate to TypeScript declarations");
+		console.log("-l cl      Translate to OpenCL C");
+		console.log("-o FILE    Write to the specified file");
+		console.log("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
+		console.log("-D NAME    Define conditional compilation symbol");
+		console.log("-r FILE.fu Read the specified source file but don't emit code");
+		console.log("-I DIR     Add directory to resource search path");
+		console.log("--help     Display this information");
+		console.log("--version  Display version information");
+	}
 	#errors = false;
 
 	hasErrors()

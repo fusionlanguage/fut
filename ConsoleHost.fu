@@ -22,6 +22,30 @@ public abstract class FuConsoleHost : GenHost
 {
 	public const string Version = "3.3.4";
 
+	public static void Usage(string app)
+	{
+		Console.WriteLine($"Usage: {app} [OPTIONS] -o FILE INPUT.fu");
+		Console.WriteLine("Options:");
+		Console.WriteLine("-l c       Translate to C");
+		Console.WriteLine("-l cpp     Translate to C++");
+		Console.WriteLine("-l cs      Translate to C#");
+		Console.WriteLine("-l d       Translate to D");
+		Console.WriteLine("-l java    Translate to Java");
+		Console.WriteLine("-l js      Translate to JavaScript");
+		Console.WriteLine("-l py      Translate to Python");
+		Console.WriteLine("-l swift   Translate to Swift");
+		Console.WriteLine("-l ts      Translate to TypeScript");
+		Console.WriteLine("-l d.ts    Translate to TypeScript declarations");
+		Console.WriteLine("-l cl      Translate to OpenCL C");
+		Console.WriteLine("-o FILE    Write to the specified file");
+		Console.WriteLine("-n NAME    Specify C++/C# namespace, Java package or C name prefix");
+		Console.WriteLine("-D NAME    Define conditional compilation symbol");
+		Console.WriteLine("-r FILE.fu Read the specified source file but don't emit code");
+		Console.WriteLine("-I DIR     Add directory to resource search path");
+		Console.WriteLine("--help     Display this information");
+		Console.WriteLine("--version  Display version information");
+	}
+
 	bool Errors = false;
 
 	public bool HasErrors() => this.Errors;
