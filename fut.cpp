@@ -232,7 +232,7 @@ int main(int argc, char **argv)
 		host.emit(&program, lang, namespace_, outputFile);
 		return host.hasErrors() ? 1 : 0;
 	}
-	for (size_t i = strlen(outputFile); --i >= 0; ) {
+	for (ptrdiff_t i = strlen(outputFile); --i >= 0; ) {
 		char c = outputFile[i];
 		if (c == '.') {
 			if (i >= 2
@@ -240,8 +240,8 @@ int main(int argc, char **argv)
 			 && strncmp(outputFile + i - 1, "d.ts", 4) == 0
 			 && (outputFile[i + 3] == '\0' || outputFile[i + 3] == ','))
 				continue;
-			std::string outputBase { outputFile, i + 1 };
 			const char *extBegin = outputFile + i + 1;
+			std::string outputBase { outputFile, extBegin };
 			int exitCode = 0;
 			for (;;) {
 				const char *extEnd = strchr(extBegin, ',');
