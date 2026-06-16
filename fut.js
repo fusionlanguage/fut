@@ -20,7 +20,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
-import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost, GenC, GenCpp, GenCs, GenD, GenJava, GenJs, GenPy, GenSwift, GenTs, GenCl } from "./libfut.js";
+import { FuParser, FuProgram, FuSema, FuSystem, FuConsoleHost } from "./libfut.js";
 
 class FileGenHost extends FuConsoleHost
 {
