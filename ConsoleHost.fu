@@ -1,6 +1,6 @@
 // ConsoleHost.fu - emit errors to stderr
 //
-// Copyright (C) 2023-2025  Piotr Fusik
+// Copyright (C) 2023-2026  Piotr Fusik
 //
 // This file is part of Fusion Transpiler,
 // see https://github.com/fusionlanguage/fut
@@ -20,6 +20,8 @@
 
 public abstract class FuConsoleHost : GenHost
 {
+	public const string Version = "3.3.4";
+
 	bool Errors = false;
 
 	public bool HasErrors() => this.Errors;

@@ -5250,6 +5250,8 @@ namespace Fusion
 	public abstract class FuConsoleHost : GenHost
 	{
 
+		public const string Version = "3.3.4";
+
 		bool Errors = false;
 
 		public bool HasErrors() => this.Errors;

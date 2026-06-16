@@ -215,7 +215,7 @@ public class Fut
 				return;
 			}
 			else if (arg.equals("--version")) {
-				System.out.println("Fusion Transpiler 3.3.4 (Java)");
+				System.out.format("Fusion Transpiler %s (Java)\n", FuConsoleHost.VERSION);
 				return;
 			}
 			else if (arg.length() == 2 && i + 1 < args.length) {

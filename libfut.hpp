@@ -2357,6 +2357,7 @@ protected:
 class FuConsoleHost : public GenHost
 {
 public:
+	static constexpr std::string_view version = "3.3.4";
 	bool hasErrors() const;
 	void setErrors(bool value);
 	void reportError(std::string_view filename, int line, int startUtf16Column, int endUtf16Column, std::string_view message) override;
