@@ -84,7 +84,7 @@ class FileGenHost extends FuConsoleHost
 	toDirectory(outputFile)
 	{
 		try {
-			if (fs.lstatSync(outputFile).isDirectory())
+			if (fs.statSync(outputFile).isDirectory())
 				return outputFile;
 		}
 		catch {
