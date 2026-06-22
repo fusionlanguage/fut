@@ -6292,18 +6292,18 @@ std::shared_ptr<FuType> FuSema::bitwiseOp(const FuExpr * left, FuToken op, const
 			rightPositive = FuRangeType::new_(0, rightRange->max);
 		}
 		if (leftRange->min < 0) {
-			const FuRangeType * leftNegative = leftRange->max < 0 ? leftRange.get() : FuRangeType::new_(leftRange->min, -1).get();
+			std::shared_ptr<FuRangeType> leftNegative = leftRange->max < 0 ? leftRange : FuRangeType::new_(leftRange->min, -1);
 			if (rightNegative != nullptr)
-				range = bitwiseUnsignedOp(leftNegative, op, rightNegative.get());
+				range = bitwiseUnsignedOp(leftNegative.get(), op, rightNegative.get());
 			if (rightPositive != nullptr)
-				range = union_(bitwiseUnsignedOp(leftNegative, op, rightPositive.get()), range);
+				range = union_(bitwiseUnsignedOp(leftNegative.get(), op, rightPositive.get()), range);
 		}
 		if (leftRange->max >= 0) {
-			const FuRangeType * leftPositive = leftRange->min >= 0 ? leftRange.get() : FuRangeType::new_(0, leftRange->max).get();
+			std::shared_ptr<FuRangeType> leftPositive = leftRange->min >= 0 ? leftRange : FuRangeType::new_(0, leftRange->max);
 			if (rightNegative != nullptr)
-				range = union_(bitwiseUnsignedOp(leftPositive, op, rightNegative.get()), range);
+				range = union_(bitwiseUnsignedOp(leftPositive.get(), op, rightNegative.get()), range);
 			if (rightPositive != nullptr)
-				range = union_(bitwiseUnsignedOp(leftPositive, op, rightPositive.get()), range);
+				range = union_(bitwiseUnsignedOp(leftPositive.get(), op, rightPositive.get()), range);
 		}
 		return range;
 	}

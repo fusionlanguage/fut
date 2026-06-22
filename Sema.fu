@@ -489,14 +489,14 @@ public class FuSema
 				rightPositive = FuRangeType.New(0, rightRange.Max);
 			}
 			if (leftRange.Min < 0) {
-				FuRangeType leftNegative = leftRange.Max < 0 ? leftRange : FuRangeType.New(leftRange.Min, -1);
+				FuRangeType# leftNegative = leftRange.Max < 0 ? leftRange : FuRangeType.New(leftRange.Min, -1);
 				if (rightNegative != null)
 					range = BitwiseUnsignedOp(leftNegative, op, rightNegative);
 				if (rightPositive != null)
 					range = Union(BitwiseUnsignedOp(leftNegative, op, rightPositive), range);
 			}
 			if (leftRange.Max >= 0) {
-				FuRangeType leftPositive = leftRange.Min >= 0 ? leftRange : FuRangeType.New(0, leftRange.Max);
+				FuRangeType# leftPositive = leftRange.Min >= 0 ? leftRange : FuRangeType.New(0, leftRange.Max);
 				if (rightNegative != null)
 					range = Union(BitwiseUnsignedOp(leftPositive, op, rightNegative), range);
 				if (rightPositive != null)
