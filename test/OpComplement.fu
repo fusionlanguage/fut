@@ -2,9 +2,17 @@ public static class Test
 {
 	public static bool Run()
 	{
-		int a = 42;
+		int i = 42;
 		byte b = 1;
-		return ~a == -43
-			&& ~b == ~1;
+		byte[2] ba;
+		ba[0] = 0x85;
+		ba[0] &= ~1; //FAIL: swift TODO
+		ushort[2] usa;
+		usa[1] = 0xaa;
+		usa[1] &= ~2;
+		return ~i == -43
+			&& ~b == ~1
+			&& ba[0] == 0x84
+			&& usa[1] == 0xa8;
 	}
 }

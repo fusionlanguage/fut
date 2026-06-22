@@ -17956,9 +17956,15 @@ void GenCs::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 
 void GenCs::writeStaticCast(const FuType * type, const FuExpr * expr)
 {
-	GenTyped::writeStaticCast(type, expr);
-	if (expr->type->nullable && !type->nullable)
-		writeChar('!');
+	const FuPrefixExpr * unary;
+	const FuLiteralLong * literal;
+	if ((unary = dynamic_cast<const FuPrefixExpr *>(expr)) && unary->op == FuToken::tilde && (literal = dynamic_cast<const FuLiteralLong *>(unary->inner.get())) && (type->id == FuId::byteRange || type->id == FuId::uShortRange))
+		visitLiteralLong(literal->value ^ (type->id == FuId::byteRange ? 255 : 65535), FuPriority::primary);
+	else {
+		GenTyped::writeStaticCast(type, expr);
+		if (expr->type->nullable && !type->nullable)
+			writeChar('!');
+	}
 }
 
 void GenCs::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)

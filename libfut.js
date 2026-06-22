@@ -18210,9 +18210,15 @@ export class GenCs extends GenTyped
 
 	writeStaticCast(type, expr)
 	{
-		super.writeStaticCast(type, expr);
-		if (expr.type.nullable && !type.nullable)
-			this.writeChar(33);
+		let unary;
+		let literal;
+		if ((unary = expr) instanceof FuPrefixExpr && unary.op == FuToken.TILDE && (literal = unary.inner) instanceof FuLiteralLong && (type.id == FuId.BYTE_RANGE || type.id == FuId.U_SHORT_RANGE))
+			this.visitLiteralLong(literal.value ^ (type.id == FuId.BYTE_RANGE ? 255n : 65535n), FuPriority.PRIMARY);
+		else {
+			super.writeStaticCast(type, expr);
+			if (expr.type.nullable && !type.nullable)
+				this.writeChar(33);
+		}
 	}
 
 	writeCoercedInternal(type, expr, parent)

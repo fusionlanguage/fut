@@ -1190,6 +1190,7 @@ private: // internal
 	friend GenBase;
 	friend GenC;
 	friend GenCpp;
+	friend GenCs;
 	friend GenJava;
 	friend GenPy;
 	friend GenPySwift;

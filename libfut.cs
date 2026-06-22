@@ -17622,9 +17622,13 @@ namespace Fusion
 
 		protected override void WriteStaticCast(FuType type, FuExpr expr)
 		{
-			base.WriteStaticCast(type, expr);
-			if (expr.Type!.Nullable && !type.Nullable)
-				WriteChar('!');
+			if (expr is FuPrefixExpr unary && unary.Op == FuToken.Tilde && unary.Inner is FuLiteralLong literal && (type.Id == FuId.ByteRange || type.Id == FuId.UShortRange))
+				VisitLiteralLong(literal.Value ^ (type.Id == FuId.ByteRange ? 255 : 65535), FuPriority.Primary);
+			else {
+				base.WriteStaticCast(type, expr);
+				if (expr.Type!.Nullable && !type.Nullable)
+					WriteChar('!');
+			}
 		}
 
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
