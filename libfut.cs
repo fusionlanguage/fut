@@ -19458,12 +19458,16 @@ namespace Fusion
 				WriteInsertedArg(obj!.Type!.AsClassType().GetValueType(), args, 1);
 				break;
 			case FuId.SortedDictionaryContainsKey:
+				if (parent > FuPriority.And)
+					WriteChar('(');
 				Write("tuple(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
 				WriteStaticInitializer(obj!.Type!.AsClassType().GetValueType());
 				Write(") in ");
 				WriteClassReference(obj!);
+				if (parent > FuPriority.And)
+					WriteChar(')');
 				break;
 			case FuId.SortedDictionaryRemove:
 				WriteClassReference(obj!);

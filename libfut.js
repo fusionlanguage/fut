@@ -20081,12 +20081,16 @@ export class GenD extends GenCCppD
 			this.#writeInsertedArg(obj.type.asClassType().getValueType(), args, 1);
 			break;
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
+			if (parent > FuPriority.AND)
+				this.writeChar(40);
 			this.write("tuple(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
 			this.#writeStaticInitializer(obj.type.asClassType().getValueType());
 			this.write(") in ");
 			this.#writeClassReference(obj);
+			if (parent > FuPriority.AND)
+				this.writeChar(41);
 			break;
 		case FuId.SORTED_DICTIONARY_REMOVE:
 			this.#writeClassReference(obj);

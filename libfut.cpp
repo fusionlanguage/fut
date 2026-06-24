@@ -19629,12 +19629,16 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writeInsertedArg(obj->type->asClassType()->getValueType().get(), args, 1);
 		break;
 	case FuId::sortedDictionaryContainsKey:
+		if (parent > FuPriority::and_)
+			writeChar('(');
 		write("tuple(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write(", ");
 		writeStaticInitializer(obj->type->asClassType()->getValueType().get());
 		write(") in ");
 		writeClassReference(obj);
+		if (parent > FuPriority::and_)
+			writeChar(')');
 		break;
 	case FuId::sortedDictionaryRemove:
 		writeClassReference(obj);

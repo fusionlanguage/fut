@@ -12,6 +12,6 @@ public static class Test
 		dict.Remove("one");
 		string one = "one";
 		dict.Remove(one);
-		return dict.Count == 2 && dict["two"] == 20 && dict["three"] == 30 && dict.ContainsKey("two");
+		return dict.Count == 2 && dict["two"] == 20 && dict["three"] == 30 && dict.ContainsKey("two") && !dict.ContainsKey("lame");
 	}
 }
