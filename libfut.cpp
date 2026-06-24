@@ -16488,13 +16488,13 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		break;
 	case FuId::dictionaryContainsKey:
 	case FuId::sortedDictionaryContainsKey:
-		if (parent > FuPriority::equality)
+		if (parent > FuPriority::and_)
 			writeChar('(');
 		startMethodCall(obj);
 		write("count(");
 		writeStronglyCoerced(obj->type->asClassType()->getKeyType(), (*args)[0].get());
 		write(") != 0");
-		if (parent > FuPriority::equality)
+		if (parent > FuPriority::and_)
 			writeChar(')');
 		break;
 	case FuId::textWriterWrite:
@@ -24656,11 +24656,11 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		break;
 	case FuId::dictionaryContainsKey:
 	case FuId::sortedDictionaryContainsKey:
-		if (parent > FuPriority::equality)
+		if (parent > FuPriority::and_)
 			writeChar('(');
 		writeIndexing(obj, (*args)[0].get());
 		write(" != nil");
-		if (parent > FuPriority::equality)
+		if (parent > FuPriority::and_)
 			writeChar(')');
 		break;
 	case FuId::dictionaryRemove:
@@ -26645,11 +26645,15 @@ void GenPy::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 	}
 }
 
-void GenPy::writeContains(const FuExpr * haystack, const FuExpr * needle)
+void GenPy::writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent)
 {
+	if (parent > FuPriority::and_)
+		writeChar('(');
 	needle->accept(this, FuPriority::rel);
 	write(" in ");
 	haystack->accept(this, FuPriority::rel);
+	if (parent > FuPriority::and_)
+		writeChar(')');
 }
 
 void GenPy::writeSlice(const FuExpr * startIndex, const FuExpr * length)
@@ -26784,7 +26788,7 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::dictionaryContainsKey:
 	case FuId::sortedDictionaryContainsKey:
 	case FuId::orderedDictionaryContainsKey:
-		writeContains(obj, (*args)[0].get());
+		writeContains(obj, (*args)[0].get(), parent);
 		break;
 	case FuId::stringEndsWith:
 		writeMethodCall(obj, "endswith", (*args)[0].get());
@@ -26897,7 +26901,7 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 			writeChar('(');
 		writeMethodCall(obj, "index", (*args)[0].get());
 		write(" if ");
-		writeContains(obj, (*args)[0].get());
+		writeContains(obj, (*args)[0].get(), FuPriority::argument);
 		write(" else -1");
 		if (parent > FuPriority::select)
 			writeChar(')');

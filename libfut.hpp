@@ -3769,7 +3769,7 @@ private:
 	static int getArrayCode(const FuType * type);
 	void writeDefaultValue(const FuType * type);
 	void writePyNewArray(const FuType * elementType, const FuExpr * value, const FuExpr * lengthExpr);
-	void writeContains(const FuExpr * haystack, const FuExpr * needle);
+	void writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent);
 	void writeSlice(const FuExpr * startIndex, const FuExpr * length);
 	void writeAssignSorted(const FuExpr * obj, std::string_view byteArray);
 	void writeAllAny(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);

@@ -1076,13 +1076,13 @@ public class GenCpp : GenCCpp
 			break;
 		case FuId.DictionaryContainsKey:
 		case FuId.SortedDictionaryContainsKey:
-			if (parent > FuPriority.Equality)
+			if (parent > FuPriority.And)
 				WriteChar('(');
 			StartMethodCall(obj);
 			Write("count(");
 			WriteStronglyCoerced(obj.Type.AsClassType().GetKeyType(), args[0]);
 			Write(") != 0");
-			if (parent > FuPriority.Equality)
+			if (parent > FuPriority.And)
 				WriteChar(')');
 			break;
 		case FuId.TextWriterWrite:

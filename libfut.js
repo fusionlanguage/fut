@@ -16653,13 +16653,13 @@ export class GenCpp extends GenCCpp
 			break;
 		case FuId.DICTIONARY_CONTAINS_KEY:
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
-			if (parent > FuPriority.EQUALITY)
+			if (parent > FuPriority.AND)
 				this.writeChar(40);
 			this.#startMethodCall(obj);
 			this.write("count(");
 			this.writeStronglyCoerced(obj.type.asClassType().getKeyType(), args[0]);
 			this.write(") != 0");
-			if (parent > FuPriority.EQUALITY)
+			if (parent > FuPriority.AND)
 				this.writeChar(41);
 			break;
 		case FuId.TEXT_WRITER_WRITE:
@@ -25385,11 +25385,11 @@ export class GenSwift extends GenPySwift
 			break;
 		case FuId.DICTIONARY_CONTAINS_KEY:
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
-			if (parent > FuPriority.EQUALITY)
+			if (parent > FuPriority.AND)
 				this.writeChar(40);
 			this.writeIndexing(obj, args[0]);
 			this.write(" != nil");
-			if (parent > FuPriority.EQUALITY)
+			if (parent > FuPriority.AND)
 				this.writeChar(41);
 			break;
 		case FuId.DICTIONARY_REMOVE:
@@ -27496,11 +27496,15 @@ export class GenPy extends GenPySwift
 		}
 	}
 
-	#writeContains(haystack, needle)
+	#writeContains(haystack, needle, parent)
 	{
+		if (parent > FuPriority.AND)
+			this.writeChar(40);
 		needle.accept(this, FuPriority.REL);
 		this.write(" in ");
 		haystack.accept(this, FuPriority.REL);
+		if (parent > FuPriority.AND)
+			this.writeChar(41);
 	}
 
 	#writeSlice(startIndex, length)
@@ -27635,7 +27639,7 @@ export class GenPy extends GenPySwift
 		case FuId.DICTIONARY_CONTAINS_KEY:
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
 		case FuId.ORDERED_DICTIONARY_CONTAINS_KEY:
-			this.#writeContains(obj, args[0]);
+			this.#writeContains(obj, args[0], parent);
 			break;
 		case FuId.STRING_ENDS_WITH:
 			this.writeMethodCall(obj, "endswith", args[0]);
@@ -27746,7 +27750,7 @@ export class GenPy extends GenPySwift
 				this.writeChar(40);
 			this.writeMethodCall(obj, "index", args[0]);
 			this.write(" if ");
-			this.#writeContains(obj, args[0]);
+			this.#writeContains(obj, args[0], FuPriority.ARGUMENT);
 			this.write(" else -1");
 			if (parent > FuPriority.SELECT)
 				this.writeChar(41);

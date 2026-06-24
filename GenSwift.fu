@@ -769,11 +769,11 @@ public class GenSwift : GenPySwift
 			break;
 		case FuId.DictionaryContainsKey:
 		case FuId.SortedDictionaryContainsKey:
-			if (parent > FuPriority.Equality)
+			if (parent > FuPriority.And)
 				WriteChar('(');
 			WriteIndexing(obj, args[0]);
 			Write(" != nil");
-			if (parent > FuPriority.Equality)
+			if (parent > FuPriority.And)
 				WriteChar(')');
 			break;
 		case FuId.DictionaryRemove:

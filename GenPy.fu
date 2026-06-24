@@ -752,11 +752,15 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void WriteContains!(FuExpr haystack, FuExpr needle)
+	void WriteContains!(FuExpr haystack, FuExpr needle, FuPriority parent)
 	{
+		if (parent > FuPriority.And)
+			WriteChar('(');
 		needle.Accept(this, FuPriority.Rel);
 		Write(" in ");
 		haystack.Accept(this, FuPriority.Rel);
+		if (parent > FuPriority.And)
+			WriteChar(')');
 	}
 
 	void WriteSlice!(FuExpr startIndex, FuExpr? length)
@@ -891,7 +895,7 @@ public class GenPy : GenPySwift
 		case FuId.DictionaryContainsKey:
 		case FuId.SortedDictionaryContainsKey:
 		case FuId.OrderedDictionaryContainsKey:
-			WriteContains(obj, args[0]);
+			WriteContains(obj, args[0], parent);
 			break;
 		case FuId.StringEndsWith:
 			WriteMethodCall(obj, "endswith", args[0]);
@@ -1001,7 +1005,7 @@ public class GenPy : GenPySwift
 				WriteChar('(');
 			WriteMethodCall(obj, "index", args[0]);
 			Write(" if ");
-			WriteContains(obj, args[0]); // FIXME: side effects
+			WriteContains(obj, args[0], FuPriority.Argument); // FIXME: side effects
 			Write(" else -1");
 			if (parent > FuPriority.Select)
 				WriteChar(')');

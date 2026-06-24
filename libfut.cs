@@ -16100,13 +16100,13 @@ namespace Fusion
 				break;
 			case FuId.DictionaryContainsKey:
 			case FuId.SortedDictionaryContainsKey:
-				if (parent > FuPriority.Equality)
+				if (parent > FuPriority.And)
 					WriteChar('(');
 				StartMethodCall(obj!);
 				Write("count(");
 				WriteStronglyCoerced(obj!.Type!.AsClassType().GetKeyType(), args[0]);
 				Write(") != 0");
-				if (parent > FuPriority.Equality)
+				if (parent > FuPriority.And)
 					WriteChar(')');
 				break;
 			case FuId.TextWriterWrite:
@@ -24693,11 +24693,11 @@ namespace Fusion
 				break;
 			case FuId.DictionaryContainsKey:
 			case FuId.SortedDictionaryContainsKey:
-				if (parent > FuPriority.Equality)
+				if (parent > FuPriority.And)
 					WriteChar('(');
 				WriteIndexing(obj!, args[0]);
 				Write(" != nil");
-				if (parent > FuPriority.Equality)
+				if (parent > FuPriority.And)
 					WriteChar(')');
 				break;
 			case FuId.DictionaryRemove:
@@ -26783,11 +26783,15 @@ namespace Fusion
 			}
 		}
 
-		void WriteContains(FuExpr haystack, FuExpr needle)
+		void WriteContains(FuExpr haystack, FuExpr needle, FuPriority parent)
 		{
+			if (parent > FuPriority.And)
+				WriteChar('(');
 			needle.Accept(this, FuPriority.Rel);
 			Write(" in ");
 			haystack.Accept(this, FuPriority.Rel);
+			if (parent > FuPriority.And)
+				WriteChar(')');
 		}
 
 		void WriteSlice(FuExpr startIndex, FuExpr? length)
@@ -26922,7 +26926,7 @@ namespace Fusion
 			case FuId.DictionaryContainsKey:
 			case FuId.SortedDictionaryContainsKey:
 			case FuId.OrderedDictionaryContainsKey:
-				WriteContains(obj!, args[0]);
+				WriteContains(obj!, args[0], parent);
 				break;
 			case FuId.StringEndsWith:
 				WriteMethodCall(obj!, "endswith", args[0]);
@@ -27032,7 +27036,7 @@ namespace Fusion
 					WriteChar('(');
 				WriteMethodCall(obj!, "index", args[0]);
 				Write(" if ");
-				WriteContains(obj!, args[0]);
+				WriteContains(obj!, args[0], FuPriority.Argument);
 				Write(" else -1");
 				if (parent > FuPriority.Select)
 					WriteChar(')');
