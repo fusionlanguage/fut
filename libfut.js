@@ -22204,7 +22204,7 @@ export class GenJava extends GenTyped
 			this.write(", ");
 			param = param.nextVar();
 		}
-		param.value.accept(this, FuPriority.ARGUMENT);
+		this.writeCoerced(param.type, param.value, FuPriority.ARGUMENT);
 		this.writeLine(");");
 		this.closeBlock();
 	}

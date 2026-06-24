@@ -21652,7 +21652,7 @@ void GenJava::writeOverloads(const FuMethod * method, int paramCount)
 		write(", ");
 		param = param->nextVar();
 	}
-	param->value->accept(this, FuPriority::argument);
+	writeCoerced(param->type.get(), param->value.get(), FuPriority::argument);
 	writeLine(");");
 	closeBlock();
 }

@@ -11,8 +11,10 @@ public static class Test
 
 	public static bool Quux(int x = DefaultX + 1) => x == DefaultX + 1;
 
+	public static bool Float(float f = 10.5) => f == 10.5;
+
 	public static bool Run()
 	{
-		return Foo() && Bar() && Quux();
+		return Foo() && Bar() && Quux() && Float();
 	}
 }

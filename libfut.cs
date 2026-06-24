@@ -21538,7 +21538,7 @@ namespace Fusion
 				Write(", ");
 				param = param.NextVar()!;
 			}
-			param.Value!.Accept(this, FuPriority.Argument);
+			WriteCoerced(param.Type!, param.Value!, FuPriority.Argument);
 			WriteLine(");");
 			CloseBlock();
 		}
