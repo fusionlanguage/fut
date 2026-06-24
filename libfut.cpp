@@ -5894,12 +5894,18 @@ bool FuSema::coerce(const FuExpr * expr, const FuType * type) const
 
 bool FuSema::coercePermanent(const FuExpr * expr, const FuType * type) const
 {
-	bool ok = coerce(expr, type);
-	if (ok && type->id == FuId::stringPtrType && expr->isNewString(true)) {
+	if (!coerce(expr, type))
+		return false;
+	if (type->id == FuId::stringPtrType && expr->isNewString(true)) {
 		reportError(expr, "New string must be assigned to 'string()'");
 		return false;
 	}
-	return ok;
+	const FuCallExpr * call;
+	if ((call = dynamic_cast<const FuCallExpr *>(expr)) && call->method->symbol->id != FuId::listLast && dynamic_cast<const FuStorageType *>(expr->type.get()) && !dynamic_cast<const FuStorageType *>(type)) {
+		reportError(expr, std::format("Returned object must be assigned to '{}'", expr->type->toString()));
+		return false;
+	}
+	return true;
 }
 
 std::shared_ptr<FuExpr> FuSema::visitInterpolatedString(std::shared_ptr<FuInterpolatedString> expr)

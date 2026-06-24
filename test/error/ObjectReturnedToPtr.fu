@@ -1,0 +1,21 @@
+public class Test
+{
+	static Test() Foo()
+	{
+		Test() o;
+		return o;
+	}
+
+	static List<int>() Bar()
+	{
+		List<int>() l;
+		return l;
+	}
+
+	public static bool Run()
+	{
+		Test r = Foo(); //ERROR: Returned object must be assigned to 'Test()'
+		List<int> l = Bar(); //ERROR: Returned object must be assigned to 'List<int>()'
+		return true;
+	}
+}

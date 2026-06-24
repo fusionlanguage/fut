@@ -113,12 +113,17 @@ public class FuSema
 
 	bool CoercePermanent(FuExpr expr, FuType type)
 	{
-		bool ok = Coerce(expr, type);
-		if (ok && type.Id == FuId.StringPtrType && expr.IsNewString(true)) {
+		if (!Coerce(expr, type))
+			return false;
+		if (type.Id == FuId.StringPtrType && expr.IsNewString(true)) {
 			ReportError(expr, "New string must be assigned to 'string()'");
 			return false;
 		}
-		return ok;
+		if (expr is FuCallExpr call && call.Method.Symbol.Id != FuId.ListLast && expr.Type is FuStorageType && !(type is FuStorageType)) {
+			ReportError(expr, $"Returned object must be assigned to '{expr.Type}'");
+			return false;
+		}
+		return true;
 	}
 
 	FuExpr# VisitInterpolatedString!(FuInterpolatedString# expr)

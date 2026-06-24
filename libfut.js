@@ -5717,12 +5717,18 @@ export class FuSema
 
 	#coercePermanent(expr, type)
 	{
-		let ok = this.#coerce(expr, type);
-		if (ok && type.id == FuId.STRING_PTR_TYPE && expr.isNewString(true)) {
+		if (!this.#coerce(expr, type))
+			return false;
+		if (type.id == FuId.STRING_PTR_TYPE && expr.isNewString(true)) {
 			this.#reportError(expr, "New string must be assigned to 'string()'");
 			return false;
 		}
-		return ok;
+		let call;
+		if ((call = expr) instanceof FuCallExpr && call.method.symbol.id != FuId.LIST_LAST && expr.type instanceof FuStorageType && !(type instanceof FuStorageType)) {
+			this.#reportError(expr, `Returned object must be assigned to '${expr.type}'`);
+			return false;
+		}
+		return true;
 	}
 
 	#visitInterpolatedString(expr)
