@@ -3399,6 +3399,7 @@ private:
 	static bool isUnsignedByteIndexing(const FuExpr * expr);
 	void writeIndexingInternal(const FuBinaryExpr * expr);
 	void writeSByteLiteral(const FuLiteralLong * literal);
+	static bool isCollectionIndexing(const FuExpr * expr);
 	static bool isForeachUnsignedBytes(const FuSymbolReference * expr);
 	void writeArrayBinarySearchFill(const FuExpr * obj, std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeMethodCallNoArgs(const FuExpr * obj, std::string_view method);

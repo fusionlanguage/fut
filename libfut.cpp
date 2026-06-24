@@ -20645,9 +20645,15 @@ void GenJava::writeSByteLiteral(const FuLiteralLong * literal)
 	literal->accept(this, FuPriority::primary);
 }
 
+bool GenJava::isCollectionIndexing(const FuExpr * expr)
+{
+	const FuBinaryExpr * binary;
+	return (binary = dynamic_cast<const FuBinaryExpr *>(expr)) && binary->op == FuToken::leftBracket && !binary->left->type->isArray() && !dynamic_cast<const FuStringType *>(binary->left->type.get());
+}
+
 void GenJava::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_)
 {
-	if ((dynamic_cast<const FuStringType *>(left->type.get()) && right->type->id != FuId::nullType) || (dynamic_cast<const FuStringType *>(right->type.get()) && left->type->id != FuId::nullType)) {
+	if ((dynamic_cast<const FuStringType *>(left->type.get()) && right->type->id != FuId::nullType) || (dynamic_cast<const FuStringType *>(right->type.get()) && left->type->id != FuId::nullType) || (dynamic_cast<const FuNumericType *>(left->type.get()) && isCollectionIndexing(left) && isCollectionIndexing(right))) {
 		if (not_)
 			writeChar('!');
 		writeMethodCall(left, "equals", right);

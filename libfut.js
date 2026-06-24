@@ -21190,9 +21190,15 @@ export class GenJava extends GenTyped
 		literal.accept(this, FuPriority.PRIMARY);
 	}
 
+	static #isCollectionIndexing(expr)
+	{
+		let binary;
+		return (binary = expr) instanceof FuBinaryExpr && binary.op == FuToken.LEFT_BRACKET && !binary.left.type.isArray() && !(binary.left.type instanceof FuStringType);
+	}
+
 	writeEqual(left, right, parent, not)
 	{
-		if ((left.type instanceof FuStringType && right.type.id != FuId.NULL_TYPE) || (right.type instanceof FuStringType && left.type.id != FuId.NULL_TYPE)) {
+		if ((left.type instanceof FuStringType && right.type.id != FuId.NULL_TYPE) || (right.type instanceof FuStringType && left.type.id != FuId.NULL_TYPE) || (left.type instanceof FuNumericType && GenJava.#isCollectionIndexing(left) && GenJava.#isCollectionIndexing(right))) {
 			if (not)
 				this.writeChar(33);
 			this.writeMethodCall(left, "equals", right);
