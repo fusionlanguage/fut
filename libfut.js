@@ -9512,6 +9512,17 @@ export class GenBase extends FuVisitor
 		this.writeNewStorage(obj.type.asClassType().getValueType());
 	}
 
+	writeContains(haystack, needle, parent)
+	{
+		if (parent > FuPriority.AND)
+			this.writeChar(40);
+		needle.accept(this, FuPriority.REL);
+		this.write(" in ");
+		haystack.accept(this, FuPriority.PRIMARY);
+		if (parent > FuPriority.AND)
+			this.writeChar(41);
+	}
+
 	writeClampAsMinMax(args)
 	{
 		args[0].accept(this, FuPriority.ARGUMENT);
@@ -20056,11 +20067,7 @@ export class GenD extends GenCCppD
 		case FuId.HASH_SET_CONTAINS:
 		case FuId.SORTED_SET_CONTAINS:
 		case FuId.DICTIONARY_CONTAINS_KEY:
-			this.writeChar(40);
-			args[0].accept(this, FuPriority.REL);
-			this.write(" in ");
-			obj.accept(this, FuPriority.PRIMARY);
-			this.writeChar(41);
+			this.writeContains(obj, args[0], parent);
 			break;
 		case FuId.SORTED_SET_ADD:
 			this.writePostfix(obj, ".insert(");
@@ -27496,17 +27503,6 @@ export class GenPy extends GenPySwift
 		}
 	}
 
-	#writeContains(haystack, needle, parent)
-	{
-		if (parent > FuPriority.AND)
-			this.writeChar(40);
-		needle.accept(this, FuPriority.REL);
-		this.write(" in ");
-		haystack.accept(this, FuPriority.REL);
-		if (parent > FuPriority.AND)
-			this.writeChar(41);
-	}
-
 	#writeSlice(startIndex, length)
 	{
 		this.writeChar(91);
@@ -27639,7 +27635,7 @@ export class GenPy extends GenPySwift
 		case FuId.DICTIONARY_CONTAINS_KEY:
 		case FuId.SORTED_DICTIONARY_CONTAINS_KEY:
 		case FuId.ORDERED_DICTIONARY_CONTAINS_KEY:
-			this.#writeContains(obj, args[0], parent);
+			this.writeContains(obj, args[0], parent);
 			break;
 		case FuId.STRING_ENDS_WITH:
 			this.writeMethodCall(obj, "endswith", args[0]);
@@ -27750,7 +27746,7 @@ export class GenPy extends GenPySwift
 				this.writeChar(40);
 			this.writeMethodCall(obj, "index", args[0]);
 			this.write(" if ");
-			this.#writeContains(obj, args[0], FuPriority.ARGUMENT);
+			this.writeContains(obj, args[0], FuPriority.ARGUMENT);
 			this.write(" else -1");
 			if (parent > FuPriority.SELECT)
 				this.writeChar(41);

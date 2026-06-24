@@ -752,17 +752,6 @@ public class GenPy : GenPySwift
 		}
 	}
 
-	void WriteContains!(FuExpr haystack, FuExpr needle, FuPriority parent)
-	{
-		if (parent > FuPriority.And)
-			WriteChar('(');
-		needle.Accept(this, FuPriority.Rel);
-		Write(" in ");
-		haystack.Accept(this, FuPriority.Rel);
-		if (parent > FuPriority.And)
-			WriteChar(')');
-	}
-
 	void WriteSlice!(FuExpr startIndex, FuExpr? length)
 	{
 		WriteChar('[');

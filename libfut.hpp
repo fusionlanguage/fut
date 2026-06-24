@@ -2620,6 +2620,7 @@ protected:
 	void writeListAdd(const FuExpr * obj, std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeListInsert(const FuExpr * obj, std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args, std::string_view separator = ", ");
 	void writeDictionaryAdd(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent);
 	void writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * args);
 	RegexOptions getRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args) const;
 	bool writeRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args, std::string_view prefix, std::string_view separator, std::string_view suffix, std::string_view i, std::string_view m, std::string_view s);
@@ -3769,7 +3770,6 @@ private:
 	static int getArrayCode(const FuType * type);
 	void writeDefaultValue(const FuType * type);
 	void writePyNewArray(const FuType * elementType, const FuExpr * value, const FuExpr * lengthExpr);
-	void writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent);
 	void writeSlice(const FuExpr * startIndex, const FuExpr * length);
 	void writeAssignSorted(const FuExpr * obj, std::string_view byteArray);
 	void writeAllAny(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);

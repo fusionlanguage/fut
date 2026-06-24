@@ -9049,6 +9049,17 @@ namespace Fusion
 			WriteNewStorage(obj.Type!.AsClassType().GetValueType());
 		}
 
+		protected void WriteContains(FuExpr haystack, FuExpr needle, FuPriority parent)
+		{
+			if (parent > FuPriority.And)
+				WriteChar('(');
+			needle.Accept(this, FuPriority.Rel);
+			Write(" in ");
+			haystack.Accept(this, FuPriority.Primary);
+			if (parent > FuPriority.And)
+				WriteChar(')');
+		}
+
 		protected void WriteClampAsMinMax(List<FuExpr> args)
 		{
 			args[0].Accept(this, FuPriority.Argument);
@@ -19433,11 +19444,7 @@ namespace Fusion
 			case FuId.HashSetContains:
 			case FuId.SortedSetContains:
 			case FuId.DictionaryContainsKey:
-				WriteChar('(');
-				args[0].Accept(this, FuPriority.Rel);
-				Write(" in ");
-				obj!.Accept(this, FuPriority.Primary);
-				WriteChar(')');
+				WriteContains(obj!, args[0], parent);
 				break;
 			case FuId.SortedSetAdd:
 				WritePostfix(obj!, ".insert(");
@@ -26781,17 +26788,6 @@ namespace Fusion
 				Write("()");
 				break;
 			}
-		}
-
-		void WriteContains(FuExpr haystack, FuExpr needle, FuPriority parent)
-		{
-			if (parent > FuPriority.And)
-				WriteChar('(');
-			needle.Accept(this, FuPriority.Rel);
-			Write(" in ");
-			haystack.Accept(this, FuPriority.Rel);
-			if (parent > FuPriority.And)
-				WriteChar(')');
 		}
 
 		void WriteSlice(FuExpr startIndex, FuExpr? length)

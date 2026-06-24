@@ -1040,11 +1040,7 @@ public class GenD : GenCCppD
 		case FuId.HashSetContains:
 		case FuId.SortedSetContains:
 		case FuId.DictionaryContainsKey:
-			WriteChar('(');
-			args[0].Accept(this, FuPriority.Rel);
-			Write(" in ");
-			obj.Accept(this, FuPriority.Primary);
-			WriteChar(')');
+			WriteContains(obj, args[0], parent);
 			break;
 		case FuId.SortedSetAdd:
 			WritePostfix(obj, ".insert(");

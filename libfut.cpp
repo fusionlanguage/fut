@@ -9658,6 +9658,17 @@ void GenBase::writeDictionaryAdd(const FuExpr * obj, const std::vector<std::shar
 	writeNewStorage(obj->type->asClassType()->getValueType().get());
 }
 
+void GenBase::writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent)
+{
+	if (parent > FuPriority::and_)
+		writeChar('(');
+	needle->accept(this, FuPriority::rel);
+	write(" in ");
+	haystack->accept(this, FuPriority::primary);
+	if (parent > FuPriority::and_)
+		writeChar(')');
+}
+
 void GenBase::writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	(*args)[0]->accept(this, FuPriority::argument);
@@ -19604,11 +19615,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::hashSetContains:
 	case FuId::sortedSetContains:
 	case FuId::dictionaryContainsKey:
-		writeChar('(');
-		(*args)[0]->accept(this, FuPriority::rel);
-		write(" in ");
-		obj->accept(this, FuPriority::primary);
-		writeChar(')');
+		writeContains(obj, (*args)[0].get(), parent);
 		break;
 	case FuId::sortedSetAdd:
 		writePostfix(obj, ".insert(");
@@ -26643,17 +26650,6 @@ void GenPy::writeNew(const FuReadWriteClassType * klass, FuPriority parent)
 		write("()");
 		break;
 	}
-}
-
-void GenPy::writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent)
-{
-	if (parent > FuPriority::and_)
-		writeChar('(');
-	needle->accept(this, FuPriority::rel);
-	write(" in ");
-	haystack->accept(this, FuPriority::rel);
-	if (parent > FuPriority::and_)
-		writeChar(')');
 }
 
 void GenPy::writeSlice(const FuExpr * startIndex, const FuExpr * length)
