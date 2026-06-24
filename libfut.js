@@ -21198,7 +21198,7 @@ export class GenJava extends GenTyped
 
 	writeEqual(left, right, parent, not)
 	{
-		if ((left.type instanceof FuStringType && right.type.id != FuId.NULL_TYPE) || (right.type instanceof FuStringType && left.type.id != FuId.NULL_TYPE) || (left.type instanceof FuNumericType && GenJava.#isCollectionIndexing(left) && GenJava.#isCollectionIndexing(right))) {
+		if ((left.type instanceof FuStringType && right.type.id != FuId.NULL_TYPE) || (right.type instanceof FuStringType && left.type.id != FuId.NULL_TYPE)) {
 			if (not)
 				this.writeChar(33);
 			this.writeMethodCall(left, "equals", right);
@@ -21215,8 +21215,11 @@ export class GenJava extends GenTyped
 				if (parent > FuPriority.EQUALITY)
 					this.writeChar(41);
 			}
-			else
+			else {
+				if (left.type instanceof FuNumericType && GenJava.#isCollectionIndexing(left) && GenJava.#isCollectionIndexing(right))
+					this.writeStaticCastType(left.type);
 				super.writeEqual(left, right, parent, not);
+			}
 		}
 	}
 

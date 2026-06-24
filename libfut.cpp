@@ -20653,7 +20653,7 @@ bool GenJava::isCollectionIndexing(const FuExpr * expr)
 
 void GenJava::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority parent, bool not_)
 {
-	if ((dynamic_cast<const FuStringType *>(left->type.get()) && right->type->id != FuId::nullType) || (dynamic_cast<const FuStringType *>(right->type.get()) && left->type->id != FuId::nullType) || (dynamic_cast<const FuNumericType *>(left->type.get()) && isCollectionIndexing(left) && isCollectionIndexing(right))) {
+	if ((dynamic_cast<const FuStringType *>(left->type.get()) && right->type->id != FuId::nullType) || (dynamic_cast<const FuStringType *>(right->type.get()) && left->type->id != FuId::nullType)) {
 		if (not_)
 			writeChar('!');
 		writeMethodCall(left, "equals", right);
@@ -20670,8 +20670,11 @@ void GenJava::writeEqual(const FuExpr * left, const FuExpr * right, FuPriority p
 			if (parent > FuPriority::equality)
 				writeChar(')');
 		}
-		else
+		else {
+			if (dynamic_cast<const FuNumericType *>(left->type.get()) && isCollectionIndexing(left) && isCollectionIndexing(right))
+				writeStaticCastType(left->type.get());
 			GenBase::writeEqual(left, right, parent, not_);
+		}
 	}
 }
 
