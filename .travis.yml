@@ -36,9 +36,9 @@ jobs:
   - name: py, swift
     install:
       - pip install mypy
-      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2204/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz
-      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu22.04.tar.gz -C ..
-    script: make -j5 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu22.04/usr/bin/swiftc
+      - wget https://swift.org/builds/swift-$SWIFT_VERSION-release/ubuntu2404/swift-$SWIFT_VERSION-RELEASE/swift-$SWIFT_VERSION-RELEASE-ubuntu24.04.tar.gz
+      - tar xf swift-$SWIFT_VERSION-RELEASE-ubuntu24.04.tar.gz -C ..
+    script: make -j5 test-py test-swift SWIFTC=../swift-$SWIFT_VERSION-RELEASE-ubuntu24.04/usr/bin/swiftc
   - name: host-diff
     install:
       - sudo apt update
