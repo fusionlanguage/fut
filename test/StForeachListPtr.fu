@@ -14,6 +14,15 @@ public static class Test
 		list.Add(15);
 		list.Add(5);
 		list.Add(10);
-		return Sum(list) == 30;
+
+		List<List<int>()>() lol;
+		lol.Add();
+		lol[0].Add(42);
+		lol.Add();
+		lol[1].Add(37);
+		int s = 0;
+		foreach (List<int> row in lol)
+			s += row[0];
+		return Sum(list) == 30 && s == 79;
 	}
 }

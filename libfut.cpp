@@ -15931,7 +15931,7 @@ void GenCpp::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
 			break;
 		}
 	}
-	if (isClassPtr(expr->left->type.get())) {
+	if (isCppPtr(expr->left.get())) {
 		write("(*");
 		expr->left->accept(this, FuPriority::primary);
 		writeChar(')');

@@ -16095,7 +16095,7 @@ export class GenCpp extends GenCCpp
 				break;
 			}
 		}
-		if (GenCpp.#isClassPtr(expr.left.type)) {
+		if (GenCpp.#isCppPtr(expr.left)) {
 			this.write("(*");
 			expr.left.accept(this, FuPriority.PRIMARY);
 			this.writeChar(41);

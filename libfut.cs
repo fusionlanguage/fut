@@ -15546,7 +15546,7 @@ namespace Fusion
 					break;
 				}
 			}
-			if (IsClassPtr(expr.Left.Type!)) {
+			if (IsCppPtr(expr.Left)) {
 				Write("(*");
 				expr.Left.Accept(this, FuPriority.Primary);
 				WriteChar(')');
