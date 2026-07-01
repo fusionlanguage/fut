@@ -25161,13 +25161,7 @@ export class GenSwift extends GenPySwift
 	{
 		switch (method.id) {
 		case FuId.NONE:
-		case FuId.ARRAY_CONTAINS:
-		case FuId.LIST_CONTAINS:
 		case FuId.LIST_SORT_ALL:
-		case FuId.HASH_SET_CONTAINS:
-		case FuId.HASH_SET_REMOVE:
-		case FuId.SORTED_SET_CONTAINS:
-		case FuId.SORTED_SET_REMOVE:
 			if (obj == null) {
 				if (method.isStatic()) {
 					this.writeName(this.currentMethod.parent);
@@ -25258,6 +25252,14 @@ export class GenSwift extends GenPySwift
 		case FuId.STRING_TO_UPPER:
 			this.writePostfix(obj, ".uppercased()");
 			break;
+		case FuId.ARRAY_CONTAINS:
+		case FuId.LIST_CONTAINS:
+		case FuId.HASH_SET_CONTAINS:
+		case FuId.SORTED_SET_CONTAINS:
+			this.writePostfix(obj, ".contains(");
+			this.writeElementCoerced(obj.type.asClassType().getElementType(), args[0]);
+			this.writeChar(41);
+			break;
 		case FuId.ARRAY_COPY_TO:
 		case FuId.LIST_COPY_TO:
 			this.#openIndexing(args[1]);
@@ -25274,7 +25276,7 @@ export class GenSwift extends GenPySwift
 				this.write(" = [");
 				this.#writeType(array.getElementType());
 				this.write("](repeating: ");
-				this.writeCoerced(array.getElementType(), args[0], FuPriority.ARGUMENT);
+				this.writeElementCoerced(array.getElementType(), args[0]);
 				this.write(", count: ");
 				this.visitLiteralLong(BigInt(array.length), FuPriority.ARGUMENT);
 				this.writeChar(41);
@@ -25291,7 +25293,7 @@ export class GenSwift extends GenPySwift
 				this.#openIndexing(obj);
 				this.#writeRange(args[1], args[2]);
 				this.write("] = ArraySlice(repeating: ");
-				this.writeCoerced(array2.getElementType(), args[0], FuPriority.ARGUMENT);
+				this.writeElementCoerced(array2.getElementType(), args[0]);
 				this.write(", count: ");
 				this.writeCoerced(this.#system.intType, args[2], FuPriority.ARGUMENT);
 				this.writeChar(41);
@@ -25351,7 +25353,7 @@ export class GenSwift extends GenPySwift
 			if (parent > FuPriority.REL)
 				this.writeChar(40);
 			this.writePostfix(obj, ".firstIndex(of: ");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.writeElementCoerced(obj.type.asClassType().getElementType(), args[0]);
 			this.write(") ?? -1");
 			if (parent > FuPriority.REL)
 				this.writeChar(41);
@@ -25362,7 +25364,7 @@ export class GenSwift extends GenPySwift
 			if (args.length == 1)
 				this.writeNewStorage(elementType);
 			else
-				this.writeCoerced(elementType, args[1], FuPriority.ARGUMENT);
+				this.writeElementCoerced(elementType, args[1]);
 			this.write(", at: ");
 			this.writeCoerced(this.#system.intType, args[0], FuPriority.ARGUMENT);
 			this.writeChar(41);
@@ -25393,7 +25395,13 @@ export class GenSwift extends GenPySwift
 		case FuId.HASH_SET_ADD:
 		case FuId.SORTED_SET_ADD:
 			this.writePostfix(obj, ".insert(");
-			this.writeCoerced(obj.type.asClassType().getElementType(), args[0], FuPriority.ARGUMENT);
+			this.writeElementCoerced(obj.type.asClassType().getElementType(), args[0]);
+			this.writeChar(41);
+			break;
+		case FuId.HASH_SET_REMOVE:
+		case FuId.SORTED_SET_REMOVE:
+			this.writePostfix(obj, ".remove(");
+			this.writeElementCoerced(obj.type.asClassType().getElementType(), args[0]);
 			this.writeChar(41);
 			break;
 		case FuId.DICTIONARY_ADD:
@@ -25829,11 +25837,8 @@ export class GenSwift extends GenPySwift
 		if (GenSwift.#isIntIndexing(expr.left)) {
 			if (GenSwift.#isIntIndexing(right))
 				right.accept(this, FuPriority.ARGUMENT);
-			else {
-				this.write("Int32(");
-				right.accept(this, FuPriority.ARGUMENT);
-				this.writeChar(41);
-			}
+			else
+				this.writeCall("Int32", right);
 		}
 		else {
 			let leftBinary;

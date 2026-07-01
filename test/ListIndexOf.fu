@@ -6,6 +6,7 @@ public static class Test
 		li.Add(42);
 		li.Add(15);
 		li.Add(15);
+		int one = 1;
 
 		List<string>() lsp;
 		lsp.Add("foo");
@@ -14,7 +15,8 @@ public static class Test
 		List<string()>() lss;
 		lss.Add("foo");
 		lss.Add("bar");
-		return li.IndexOf(15) == 1 && li.IndexOf(1) == -1 //FAIL: c
+
+		return li.IndexOf(15) == 1 && li.IndexOf(one) == -1 //FAIL: c
 			&& lsp.IndexOf("bar") == 1 && lsp.IndexOf("quux") == -1
 			&& lss.IndexOf("bar") == 1 && lss.IndexOf("quux") == -1;
 	}

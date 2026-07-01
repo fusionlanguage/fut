@@ -6,6 +6,7 @@ public static class Test
 		a[0] = 5;
 		a[1] = 10;
 		a[2] = 15;
-		return a.Contains(10) && !a.Contains(1); //FAIL: java cl
+		int ten = 10;
+		return a.Contains(ten) && !a.Contains(1); //FAIL: java cl
 	}
 }

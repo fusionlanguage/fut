@@ -24424,13 +24424,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 {
 	switch (method->id) {
 	case FuId::none:
-	case FuId::arrayContains:
-	case FuId::listContains:
 	case FuId::listSortAll:
-	case FuId::hashSetContains:
-	case FuId::hashSetRemove:
-	case FuId::sortedSetContains:
-	case FuId::sortedSetRemove:
 		if (obj == nullptr) {
 			if (method->isStatic()) {
 				writeName(this->currentMethod->parent);
@@ -24521,6 +24515,14 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 	case FuId::stringToUpper:
 		writePostfix(obj, ".uppercased()");
 		break;
+	case FuId::arrayContains:
+	case FuId::listContains:
+	case FuId::hashSetContains:
+	case FuId::sortedSetContains:
+		writePostfix(obj, ".contains(");
+		writeElementCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
+		writeChar(')');
+		break;
 	case FuId::arrayCopyTo:
 	case FuId::listCopyTo:
 		openIndexing((*args)[1].get());
@@ -24538,7 +24540,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 				write(" = [");
 				writeType(array->getElementType().get());
 				write("](repeating: ");
-				writeCoerced(array->getElementType().get(), (*args)[0].get(), FuPriority::argument);
+				writeElementCoerced(array->getElementType().get(), (*args)[0].get());
 				write(", count: ");
 				visitLiteralLong(array->length, FuPriority::argument);
 				writeChar(')');
@@ -24557,7 +24559,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 				openIndexing(obj);
 				writeRange((*args)[1].get(), (*args)[2].get());
 				write("] = ArraySlice(repeating: ");
-				writeCoerced(array2->getElementType().get(), (*args)[0].get(), FuPriority::argument);
+				writeElementCoerced(array2->getElementType().get(), (*args)[0].get());
 				write(", count: ");
 				writeCoerced(this->system->intType.get(), (*args)[2].get(), FuPriority::argument);
 				writeChar(')');
@@ -24620,7 +24622,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		if (parent > FuPriority::rel)
 			writeChar('(');
 		writePostfix(obj, ".firstIndex(of: ");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeElementCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		write(") ?? -1");
 		if (parent > FuPriority::rel)
 			writeChar(')');
@@ -24632,7 +24634,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 			if (std::ssize(*args) == 1)
 				writeNewStorage(elementType);
 			else
-				writeCoerced(elementType, (*args)[1].get(), FuPriority::argument);
+				writeElementCoerced(elementType, (*args)[1].get());
 			write(", at: ");
 			writeCoerced(this->system->intType.get(), (*args)[0].get(), FuPriority::argument);
 			writeChar(')');
@@ -24664,7 +24666,13 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 	case FuId::hashSetAdd:
 	case FuId::sortedSetAdd:
 		writePostfix(obj, ".insert(");
-		writeCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get(), FuPriority::argument);
+		writeElementCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
+		writeChar(')');
+		break;
+	case FuId::hashSetRemove:
+	case FuId::sortedSetRemove:
+		writePostfix(obj, ".remove(");
+		writeElementCoerced(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		writeChar(')');
 		break;
 	case FuId::dictionaryAdd:
@@ -25092,11 +25100,8 @@ void GenSwift::writeSwiftAssign(const FuBinaryExpr * expr, const FuExpr * right)
 	if (isIntIndexing(expr->left.get())) {
 		if (isIntIndexing(right))
 			right->accept(this, FuPriority::argument);
-		else {
-			write("Int32(");
-			right->accept(this, FuPriority::argument);
-			writeChar(')');
-		}
+		else
+			writeCall("Int32", right);
 	}
 	else {
 		const FuBinaryExpr * leftBinary;

@@ -24467,13 +24467,7 @@ namespace Fusion
 		{
 			switch (method.Id) {
 			case FuId.None:
-			case FuId.ArrayContains:
-			case FuId.ListContains:
 			case FuId.ListSortAll:
-			case FuId.HashSetContains:
-			case FuId.HashSetRemove:
-			case FuId.SortedSetContains:
-			case FuId.SortedSetRemove:
 				if (obj == null) {
 					if (method.IsStatic()) {
 						WriteName(this.CurrentMethod!.Parent!);
@@ -24564,6 +24558,14 @@ namespace Fusion
 			case FuId.StringToUpper:
 				WritePostfix(obj!, ".uppercased()");
 				break;
+			case FuId.ArrayContains:
+			case FuId.ListContains:
+			case FuId.HashSetContains:
+			case FuId.SortedSetContains:
+				WritePostfix(obj!, ".contains(");
+				WriteElementCoerced(obj!.Type!.AsClassType().GetElementType(), args[0]);
+				WriteChar(')');
+				break;
 			case FuId.ArrayCopyTo:
 			case FuId.ListCopyTo:
 				OpenIndexing(args[1]);
@@ -24579,7 +24581,7 @@ namespace Fusion
 					Write(" = [");
 					WriteType(array.GetElementType());
 					Write("](repeating: ");
-					WriteCoerced(array.GetElementType(), args[0], FuPriority.Argument);
+					WriteElementCoerced(array.GetElementType(), args[0]);
 					Write(", count: ");
 					VisitLiteralLong(array.Length, FuPriority.Argument);
 					WriteChar(')');
@@ -24595,7 +24597,7 @@ namespace Fusion
 					OpenIndexing(obj!);
 					WriteRange(args[1], args[2]);
 					Write("] = ArraySlice(repeating: ");
-					WriteCoerced(array2.GetElementType(), args[0], FuPriority.Argument);
+					WriteElementCoerced(array2.GetElementType(), args[0]);
 					Write(", count: ");
 					WriteCoerced(this.System.IntType, args[2], FuPriority.Argument);
 					WriteChar(')');
@@ -24655,7 +24657,7 @@ namespace Fusion
 				if (parent > FuPriority.Rel)
 					WriteChar('(');
 				WritePostfix(obj!, ".firstIndex(of: ");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteElementCoerced(obj!.Type!.AsClassType().GetElementType(), args[0]);
 				Write(") ?? -1");
 				if (parent > FuPriority.Rel)
 					WriteChar(')');
@@ -24666,7 +24668,7 @@ namespace Fusion
 				if (args.Count == 1)
 					WriteNewStorage(elementType);
 				else
-					WriteCoerced(elementType, args[1], FuPriority.Argument);
+					WriteElementCoerced(elementType, args[1]);
 				Write(", at: ");
 				WriteCoerced(this.System.IntType, args[0], FuPriority.Argument);
 				WriteChar(')');
@@ -24697,7 +24699,13 @@ namespace Fusion
 			case FuId.HashSetAdd:
 			case FuId.SortedSetAdd:
 				WritePostfix(obj!, ".insert(");
-				WriteCoerced(obj!.Type!.AsClassType().GetElementType(), args[0], FuPriority.Argument);
+				WriteElementCoerced(obj!.Type!.AsClassType().GetElementType(), args[0]);
+				WriteChar(')');
+				break;
+			case FuId.HashSetRemove:
+			case FuId.SortedSetRemove:
+				WritePostfix(obj!, ".remove(");
+				WriteElementCoerced(obj!.Type!.AsClassType().GetElementType(), args[0]);
 				WriteChar(')');
 				break;
 			case FuId.DictionaryAdd:
@@ -25148,11 +25156,8 @@ namespace Fusion
 			if (IsIntIndexing(expr.Left)) {
 				if (IsIntIndexing(right))
 					right.Accept(this, FuPriority.Argument);
-				else {
-					Write("Int32(");
-					right.Accept(this, FuPriority.Argument);
-					WriteChar(')');
-				}
+				else
+					WriteCall("Int32", right);
 			}
 			else if (right is FuLiteralNull && expr.Left is FuBinaryExpr leftBinary && leftBinary.Op == FuToken.LeftBracket && leftBinary.Left.Type is FuClassType dict && dict.Class.TypeParameterCount == 2) {
 				WriteType(dict.GetValueType());

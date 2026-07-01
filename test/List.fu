@@ -9,7 +9,8 @@ public static class Test
 		list.Add(42);
 		list.Add(3);
 		list.RemoveAt(1);
-		list.Insert(1, 2);
+		int two = 2;
+		list.Insert(1, two);
 		list[0] = 5;
 		int[4] a;
 		list.CopyTo(1, a, 0, 2);
