@@ -8683,13 +8683,18 @@ export class GenBase extends FuVisitor
 			throw new Error();
 	}
 
+	writePrintfPartFormat(part)
+	{
+		this.writePrintfWidth(part);
+		this.writeChar(GenBase.#getPrintfFormat(part.argument.type, part.format));
+	}
+
 	writePrintfFormat(expr)
 	{
 		for (const part of expr.parts) {
 			this.writeDoubling(part.prefix, 37);
 			this.writeChar(37);
-			this.writePrintfWidth(part);
-			this.writeChar(GenBase.#getPrintfFormat(part.argument.type, part.format));
+			this.writePrintfPartFormat(part);
 		}
 		this.writeDoubling(expr.suffix, 37);
 	}
@@ -24641,6 +24646,7 @@ export class GenSwift extends GenPySwift
 	#arrayRef;
 	#stringCharAt;
 	#stringIndexOf;
+	#stringPad;
 	#stringSubstring;
 	#varsAtIndent = [];
 	#varBytesAtIndent = [];
@@ -24987,9 +24993,37 @@ export class GenSwift extends GenPySwift
 		}
 	}
 
+	writePrintfPartFormat(part)
+	{
+		if (part.argument.type instanceof FuClassType)
+			this.writeChar(64);
+		else
+			super.writePrintfPartFormat(part);
+	}
+
+	#writeSwiftInterpolatedStringArg(part, substringOk)
+	{
+		if (part.widthExpr != null && part.argument.type instanceof FuStringType) {
+			this.include("Foundation");
+			this.#stringPad = true;
+			this.write("fuStringPad(");
+			this.#writeUnwrapped(part.argument, FuPriority.ARGUMENT, substringOk);
+			this.write(", ");
+			part.widthExpr.accept(this, FuPriority.ARGUMENT);
+			this.writeChar(41);
+		}
+		else
+			this.#writeUnwrapped(part.argument, FuPriority.ARGUMENT, substringOk);
+	}
+
+	writeInterpolatedStringArg(part)
+	{
+		this.#writeSwiftInterpolatedStringArg(part, false);
+	}
+
 	#writeInterpolatedString(expr, newLine)
 	{
-		if (expr.parts.some(part => part.widthExpr != null || part.format != 32 || part.precision >= 0)) {
+		if (expr.parts.some(part => part.argument.type instanceof FuNumericType && (part.widthExpr != null || part.format != 32 || part.precision >= 0))) {
 			this.include("Foundation");
 			this.write("String(format: ");
 			this.writePrintf(expr, newLine);
@@ -24999,7 +25033,7 @@ export class GenSwift extends GenPySwift
 			for (const part of expr.parts) {
 				this.write(part.prefix);
 				this.write("\\(");
-				this.#writeUnwrapped(part.argument, FuPriority.ARGUMENT, true);
+				this.#writeSwiftInterpolatedStringArg(part, true);
 				this.writeChar(41);
 			}
 			this.write(expr.suffix);
@@ -26705,6 +26739,15 @@ export class GenSwift extends GenPySwift
 			this.writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 			this.closeBlock();
 		}
+		if (this.#stringPad) {
+			this.writeNewLine();
+			this.writeLine("fileprivate func fuStringPad(_ s: String, _ width: Int) -> String");
+			this.openBlock();
+			this.writeLine("return s.count >= abs(width) ? s");
+			this.writeLine("\t: width < 0 ? s.padding(toLength: -width, withPad: \" \", startingAt: 0)");
+			this.writeLine("\t: String(repeating: \" \", count: width - s.count) + s");
+			this.closeBlock();
+		}
 		if (this.#stringSubstring) {
 			this.writeNewLine();
 			this.writeLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
@@ -26754,6 +26797,7 @@ export class GenSwift extends GenPySwift
 		this.#arrayRef = false;
 		this.#stringCharAt = false;
 		this.#stringIndexOf = false;
+		this.#stringPad = false;
 		this.#stringSubstring = false;
 		this.openStringWriter();
 		this.writeTypes(program);

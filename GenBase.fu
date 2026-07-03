@@ -574,13 +574,18 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
+	protected virtual void WritePrintfPartFormat!(FuInterpolatedPart part)
+	{
+		WritePrintfWidth(part);
+		WriteChar(GetPrintfFormat(part.Argument.Type, part.Format));
+	}
+
 	protected void WritePrintfFormat!(FuInterpolatedString expr)
 	{
 		foreach (FuInterpolatedPart part in expr.Parts) {
 			WriteDoubling(part.Prefix, '%');
 			WriteChar('%');
-			WritePrintfWidth(part);
-			WriteChar(GetPrintfFormat(part.Argument.Type, part.Format));
+			WritePrintfPartFormat(part);
 		}
 		WriteDoubling(expr.Suffix, '%');
 	}

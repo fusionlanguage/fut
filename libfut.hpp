@@ -2545,6 +2545,7 @@ protected:
 	virtual void writeLocalName(const FuSymbol * symbol, FuPriority parent);
 	void writeDoubling(std::string_view s, int doubled);
 	virtual void writePrintfWidth(const FuInterpolatedPart * part);
+	virtual void writePrintfPartFormat(const FuInterpolatedPart * part);
 	void writePrintfFormat(const FuInterpolatedString * expr);
 	void writePyFormat(const FuInterpolatedPart * part);
 	virtual void writeInterpolatedStringArg(const FuInterpolatedPart * part);
@@ -3600,6 +3601,8 @@ protected:
 	void writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol) override;
 	FuId getTypeId(const FuType * type, bool promote) const override;
 	void writeTypeAndName(const FuNamedValue * value) override;
+	void writePrintfPartFormat(const FuInterpolatedPart * part) override;
+	void writeInterpolatedStringArg(const FuInterpolatedPart * part) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeStringLength(const FuExpr * expr) override;
 	void writeArrayLength(const FuExpr * expr, FuPriority parent) override;
@@ -3660,6 +3663,7 @@ private:
 	bool arrayRef;
 	bool stringCharAt;
 	bool stringIndexOf;
+	bool stringPad;
 	bool stringSubstring;
 	std::vector<std::unordered_set<std::string_view>> varsAtIndent;
 	std::vector<bool> varBytesAtIndent;
@@ -3671,6 +3675,7 @@ private:
 	void writeType(const FuType * type);
 	void writePromotedType(const FuType * type);
 	void writeUnwrapped(const FuExpr * expr, FuPriority parent, bool substringOk);
+	void writeSwiftInterpolatedStringArg(const FuInterpolatedPart * part, bool substringOk);
 	void writeInterpolatedString(const FuInterpolatedString * expr, bool newLine);
 	static bool isIntIndexing(const FuExpr * expr);
 	void writeStringContains(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);

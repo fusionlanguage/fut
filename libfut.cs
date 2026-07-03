@@ -8241,13 +8241,18 @@ namespace Fusion
 			}
 		}
 
+		protected virtual void WritePrintfPartFormat(FuInterpolatedPart part)
+		{
+			WritePrintfWidth(part);
+			WriteChar(GetPrintfFormat(part.Argument.Type!, part.Format));
+		}
+
 		protected void WritePrintfFormat(FuInterpolatedString expr)
 		{
 			foreach (FuInterpolatedPart part in expr.Parts) {
 				WriteDoubling(part.Prefix, '%');
 				WriteChar('%');
-				WritePrintfWidth(part);
-				WriteChar(GetPrintfFormat(part.Argument.Type!, part.Format));
+				WritePrintfPartFormat(part);
 			}
 			WriteDoubling(expr.Suffix, '%');
 		}
@@ -23961,6 +23966,8 @@ namespace Fusion
 
 		bool StringIndexOf;
 
+		bool StringPad;
+
 		bool StringSubstring;
 
 		readonly List<HashSet<string>> VarsAtIndent = new List<HashSet<string>>();
@@ -24298,9 +24305,37 @@ namespace Fusion
 				expr.Accept(this, parent);
 		}
 
+		protected override void WritePrintfPartFormat(FuInterpolatedPart part)
+		{
+			if (part.Argument.Type is FuClassType)
+				WriteChar('@');
+			else
+				base.WritePrintfPartFormat(part);
+		}
+
+		void WriteSwiftInterpolatedStringArg(FuInterpolatedPart part, bool substringOk)
+		{
+			if (part.WidthExpr != null && part.Argument.Type is FuStringType) {
+				Include("Foundation");
+				this.StringPad = true;
+				Write("fuStringPad(");
+				WriteUnwrapped(part.Argument, FuPriority.Argument, substringOk);
+				Write(", ");
+				part.WidthExpr!.Accept(this, FuPriority.Argument);
+				WriteChar(')');
+			}
+			else
+				WriteUnwrapped(part.Argument, FuPriority.Argument, substringOk);
+		}
+
+		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)
+		{
+			WriteSwiftInterpolatedStringArg(part, false);
+		}
+
 		void WriteInterpolatedString(FuInterpolatedString expr, bool newLine)
 		{
-			if (expr.Parts.Exists(part => part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0)) {
+			if (expr.Parts.Exists(part => part.Argument.Type is FuNumericType && (part.WidthExpr != null || part.Format != ' ' || part.Precision >= 0))) {
 				Include("Foundation");
 				Write("String(format: ");
 				WritePrintf(expr, newLine);
@@ -24310,7 +24345,7 @@ namespace Fusion
 				foreach (FuInterpolatedPart part in expr.Parts) {
 					Write(part.Prefix);
 					Write("\\(");
-					WriteUnwrapped(part.Argument, FuPriority.Argument, true);
+					WriteSwiftInterpolatedStringArg(part, true);
 					WriteChar(')');
 				}
 				Write(expr.Suffix);
@@ -26002,6 +26037,15 @@ namespace Fusion
 				WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 				CloseBlock();
 			}
+			if (this.StringPad) {
+				WriteNewLine();
+				WriteLine("fileprivate func fuStringPad(_ s: String, _ width: Int) -> String");
+				OpenBlock();
+				WriteLine("return s.count >= abs(width) ? s");
+				WriteLine("\t: width < 0 ? s.padding(toLength: -width, withPad: \" \", startingAt: 0)");
+				WriteLine("\t: String(repeating: \" \", count: width - s.count) + s");
+				CloseBlock();
+			}
 			if (this.StringSubstring) {
 				WriteNewLine();
 				WriteLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
@@ -26051,6 +26095,7 @@ namespace Fusion
 			this.ArrayRef = false;
 			this.StringCharAt = false;
 			this.StringIndexOf = false;
+			this.StringPad = false;
 			this.StringSubstring = false;
 			OpenStringWriter();
 			WriteTypes(program);

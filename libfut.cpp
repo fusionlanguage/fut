@@ -8846,13 +8846,18 @@ int GenBase::getPrintfFormat(const FuType * type, int format)
 		std::abort();
 }
 
+void GenBase::writePrintfPartFormat(const FuInterpolatedPart * part)
+{
+	writePrintfWidth(part);
+	writeChar(getPrintfFormat(part->argument->type.get(), part->format));
+}
+
 void GenBase::writePrintfFormat(const FuInterpolatedString * expr)
 {
 	for (const FuInterpolatedPart &part : expr->parts) {
 		writeDoubling(part.prefix, '%');
 		writeChar('%');
-		writePrintfWidth(&part);
-		writeChar(getPrintfFormat(part.argument->type.get(), part.format));
+		writePrintfPartFormat(&part);
 	}
 	writeDoubling(expr->suffix, '%');
 }
@@ -24250,9 +24255,37 @@ void GenSwift::writeUnwrapped(const FuExpr * expr, FuPriority parent, bool subst
 	}
 }
 
+void GenSwift::writePrintfPartFormat(const FuInterpolatedPart * part)
+{
+	if (dynamic_cast<const FuClassType *>(part->argument->type.get()))
+		writeChar('@');
+	else
+		GenBase::writePrintfPartFormat(part);
+}
+
+void GenSwift::writeSwiftInterpolatedStringArg(const FuInterpolatedPart * part, bool substringOk)
+{
+	if (part->widthExpr != nullptr && dynamic_cast<const FuStringType *>(part->argument->type.get())) {
+		include("Foundation");
+		this->stringPad = true;
+		write("fuStringPad(");
+		writeUnwrapped(part->argument.get(), FuPriority::argument, substringOk);
+		write(", ");
+		part->widthExpr->accept(this, FuPriority::argument);
+		writeChar(')');
+	}
+	else
+		writeUnwrapped(part->argument.get(), FuPriority::argument, substringOk);
+}
+
+void GenSwift::writeInterpolatedStringArg(const FuInterpolatedPart * part)
+{
+	writeSwiftInterpolatedStringArg(part, false);
+}
+
 void GenSwift::writeInterpolatedString(const FuInterpolatedString * expr, bool newLine)
 {
-	if (std::any_of(expr->parts.begin(), expr->parts.end(), [](const FuInterpolatedPart &part) { return part.widthExpr != nullptr || part.format != ' ' || part.precision >= 0; })) {
+	if (std::any_of(expr->parts.begin(), expr->parts.end(), [](const FuInterpolatedPart &part) { return dynamic_cast<const FuNumericType *>(part.argument->type.get()) && (part.widthExpr != nullptr || part.format != ' ' || part.precision >= 0); })) {
 		include("Foundation");
 		write("String(format: ");
 		writePrintf(expr, newLine);
@@ -24262,7 +24295,7 @@ void GenSwift::writeInterpolatedString(const FuInterpolatedString * expr, bool n
 		for (const FuInterpolatedPart &part : expr->parts) {
 			write(part.prefix);
 			write("\\(");
-			writeUnwrapped(part.argument.get(), FuPriority::argument, true);
+			writeSwiftInterpolatedStringArg(&part, true);
 			writeChar(')');
 		}
 		write(expr->suffix);
@@ -25953,6 +25986,15 @@ void GenSwift::writeLibrary()
 		writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 		closeBlock();
 	}
+	if (this->stringPad) {
+		writeNewLine();
+		writeLine("fileprivate func fuStringPad(_ s: String, _ width: Int) -> String");
+		openBlock();
+		writeLine("return s.count >= abs(width) ? s");
+		writeLine("\t: width < 0 ? s.padding(toLength: -width, withPad: \" \", startingAt: 0)");
+		writeLine("\t: String(repeating: \" \", count: width - s.count) + s");
+		closeBlock();
+	}
 	if (this->stringSubstring) {
 		writeNewLine();
 		writeLine("fileprivate func fuStringSubstring(_ s: String, _ offset: Int) -> Substring");
@@ -26002,6 +26044,7 @@ void GenSwift::writeProgram(const FuProgram * program, std::string_view outputFi
 	this->arrayRef = false;
 	this->stringCharAt = false;
 	this->stringIndexOf = false;
+	this->stringPad = false;
 	this->stringSubstring = false;
 	openStringWriter();
 	writeTypes(program);
