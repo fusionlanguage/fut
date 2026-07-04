@@ -11,7 +11,7 @@ public static class Test
 		int one = 1;
 		s.Add(one);
 		int two = 2;
-		s.Remove(two); //FAIL: c TODO
+		s.Remove(two);
 		HashSet<byte>() sb;
 		sb.Add(200);
 		int b = 222;

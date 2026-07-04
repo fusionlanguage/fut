@@ -11674,19 +11674,32 @@ namespace Fusion
 			}
 		}
 
-		void WriteGPointerCast(FuType type, FuExpr expr)
+		void WriteNumberToGPointerCast(FuType type, FuExpr expr)
 		{
-			if (type.Id == FuId.NIntType)
+			switch (type.Id) {
+			case FuId.NIntType:
+			case FuId.LongType:
 				WriteCall("GSIZE_TO_POINTER", expr);
-			else if ((type is FuIntegerType && type.Id != FuId.LongType) || type is FuEnum)
-				WriteCall("GINT_TO_POINTER", expr);
-			else if (type is FuFloatingType) {
+				break;
+			case FuId.FloatType:
+			case FuId.DoubleType:
 				Write("(union { ");
 				Write(type.Name);
 				Write(" f; gpointer p; }) { ");
 				expr.Accept(this, FuPriority.Argument);
 				Write(" }.p");
+				break;
+			default:
+				Debug.Assert(type is FuIntegerType || type is FuEnum);
+				WriteCall("GINT_TO_POINTER", expr);
+				break;
 			}
+		}
+
+		void WriteGPointerCast(FuType type, FuExpr expr)
+		{
+			if (type is FuNumericType || type is FuEnum)
+				WriteNumberToGPointerCast(type, expr);
 			else if (type.Id == FuId.StringPtrType && expr.Type!.Id == FuId.StringPtrType) {
 				Write("(gpointer) ");
 				expr.Accept(this, FuPriority.Primary);
@@ -11699,22 +11712,6 @@ namespace Fusion
 		{
 			WriteChar('&');
 			expr.Accept(this, FuPriority.Primary);
-		}
-
-		void WriteGConstPointerCast(FuExpr expr)
-		{
-			switch (expr.Type) {
-			case FuStorageType:
-				WriteAddressOf(expr);
-				break;
-			case FuClassType:
-				expr.Accept(this, FuPriority.Argument);
-				break;
-			default:
-				Write("(gconstpointer) ");
-				expr.Accept(this, FuPriority.Primary);
-				break;
-			}
 		}
 
 		void WriteGPointerToInt(FuType type)
@@ -11752,6 +11749,21 @@ namespace Fusion
 			WriteChar(')');
 			if (parenthesis)
 				WriteChar(')');
+		}
+
+		void StartDictionaryLookup(string function, FuExpr obj, FuExpr key)
+		{
+			Write(function);
+			WriteChar('(');
+			obj.Accept(this, FuPriority.Argument);
+			Write(", ");
+			FuType type = obj.Type!.AsClassType().GetKeyType();
+			if (type is FuNumericType || type is FuEnum)
+				WriteNumberToGPointerCast(type, key);
+			else if (key.Type is FuStorageType)
+				WriteAddressOf(key);
+			else
+				key.Accept(this, FuPriority.Argument);
 		}
 
 		void StartDictionaryInsert(FuExpr dict, FuExpr key)
@@ -12246,16 +12258,6 @@ namespace Fusion
 			VisitLiteralLong(id, FuPriority.Primary);
 			WriteChar(')');
 			this.CurrentTemporaries[id] = elementType;
-		}
-
-		void WriteDictionaryLookup(FuExpr obj, string function, FuExpr key)
-		{
-			Write(function);
-			WriteChar('(');
-			obj.Accept(this, FuPriority.Argument);
-			Write(", ");
-			WriteGConstPointerCast(key);
-			WriteChar(')');
 		}
 
 		void WriteArgsAndRightParenthesis(FuMethod method, List<FuExpr> args)
@@ -12863,11 +12865,13 @@ namespace Fusion
 				break;
 			case FuId.HashSetContains:
 			case FuId.DictionaryContainsKey:
-				WriteDictionaryLookup(obj!, "g_hash_table_contains", args[0]);
+				StartDictionaryLookup("g_hash_table_contains", obj!, args[0]);
+				WriteChar(')');
 				break;
 			case FuId.HashSetRemove:
 			case FuId.DictionaryRemove:
-				WriteDictionaryLookup(obj!, "g_hash_table_remove", args[0]);
+				StartDictionaryLookup("g_hash_table_remove", obj!, args[0]);
+				WriteChar(')');
 				break;
 			case FuId.SortedSetAdd:
 				Write("g_tree_insert(");
@@ -12909,15 +12913,13 @@ namespace Fusion
 				break;
 			case FuId.SortedSetContains:
 			case FuId.SortedDictionaryContainsKey:
-				Write("g_tree_lookup_extended(");
-				obj!.Accept(this, FuPriority.Argument);
-				Write(", ");
-				WriteGConstPointerCast(args[0]);
+				StartDictionaryLookup("g_tree_lookup_extended", obj!, args[0]);
 				Write(", NULL, NULL)");
 				break;
 			case FuId.SortedSetRemove:
 			case FuId.SortedDictionaryRemove:
-				WriteDictionaryLookup(obj!, "g_tree_remove", args[0]);
+				StartDictionaryLookup("g_tree_remove", obj!, args[0]);
+				WriteChar(')');
 				break;
 			case FuId.TextWriterFlush:
 				Include("stdio.h");
@@ -13174,15 +13176,15 @@ namespace Fusion
 			FuType valueType = expr.Left.Type!.AsClassType().GetValueType();
 			if (valueType is FuIntegerType && valueType.Id != FuId.LongType) {
 				WriteGPointerToInt(valueType);
-				WriteDictionaryLookup(expr.Left, function, expr.Right!);
-				WriteChar(')');
+				StartDictionaryLookup(function, expr.Left, expr.Right!);
+				Write("))");
 			}
 			else if (valueType is FuFloatingType) {
 				Write("(union { gpointer p; ");
 				Write(valueType.Name);
 				Write(" f; }) { ");
-				WriteDictionaryLookup(expr.Left, function, expr.Right!);
-				Write(" }.f");
+				StartDictionaryLookup(function, expr.Left, expr.Right!);
+				Write(") }.f");
 			}
 			else {
 				if (parent > FuPriority.Mul)
@@ -13196,7 +13198,8 @@ namespace Fusion
 						Write("GPOINTER_TO_INT(");
 					}
 				}
-				WriteDictionaryLookup(expr.Left, function, expr.Right!);
+				StartDictionaryLookup(function, expr.Left, expr.Right!);
+				WriteChar(')');
 				if (parent > FuPriority.Mul || valueType is FuEnum)
 					WriteChar(')');
 			}
@@ -24315,7 +24318,7 @@ namespace Fusion
 
 		void WriteSwiftInterpolatedStringArg(FuInterpolatedPart part, bool substringOk)
 		{
-			if (part.WidthExpr != null && part.Argument.Type is FuStringType) {
+			if (part.WidthExpr != null && part.Argument.Type is FuClassType) {
 				Include("Foundation");
 				this.StringPad = true;
 				Write("fuStringPad(");

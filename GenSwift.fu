@@ -371,7 +371,7 @@ public class GenSwift : GenPySwift
 
 	void WriteSwiftInterpolatedStringArg!(FuInterpolatedPart part, bool substringOk)
 	{
-		if (part.WidthExpr != null && part.Argument.Type is FuStringType) {
+		if (part.WidthExpr != null && part.Argument.Type is FuClassType) {
 			Include("Foundation");
 			this.StringPad = true;
 			Write("fuStringPad(");

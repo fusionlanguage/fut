@@ -2996,12 +2996,13 @@ private:
 	int writeCTemporary(const FuType * type, const FuExpr * expr);
 	static bool needsOwningTemporary(const FuExpr * expr);
 	bool hasTemporariesToDestruct() const;
+	void writeNumberToGPointerCast(const FuType * type, const FuExpr * expr);
 	void writeGPointerCast(const FuType * type, const FuExpr * expr);
 	void writeAddressOf(const FuExpr * expr);
-	void writeGConstPointerCast(const FuExpr * expr);
 	void writeGPointerToInt(const FuType * type);
 	void writeUnstorage(const FuExpr * obj);
 	void writeQueueGet(std::string_view function, const FuExpr * obj, FuPriority parent);
+	void startDictionaryLookup(std::string_view function, const FuExpr * obj, const FuExpr * key);
 	void startDictionaryInsert(const FuExpr * dict, const FuExpr * key);
 	static const FuMethod * getThrowingMethod(const FuExpr * expr);
 	static bool hasListDestroy(const FuType * type);
@@ -3016,7 +3017,6 @@ private:
 	void writeStringMethod(std::string_view name, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeSizeofCompare(const FuType * elementType);
 	void writeListAddInsert(const FuExpr * obj, bool insert, std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeDictionaryLookup(const FuExpr * obj, std::string_view function, const FuExpr * key);
 	void writeArgsAndRightParenthesis(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeCRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeTextWriterWrite(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);

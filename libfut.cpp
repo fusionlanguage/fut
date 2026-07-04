@@ -12149,19 +12149,32 @@ void GenC::writeVar(const FuNamedValue * def)
 	}
 }
 
-void GenC::writeGPointerCast(const FuType * type, const FuExpr * expr)
+void GenC::writeNumberToGPointerCast(const FuType * type, const FuExpr * expr)
 {
-	if (type->id == FuId::nIntType)
+	switch (type->id) {
+	case FuId::nIntType:
+	case FuId::longType:
 		writeCall("GSIZE_TO_POINTER", expr);
-	else if ((dynamic_cast<const FuIntegerType *>(type) && type->id != FuId::longType) || dynamic_cast<const FuEnum *>(type))
-		writeCall("GINT_TO_POINTER", expr);
-	else if (dynamic_cast<const FuFloatingType *>(type)) {
+		break;
+	case FuId::floatType:
+	case FuId::doubleType:
 		write("(union { ");
 		write(type->name);
 		write(" f; gpointer p; }) { ");
 		expr->accept(this, FuPriority::argument);
 		write(" }.p");
+		break;
+	default:
+		assert(dynamic_cast<const FuIntegerType *>(type) || dynamic_cast<const FuEnum *>(type));
+		writeCall("GINT_TO_POINTER", expr);
+		break;
 	}
+}
+
+void GenC::writeGPointerCast(const FuType * type, const FuExpr * expr)
+{
+	if (dynamic_cast<const FuNumericType *>(type) || dynamic_cast<const FuEnum *>(type))
+		writeNumberToGPointerCast(type, expr);
 	else if (type->id == FuId::stringPtrType && expr->type->id == FuId::stringPtrType) {
 		write("(gpointer) ");
 		expr->accept(this, FuPriority::primary);
@@ -12174,18 +12187,6 @@ void GenC::writeAddressOf(const FuExpr * expr)
 {
 	writeChar('&');
 	expr->accept(this, FuPriority::primary);
-}
-
-void GenC::writeGConstPointerCast(const FuExpr * expr)
-{
-	if (dynamic_cast<const FuStorageType *>(expr->type.get()))
-		writeAddressOf(expr);
-	else if (dynamic_cast<const FuClassType *>(expr->type.get()))
-		expr->accept(this, FuPriority::argument);
-	else {
-		write("(gconstpointer) ");
-		expr->accept(this, FuPriority::primary);
-	}
 }
 
 void GenC::writeGPointerToInt(const FuType * type)
@@ -12223,6 +12224,21 @@ void GenC::writeQueueGet(std::string_view function, const FuExpr * obj, FuPriori
 	writeChar(')');
 	if (parenthesis)
 		writeChar(')');
+}
+
+void GenC::startDictionaryLookup(std::string_view function, const FuExpr * obj, const FuExpr * key)
+{
+	write(function);
+	writeChar('(');
+	obj->accept(this, FuPriority::argument);
+	write(", ");
+	const FuType * type = obj->type->asClassType()->getKeyType();
+	if (dynamic_cast<const FuNumericType *>(type) || dynamic_cast<const FuEnum *>(type))
+		writeNumberToGPointerCast(type, key);
+	else if (dynamic_cast<const FuStorageType *>(key->type.get()))
+		writeAddressOf(key);
+	else
+		key->accept(this, FuPriority::argument);
 }
 
 void GenC::startDictionaryInsert(const FuExpr * dict, const FuExpr * key)
@@ -12728,16 +12744,6 @@ void GenC::writeListAddInsert(const FuExpr * obj, bool insert, std::string_view 
 	visitLiteralLong(id, FuPriority::primary);
 	writeChar(')');
 	this->currentTemporaries[id] = elementType;
-}
-
-void GenC::writeDictionaryLookup(const FuExpr * obj, std::string_view function, const FuExpr * key)
-{
-	write(function);
-	writeChar('(');
-	obj->accept(this, FuPriority::argument);
-	write(", ");
-	writeGConstPointerCast(key);
-	writeChar(')');
 }
 
 void GenC::writeArgsAndRightParenthesis(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
@@ -13360,11 +13366,13 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::hashSetContains:
 	case FuId::dictionaryContainsKey:
-		writeDictionaryLookup(obj, "g_hash_table_contains", (*args)[0].get());
+		startDictionaryLookup("g_hash_table_contains", obj, (*args)[0].get());
+		writeChar(')');
 		break;
 	case FuId::hashSetRemove:
 	case FuId::dictionaryRemove:
-		writeDictionaryLookup(obj, "g_hash_table_remove", (*args)[0].get());
+		startDictionaryLookup("g_hash_table_remove", obj, (*args)[0].get());
+		writeChar(')');
 		break;
 	case FuId::sortedSetAdd:
 		write("g_tree_insert(");
@@ -13408,15 +13416,13 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::sortedSetContains:
 	case FuId::sortedDictionaryContainsKey:
-		write("g_tree_lookup_extended(");
-		obj->accept(this, FuPriority::argument);
-		write(", ");
-		writeGConstPointerCast((*args)[0].get());
+		startDictionaryLookup("g_tree_lookup_extended", obj, (*args)[0].get());
 		write(", NULL, NULL)");
 		break;
 	case FuId::sortedSetRemove:
 	case FuId::sortedDictionaryRemove:
-		writeDictionaryLookup(obj, "g_tree_remove", (*args)[0].get());
+		startDictionaryLookup("g_tree_remove", obj, (*args)[0].get());
+		writeChar(')');
 		break;
 	case FuId::textWriterFlush:
 		include("stdio.h");
@@ -13673,15 +13679,15 @@ void GenC::writeDictionaryIndexing(std::string_view function, const FuBinaryExpr
 	const FuType * valueType = expr->left->type->asClassType()->getValueType().get();
 	if (dynamic_cast<const FuIntegerType *>(valueType) && valueType->id != FuId::longType) {
 		writeGPointerToInt(valueType);
-		writeDictionaryLookup(expr->left.get(), function, expr->right.get());
-		writeChar(')');
+		startDictionaryLookup(function, expr->left.get(), expr->right.get());
+		write("))");
 	}
 	else if (dynamic_cast<const FuFloatingType *>(valueType)) {
 		write("(union { gpointer p; ");
 		write(valueType->name);
 		write(" f; }) { ");
-		writeDictionaryLookup(expr->left.get(), function, expr->right.get());
-		write(" }.f");
+		startDictionaryLookup(function, expr->left.get(), expr->right.get());
+		write(") }.f");
 	}
 	else {
 		if (parent > FuPriority::mul)
@@ -13696,7 +13702,8 @@ void GenC::writeDictionaryIndexing(std::string_view function, const FuBinaryExpr
 				write("GPOINTER_TO_INT(");
 			}
 		}
-		writeDictionaryLookup(expr->left.get(), function, expr->right.get());
+		startDictionaryLookup(function, expr->left.get(), expr->right.get());
+		writeChar(')');
 		if (parent > FuPriority::mul || dynamic_cast<const FuEnum *>(valueType))
 			writeChar(')');
 	}
@@ -24265,7 +24272,7 @@ void GenSwift::writePrintfPartFormat(const FuInterpolatedPart * part)
 
 void GenSwift::writeSwiftInterpolatedStringArg(const FuInterpolatedPart * part, bool substringOk)
 {
-	if (part->widthExpr != nullptr && dynamic_cast<const FuStringType *>(part->argument->type.get())) {
+	if (part->widthExpr != nullptr && dynamic_cast<const FuClassType *>(part->argument->type.get())) {
 		include("Foundation");
 		this->stringPad = true;
 		write("fuStringPad(");
