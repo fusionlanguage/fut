@@ -5250,7 +5250,7 @@ namespace Fusion
 	public abstract class FuConsoleHost : GenHost
 	{
 
-		public const string Version = "3.3.4";
+		public const string Version = "3.3.5";
 
 		public static void Usage(string app)
 		{
