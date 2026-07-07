@@ -24713,7 +24713,7 @@ namespace Fusion
 				break;
 			case FuId.ListLast:
 			case FuId.StackPeek:
-				WritePostfix(obj!, ".last");
+				WritePostfix(obj!, ".last!");
 				break;
 			case FuId.ListRemoveAt:
 				WritePostfix(obj!, ".remove(at: ");
@@ -24729,7 +24729,7 @@ namespace Fusion
 				WritePostfix(obj!, ".removeFirst()");
 				break;
 			case FuId.QueuePeek:
-				WritePostfix(obj!, ".first");
+				WritePostfix(obj!, ".first!");
 				break;
 			case FuId.StackPop:
 				WritePostfix(obj!, ".removeLast()");

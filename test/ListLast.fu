@@ -6,6 +6,7 @@ public static class Test
 		list.Add("foo");
 		list.Add("bar");
 		list.Add("quux");
-		return list.Last() == "quux";
+		string s = list.Last();
+		return list.Last() == "quux" && s == "quux";
 	}
 }

@@ -25412,7 +25412,7 @@ export class GenSwift extends GenPySwift
 			break;
 		case FuId.LIST_LAST:
 		case FuId.STACK_PEEK:
-			this.writePostfix(obj, ".last");
+			this.writePostfix(obj, ".last!");
 			break;
 		case FuId.LIST_REMOVE_AT:
 			this.writePostfix(obj, ".remove(at: ");
@@ -25428,7 +25428,7 @@ export class GenSwift extends GenPySwift
 			this.writePostfix(obj, ".removeFirst()");
 			break;
 		case FuId.QUEUE_PEEK:
-			this.writePostfix(obj, ".first");
+			this.writePostfix(obj, ".first!");
 			break;
 		case FuId.STACK_POP:
 			this.writePostfix(obj, ".removeLast()");

@@ -24682,7 +24682,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		}
 	case FuId::listLast:
 	case FuId::stackPeek:
-		writePostfix(obj, ".last");
+		writePostfix(obj, ".last!");
 		break;
 	case FuId::listRemoveAt:
 		writePostfix(obj, ".remove(at: ");
@@ -24698,7 +24698,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writePostfix(obj, ".removeFirst()");
 		break;
 	case FuId::queuePeek:
-		writePostfix(obj, ".first");
+		writePostfix(obj, ".first!");
 		break;
 	case FuId::stackPop:
 		writePostfix(obj, ".removeLast()");
