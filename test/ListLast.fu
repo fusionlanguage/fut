@@ -7,6 +7,10 @@ public static class Test
 		list.Add("bar");
 		list.Add("quux");
 		string s = list.Last();
-		return list.Last() == "quux" && s == "quux";
+		List<List<int>()>() lol;
+		lol.Add();
+		lol[0].Add(42);
+		int i = lol.Last()[0];
+		return list.Last() == "quux" && s == "quux" && i == 42;
 	}
 }

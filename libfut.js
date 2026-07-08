@@ -12112,8 +12112,9 @@ export class GenC extends GenCCpp
 
 	static #needsOwningTemporary(expr)
 	{
+		let call;
 		let new_;
-		return expr.isNewString(false) || (expr instanceof FuCallExpr && expr.type instanceof FuOwningType) || ((new_ = expr) instanceof FuPrefixExpr && new_.op == FuToken.NEW);
+		return expr.isNewString(false) || ((call = expr) instanceof FuCallExpr && expr.type instanceof FuOwningType && call.method.symbol.id != FuId.LIST_LAST) || ((new_ = expr) instanceof FuPrefixExpr && new_.op == FuToken.NEW);
 	}
 
 	writeOwningTemporary(expr)
