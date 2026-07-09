@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		Dictionary<string(), List<int>#>() dict; //FAIL: cl
+		Dictionary<string(), List<int>#>() dict; //FAIL: swift cl
 		dict["foo"] = new List<int>();
 		dict["foo"].Add(5);
 		dict["foo"].Add(10);

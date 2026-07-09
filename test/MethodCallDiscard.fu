@@ -22,7 +22,7 @@ public class Test
 		return result;
 	}
 
-	static List<int># CreateDynamicList() => new List<int>();
+	static List<int># CreateDynamicList() => new List<int>(); //FAIL: swift
 
 	public static bool Run()
 	{

@@ -7,7 +7,7 @@ public static class Test
 		return l;
 	}
 
-	static int AcceptPtr(List<int> l)
+	static int AcceptPtr(List<int> l) //FAIL: swift
 	{
 		return l[0];
 	}
