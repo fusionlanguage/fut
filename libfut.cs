@@ -6902,6 +6902,7 @@ namespace Fusion
 							return PoisonError(expr, "Invalid type");
 						else
 							ptr.Name = klass.Name;
+						ptr.Loc = expr.Loc;
 						return ptr;
 					}
 					else if (symbol.Left != null)

@@ -1643,6 +1643,7 @@ public class FuSema
 						return PoisonError(expr, "Invalid type");
 					else
 						ptr.Name = klass.Name; // TODO: needed?
+					ptr.Loc = expr.Loc;
 					return ptr;
 				}
 				else if (symbol.Left != null)

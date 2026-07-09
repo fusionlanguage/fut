@@ -7324,6 +7324,7 @@ export class FuSema
 						return this.#poisonError(expr, "Invalid type");
 					else
 						ptr.name = klass.name;
+					ptr.loc = expr.loc;
 					return ptr;
 				}
 				else if (symbol.left != null)

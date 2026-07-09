@@ -7537,6 +7537,7 @@ std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, b
 					return poisonError(expr, "Invalid type");
 				else
 					ptr->name = klass->name;
+				ptr->loc = expr->loc;
 				return ptr;
 			}
 			else if (symbol->left != nullptr)
