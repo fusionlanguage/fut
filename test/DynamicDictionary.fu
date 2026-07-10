@@ -2,7 +2,7 @@ public static class Test
 {
 	static Dictionary<int, int># GetMap()
 	{
-		Dictionary<int, int># map = new Dictionary<int, int>(); //FAIL: swift cl
+		Dictionary<int, int># map = new Dictionary<int, int>(); //FAIL: cl
 		return map;
 	}
 

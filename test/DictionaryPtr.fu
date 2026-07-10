@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		Dictionary<int, int>() dict; //FAIL: cl
-		Dictionary<int, int>! p; //FAIL: swift
+		Dictionary<int, int>! p;
 		p = dict;
 		p[1] = 10;
 		p.Clear();

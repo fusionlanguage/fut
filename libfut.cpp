@@ -24219,8 +24219,6 @@ void GenSwift::writeType(const FuType * type)
 		}
 	}
 	else if (const FuClassType *klass = dynamic_cast<const FuClassType *>(type)) {
-		if (klass->class_->typeParameterCount != 0 && !dynamic_cast<const FuStorageType *>(klass) && klass->class_->id != FuId::arrayPtrClass)
-			notYet(klass, std::format("{} reference", klass->class_->name));
 		writeClassName(klass);
 		if (klass->nullable)
 			writeChar('?');

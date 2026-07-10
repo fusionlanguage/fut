@@ -24266,8 +24266,6 @@ namespace Fusion
 				}
 				break;
 			case FuClassType klass:
-				if (klass.Class.TypeParameterCount != 0 && !(klass is FuStorageType) && klass.Class.Id != FuId.ArrayPtrClass)
-					NotYet(klass, $"{klass.Class.Name} reference");
 				WriteClassName(klass);
 				if (klass.Nullable)
 					WriteChar('?');

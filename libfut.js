@@ -24957,8 +24957,6 @@ export class GenSwift extends GenPySwift
 		}
 		else if (type instanceof FuClassType) {
 			const klass = type;
-			if (klass.class.typeParameterCount != 0 && !(klass instanceof FuStorageType) && klass.class.id != FuId.ARRAY_PTR_CLASS)
-				this.notYet(klass, `${klass.class.name} reference`);
 			this.#writeClassName(klass);
 			if (klass.nullable)
 				this.writeChar(63);

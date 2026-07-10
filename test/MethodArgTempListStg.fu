@@ -7,7 +7,7 @@ public static class Test
 		return l;
 	}
 
-	static int AcceptPtr(List<int> l) //FAIL: swift
+	static int AcceptPtr(List<int> l)
 	{
 		return l[0];
 	}
