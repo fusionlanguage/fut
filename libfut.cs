@@ -15999,6 +15999,10 @@ namespace Fusion
 					StartMethodCall(obj!);
 					Write("emplace_back()");
 				}
+				else if (obj!.Type!.AsClassType().GetElementType().Id == FuId.StringStorageType) {
+					StartMethodCall(obj!);
+					WriteCall("emplace_back", args[0]);
+				}
 				else
 					WriteCollectionMethod(obj!, "push_back", args);
 				break;
@@ -16037,6 +16041,12 @@ namespace Fusion
 				if (args.Count == 1) {
 					Write("emplace(");
 					WriteArrayPtrAdd(obj!, args[0]);
+				}
+				else if (obj!.Type!.AsClassType().GetElementType().Id == FuId.StringStorageType) {
+					Write("emplace(");
+					WriteArrayPtrAdd(obj!, args[0]);
+					Write(", ");
+					args[1].Accept(this, FuPriority.Argument);
 				}
 				else {
 					Write("insert(");

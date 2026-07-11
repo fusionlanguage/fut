@@ -16557,6 +16557,10 @@ export class GenCpp extends GenCCpp
 				this.#startMethodCall(obj);
 				this.write("emplace_back()");
 			}
+			else if (obj.type.asClassType().getElementType().id == FuId.STRING_STORAGE_TYPE) {
+				this.#startMethodCall(obj);
+				this.writeCall("emplace_back", args[0]);
+			}
 			else
 				this.#writeCollectionMethod(obj, "push_back", args);
 			break;
@@ -16595,6 +16599,12 @@ export class GenCpp extends GenCCpp
 			if (args.length == 1) {
 				this.write("emplace(");
 				this.writeArrayPtrAdd(obj, args[0]);
+			}
+			else if (obj.type.asClassType().getElementType().id == FuId.STRING_STORAGE_TYPE) {
+				this.write("emplace(");
+				this.writeArrayPtrAdd(obj, args[0]);
+				this.write(", ");
+				args[1].accept(this, FuPriority.ARGUMENT);
 			}
 			else {
 				this.write("insert(");

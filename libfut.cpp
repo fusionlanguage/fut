@@ -5723,7 +5723,7 @@ void FuParser::parse(std::string_view filename, uint8_t const * input, int input
 			parseEnum(doc, line, column, isPublic);
 			break;
 		case FuToken::native:
-			this->host->program->topLevelNatives.push_back(parseNative()->content);
+			this->host->program->topLevelNatives.emplace_back(parseNative()->content);
 			break;
 		default:
 			reportError("Expected class or enum");
@@ -16392,6 +16392,10 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 			startMethodCall(obj);
 			write("emplace_back()");
 		}
+		else if (obj->type->asClassType()->getElementType()->id == FuId::stringStorageType) {
+			startMethodCall(obj);
+			writeCall("emplace_back", (*args)[0].get());
+		}
 		else
 			writeCollectionMethod(obj, "push_back", args);
 		break;
@@ -16430,6 +16434,12 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		if (std::ssize(*args) == 1) {
 			write("emplace(");
 			writeArrayPtrAdd(obj, (*args)[0].get());
+		}
+		else if (obj->type->asClassType()->getElementType()->id == FuId::stringStorageType) {
+			write("emplace(");
+			writeArrayPtrAdd(obj, (*args)[0].get());
+			write(", ");
+			(*args)[1]->accept(this, FuPriority::argument);
 		}
 		else {
 			write("insert(");
