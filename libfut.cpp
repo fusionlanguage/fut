@@ -1160,6 +1160,11 @@ std::string FuExpr::toString() const
 	std::abort();
 }
 
+bool FuExpr::hasSideEffect() const
+{
+	return false;
+}
+
 bool FuExpr::isIndexing() const
 {
 	return false;
@@ -1600,6 +1605,11 @@ int FuPrefixExpr::intValue() const
 	return ~this->inner->intValue();
 }
 
+bool FuPrefixExpr::hasSideEffect() const
+{
+	return this->op == FuToken::increment || this->op == FuToken::decrement;
+}
+
 bool FuPrefixExpr::isConst(bool varIsConst) const
 {
 	return (this->op == FuToken::minus || this->op == FuToken::tilde || this->op == FuToken::exclamationMark || this->op == FuToken::resource) && this->inner->isConst(varIsConst);
@@ -1613,6 +1623,11 @@ void FuPrefixExpr::accept(FuVisitor * visitor, FuPriority parent) const
 bool FuPrefixExpr::isUnique() const
 {
 	return this->op == FuToken::new_ && !dynamic_cast<const FuAggregateInitializer *>(this->inner.get());
+}
+
+bool FuPostfixExpr::hasSideEffect() const
+{
+	return true;
 }
 
 void FuPostfixExpr::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1714,7 +1729,7 @@ bool FuBinaryExpr::isRel() const
 	}
 }
 
-bool FuBinaryExpr::isAssign() const
+bool FuBinaryExpr::hasSideEffect() const
 {
 	switch (this->op) {
 	case FuToken::assign:
@@ -1834,6 +1849,11 @@ void FuSelectExpr::setShared() const
 std::string FuSelectExpr::toString() const
 {
 	return std::format("({} ? {} : {})", this->cond->toString(), this->onTrue->toString(), this->onFalse->toString());
+}
+
+bool FuCallExpr::hasSideEffect() const
+{
+	return true;
 }
 
 bool FuCallExpr::isConst(bool varIsConst) const
@@ -5091,7 +5111,7 @@ std::shared_ptr<FuConst> FuParser::parseConst(FuVisibility visibility)
 	return konst;
 }
 
-std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar)
+std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar, bool needSideEffect)
 {
 	std::shared_ptr<FuExpr> left = allowVar ? parseType() : parseExpr();
 	switch (this->currentToken) {
@@ -5111,16 +5131,19 @@ std::shared_ptr<FuExpr> FuParser::parseAssign(bool allowVar)
 			futemp0->loc = this->tokenLoc;
 			futemp0->left = left;
 			futemp0->op = nextToken();
-			futemp0->right = parseAssign(false);
+			futemp0->right = parseAssign(false, false);
 			return futemp0;
 		}
 	case FuToken::id:
 		if (allowVar)
 			return parseVar(left, true);
-		return left;
+		break;
 	default:
-		return left;
+		break;
 	}
+	if (needSideEffect && left != nullptr && !left->hasSideEffect())
+		reportError("Useless expression");
+	return left;
 }
 
 std::shared_ptr<FuBlock> FuParser::parseBlock(FuMethodBase * method)
@@ -5202,13 +5225,13 @@ std::shared_ptr<FuFor> FuParser::parseFor()
 	expect(FuToken::for_);
 	expect(FuToken::leftParenthesis);
 	if (!see(FuToken::semicolon))
-		result->init = parseAssign(true);
+		result->init = parseAssign(true, true);
 	expect(FuToken::semicolon);
 	if (!see(FuToken::semicolon))
 		result->cond = parseExpr();
 	expect(FuToken::semicolon);
 	if (!see(FuToken::rightParenthesis))
-		result->advance = parseAssign(false);
+		result->advance = parseAssign(false, true);
 	expect(FuToken::rightParenthesis);
 	parseLoopBody(result.get());
 	return result;
@@ -5454,7 +5477,7 @@ std::shared_ptr<FuStatement> FuParser::parseStatement()
 		return parseWhile();
 	default:
 		{
-			std::shared_ptr<FuExpr> expr = parseAssign(true);
+			std::shared_ptr<FuExpr> expr = parseAssign(true, true);
 			expect(FuToken::semicolon);
 			return expr;
 		}
@@ -7453,10 +7476,6 @@ std::shared_ptr<FuExpr> FuSema::visitExpr(std::shared_ptr<FuExpr> expr, bool all
 		return visitSelectExpr(select);
 	else if (std::shared_ptr<FuCallExpr>call = std::dynamic_pointer_cast<FuCallExpr>(expr))
 		return visitCallExpr(call);
-	else if (dynamic_cast<const FuLambdaExpr *>(expr.get())) {
-		reportError(expr.get(), "Unexpected lambda expression");
-		return expr;
-	}
 	else if (std::shared_ptr<FuVar>def = std::dynamic_pointer_cast<FuVar>(expr)) {
 		visitVar(def);
 		return expr;
@@ -10669,7 +10688,7 @@ void GenTyped::writeNotPromoted(const FuType * type, const FuExpr * expr)
 bool GenTyped::isPromoted(const FuExpr * expr) const
 {
 	const FuBinaryExpr * binary;
-	return !((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && (binary->op == FuToken::leftBracket || binary->isAssign()));
+	return !((binary = dynamic_cast<const FuBinaryExpr *>(expr)) && (binary->op == FuToken::leftBracket || binary->hasSideEffect()));
 }
 
 void GenTyped::writeAssignRight(const FuBinaryExpr * expr)
@@ -21342,7 +21361,7 @@ bool GenJava::isPromoted(const FuExpr * expr) const
 void GenJava::writeAssignRight(const FuBinaryExpr * expr)
 {
 	const FuBinaryExpr * rightBinary;
-	if (!isUnsignedByteIndexing(expr->left.get()) && (rightBinary = dynamic_cast<const FuBinaryExpr *>(expr->right.get())) && rightBinary->isAssign() && isUnsignedByte(expr->right->type.get())) {
+	if (!isUnsignedByteIndexing(expr->left.get()) && (rightBinary = dynamic_cast<const FuBinaryExpr *>(expr->right.get())) && rightBinary->hasSideEffect() && isUnsignedByte(expr->right->type.get())) {
 		writeChar('(');
 		GenTyped::writeAssignRight(expr);
 		write(") & 0xff");
@@ -25135,7 +25154,7 @@ void GenSwift::writeEnumFlagsAnd(const FuExpr * left, std::string_view method, s
 const FuExpr * GenSwift::writeAssignNested(const FuBinaryExpr * expr)
 {
 	const FuBinaryExpr * rightBinary;
-	if ((rightBinary = dynamic_cast<const FuBinaryExpr *>(expr->right.get())) && rightBinary->isAssign()) {
+	if ((rightBinary = dynamic_cast<const FuBinaryExpr *>(expr->right.get())) && rightBinary->hasSideEffect()) {
 		visitBinaryExpr(rightBinary, FuPriority::statement);
 		writeNewLine();
 		return rightBinary->left.get();
@@ -26531,7 +26550,7 @@ void GenPy::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 	case FuToken::assign:
 		if (this->atLineStart) {
 			const FuBinaryExpr * rightBinary;
-			for (const FuExpr * right = expr->right.get(); (rightBinary = dynamic_cast<const FuBinaryExpr *>(right)) && rightBinary->isAssign(); right = rightBinary->right.get()) {
+			for (const FuExpr * right = expr->right.get(); (rightBinary = dynamic_cast<const FuBinaryExpr *>(right)) && rightBinary->hasSideEffect(); right = rightBinary->right.get()) {
 				if (rightBinary->op != FuToken::assign) {
 					visitBinaryExpr(rightBinary, FuPriority::statement);
 					writeNewLine();
@@ -26543,7 +26562,7 @@ void GenPy::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 		write(" = ");
 		{
 			const FuBinaryExpr * rightBinary;
-			((rightBinary = dynamic_cast<const FuBinaryExpr *>(expr->right.get())) && rightBinary->isAssign() && rightBinary->op != FuToken::assign ? rightBinary->left : expr->right)->accept(this, FuPriority::assign);
+			((rightBinary = dynamic_cast<const FuBinaryExpr *>(expr->right.get())) && rightBinary->hasSideEffect() && rightBinary->op != FuToken::assign ? rightBinary->left : expr->right)->accept(this, FuPriority::assign);
 		}
 		break;
 	case FuToken::addAssign:
@@ -26559,7 +26578,7 @@ void GenPy::visitBinaryExpr(const FuBinaryExpr * expr, FuPriority parent)
 		{
 			const FuExpr * right = expr->right.get();
 			const FuBinaryExpr * rightBinary;
-			if ((rightBinary = dynamic_cast<const FuBinaryExpr *>(right)) && rightBinary->isAssign()) {
+			if ((rightBinary = dynamic_cast<const FuBinaryExpr *>(right)) && rightBinary->hasSideEffect()) {
 				visitBinaryExpr(rightBinary, FuPriority::statement);
 				writeNewLine();
 				right = rightBinary->left.get();

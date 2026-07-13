@@ -1559,9 +1559,6 @@ public class FuSema
 			return VisitSelectExpr(select);
 		case FuCallExpr# call:
 			return VisitCallExpr(call);
-		case FuLambdaExpr:
-			ReportError(expr, "Unexpected lambda expression");
-			return expr;
 		case FuVar# def:
 			VisitVar(def);
 			return expr;

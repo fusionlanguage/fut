@@ -3,7 +3,7 @@ public static class Test
 	public static bool Run()
 	{
 		int x = 1;
-		int y = x += 4; //ERROR: Expected ';', got '+='
+		int y = x += 4; //ERROR: Expected ';', got '+=' //ERROR: Useless expression
 		return x == 5 && y == 5;
 	}
 }

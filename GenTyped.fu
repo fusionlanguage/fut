@@ -187,7 +187,7 @@ public abstract class GenTyped : GenBase
 			WriteCoercedLiteral(type, expr);
 	}
 
-	protected virtual bool IsPromoted(FuExpr expr) => !(expr is FuBinaryExpr binary && (binary.Op == FuToken.LeftBracket || binary.IsAssign()));
+	protected virtual bool IsPromoted(FuExpr expr) => !(expr is FuBinaryExpr binary && (binary.Op == FuToken.LeftBracket || binary.HasSideEffect()));
 
 	protected override void WriteAssignRight!(FuBinaryExpr expr)
 	{

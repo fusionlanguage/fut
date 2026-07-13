@@ -552,7 +552,7 @@ public class GenPy : GenPySwift
 
 		case FuToken.Assign:
 			if (this.AtLineStart) {
-				for (FuExpr right = expr.Right; right is FuBinaryExpr rightBinary && rightBinary.IsAssign(); right = rightBinary.Right) {
+				for (FuExpr right = expr.Right; right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect(); right = rightBinary.Right) {
 					if (rightBinary.Op != FuToken.Assign) {
 						VisitBinaryExpr(rightBinary, FuPriority.Statement);
 						WriteNewLine();
@@ -563,7 +563,7 @@ public class GenPy : GenPySwift
 			expr.Left.Accept(this, FuPriority.Assign);
 			Write(" = ");
 			{
-				(expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != FuToken.Assign ? rightBinary.Left /* FIXME: side effect*/ : expr.Right).Accept(this, FuPriority.Assign);
+				(expr.Right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect() && rightBinary.Op != FuToken.Assign ? rightBinary.Left /* FIXME: side effect*/ : expr.Right).Accept(this, FuPriority.Assign);
 			}
 			break;
 		case FuToken.AddAssign:
@@ -578,7 +578,7 @@ public class GenPy : GenPySwift
 		case FuToken.ShiftRightAssign:
 			{
 				FuExpr right = expr.Right;
-				if (right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {
+				if (right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect()) {
 					VisitBinaryExpr(rightBinary, FuPriority.Statement);
 					WriteNewLine();
 					right = rightBinary.Left; // FIXME: side effect

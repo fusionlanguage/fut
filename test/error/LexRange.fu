@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		0 .. 9 digit; //ERROR: Range types have been removed - replace with byte/sbyte/short/ushort/int/uint //ERROR: Expected identifier, got '.' //ERROR: Expected ';', got integer constant
+		0 .. 9 digit; //ERROR: Range types have been removed - replace with byte/sbyte/short/ushort/int/uint //ERROR: Expected identifier, got '.' //ERROR: Useless expression //ERROR: Expected ';', got integer constant //ERROR: Useless expression
 		return true;
 	}
 }

@@ -345,6 +345,7 @@ public abstract class FuExpr : FuStatement
 	internal FuType#? Type;
 	public override bool CompletesNormally() => true;
 	public virtual string() ToString() { assert false; }
+	public virtual bool HasSideEffect() => false;
 	public virtual bool IsIndexing() => false;
 	public virtual bool IsLiteralZero() => false;
 	public virtual int IntValue() { assert false; }
@@ -674,6 +675,7 @@ public class FuPrefixExpr : FuUnaryExpr
 		assert this.Op == FuToken.Tilde;
 		return ~this.Inner.IntValue();
 	}
+	public override bool HasSideEffect() => this.Op == FuToken.Increment || this.Op == FuToken.Decrement;
 	public override bool IsConst(bool varIsConst) => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner.IsConst(varIsConst);
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitPrefixExpr(this, parent); }
 	public override bool IsUnique() => this.Op == FuToken.New && !(this.Inner is FuAggregateInitializer);
@@ -681,6 +683,7 @@ public class FuPrefixExpr : FuUnaryExpr
 
 public class FuPostfixExpr : FuUnaryExpr
 {
+	public override bool HasSideEffect() => true;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitPostfixExpr(this, parent); }
 }
 
@@ -764,7 +767,7 @@ public class FuBinaryExpr : FuExpr
 			return false;
 		}
 	}
-	public bool IsAssign()
+	public override bool HasSideEffect()
 	{
 		switch (this.Op) {
 		case FuToken.Assign:
@@ -874,6 +877,7 @@ public class FuCallExpr : FuExpr
 {
 	internal FuSymbolReference# Method;
 	internal List<FuExpr#>() Arguments;
+	public override bool HasSideEffect() => true;
 	public override bool IsConst(bool varIsConst)
 	{
 		assert this.Method.Symbol is FuMethod method;

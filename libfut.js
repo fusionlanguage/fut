@@ -1552,6 +1552,11 @@ export class FuExpr extends FuStatement
 		throw new Error();
 	}
 
+	hasSideEffect()
+	{
+		return false;
+	}
+
 	isIndexing()
 	{
 		return false;
@@ -2083,6 +2088,11 @@ export class FuPrefixExpr extends FuUnaryExpr
 		return ~this.inner.intValue();
 	}
 
+	hasSideEffect()
+	{
+		return this.op == FuToken.INCREMENT || this.op == FuToken.DECREMENT;
+	}
+
 	isConst(varIsConst)
 	{
 		return (this.op == FuToken.MINUS || this.op == FuToken.TILDE || this.op == FuToken.EXCLAMATION_MARK || this.op == FuToken.RESOURCE) && this.inner.isConst(varIsConst);
@@ -2101,6 +2111,11 @@ export class FuPrefixExpr extends FuUnaryExpr
 
 export class FuPostfixExpr extends FuUnaryExpr
 {
+
+	hasSideEffect()
+	{
+		return true;
+	}
 
 	accept(visitor, parent)
 	{
@@ -2208,7 +2223,7 @@ export class FuBinaryExpr extends FuExpr
 		}
 	}
 
-	isAssign()
+	hasSideEffect()
 	{
 		switch (this.op) {
 		case FuToken.ASSIGN:
@@ -2342,6 +2357,11 @@ export class FuCallExpr extends FuExpr
 {
 	method;
 	arguments_ = [];
+
+	hasSideEffect()
+	{
+		return true;
+	}
 
 	isConst(varIsConst)
 	{
@@ -4944,7 +4964,7 @@ export class FuParser extends FuLexer
 		return konst;
 	}
 
-	#parseAssign(allowVar)
+	#parseAssign(allowVar, needSideEffect)
 	{
 		let left = allowVar ? this.#parseType() : this.#parseExpr();
 		switch (this.currentToken) {
@@ -4959,14 +4979,17 @@ export class FuParser extends FuLexer
 		case FuToken.XOR_ASSIGN:
 		case FuToken.SHIFT_LEFT_ASSIGN:
 		case FuToken.SHIFT_RIGHT_ASSIGN:
-			return Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parseAssign(false) });
+			return Object.assign(new FuBinaryExpr(), { loc: this.tokenLoc, left: left, op: this.nextToken(), right: this.#parseAssign(false, false) });
 		case FuToken.ID:
 			if (allowVar)
 				return this.#parseVar(left, true);
-			return left;
+			break;
 		default:
-			return left;
+			break;
 		}
+		if (needSideEffect && left != null && !left.hasSideEffect())
+			this.reportError("Useless expression");
+		return left;
 	}
 
 	#parseBlock(method)
@@ -5041,13 +5064,13 @@ export class FuParser extends FuLexer
 		this.expect(FuToken.FOR);
 		this.expect(FuToken.LEFT_PARENTHESIS);
 		if (!this.see(FuToken.SEMICOLON))
-			result.init = this.#parseAssign(true);
+			result.init = this.#parseAssign(true, true);
 		this.expect(FuToken.SEMICOLON);
 		if (!this.see(FuToken.SEMICOLON))
 			result.cond = this.#parseExpr();
 		this.expect(FuToken.SEMICOLON);
 		if (!this.see(FuToken.RIGHT_PARENTHESIS))
-			result.advance = this.#parseAssign(false);
+			result.advance = this.#parseAssign(false, true);
 		this.expect(FuToken.RIGHT_PARENTHESIS);
 		this.#parseLoopBody(result);
 		return result;
@@ -5278,7 +5301,7 @@ export class FuParser extends FuLexer
 		case FuToken.WHILE:
 			return this.#parseWhile();
 		default:
-			let expr = this.#parseAssign(true);
+			let expr = this.#parseAssign(true, true);
 			this.expect(FuToken.SEMICOLON);
 			return expr;
 		}
@@ -7234,10 +7257,6 @@ export class FuSema
 		else if (expr instanceof FuCallExpr) {
 			const call = expr;
 			return this.#visitCallExpr(call);
-		}
-		else if (expr instanceof FuLambdaExpr) {
-			this.#reportError(expr, "Unexpected lambda expression");
-			return expr;
 		}
 		else if (expr instanceof FuVar) {
 			const def = expr;
@@ -10572,7 +10591,7 @@ export class GenTyped extends GenBase
 	isPromoted(expr)
 	{
 		let binary;
-		return !((binary = expr) instanceof FuBinaryExpr && (binary.op == FuToken.LEFT_BRACKET || binary.isAssign()));
+		return !((binary = expr) instanceof FuBinaryExpr && (binary.op == FuToken.LEFT_BRACKET || binary.hasSideEffect()));
 	}
 
 	writeAssignRight(expr)
@@ -21889,7 +21908,7 @@ export class GenJava extends GenTyped
 	writeAssignRight(expr)
 	{
 		let rightBinary;
-		if (!GenJava.#isUnsignedByteIndexing(expr.left) && (rightBinary = expr.right) instanceof FuBinaryExpr && rightBinary.isAssign() && GenJava.#isUnsignedByte(expr.right.type)) {
+		if (!GenJava.#isUnsignedByteIndexing(expr.left) && (rightBinary = expr.right) instanceof FuBinaryExpr && rightBinary.hasSideEffect() && GenJava.#isUnsignedByte(expr.right.type)) {
 			this.writeChar(40);
 			super.writeAssignRight(expr);
 			this.write(") & 0xff");
@@ -25873,7 +25892,7 @@ export class GenSwift extends GenPySwift
 	#writeAssignNested(expr)
 	{
 		let rightBinary;
-		if ((rightBinary = expr.right) instanceof FuBinaryExpr && rightBinary.isAssign()) {
+		if ((rightBinary = expr.right) instanceof FuBinaryExpr && rightBinary.hasSideEffect()) {
 			this.visitBinaryExpr(rightBinary, FuPriority.STATEMENT);
 			this.writeNewLine();
 			return rightBinary.left;
@@ -27378,7 +27397,7 @@ export class GenPy extends GenPySwift
 		case FuToken.ASSIGN:
 			if (this.atLineStart) {
 				let rightBinary;
-				for (let right = expr.right; (rightBinary = right) instanceof FuBinaryExpr && rightBinary.isAssign(); right = rightBinary.right) {
+				for (let right = expr.right; (rightBinary = right) instanceof FuBinaryExpr && rightBinary.hasSideEffect(); right = rightBinary.right) {
 					if (rightBinary.op != FuToken.ASSIGN) {
 						this.visitBinaryExpr(rightBinary, FuPriority.STATEMENT);
 						this.writeNewLine();
@@ -27390,7 +27409,7 @@ export class GenPy extends GenPySwift
 			this.write(" = ");
 			{
 				let rightBinary;
-				((rightBinary = expr.right) instanceof FuBinaryExpr && rightBinary.isAssign() && rightBinary.op != FuToken.ASSIGN ? rightBinary.left : expr.right).accept(this, FuPriority.ASSIGN);
+				((rightBinary = expr.right) instanceof FuBinaryExpr && rightBinary.hasSideEffect() && rightBinary.op != FuToken.ASSIGN ? rightBinary.left : expr.right).accept(this, FuPriority.ASSIGN);
 			}
 			break;
 		case FuToken.ADD_ASSIGN:
@@ -27406,7 +27425,7 @@ export class GenPy extends GenPySwift
 			{
 				let right = expr.right;
 				let rightBinary;
-				if ((rightBinary = right) instanceof FuBinaryExpr && rightBinary.isAssign()) {
+				if ((rightBinary = right) instanceof FuBinaryExpr && rightBinary.hasSideEffect()) {
 					this.visitBinaryExpr(rightBinary, FuPriority.STATEMENT);
 					this.writeNewLine();
 					right = rightBinary.left;

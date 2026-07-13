@@ -1232,7 +1232,7 @@ public class GenSwift : GenPySwift
 
 	FuExpr WriteAssignNested!(FuBinaryExpr expr)
 	{
-		if (expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {
+		if (expr.Right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect()) {
 			VisitBinaryExpr(rightBinary, FuPriority.Statement);
 			WriteNewLine();
 			return rightBinary.Left; // FIXME: side effect

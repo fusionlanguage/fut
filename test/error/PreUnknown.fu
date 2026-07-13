@@ -3,9 +3,9 @@ public static class Test
 	public static bool Run()
 	{
 #iftrue //ERROR: Invalid expression //ERROR: Expected ';', got unknown preprocessor directive
-#foo //ERROR: Expected ';', got unknown preprocessor directive
-#elf //ERROR: Expected ';', got unknown preprocessor directive
-#enlarge //ERROR: Expected ';', got unknown preprocessor directive
-		return true; //ERROR: Expected ';', got 'return'
+#foo //ERROR: Useless expression //ERROR: Expected ';', got unknown preprocessor directive
+#elf //ERROR: Useless expression //ERROR: Expected ';', got unknown preprocessor directive
+#enlarge //ERROR: Useless expression //ERROR: Expected ';', got unknown preprocessor directive
+		return true; //ERROR: Useless expression //ERROR: Expected ';', got 'return' //ERROR: Useless expression
 	}
 }

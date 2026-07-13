@@ -3,9 +3,9 @@ public static class Test
 	public static bool Run()
 	{
 		int
-			10.5 //ERROR: Expected ';', got floating-point constant
+			10.5 //ERROR: Useless expression //ERROR: Expected ';', got floating-point constant
 		string
-			'f' //ERROR: Expected ';', got character constant
+			'f' //ERROR: Useless expression //ERROR: Expected ';', got character constant
 		] //ERROR: Invalid expression //ERROR: Expected ';', got ']'
 		& //ERROR: Invalid expression //ERROR: Expected ';', got '&'
 		/// //ERROR: Invalid expression //ERROR: Expected ';', got '///'

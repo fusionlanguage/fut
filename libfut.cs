@@ -1640,6 +1640,8 @@ namespace Fusion
 			throw new NotImplementedException();
 		}
 
+		public virtual bool HasSideEffect() => false;
+
 		public virtual bool IsIndexing() => false;
 
 		public virtual bool IsLiteralZero() => false;
@@ -2066,6 +2068,8 @@ namespace Fusion
 			return ~this.Inner!.IntValue();
 		}
 
+		public override bool HasSideEffect() => this.Op == FuToken.Increment || this.Op == FuToken.Decrement;
+
 		public override bool IsConst(bool varIsConst) => (this.Op == FuToken.Minus || this.Op == FuToken.Tilde || this.Op == FuToken.ExclamationMark || this.Op == FuToken.Resource) && this.Inner!.IsConst(varIsConst);
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
@@ -2078,6 +2082,8 @@ namespace Fusion
 
 	public class FuPostfixExpr : FuUnaryExpr
 	{
+
+		public override bool HasSideEffect() => true;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2179,7 +2185,7 @@ namespace Fusion
 			}
 		}
 
-		public bool IsAssign()
+		public override bool HasSideEffect()
 		{
 			switch (this.Op) {
 			case FuToken.Assign:
@@ -2303,6 +2309,8 @@ namespace Fusion
 		internal FuSymbolReference Method = null!;
 
 		internal readonly List<FuExpr> Arguments = new List<FuExpr>();
+
+		public override bool HasSideEffect() => true;
 
 		public override bool IsConst(bool varIsConst)
 		{
@@ -4676,9 +4684,9 @@ namespace Fusion
 			return konst;
 		}
 
-		FuExpr ParseAssign(bool allowVar)
+		FuExpr ParseAssign(bool allowVar, bool needSideEffect)
 		{
-			FuExpr left = allowVar ? ParseType() : ParseExpr();
+			FuExpr? left = allowVar ? ParseType() : ParseExpr();
 			switch (this.CurrentToken) {
 			case FuToken.Assign:
 			case FuToken.AddAssign:
@@ -4691,14 +4699,17 @@ namespace Fusion
 			case FuToken.XorAssign:
 			case FuToken.ShiftLeftAssign:
 			case FuToken.ShiftRightAssign:
-				return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseAssign(false) };
+				return new FuBinaryExpr { Loc = this.TokenLoc, Left = left!, Op = NextToken(), Right = ParseAssign(false, false) };
 			case FuToken.Id:
 				if (allowVar)
-					return ParseVar(left, true);
-				return left;
+					return ParseVar(left!, true);
+				break;
 			default:
-				return left;
+				break;
 			}
+			if (needSideEffect && left != null && !left!.HasSideEffect())
+				ReportError("Useless expression");
+			return left!;
 		}
 
 		FuBlock ParseBlock(FuMethodBase? method)
@@ -4772,13 +4783,13 @@ namespace Fusion
 			Expect(FuToken.For);
 			Expect(FuToken.LeftParenthesis);
 			if (!See(FuToken.Semicolon))
-				result.Init = ParseAssign(true);
+				result.Init = ParseAssign(true, true);
 			Expect(FuToken.Semicolon);
 			if (!See(FuToken.Semicolon))
 				result.Cond = ParseExpr();
 			Expect(FuToken.Semicolon);
 			if (!See(FuToken.RightParenthesis))
-				result.Advance = ParseAssign(false);
+				result.Advance = ParseAssign(false, true);
 			Expect(FuToken.RightParenthesis);
 			ParseLoopBody(result);
 			return result;
@@ -5003,7 +5014,7 @@ namespace Fusion
 			case FuToken.While:
 				return ParseWhile();
 			default:
-				FuExpr expr = ParseAssign(true);
+				FuExpr expr = ParseAssign(true, true);
 				Expect(FuToken.Semicolon);
 				return expr;
 			}
@@ -6819,9 +6830,6 @@ namespace Fusion
 				return VisitSelectExpr(select);
 			case FuCallExpr call:
 				return VisitCallExpr(call);
-			case FuLambdaExpr:
-				ReportError(expr, "Unexpected lambda expression");
-				return expr;
 			case FuVar def:
 				VisitVar(def);
 				return expr;
@@ -10078,7 +10086,7 @@ namespace Fusion
 				WriteCoercedLiteral(type, expr);
 		}
 
-		protected virtual bool IsPromoted(FuExpr expr) => !(expr is FuBinaryExpr binary && (binary.Op == FuToken.LeftBracket || binary.IsAssign()));
+		protected virtual bool IsPromoted(FuExpr expr) => !(expr is FuBinaryExpr binary && (binary.Op == FuToken.LeftBracket || binary.HasSideEffect()));
 
 		protected override void WriteAssignRight(FuBinaryExpr expr)
 		{
@@ -21227,7 +21235,7 @@ namespace Fusion
 
 		protected override void WriteAssignRight(FuBinaryExpr expr)
 		{
-			if (!IsUnsignedByteIndexing(expr.Left) && expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign() && IsUnsignedByte(expr.Right!.Type!)) {
+			if (!IsUnsignedByteIndexing(expr.Left) && expr.Right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect() && IsUnsignedByte(expr.Right!.Type!)) {
 				WriteChar('(');
 				base.WriteAssignRight(expr);
 				Write(") & 0xff");
@@ -25188,7 +25196,7 @@ namespace Fusion
 
 		FuExpr WriteAssignNested(FuBinaryExpr expr)
 		{
-			if (expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {
+			if (expr.Right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect()) {
 				VisitBinaryExpr(rightBinary, FuPriority.Statement);
 				WriteNewLine();
 				return rightBinary.Left;
@@ -26661,7 +26669,7 @@ namespace Fusion
 				break;
 			case FuToken.Assign:
 				if (this.AtLineStart) {
-					for (FuExpr right = expr.Right!; right is FuBinaryExpr rightBinary && rightBinary.IsAssign(); right = rightBinary.Right!) {
+					for (FuExpr right = expr.Right!; right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect(); right = rightBinary.Right!) {
 						if (rightBinary.Op != FuToken.Assign) {
 							VisitBinaryExpr(rightBinary, FuPriority.Statement);
 							WriteNewLine();
@@ -26672,7 +26680,7 @@ namespace Fusion
 				expr.Left.Accept(this, FuPriority.Assign);
 				Write(" = ");
 				{
-					(expr.Right is FuBinaryExpr rightBinary && rightBinary.IsAssign() && rightBinary.Op != FuToken.Assign ? rightBinary.Left : expr.Right)!.Accept(this, FuPriority.Assign);
+					(expr.Right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect() && rightBinary.Op != FuToken.Assign ? rightBinary.Left : expr.Right)!.Accept(this, FuPriority.Assign);
 				}
 				break;
 			case FuToken.AddAssign:
@@ -26687,7 +26695,7 @@ namespace Fusion
 			case FuToken.ShiftRightAssign:
 				{
 					FuExpr right = expr.Right!;
-					if (right is FuBinaryExpr rightBinary && rightBinary.IsAssign()) {
+					if (right is FuBinaryExpr rightBinary && rightBinary.HasSideEffect()) {
 						VisitBinaryExpr(rightBinary, FuPriority.Statement);
 						WriteNewLine();
 						right = rightBinary.Left;

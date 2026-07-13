@@ -769,6 +769,7 @@ public:
 	virtual ~FuExpr() = default;
 	bool completesNormally() const override;
 	virtual std::string toString() const;
+	virtual bool hasSideEffect() const;
 	virtual bool isIndexing() const;
 	virtual bool isLiteralZero() const;
 	virtual int intValue() const;
@@ -1202,6 +1203,7 @@ class FuPrefixExpr : public FuUnaryExpr
 public:
 	FuPrefixExpr() = default;
 	int intValue() const override;
+	bool hasSideEffect() const override;
 	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isUnique() const override;
@@ -1211,6 +1213,7 @@ class FuPostfixExpr : public FuUnaryExpr
 {
 public:
 	FuPostfixExpr() = default;
+	bool hasSideEffect() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 };
 
@@ -1225,7 +1228,7 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	bool isRel() const;
-	bool isAssign() const;
+	bool hasSideEffect() const override;
 	std::string_view getOpString() const;
 	std::string toString() const override;
 private: // internal
@@ -1279,6 +1282,7 @@ class FuCallExpr : public FuExpr
 {
 public:
 	FuCallExpr() = default;
+	bool hasSideEffect() const override;
 	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
@@ -2303,7 +2307,7 @@ private:
 	void addSymbol(FuScope * scope, std::shared_ptr<FuSymbol> symbol);
 	std::shared_ptr<FuVar> parseVar(std::shared_ptr<FuExpr> type, bool initializer);
 	std::shared_ptr<FuConst> parseConst(FuVisibility visibility);
-	std::shared_ptr<FuExpr> parseAssign(bool allowVar);
+	std::shared_ptr<FuExpr> parseAssign(bool allowVar, bool needSideEffect);
 	std::shared_ptr<FuBlock> parseBlock(FuMethodBase * method);
 	std::shared_ptr<FuAssert> parseAssert();
 	std::shared_ptr<FuBreak> parseBreak();

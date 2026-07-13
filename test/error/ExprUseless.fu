@@ -1,0 +1,17 @@
+public static class Test
+{
+	static bool Foo() => true;
+
+	public static bool Run()
+	{
+		Foo; //ERROR: Useless expression
+		Test.Foo; //ERROR: Useless expression
+		int x = 42;
+		x; //ERROR: Useless expression
+		1 + 2; //ERROR: Useless expression //ERROR: Expected ';', got '+' //ERROR: Useless expression
+		++x;
+		x--;
+		~x; //ERROR: Useless expression
+		return true;
+	}
+}

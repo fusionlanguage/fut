@@ -2,7 +2,7 @@ public static class Test
 {
 	public static bool Run()
 	{
-		x => x + 1; //ERROR: Unexpected lambda expression
+		x => x + 1; //ERROR: Useless expression
 		return true;
 	}
 }

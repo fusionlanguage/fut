@@ -544,9 +544,9 @@ public class FuParser : FuLexer
 		return konst;
 	}
 
-	FuExpr# ParseAssign!(bool allowVar)
+	FuExpr# ParseAssign!(bool allowVar, bool needSideEffect)
 	{
-		FuExpr# left = allowVar ? ParseType() : ParseExpr();
+		FuExpr#? left = allowVar ? ParseType() : ParseExpr();
 		switch (this.CurrentToken) {
 		case FuToken.Assign:
 		case FuToken.AddAssign:
@@ -559,14 +559,17 @@ public class FuParser : FuLexer
 		case FuToken.XorAssign:
 		case FuToken.ShiftLeftAssign:
 		case FuToken.ShiftRightAssign:
-			return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseAssign(false) };
+			return new FuBinaryExpr { Loc = this.TokenLoc, Left = left, Op = NextToken(), Right = ParseAssign(false, false) };
 		case FuToken.Id:
 			if (allowVar)
 				return ParseVar(left, true);
-			return left;
+			break;
 		default:
-			return left;
+			break;
 		}
+		if (needSideEffect && left != null && !left.HasSideEffect())
+			ReportError("Useless expression");
+		return left;
 	}
 
 	FuBlock# ParseBlock!(FuMethodBase!? method)
@@ -640,13 +643,13 @@ public class FuParser : FuLexer
 		Expect(FuToken.For);
 		Expect(FuToken.LeftParenthesis);
 		if (!See(FuToken.Semicolon))
-			result.Init = ParseAssign(true);
+			result.Init = ParseAssign(true, true);
 		Expect(FuToken.Semicolon);
 		if (!See(FuToken.Semicolon))
 			result.Cond = ParseExpr();
 		Expect(FuToken.Semicolon);
 		if (!See(FuToken.RightParenthesis))
-			result.Advance = ParseAssign(false);
+			result.Advance = ParseAssign(false, true);
 		Expect(FuToken.RightParenthesis);
 		ParseLoopBody(result);
 		return result;
@@ -873,7 +876,7 @@ public class FuParser : FuLexer
 		case FuToken.While:
 			return ParseWhile();
 		default:
-			FuExpr# expr = ParseAssign(true);
+			FuExpr# expr = ParseAssign(true, true);
 			Expect(FuToken.Semicolon);
 			return expr;
 		}
