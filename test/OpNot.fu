@@ -7,7 +7,7 @@ public static class Test
 		bool t = true;
 		return !a
 			&& !(a && a)
-			&& !(a && !a)
+			&& !(a && t)
 			&& !(a & a)
 			&& !(a & !a)
 			&& !(!t & a)
