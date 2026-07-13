@@ -22083,6 +22083,11 @@ namespace Fusion
 			expr.Accept(this, parent);
 		}
 
+		protected override void WriteNotPromoted(FuType type, FuExpr expr)
+		{
+			WriteCoercedInternal(type, expr, FuPriority.Argument);
+		}
+
 		protected override void WriteNewArray(FuType elementType, FuExpr lengthExpr, FuPriority parent)
 		{
 			if (elementType is FuStorageType) {

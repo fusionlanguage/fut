@@ -22182,6 +22182,11 @@ void GenJsNoModule::writeCoercedInternal(const FuType * type, const FuExpr * exp
 	expr->accept(this, parent);
 }
 
+void GenJsNoModule::writeNotPromoted(const FuType * type, const FuExpr * expr)
+{
+	writeCoercedInternal(type, expr, FuPriority::argument);
+}
+
 void GenJsNoModule::writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent)
 {
 	if (dynamic_cast<const FuStorageType *>(elementType)) {

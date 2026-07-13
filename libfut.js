@@ -22775,6 +22775,11 @@ export class GenJsNoModule extends GenBase
 		expr.accept(this, parent);
 	}
 
+	writeNotPromoted(type, expr)
+	{
+		this.writeCoercedInternal(type, expr, FuPriority.ARGUMENT);
+	}
+
 	writeNewArray(elementType, lengthExpr, parent)
 	{
 		if (elementType instanceof FuStorageType) {

@@ -3436,6 +3436,7 @@ protected:
 	void writeVar(const FuNamedValue * def) override;
 	void writeLocalName(const FuSymbol * symbol, FuPriority parent) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
+	void writeNotPromoted(const FuType * type, const FuExpr * expr) override;
 	void writeNewArray(const FuType * elementType, const FuExpr * lengthExpr, FuPriority parent) override;
 	bool hasInitCode(const FuNamedValue * def) const override;
 	void writeInitCode(const FuNamedValue * def) override;

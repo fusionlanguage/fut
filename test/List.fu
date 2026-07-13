@@ -31,7 +31,7 @@ public static class Test
 		ld.Add(10.5);
 
 		List<long>() ll;
-		ll.Add(Math.Floor(10.3)); //FAIL: js ts TODO
+		ll.Add(Math.Floor(10.3));
 
 		List<string()>() ls;
 		ls.Add("foo");
