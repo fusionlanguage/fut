@@ -5562,7 +5562,7 @@ export class GenHost extends FuSemaHost
 export class FuConsoleHost extends GenHost
 {
 
-	static VERSION = "3.3.5";
+	static VERSION = "3.3.6";
 
 	static usage(app)
 	{
