@@ -58,8 +58,46 @@ On macOS:
 
     brew install node glib pkg-config
 
-Run the tests with:
+Run all tests with:
 
     make test
 
 The `-jN` option is supported and strongly recommended.
+
+To test a single target language:
+
+    make test-c
+    make test-cpp
+    make test-cs
+    make test-d
+    make test-java
+    make test-js
+    make test-ts
+    make test-py
+    make test-swift
+    make test-cl
+
+To run one executable test (`test/List.fu` in this example) for every language:
+
+    make test-List.fu
+
+To run that same test for one language only, build its result file under `test/bin/`:
+
+    make test/bin/List/c.txt
+    make test/bin/List/cpp.txt
+    make test/bin/List/cs.txt
+    make test/bin/List/d.txt
+    make test/bin/List/java.txt
+    make test/bin/List/js.txt
+    make test/bin/List/ts.txt
+    make test/bin/List/py.txt
+    make test/bin/List/swift.txt
+    make test/bin/List/cl.txt
+
+To run all diagnostic tests:
+
+    make test-error
+
+To run one diagnostic test (`test/error/ExprUseless.fu`):
+
+    make test/bin/ExprUseless/error.txt
