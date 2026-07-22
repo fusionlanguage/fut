@@ -34,12 +34,12 @@ target language; only the last one is language-specific.
    supplied with the `-D` option.
 
 2. **Parsing** (`Parser.fu`) — `FuParser` extends `FuLexer` and builds the
-   abstract syntax tree. Its entry point is `Parse!(filename, input, length)`,
+   abstract syntax tree. Its entry point is `Parse(filename, input, length)`,
    which is called once per input file; all files contribute to the same
    program. Parsing is purely syntactic — names are not yet resolved and
    expressions are not yet typed.
 
-3. **Semantic analysis** (`Sema.fu`) — `FuSema.Process!()` walks the parsed
+3. **Semantic analysis** (`Sema.fu`) — `FuSema.Process()` walks the parsed
    program and resolves it: it links symbol references to declarations, infers
    and checks types, resolves overloads, evaluates constant expressions,
    enforces visibility and object-lifetime (storage / pointer / dynamic) rules,
@@ -100,8 +100,8 @@ Code generation uses the visitor pattern. `FuVisitor` (in `AST.fu`) declares one
 owns the output `TextWriter` (via a `GenHost`), indentation, precedence-aware
 parenthesization, and default traversal logic. Each concrete generator overrides
 the pieces that differ for its language. The public entry point of a generator
-is `WriteProgram!(program, outputFile, namespace)`; helpers like
-`GetTargetName`, `NotSupported`/`NotYet`, and `Write!` support consistent
+is `WriteProgram(program, outputFile, namespace)`; helpers like
+`GetTargetName`, `NotSupported`/`NotYet`, and `Write` support consistent
 output and diagnostics.
 
 Backends are organized so related languages share code:
@@ -141,15 +141,15 @@ The host is responsible for:
 - parsing command-line options (`-o`, `-l`, `-n`, `-D`, `-r`, `-I`, `--help`,
   `--version`);
 - reading input files and feeding them to the shared `parseAndResolve` logic,
-  which runs the parser over every file and then `FuSema.Process!()`;
+  which runs the parser over every file and then `FuSema.Process()`;
 - constructing `FuSystem` and the `FuProgram` (optionally a second program for
   `-r` referenced files that are resolved but not emitted);
 - selecting a generator and emitting output.
 
 Generator selection is centralized in Fusion in `ConsoleHost.fu`
-(`FuConsoleHost.Emit!`), which maps a language string to the right `Gen*` class.
+(`FuConsoleHost.Emit`), which maps a language string to the right `Gen*` class.
 When the `-o` filename lists several comma-separated extensions
-(e.g. `-o hello.c,cpp,cs,d,java,js,py,swift,ts,cl`), the host calls `Emit!` once
+(e.g. `-o hello.c,cpp,cs,d,java,js,py,swift,ts,cl`), the host calls `Emit` once
 per extension, so a single invocation produces every requested language.
 
 ## Self-hosting and bootstrapping
@@ -191,7 +191,7 @@ so the three ports can never silently diverge.
 | `GenC*.fu`, `GenD.fu`, `GenCs.fu`, `GenJava.fu` | C-family, D, C#, Java backends |
 | `GenJs.fu`, `GenTs.fu` | JavaScript and TypeScript backends |
 | `GenPySwift.fu`, `GenPy.fu`, `GenSwift.fu` | Python and Swift backends |
-| `ConsoleHost.fu` | Language-to-generator dispatch (`FuConsoleHost.Emit!`) |
+| `ConsoleHost.fu` | Language-to-generator dispatch (`FuConsoleHost.Emit`) |
 | `fut.cpp` / `fut.cs` / `Fut.java` / `fut.js` | Hand-written CLI hosts |
 | `libfut.cpp` / `libfut.cs` / `libfut.js` | Committed bootstrap transpilations |
 | `test/` | Executable cross-language tests and `error/` diagnostics tests |
@@ -202,11 +202,11 @@ At a high level:
 
 1. Create `GenXxx.fu` extending the closest existing generator (`GenTyped` for a
    statically-typed language, `GenBase`/`GenPySwift`/`GenJsNoModule` otherwise).
-   Override `GetTargetName`, `WriteProgram!` and the `Visit*` / `Write*`
+   Override `GetTargetName`, `WriteProgram` and the `Visit*` / `Write*`
    methods that differ. Use `NotSupported` / `NotYet` for constructs you cannot
    (yet) emit.
 2. Add the new source file to `SOURCE_FU` in the `Makefile`.
-3. Register the language string → generator mapping in `FuConsoleHost.Emit!`
+3. Register the language string → generator mapping in `FuConsoleHost.Emit`
    (`ConsoleHost.fu`), and add the extension to the CLI usage text.
 4. Add build/run rules and a `test-xxx` target in the `Makefile`, and a CI job in
    `.github/workflows/test.yml`.
