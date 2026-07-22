@@ -16298,6 +16298,7 @@ export class GenCpp extends GenCCpp
 				let uppercase = false;
 				let hex = false;
 				let flt = 71;
+				let precision = 6;
 				for (const part of interpolated.parts) {
 					switch (part.format) {
 					case 69:
@@ -16352,6 +16353,14 @@ export class GenCpp extends GenCCpp
 						}
 						break;
 					}
+					let newPrecision = part.precision >= 0 ? part.precision : 6;
+					if (newPrecision != precision) {
+						precision = newPrecision;
+						this.include("iomanip");
+						this.write(" << std::setprecision(");
+						this.visitLiteralLong(BigInt(precision), FuPriority.ARGUMENT);
+						this.writeChar(41);
+					}
 					if (part.prefix.length > 0) {
 						this.write(" << ");
 						this.visitLiteralString(part.prefix);
@@ -16364,6 +16373,8 @@ export class GenCpp extends GenCCpp
 					this.write(" << std::dec");
 				if (flt != 71)
 					this.write(" << std::defaultfloat");
+				if (precision != 6)
+					this.write(" << std::setprecision(6)");
 				if (interpolated.suffix.length > 0) {
 					this.write(" << ");
 					if (newLine) {

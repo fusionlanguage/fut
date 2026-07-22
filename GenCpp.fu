@@ -676,6 +676,8 @@ public class GenCpp : GenCCpp
 				bool uppercase = false;
 				bool hex = false;
 				int flt = 'G';
+				const int defaultPrecision = 6;
+				int precision = defaultPrecision;
 				foreach (FuInterpolatedPart part in interpolated.Parts) {
 					switch (part.Format) {
 					case 'E':
@@ -731,6 +733,14 @@ public class GenCpp : GenCCpp
 						}
 						break;
 					}
+					int newPrecision = part.Precision >= 0 ? part.Precision : defaultPrecision;
+					if (newPrecision != precision) {
+						precision = newPrecision;
+						Include("iomanip");
+						Write(" << std::setprecision(");
+						VisitLiteralLong(precision, FuPriority.Argument);
+						WriteChar(')');
+					}
 
 					if (part.Prefix.Length > 0) {
 						Write(" << ");
@@ -746,6 +756,8 @@ public class GenCpp : GenCCpp
 					Write(" << std::dec");
 				if (flt != 'G')
 					Write(" << std::defaultfloat");
+				if (precision != defaultPrecision)
+					Write($" << std::setprecision({defaultPrecision})");
 				if (interpolated.Suffix.Length > 0) {
 					Write(" << ");
 					if (newLine) {

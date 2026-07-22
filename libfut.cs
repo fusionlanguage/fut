@@ -15732,6 +15732,7 @@ namespace Fusion
 					bool uppercase = false;
 					bool hex = false;
 					int flt = 'G';
+					int precision = 6;
 					foreach (FuInterpolatedPart part in interpolated.Parts) {
 						switch (part.Format) {
 						case 'E':
@@ -15786,6 +15787,14 @@ namespace Fusion
 							}
 							break;
 						}
+						int newPrecision = part.Precision >= 0 ? part.Precision : 6;
+						if (newPrecision != precision) {
+							precision = newPrecision;
+							Include("iomanip");
+							Write(" << std::setprecision(");
+							VisitLiteralLong(precision, FuPriority.Argument);
+							WriteChar(')');
+						}
 						if (part.Prefix.Length > 0) {
 							Write(" << ");
 							VisitLiteralString(part.Prefix);
@@ -15798,6 +15807,8 @@ namespace Fusion
 						Write(" << std::dec");
 					if (flt != 'G')
 						Write(" << std::defaultfloat");
+					if (precision != 6)
+						Write(" << std::setprecision(6)");
 					if (interpolated.Suffix.Length > 0) {
 						Write(" << ");
 						if (newLine) {
