@@ -16133,8 +16133,13 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 			bool uppercase = false;
 			bool hex = false;
 			int flt = 'G';
+			bool left = false;
 			int precision = 6;
 			for (const FuInterpolatedPart &part : interpolated->parts) {
+				if (!part.prefix.empty()) {
+					write(" << ");
+					visitLiteralString(part.prefix);
+				}
 				switch (part.format) {
 				case 'E':
 				case 'G':
@@ -16188,6 +16193,24 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 					}
 					break;
 				}
+				if (part.widthExpr != nullptr) {
+					int w = part.width;
+					if (w < 0) {
+						w = -w;
+						if (!left) {
+							left = true;
+							write(" << std::left");
+						}
+					}
+					else if (left) {
+						left = false;
+						write(" << std::right");
+					}
+					include("iomanip");
+					write(" << std::setw(");
+					visitLiteralLong(w, FuPriority::argument);
+					writeChar(')');
+				}
 				int newPrecision = part.precision >= 0 ? part.precision : 6;
 				if (newPrecision != precision) {
 					precision = newPrecision;
@@ -16195,10 +16218,6 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 					write(" << std::setprecision(");
 					visitLiteralLong(precision, FuPriority::argument);
 					writeChar(')');
-				}
-				if (!part.prefix.empty()) {
-					write(" << ");
-					visitLiteralString(part.prefix);
 				}
 				writeWriteArgument(part.argument.get());
 			}
@@ -16208,6 +16227,8 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 				write(" << std::dec");
 			if (flt != 'G')
 				write(" << std::defaultfloat");
+			if (left)
+				write(" << std::right");
 			if (precision != 6)
 				write(" << std::setprecision(6)");
 			if (!interpolated->suffix.empty()) {

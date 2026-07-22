@@ -16298,8 +16298,13 @@ export class GenCpp extends GenCCpp
 				let uppercase = false;
 				let hex = false;
 				let flt = 71;
+				let left = false;
 				let precision = 6;
 				for (const part of interpolated.parts) {
+					if (part.prefix.length > 0) {
+						this.write(" << ");
+						this.visitLiteralString(part.prefix);
+					}
 					switch (part.format) {
 					case 69:
 					case 71:
@@ -16353,6 +16358,24 @@ export class GenCpp extends GenCCpp
 						}
 						break;
 					}
+					if (part.widthExpr != null) {
+						let w = part.width;
+						if (w < 0) {
+							w = -w;
+							if (!left) {
+								left = true;
+								this.write(" << std::left");
+							}
+						}
+						else if (left) {
+							left = false;
+							this.write(" << std::right");
+						}
+						this.include("iomanip");
+						this.write(" << std::setw(");
+						this.visitLiteralLong(BigInt(w), FuPriority.ARGUMENT);
+						this.writeChar(41);
+					}
 					let newPrecision = part.precision >= 0 ? part.precision : 6;
 					if (newPrecision != precision) {
 						precision = newPrecision;
@@ -16360,10 +16383,6 @@ export class GenCpp extends GenCCpp
 						this.write(" << std::setprecision(");
 						this.visitLiteralLong(BigInt(precision), FuPriority.ARGUMENT);
 						this.writeChar(41);
-					}
-					if (part.prefix.length > 0) {
-						this.write(" << ");
-						this.visitLiteralString(part.prefix);
 					}
 					this.#writeWriteArgument(part.argument);
 				}
@@ -16373,6 +16392,8 @@ export class GenCpp extends GenCCpp
 					this.write(" << std::dec");
 				if (flt != 71)
 					this.write(" << std::defaultfloat");
+				if (left)
+					this.write(" << std::right");
 				if (precision != 6)
 					this.write(" << std::setprecision(6)");
 				if (interpolated.suffix.length > 0) {
