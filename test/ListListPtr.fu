@@ -2,8 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-		List<List<int>()>() lol; //FAIL: swift TODO; cl
-		List<List<int>()>! plol = lol;
+		List<List<int>()>() lol; //FAIL: cl
+		List<List<int>()>! plol = lol; //FAIL: swift
 		plol.Add();
 		lol[0].Add(42);
 		return plol[0][0] == 42;
