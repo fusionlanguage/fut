@@ -9558,6 +9558,38 @@ export class GenBase extends FuVisitor
 		this.writeChar(41);
 	}
 
+	writeRegexLiteral(literal)
+	{
+		this.writeChar(47);
+		let escaped = false;
+		for (const c of literal.value) {
+			switch (c.codePointAt(0)) {
+			case 92:
+				if (!escaped) {
+					escaped = true;
+					continue;
+				}
+				escaped = false;
+				break;
+			case 34:
+			case 39:
+				escaped = false;
+				break;
+			case 47:
+				escaped = true;
+				break;
+			default:
+				break;
+			}
+			if (escaped) {
+				this.writeChar(92);
+				escaped = false;
+			}
+			this.writeChar(c.codePointAt(0));
+		}
+		this.writeChar(47);
+	}
+
 	getRegexOptions(args)
 	{
 		let expr = args.at(-1);
@@ -22971,34 +23003,7 @@ export class GenJsNoModule extends GenBase
 		let pattern = args[argIndex];
 		let literal;
 		if ((literal = pattern) instanceof FuLiteralString) {
-			this.writeChar(47);
-			let escaped = false;
-			for (const c of literal.value) {
-				switch (c.codePointAt(0)) {
-				case 92:
-					if (!escaped) {
-						escaped = true;
-						continue;
-					}
-					escaped = false;
-					break;
-				case 34:
-				case 39:
-					escaped = false;
-					break;
-				case 47:
-					escaped = true;
-					break;
-				default:
-					break;
-				}
-				if (escaped) {
-					this.writeChar(92);
-					escaped = false;
-				}
-				this.writeChar(c.codePointAt(0));
-			}
-			this.writeChar(47);
+			this.writeRegexLiteral(literal);
 			this.writeRegexOptions(args, "", "", "", "i", "m", "s");
 		}
 		else {
@@ -25255,6 +25260,23 @@ export class GenSwift extends GenPySwift
 		return true;
 	}
 
+	#writeNewRegex(args, argIndex)
+	{
+		let pattern = args[argIndex];
+		let literal;
+		if ((literal = pattern) instanceof FuLiteralString) {
+			this.writeChar(35);
+			this.writeRegexLiteral(literal);
+			this.writeChar(35);
+		}
+		else {
+			this.write("try Regex(");
+			this.#writeUnwrapped(pattern, FuPriority.ARGUMENT, false);
+			this.writeChar(41);
+		}
+		this.writeRegexOptions(args, "", "", "", ".ignoresCase()", ".anchorsMatchLineEndings()", ".dotMatchesNewlines()");
+	}
+
 	#writeJsonElementIs(obj, name, parent)
 	{
 		if (parent > FuPriority.EQUALITY)
@@ -25698,6 +25720,19 @@ export class GenSwift extends GenPySwift
 		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
 			this.include("Foundation");
 			this.write("Int64(Date.now.timeIntervalSince1970 * 1000)");
+			break;
+		case FuId.REGEX_COMPILE:
+			this.#writeNewRegex(args, 0);
+			break;
+		case FuId.REGEX_IS_MATCH_STR:
+			this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
+			this.write(".contains(");
+			this.#writeNewRegex(args, 1);
+			this.writeChar(41);
+			break;
+		case FuId.REGEX_IS_MATCH_REGEX:
+			this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
+			this.writeCall(".contains", obj);
 			break;
 		case FuId.JSON_ELEMENT_PARSE:
 			this.include("Foundation");
@@ -26507,6 +26542,10 @@ export class GenSwift extends GenPySwift
 			this.visitLiteralLong(BigInt(i), FuPriority.ARGUMENT);
 		}
 		this.writeCharLine(41);
+	}
+
+	writeRegexOptionsEnum(program)
+	{
 	}
 
 	writeEnum(enu)

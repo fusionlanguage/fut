@@ -2627,6 +2627,7 @@ protected:
 	void writeDictionaryAdd(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent);
 	void writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * args);
+	void writeRegexLiteral(const FuLiteralString * literal);
 	RegexOptions getRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args) const;
 	bool writeRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args, std::string_view prefix, std::string_view separator, std::string_view suffix, std::string_view i, std::string_view m, std::string_view s);
 	virtual void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) = 0;
@@ -3640,6 +3641,7 @@ protected:
 	void writeResultVar() override;
 	void writeException() override;
 	void writeParameter(const FuVar * param) override;
+	void writeRegexOptionsEnum(const FuProgram * program) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
@@ -3688,6 +3690,7 @@ private:
 	void writeToTextWriter(const FuExpr * obj);
 	void writeUnicodeScalar(const FuExpr * expr);
 	bool addVar(std::string_view name);
+	void writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	void writeDefaultValue(const FuType * type);
 	void writeEnumFlagsAnd(const FuExpr * left, std::string_view method, std::string_view notMethod, const FuExpr * right);

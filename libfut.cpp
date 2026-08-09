@@ -9704,6 +9704,38 @@ void GenBase::writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * ar
 	writeChar(')');
 }
 
+void GenBase::writeRegexLiteral(const FuLiteralString * literal)
+{
+	writeChar('/');
+	bool escaped = false;
+	for (int c : literal->value) {
+		switch (c) {
+		case '\\':
+			if (!escaped) {
+				escaped = true;
+				continue;
+			}
+			escaped = false;
+			break;
+		case '"':
+		case '\'':
+			escaped = false;
+			break;
+		case '/':
+			escaped = true;
+			break;
+		default:
+			break;
+		}
+		if (escaped) {
+			writeChar('\\');
+			escaped = false;
+		}
+		writeChar(c);
+	}
+	writeChar('/');
+}
+
 RegexOptions GenBase::getRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args) const
 {
 	const FuExpr * expr = args->back().get();
@@ -22377,34 +22409,7 @@ void GenJsNoModule::writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * a
 {
 	const FuExpr * pattern = (*args)[argIndex].get();
 	if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>(pattern)) {
-		writeChar('/');
-		bool escaped = false;
-		for (int c : literal->value) {
-			switch (c) {
-			case '\\':
-				if (!escaped) {
-					escaped = true;
-					continue;
-				}
-				escaped = false;
-				break;
-			case '"':
-			case '\'':
-				escaped = false;
-				break;
-			case '/':
-				escaped = true;
-				break;
-			default:
-				break;
-			}
-			if (escaped) {
-				writeChar('\\');
-				escaped = false;
-			}
-			writeChar(c);
-		}
-		writeChar('/');
+		writeRegexLiteral(literal);
 		writeRegexOptions(args, "", "", "", "i", "m", "s");
 	}
 	else {
@@ -24517,6 +24522,22 @@ bool GenSwift::addVar(std::string_view name)
 	return true;
 }
 
+void GenSwift::writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex)
+{
+	const FuExpr * pattern = (*args)[argIndex].get();
+	if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>(pattern)) {
+		writeChar('#');
+		writeRegexLiteral(literal);
+		writeChar('#');
+	}
+	else {
+		write("try Regex(");
+		writeUnwrapped(pattern, FuPriority::argument, false);
+		writeChar(')');
+	}
+	writeRegexOptions(args, "", "", "", ".ignoresCase()", ".anchorsMatchLineEndings()", ".dotMatchesNewlines()");
+}
+
 void GenSwift::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent)
 {
 	if (parent > FuPriority::equality)
@@ -24964,6 +24985,19 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
 		include("Foundation");
 		write("Int64(Date.now.timeIntervalSince1970 * 1000)");
+		break;
+	case FuId::regexCompile:
+		writeNewRegex(args, 0);
+		break;
+	case FuId::regexIsMatchStr:
+		writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
+		write(".contains(");
+		writeNewRegex(args, 1);
+		writeChar(')');
+		break;
+	case FuId::regexIsMatchRegex:
+		writeUnwrapped((*args)[0].get(), FuPriority::primary, true);
+		writeCall(".contains", obj);
 		break;
 	case FuId::jsonElementParse:
 		include("Foundation");
@@ -25755,6 +25789,10 @@ void GenSwift::visitEnumValue(const FuConst * konst, const FuConst * previous)
 		visitLiteralLong(i, FuPriority::argument);
 	}
 	writeCharLine(')');
+}
+
+void GenSwift::writeRegexOptionsEnum(const FuProgram * program)
+{
 }
 
 void GenSwift::writeEnum(const FuEnum * enu)

@@ -3,7 +3,7 @@ public class Test
 	public static bool Run()
 	{
 		string s = "123";
-		return Regex.IsMatch(s, "^\\d+$") //FAIL: swift TODO; cl
+		return Regex.IsMatch(s, "^\\d+$") //FAIL: cl
 			&& Regex.IsMatch(s, "3")
 			&& !Regex.IsMatch(s, "x", RegexOptions.None)
 			&& Regex.IsMatch("1/\\2", "^\\d/\\\\\\d$")

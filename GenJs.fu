@@ -496,34 +496,7 @@ public class GenJsNoModule : GenBase
 	{
 		FuExpr pattern = args[argIndex];
 		if (pattern is FuLiteralString literal) {
-			WriteChar('/');
-			bool escaped = false;
-			foreach (int c in literal.Value) {
-				switch (c) {
-				case '\\':
-					if (!escaped) {
-						escaped = true;
-						continue;
-					}
-					escaped = false;
-					break;
-				case '"':
-				case '\'':
-					escaped = false;
-					break;
-				case '/':
-					escaped = true;
-					break;
-				default:
-					break;
-				}
-				if (escaped) {
-					WriteChar('\\');
-					escaped = false;
-				}
-				WriteChar(c);
-			}
-			WriteChar('/');
+			WriteRegexLiteral(literal);
 			WriteRegexOptions(args, "", "", "", "i", "m", "s");
 		}
 		else {

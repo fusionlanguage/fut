@@ -9084,6 +9084,38 @@ namespace Fusion
 			WriteChar(')');
 		}
 
+		protected void WriteRegexLiteral(FuLiteralString literal)
+		{
+			WriteChar('/');
+			bool escaped = false;
+			foreach (int c in literal.Value) {
+				switch (c) {
+				case '\\':
+					if (!escaped) {
+						escaped = true;
+						continue;
+					}
+					escaped = false;
+					break;
+				case '"':
+				case '\'':
+					escaped = false;
+					break;
+				case '/':
+					escaped = true;
+					break;
+				default:
+					break;
+				}
+				if (escaped) {
+					WriteChar('\\');
+					escaped = false;
+				}
+				WriteChar(c);
+			}
+			WriteChar('/');
+		}
+
 		protected RegexOptions GetRegexOptions(List<FuExpr> args)
 		{
 			FuExpr expr = args[^1];
@@ -22275,34 +22307,7 @@ namespace Fusion
 		{
 			FuExpr pattern = args[argIndex];
 			if (pattern is FuLiteralString literal) {
-				WriteChar('/');
-				bool escaped = false;
-				foreach (int c in literal.Value) {
-					switch (c) {
-					case '\\':
-						if (!escaped) {
-							escaped = true;
-							continue;
-						}
-						escaped = false;
-						break;
-					case '"':
-					case '\'':
-						escaped = false;
-						break;
-					case '/':
-						escaped = true;
-						break;
-					default:
-						break;
-					}
-					if (escaped) {
-						WriteChar('\\');
-						escaped = false;
-					}
-					WriteChar(c);
-				}
-				WriteChar('/');
+				WriteRegexLiteral(literal);
 				WriteRegexOptions(args, "", "", "", "i", "m", "s");
 			}
 			else {
@@ -24546,6 +24551,22 @@ namespace Fusion
 			return true;
 		}
 
+		void WriteNewRegex(List<FuExpr> args, int argIndex)
+		{
+			FuExpr pattern = args[argIndex];
+			if (pattern is FuLiteralString literal) {
+				WriteChar('#');
+				WriteRegexLiteral(literal);
+				WriteChar('#');
+			}
+			else {
+				Write("try Regex(");
+				WriteUnwrapped(pattern, FuPriority.Argument, false);
+				WriteChar(')');
+			}
+			WriteRegexOptions(args, "", "", "", ".ignoresCase()", ".anchorsMatchLineEndings()", ".dotMatchesNewlines()");
+		}
+
 		void WriteJsonElementIs(FuExpr obj, string name, FuPriority parent)
 		{
 			if (parent > FuPriority.Equality)
@@ -24983,6 +25004,19 @@ namespace Fusion
 			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
 				Include("Foundation");
 				Write("Int64(Date.now.timeIntervalSince1970 * 1000)");
+				break;
+			case FuId.RegexCompile:
+				WriteNewRegex(args, 0);
+				break;
+			case FuId.RegexIsMatchStr:
+				WriteUnwrapped(args[0], FuPriority.Primary, true);
+				Write(".contains(");
+				WriteNewRegex(args, 1);
+				WriteChar(')');
+				break;
+			case FuId.RegexIsMatchRegex:
+				WriteUnwrapped(args[0], FuPriority.Primary, true);
+				WriteCall(".contains", obj!);
 				break;
 			case FuId.JsonElementParse:
 				Include("Foundation");
@@ -25785,6 +25819,10 @@ namespace Fusion
 				VisitLiteralLong(i, FuPriority.Argument);
 			}
 			WriteCharLine(')');
+		}
+
+		protected override void WriteRegexOptionsEnum(FuProgram program)
+		{
 		}
 
 		protected override void WriteEnum(FuEnum enu)
