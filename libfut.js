@@ -9556,11 +9556,11 @@ export class GenBase extends FuVisitor
 		this.writeChar(41);
 	}
 
-	writeRegexLiteral(literal)
+	writeRegexLiteral(s)
 	{
 		this.writeChar(47);
 		let escaped = false;
-		for (const c of literal.value) {
+		for (const c of s) {
 			switch (c.codePointAt(0)) {
 			case 92:
 				if (!escaped) {
@@ -23011,7 +23011,7 @@ export class GenJsNoModule extends GenBase
 		let pattern = args[argIndex];
 		let literal;
 		if ((literal = pattern) instanceof FuLiteralString) {
-			this.writeRegexLiteral(literal);
+			this.writeRegexLiteral(literal.value);
 			this.writeRegexOptions(args, "", "", "", "i", "m", "s");
 		}
 		else {
@@ -25274,7 +25274,7 @@ export class GenSwift extends GenPySwift
 		let literal;
 		if ((literal = pattern) instanceof FuLiteralString) {
 			this.writeChar(35);
-			this.writeRegexLiteral(literal);
+			this.writeRegexLiteral(literal.value);
 			this.writeChar(35);
 		}
 		else {

@@ -1413,11 +1413,11 @@ public abstract class GenBase : FuVisitor
 		WriteChar(')');
 	}
 
-	protected void WriteRegexLiteral!(FuLiteralString literal)
+	protected void WriteRegexLiteral!(string s)
 	{
 		WriteChar('/');
 		bool escaped = false;
-		foreach (int c in literal.Value) {
+		foreach (int c in s) {
 			switch (c) {
 			case '\\':
 				if (!escaped) {

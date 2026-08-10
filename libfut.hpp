@@ -2627,7 +2627,7 @@ protected:
 	void writeDictionaryAdd(const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeContains(const FuExpr * haystack, const FuExpr * needle, FuPriority parent);
 	void writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeRegexLiteral(const FuLiteralString * literal);
+	void writeRegexLiteral(std::string_view s);
 	RegexOptions getRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args) const;
 	bool writeRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args, std::string_view prefix, std::string_view separator, std::string_view suffix, std::string_view i, std::string_view m, std::string_view s);
 	virtual void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) = 0;

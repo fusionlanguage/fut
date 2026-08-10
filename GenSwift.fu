@@ -550,7 +550,7 @@ public class GenSwift : GenPySwift
 		FuExpr pattern = args[argIndex];
 		if (pattern is FuLiteralString literal) {
 			WriteChar('#');
-			WriteRegexLiteral(literal);
+			WriteRegexLiteral(literal.Value);
 			WriteChar('#');
 		}
 		else {

@@ -9704,11 +9704,11 @@ void GenBase::writeClampAsMinMax(const std::vector<std::shared_ptr<FuExpr>> * ar
 	writeChar(')');
 }
 
-void GenBase::writeRegexLiteral(const FuLiteralString * literal)
+void GenBase::writeRegexLiteral(std::string_view s)
 {
 	writeChar('/');
 	bool escaped = false;
-	for (int c : literal->value) {
+	for (int c : s) {
 		switch (c) {
 		case '\\':
 			if (!escaped) {
@@ -22419,7 +22419,7 @@ void GenJsNoModule::writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * a
 {
 	const FuExpr * pattern = (*args)[argIndex].get();
 	if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>(pattern)) {
-		writeRegexLiteral(literal);
+		writeRegexLiteral(literal->value);
 		writeRegexOptions(args, "", "", "", "i", "m", "s");
 	}
 	else {
@@ -24537,7 +24537,7 @@ void GenSwift::writeNewRegex(const std::vector<std::shared_ptr<FuExpr>> * args, 
 	const FuExpr * pattern = (*args)[argIndex].get();
 	if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>(pattern)) {
 		writeChar('#');
-		writeRegexLiteral(literal);
+		writeRegexLiteral(literal->value);
 		writeChar('#');
 	}
 	else {

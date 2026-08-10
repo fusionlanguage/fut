@@ -9082,11 +9082,11 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		protected void WriteRegexLiteral(FuLiteralString literal)
+		protected void WriteRegexLiteral(string s)
 		{
 			WriteChar('/');
 			bool escaped = false;
-			foreach (int c in literal.Value) {
+			foreach (int c in s) {
 				switch (c) {
 				case '\\':
 					if (!escaped) {
@@ -22312,7 +22312,7 @@ namespace Fusion
 		{
 			FuExpr pattern = args[argIndex];
 			if (pattern is FuLiteralString literal) {
-				WriteRegexLiteral(literal);
+				WriteRegexLiteral(literal.Value);
 				WriteRegexOptions(args, "", "", "", "i", "m", "s");
 			}
 			else {
@@ -24561,7 +24561,7 @@ namespace Fusion
 			FuExpr pattern = args[argIndex];
 			if (pattern is FuLiteralString literal) {
 				WriteChar('#');
-				WriteRegexLiteral(literal);
+				WriteRegexLiteral(literal.Value);
 				WriteChar('#');
 			}
 			else {

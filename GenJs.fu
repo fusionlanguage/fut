@@ -496,7 +496,7 @@ public class GenJsNoModule : GenBase
 	{
 		FuExpr pattern = args[argIndex];
 		if (pattern is FuLiteralString literal) {
-			WriteRegexLiteral(literal);
+			WriteRegexLiteral(literal.Value);
 			WriteRegexOptions(args, "", "", "", "i", "m", "s");
 		}
 		else {
