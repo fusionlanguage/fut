@@ -3170,9 +3170,10 @@ private:
 	void writeStringMethod(const FuExpr * obj, std::string_view name, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeAllAnyContains(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeCollectionMethod(const FuExpr * obj, std::string_view name, const std::vector<std::shared_ptr<FuExpr>> * args);
-	void writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	void writeWriteArgument(const FuExpr * expr);
 	void writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine);
+	static bool isStringPtrNotLiteral(const FuExpr * expr);
+	void writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex);
 	void writeRegexArgument(const FuExpr * expr);
 	void writeMathClampMaxMin(const FuType * type, std::string_view function, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeMatchProperty(const FuSymbolReference * expr, std::string_view name);

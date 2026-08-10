@@ -15738,15 +15738,6 @@ namespace Fusion
 			WriteChar(')');
 		}
 
-		void WriteRegex(List<FuExpr> args, int argIndex)
-		{
-			Include("regex");
-			Write("std::regex(");
-			args[argIndex].Accept(this, FuPriority.Argument);
-			WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
-			WriteChar(')');
-		}
-
 		void WriteWriteArgument(FuExpr expr)
 		{
 			Write(" << ");
@@ -15881,6 +15872,23 @@ namespace Fusion
 			}
 			if (newLine)
 				Write(" << '\\n'");
+		}
+
+		static bool IsStringPtrNotLiteral(FuExpr expr) => expr.Type!.Id == FuId.StringPtrType && !(expr is FuLiteralString);
+
+		void WriteRegex(List<FuExpr> args, int argIndex)
+		{
+			Include("regex");
+			Write("std::regex(");
+			FuExpr pattern = args[argIndex];
+			if (IsStringPtrNotLiteral(pattern)) {
+				WritePostfix(pattern, ".data(), ");
+				WritePostfix(pattern, ".size()");
+			}
+			else
+				pattern.Accept(this, FuPriority.Argument);
+			WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+			WriteChar(')');
 		}
 
 		void WriteRegexArgument(FuExpr expr)
@@ -16383,7 +16391,7 @@ namespace Fusion
 				Write("std::regex_search(");
 				if (args[0].Type!.Id == FuId.StringStorageType)
 					WritePostfix(args[0], ".c_str()");
-				else if (args[0].Type!.Id == FuId.StringPtrType && !(args[0] is FuLiteral))
+				else if (IsStringPtrNotLiteral(args[0]))
 					WriteBeginEnd(args[0]);
 				else
 					args[0].Accept(this, FuPriority.Argument);
@@ -16845,9 +16853,8 @@ namespace Fusion
 
 		protected override void WriteStronglyCoerced(FuType type, FuExpr expr)
 		{
-			if (type.Id == FuId.StringStorageType && expr.Type!.Id == FuId.StringPtrType && !(expr is FuLiteral)) {
+			if (type.Id == FuId.StringStorageType && IsStringPtrNotLiteral(expr))
 				WriteCall("std::string", expr);
-			}
 			else {
 				FuCallExpr? call = IsStringSubstring(expr);
 				if (call != null && type.Id == FuId.StringStorageType && (IsUTF8GetString(call!) ? call!.Arguments[0] : call!.Method.Left)!.Type!.Id != FuId.StringStorageType) {
@@ -16955,7 +16962,7 @@ namespace Fusion
 		{
 			if (expr == null)
 				Write("\"\"");
-			else if (expr!.Type!.Id == FuId.StringPtrType && !(expr is FuLiteralString))
+			else if (IsStringPtrNotLiteral(expr!))
 				WriteCall("std::string", expr!);
 			else
 				expr!.Accept(this, FuPriority.Argument);

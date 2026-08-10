@@ -16139,15 +16139,6 @@ void GenCpp::writeCollectionMethod(const FuExpr * obj, std::string_view name, co
 	writeChar(')');
 }
 
-void GenCpp::writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex)
-{
-	include("regex");
-	write("std::regex(");
-	(*args)[argIndex]->accept(this, FuPriority::argument);
-	writeRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
-	writeChar(')');
-}
-
 void GenCpp::writeWriteArgument(const FuExpr * expr)
 {
 	write(" << ");
@@ -16285,6 +16276,26 @@ void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool 
 	}
 	if (newLine)
 		write(" << '\\n'");
+}
+
+bool GenCpp::isStringPtrNotLiteral(const FuExpr * expr)
+{
+	return expr->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteralString *>(expr);
+}
+
+void GenCpp::writeRegex(const std::vector<std::shared_ptr<FuExpr>> * args, int argIndex)
+{
+	include("regex");
+	write("std::regex(");
+	const FuExpr * pattern = (*args)[argIndex].get();
+	if (isStringPtrNotLiteral(pattern)) {
+		writePostfix(pattern, ".data(), ");
+		writePostfix(pattern, ".size()");
+	}
+	else
+		pattern->accept(this, FuPriority::argument);
+	writeRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+	writeChar(')');
 }
 
 void GenCpp::writeRegexArgument(const FuExpr * expr)
@@ -16793,7 +16804,7 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		write("std::regex_search(");
 		if ((*args)[0]->type->id == FuId::stringStorageType)
 			writePostfix((*args)[0].get(), ".c_str()");
-		else if ((*args)[0]->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteral *>((*args)[0].get()))
+		else if (isStringPtrNotLiteral((*args)[0].get()))
 			writeBeginEnd((*args)[0].get());
 		else
 			(*args)[0]->accept(this, FuPriority::argument);
@@ -17255,9 +17266,8 @@ void GenCpp::visitLock(const FuLock * statement)
 
 void GenCpp::writeStronglyCoerced(const FuType * type, const FuExpr * expr)
 {
-	if (type->id == FuId::stringStorageType && expr->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteral *>(expr)) {
+	if (type->id == FuId::stringStorageType && isStringPtrNotLiteral(expr))
 		writeCall("std::string", expr);
-	}
 	else {
 		const FuCallExpr * call = isStringSubstring(expr);
 		if (call != nullptr && type->id == FuId::stringStorageType && (isUTF8GetString(call) ? call->arguments[0] : call->method->left)->type->id != FuId::stringStorageType) {
@@ -17359,7 +17369,7 @@ void GenCpp::writeThrowMessage(const FuExpr * expr)
 {
 	if (expr == nullptr)
 		write("\"\"");
-	else if (expr->type->id == FuId::stringPtrType && !dynamic_cast<const FuLiteralString *>(expr))
+	else if (isStringPtrNotLiteral(expr))
 		writeCall("std::string", expr);
 	else
 		expr->accept(this, FuPriority::argument);

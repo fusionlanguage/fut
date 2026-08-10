@@ -16303,15 +16303,6 @@ export class GenCpp extends GenCCpp
 		this.writeChar(41);
 	}
 
-	#writeRegex(args, argIndex)
-	{
-		this.include("regex");
-		this.write("std::regex(");
-		args[argIndex].accept(this, FuPriority.ARGUMENT);
-		this.writeRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
-		this.writeChar(41);
-	}
-
 	#writeWriteArgument(expr)
 	{
 		this.write(" << ");
@@ -16450,6 +16441,26 @@ export class GenCpp extends GenCCpp
 		}
 		if (newLine)
 			this.write(" << '\\n'");
+	}
+
+	static #isStringPtrNotLiteral(expr)
+	{
+		return expr.type.id == FuId.STRING_PTR_TYPE && !(expr instanceof FuLiteralString);
+	}
+
+	#writeRegex(args, argIndex)
+	{
+		this.include("regex");
+		this.write("std::regex(");
+		let pattern = args[argIndex];
+		if (GenCpp.#isStringPtrNotLiteral(pattern)) {
+			this.writePostfix(pattern, ".data(), ");
+			this.writePostfix(pattern, ".size()");
+		}
+		else
+			pattern.accept(this, FuPriority.ARGUMENT);
+		this.writeRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+		this.writeChar(41);
 	}
 
 	#writeRegexArgument(expr)
@@ -16954,7 +16965,7 @@ export class GenCpp extends GenCCpp
 			this.write("std::regex_search(");
 			if (args[0].type.id == FuId.STRING_STORAGE_TYPE)
 				this.writePostfix(args[0], ".c_str()");
-			else if (args[0].type.id == FuId.STRING_PTR_TYPE && !(args[0] instanceof FuLiteral))
+			else if (GenCpp.#isStringPtrNotLiteral(args[0]))
 				this.#writeBeginEnd(args[0]);
 			else
 				args[0].accept(this, FuPriority.ARGUMENT);
@@ -17435,9 +17446,8 @@ export class GenCpp extends GenCCpp
 
 	writeStronglyCoerced(type, expr)
 	{
-		if (type.id == FuId.STRING_STORAGE_TYPE && expr.type.id == FuId.STRING_PTR_TYPE && !(expr instanceof FuLiteral)) {
+		if (type.id == FuId.STRING_STORAGE_TYPE && GenCpp.#isStringPtrNotLiteral(expr))
 			this.writeCall("std::string", expr);
-		}
 		else {
 			let call = GenCpp.isStringSubstring(expr);
 			if (call != null && type.id == FuId.STRING_STORAGE_TYPE && (GenCpp.isUTF8GetString(call) ? call.arguments_[0] : call.method.left).type.id != FuId.STRING_STORAGE_TYPE) {
@@ -17552,7 +17562,7 @@ export class GenCpp extends GenCCpp
 	{
 		if (expr == null)
 			this.write("\"\"");
-		else if (expr.type.id == FuId.STRING_PTR_TYPE && !(expr instanceof FuLiteralString))
+		else if (GenCpp.#isStringPtrNotLiteral(expr))
 			this.writeCall("std::string", expr);
 		else
 			expr.accept(this, FuPriority.ARGUMENT);

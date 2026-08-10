@@ -650,15 +650,6 @@ public class GenCpp : GenCCpp
 		WriteChar(')');
 	}
 
-	void WriteRegex!(List<FuExpr#> args, int argIndex)
-	{
-		Include("regex");
-		Write("std::regex(");
-		args[argIndex].Accept(this, FuPriority.Argument);
-		WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
-		WriteChar(')');
-	}
-
 	void WriteWriteArgument!(FuExpr expr)
 	{
 		Write(" << ");
@@ -798,6 +789,23 @@ public class GenCpp : GenCCpp
 		}
 		if (newLine)
 			Write(" << '\\n'");
+	}
+
+	static bool IsStringPtrNotLiteral(FuExpr expr) => expr.Type.Id == FuId.StringPtrType && !(expr is FuLiteralString);
+
+	void WriteRegex!(List<FuExpr#> args, int argIndex)
+	{
+		Include("regex");
+		Write("std::regex(");
+		FuExpr pattern = args[argIndex];
+		if (IsStringPtrNotLiteral(pattern)) {
+			WritePostfix(pattern, ".data(), ");
+			WritePostfix(pattern, ".size()"); // FIXME: side effect
+		}
+		else
+			pattern.Accept(this, FuPriority.Argument);
+		WriteRegexOptions(args, ", std::regex::ECMAScript | ", " | ", "", "std::regex::icase", "std::regex::multiline", "std::regex::NOT_SUPPORTED_singleline");
+		WriteChar(')');
 	}
 
 	void WriteRegexArgument!(FuExpr expr)
@@ -1300,7 +1308,7 @@ public class GenCpp : GenCCpp
 			Write("std::regex_search(");
 			if (args[0].Type.Id == FuId.StringStorageType)
 				WritePostfix(args[0], ".c_str()");
-			else if (args[0].Type.Id == FuId.StringPtrType && !(args[0] is FuLiteral))
+			else if (IsStringPtrNotLiteral(args[0]))
 				WriteBeginEnd(args[0]);
 			else
 				args[0].Accept(this, FuPriority.Argument);
@@ -1768,11 +1776,8 @@ public class GenCpp : GenCCpp
 	// Not needed for initialization or assignment.
 	protected override void WriteStronglyCoerced!(FuType type, FuExpr expr)
 	{
-		if (type.Id == FuId.StringStorageType
-		 && expr.Type.Id == FuId.StringPtrType
-		 && !(expr is FuLiteral)) {
+		if (type.Id == FuId.StringStorageType && IsStringPtrNotLiteral(expr))
 			WriteCall("std::string", expr);
-		}
 		else {
 			FuCallExpr? call = IsStringSubstring(expr);
 			if (call != null
@@ -1882,7 +1887,7 @@ public class GenCpp : GenCCpp
 	{
 		if (expr == null)
 			Write("\"\"");
-		else if (expr.Type.Id == FuId.StringPtrType && !(expr is FuLiteralString))
+		else if (IsStringPtrNotLiteral(expr))
 			WriteCall("std::string", expr);
 		else
 			expr.Accept(this, FuPriority.Argument);
