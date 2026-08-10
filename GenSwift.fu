@@ -1829,10 +1829,6 @@ public class GenSwift : GenPySwift
 		WriteCharLine(')');
 	}
 
-	protected override void WriteRegexOptionsEnum!(FuProgram program)
-	{
-	}
-
 	protected override void WriteEnum!(FuEnum enu)
 	{
 		WriteNewLine();

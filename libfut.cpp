@@ -6061,15 +6061,13 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 			if (!nearMember->isStatic() && (this->currentMethod == nullptr || this->currentMethod->isStatic()))
 				reportError(expr.get(), std::format("Cannot use instance member '{}' from static context", expr->name));
 		}
-		if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(resolved.get())) {
-			if (const FuVar *v = dynamic_cast<const FuVar *>(symbol->symbol)) {
-				if (FuFor *loop = dynamic_cast<FuFor *>(v->parent))
-					loop->isIndVarUsed = true;
-				else if (this->currentPureArguments.count(v) != 0)
-					return this->currentPureArguments.find(v)->second;
-			}
-			else if (symbol->symbol->id == FuId::regexOptionsEnum)
-				this->host->program->regexOptionsEnum = true;
+		const FuSymbolReference * symbol;
+		const FuVar * v;
+		if ((symbol = dynamic_cast<const FuSymbolReference *>(resolved.get())) && (v = dynamic_cast<const FuVar *>(symbol->symbol))) {
+			if (FuFor *loop = dynamic_cast<FuFor *>(v->parent))
+				loop->isIndVarUsed = true;
+			else if (this->currentPureArguments.count(v) != 0)
+				return this->currentPureArguments.find(v)->second;
 		}
 		return resolved;
 	}
@@ -7565,6 +7563,8 @@ std::shared_ptr<FuType> FuSema::toBaseType(FuExpr * expr, FuToken ptrModifier, b
 				type = this->host->program->system->stringNullablePtrType;
 				nullable = false;
 			}
+			else if (type->id == FuId::regexOptionsEnum)
+				this->host->program->regexOptionsEnum = true;
 			return expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this->poison;
 		}
 		return poisonError(expr, std::format("Type '{}' not found", symbol->name));
@@ -25799,10 +25799,6 @@ void GenSwift::visitEnumValue(const FuConst * konst, const FuConst * previous)
 		visitLiteralLong(i, FuPriority::argument);
 	}
 	writeCharLine(')');
-}
-
-void GenSwift::writeRegexOptionsEnum(const FuProgram * program)
-{
 }
 
 void GenSwift::writeEnum(const FuEnum * enu)

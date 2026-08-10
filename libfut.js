@@ -5885,17 +5885,13 @@ export class FuSema
 					this.#reportError(expr, `Cannot use instance member '${expr.name}' from static context`);
 			}
 			let symbol;
-			if ((symbol = resolved) instanceof FuSymbolReference) {
-				let v;
-				if ((v = symbol.symbol) instanceof FuVar) {
-					let loop;
-					if ((loop = v.parent) instanceof FuFor)
-						loop.isIndVarUsed = true;
-					else if (this.#currentPureArguments.hasOwnProperty(v))
-						return this.#currentPureArguments[v];
-				}
-				else if (symbol.symbol.id == FuId.REGEX_OPTIONS_ENUM)
-					this.#host.program.regexOptionsEnum = true;
+			let v;
+			if ((symbol = resolved) instanceof FuSymbolReference && (v = symbol.symbol) instanceof FuVar) {
+				let loop;
+				if ((loop = v.parent) instanceof FuFor)
+					loop.isIndVarUsed = true;
+				else if (this.#currentPureArguments.hasOwnProperty(v))
+					return this.#currentPureArguments[v];
 			}
 			return resolved;
 		}
@@ -7352,6 +7348,8 @@ export class FuSema
 					type = this.#host.program.system.stringNullablePtrType;
 					nullable = false;
 				}
+				else if (type.id == FuId.REGEX_OPTIONS_ENUM)
+					this.#host.program.regexOptionsEnum = true;
 				return this.#expectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.#poison;
 			}
 			return this.#poisonError(expr, `Type '${symbol.name}' not found`);
@@ -26552,10 +26550,6 @@ export class GenSwift extends GenPySwift
 			this.visitLiteralLong(BigInt(i), FuPriority.ARGUMENT);
 		}
 		this.writeCharLine(41);
-	}
-
-	writeRegexOptionsEnum(program)
-	{
 	}
 
 	writeEnum(enu)

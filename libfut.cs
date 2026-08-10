@@ -5584,15 +5584,11 @@ namespace Fusion
 					if (!nearMember.IsStatic() && (this.CurrentMethod == null || this.CurrentMethod!.IsStatic()))
 						ReportError(expr, $"Cannot use instance member '{expr.Name}' from static context");
 				}
-				if (resolved is FuSymbolReference symbol) {
-					if (symbol.Symbol is FuVar v) {
-						if (v.Parent is FuFor loop)
-							loop.IsIndVarUsed = true;
-						else if (this.CurrentPureArguments.ContainsKey(v))
-							return this.CurrentPureArguments[v];
-					}
-					else if (symbol.Symbol!.Id == FuId.RegexOptionsEnum)
-						this.Host.Program.RegexOptionsEnum = true;
+				if (resolved is FuSymbolReference symbol && symbol.Symbol is FuVar v) {
+					if (v.Parent is FuFor loop)
+						loop.IsIndVarUsed = true;
+					else if (this.CurrentPureArguments.ContainsKey(v))
+						return this.CurrentPureArguments[v];
 				}
 				return resolved;
 			}
@@ -6919,6 +6915,8 @@ namespace Fusion
 						type = this.Host.Program.System.StringNullablePtrType;
 						nullable = false;
 					}
+					else if (type.Id == FuId.RegexOptionsEnum)
+						this.Host.Program.RegexOptionsEnum = true;
 					return ExpectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.Poison;
 				}
 				return PoisonError(expr, $"Type '{symbol.Name}' not found");
@@ -25826,10 +25824,6 @@ namespace Fusion
 				VisitLiteralLong(i, FuPriority.Argument);
 			}
 			WriteCharLine(')');
-		}
-
-		protected override void WriteRegexOptionsEnum(FuProgram program)
-		{
 		}
 
 		protected override void WriteEnum(FuEnum enu)

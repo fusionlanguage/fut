@@ -252,15 +252,11 @@ public class FuSema
 				 && (this.CurrentMethod == null || this.CurrentMethod.IsStatic()))
 					ReportError(expr, $"Cannot use instance member '{expr.Name}' from static context");
 			}
-			if (resolved is FuSymbolReference symbol) {
-				if (symbol.Symbol is FuVar v) {
-					if (v.Parent is FuFor! loop)
-						loop.IsIndVarUsed = true;
-					else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
-						return this.CurrentPureArguments[v];
-				}
-				else if (symbol.Symbol.Id == FuId.RegexOptionsEnum)
-					this.Host.Program.RegexOptionsEnum = true;
+			if (resolved is FuSymbolReference symbol && symbol.Symbol is FuVar v) {
+				if (v.Parent is FuFor! loop)
+					loop.IsIndVarUsed = true;
+				else if (this.CurrentPureArguments.ContainsKey(v)) // TryGetValue
+					return this.CurrentPureArguments[v];
 			}
 			return resolved;
 		}
@@ -1649,6 +1645,8 @@ public class FuSema
 					type = this.Host.Program.System.StringNullablePtrType;
 					nullable = false;
 				}
+				else if (type.Id == FuId.RegexOptionsEnum)
+					this.Host.Program.RegexOptionsEnum = true;
 				return ExpectNoPtrModifier(expr, ptrModifier, nullable) ? type : this.Poison;
 			}
 			return PoisonError(expr, $"Type '{symbol.Name}' not found");

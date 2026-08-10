@@ -3642,7 +3642,6 @@ protected:
 	void writeResultVar() override;
 	void writeException() override;
 	void writeParameter(const FuVar * param) override;
-	void writeRegexOptionsEnum(const FuProgram * program) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;
