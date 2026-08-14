@@ -77,11 +77,11 @@ public class GenCpp : GenCCpp
 		Include("format");
 		Write("std::format(\"");
 		foreach (FuInterpolatedPart part in expr.Parts) {
-			WriteDoubling(part.Prefix, '{');
+			WriteDoublingBraces(part.Prefix);
 			WriteChar('{');
 			WritePyFormat(part);
 		}
-		WriteDoubling(expr.Suffix, '{');
+		WriteDoublingBraces(expr.Suffix);
 		WriteChar('"');
 		WriteInterpolatedStringArgs(expr);
 		WriteChar(')');

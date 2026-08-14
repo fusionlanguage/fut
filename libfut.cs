@@ -8205,6 +8205,15 @@ namespace Fusion
 			}
 		}
 
+		protected void WriteDoublingBraces(string s)
+		{
+			foreach (int c in s) {
+				if (c == '{' || c == '}')
+					WriteChar(c);
+				WriteChar(c);
+			}
+		}
+
 		protected virtual void WritePrintfWidth(FuInterpolatedPart part)
 		{
 			if (part.WidthExpr != null)
@@ -15168,11 +15177,11 @@ namespace Fusion
 			Include("format");
 			Write("std::format(\"");
 			foreach (FuInterpolatedPart part in expr.Parts) {
-				WriteDoubling(part.Prefix, '{');
+				WriteDoublingBraces(part.Prefix);
 				WriteChar('{');
 				WritePyFormat(part);
 			}
-			WriteDoubling(expr.Suffix, '{');
+			WriteDoublingBraces(expr.Suffix);
 			WriteChar('"');
 			WriteInterpolatedStringArgs(expr);
 			WriteChar(')');
@@ -17760,7 +17769,7 @@ namespace Fusion
 			}
 			Write("$\"");
 			foreach (FuInterpolatedPart part in expr.Parts) {
-				WriteDoubling(part.Prefix, '{');
+				WriteDoublingBraces(part.Prefix);
 				WriteChar('{');
 				if (part.Format == 'U' || part.Format == 'u')
 					WriteCall("char.ConvertFromUtf32", part.Argument);
@@ -17778,7 +17787,7 @@ namespace Fusion
 				}
 				WriteChar('}');
 			}
-			WriteDoubling(expr.Suffix, '{');
+			WriteDoublingBraces(expr.Suffix);
 			WriteChar('"');
 		}
 
@@ -26630,12 +26639,12 @@ namespace Fusion
 		{
 			Write("f\"");
 			foreach (FuInterpolatedPart part in expr.Parts) {
-				WriteDoubling(part.Prefix, '{');
+				WriteDoublingBraces(part.Prefix);
 				WriteChar('{');
 				part.Argument.Accept(this, FuPriority.Argument);
 				WritePyFormat(part);
 			}
-			WriteDoubling(expr.Suffix, '{');
+			WriteDoublingBraces(expr.Suffix);
 			WriteChar('"');
 		}
 

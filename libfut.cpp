@@ -8823,6 +8823,15 @@ void GenBase::writeDoubling(std::string_view s, int doubled)
 	}
 }
 
+void GenBase::writeDoublingBraces(std::string_view s)
+{
+	for (int c : s) {
+		if (c == '{' || c == '}')
+			writeChar(c);
+		writeChar(c);
+	}
+}
+
 void GenBase::writePrintfWidth(const FuInterpolatedPart * part)
 {
 	if (part->widthExpr != nullptr)
@@ -15666,11 +15675,11 @@ void GenCpp::visitInterpolatedString(const FuInterpolatedString * expr, FuPriori
 	include("format");
 	write("std::format(\"");
 	for (const FuInterpolatedPart &part : expr->parts) {
-		writeDoubling(part.prefix, '{');
+		writeDoublingBraces(part.prefix);
 		writeChar('{');
 		writePyFormat(&part);
 	}
-	writeDoubling(expr->suffix, '{');
+	writeDoublingBraces(expr->suffix);
 	writeChar('"');
 	writeInterpolatedStringArgs(expr);
 	writeChar(')');
@@ -18121,7 +18130,7 @@ void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 	}
 	write("$\"");
 	for (const FuInterpolatedPart &part : expr->parts) {
-		writeDoubling(part.prefix, '{');
+		writeDoublingBraces(part.prefix);
 		writeChar('{');
 		if (part.format == 'U' || part.format == 'u')
 			writeCall("char.ConvertFromUtf32", part.argument.get());
@@ -18139,7 +18148,7 @@ void GenCs::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 		}
 		writeChar('}');
 	}
-	writeDoubling(expr->suffix, '{');
+	writeDoublingBraces(expr->suffix);
 	writeChar('"');
 }
 
@@ -26510,12 +26519,12 @@ void GenPy::visitInterpolatedString(const FuInterpolatedString * expr, FuPriorit
 {
 	write("f\"");
 	for (const FuInterpolatedPart &part : expr->parts) {
-		writeDoubling(part.prefix, '{');
+		writeDoublingBraces(part.prefix);
 		writeChar('{');
 		part.argument->accept(this, FuPriority::argument);
 		writePyFormat(&part);
 	}
-	writeDoubling(expr->suffix, '{');
+	writeDoublingBraces(expr->suffix);
 	writeChar('"');
 }
 

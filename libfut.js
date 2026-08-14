@@ -8658,6 +8658,15 @@ export class GenBase extends FuVisitor
 		}
 	}
 
+	writeDoublingBraces(s)
+	{
+		for (const c of s) {
+			if (c.codePointAt(0) == 123 || c.codePointAt(0) == 125)
+				this.writeChar(c.codePointAt(0));
+			this.writeChar(c.codePointAt(0));
+		}
+	}
+
 	writePrintfWidth(part)
 	{
 		if (part.widthExpr != null)
@@ -15731,11 +15740,11 @@ export class GenCpp extends GenCCpp
 		this.include("format");
 		this.write("std::format(\"");
 		for (const part of expr.parts) {
-			this.writeDoubling(part.prefix, 123);
+			this.writeDoublingBraces(part.prefix);
 			this.writeChar(123);
 			this.writePyFormat(part);
 		}
-		this.writeDoubling(expr.suffix, 123);
+		this.writeDoublingBraces(expr.suffix);
 		this.writeChar(34);
 		this.writeInterpolatedStringArgs(expr);
 		this.writeChar(41);
@@ -18373,7 +18382,7 @@ export class GenCs extends GenTyped
 		}
 		this.write("$\"");
 		for (const part of expr.parts) {
-			this.writeDoubling(part.prefix, 123);
+			this.writeDoublingBraces(part.prefix);
 			this.writeChar(123);
 			if (part.format == 85 || part.format == 117)
 				this.writeCall("char.ConvertFromUtf32", part.argument);
@@ -18391,7 +18400,7 @@ export class GenCs extends GenTyped
 			}
 			this.writeChar(125);
 		}
-		this.writeDoubling(expr.suffix, 123);
+		this.writeDoublingBraces(expr.suffix);
 		this.writeChar(34);
 	}
 
@@ -27356,12 +27365,12 @@ export class GenPy extends GenPySwift
 	{
 		this.write("f\"");
 		for (const part of expr.parts) {
-			this.writeDoubling(part.prefix, 123);
+			this.writeDoublingBraces(part.prefix);
 			this.writeChar(123);
 			part.argument.accept(this, FuPriority.ARGUMENT);
 			this.writePyFormat(part);
 		}
-		this.writeDoubling(expr.suffix, 123);
+		this.writeDoublingBraces(expr.suffix);
 		this.writeChar(34);
 	}
 

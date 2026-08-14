@@ -2,7 +2,8 @@ public static class Test
 {
 	public static bool Run()
 	{
-		const int answer = 42;
-		return "The answer " + $"is {answer}" == "The answer is 42";
+		int answer = 42;
+		return "The answer " + $"is {answer}" == "The answer is 42"
+			&& "{\"answer\":" + $"{answer}" + "}" == "{\"answer\":42}";
 	}
 }

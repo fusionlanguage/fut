@@ -434,12 +434,12 @@ public class GenPy : GenPySwift
 	{
 		Write("f\"");
 		foreach (FuInterpolatedPart part in expr.Parts) {
-			WriteDoubling(part.Prefix, '{');
+			WriteDoublingBraces(part.Prefix);
 			WriteChar('{');
 			part.Argument.Accept(this, FuPriority.Argument);
 			WritePyFormat(part);
 		}
-		WriteDoubling(expr.Suffix, '{');
+		WriteDoublingBraces(expr.Suffix);
 		WriteChar('"');
 	}
 
