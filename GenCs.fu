@@ -354,7 +354,7 @@ public class GenCs : GenTyped
 		}
 		Write("$\"");
 		foreach (FuInterpolatedPart part in expr.Parts) {
-			WriteDoubling(part.Prefix, '{');
+			WriteDoublingBraces(part.Prefix);
 			WriteChar('{');
 			if (part.Format == 'U' || part.Format == 'u')
 				WriteCall("char.ConvertFromUtf32", part.Argument);
@@ -372,7 +372,7 @@ public class GenCs : GenTyped
 			}
 			WriteChar('}');
 		}
-		WriteDoubling(expr.Suffix, '{');
+		WriteDoublingBraces(expr.Suffix);
 		WriteChar('"');
 	}
 

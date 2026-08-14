@@ -2548,6 +2548,7 @@ protected:
 	virtual void writeTypeAndName(const FuNamedValue * value) = 0;
 	virtual void writeLocalName(const FuSymbol * symbol, FuPriority parent);
 	void writeDoubling(std::string_view s, int doubled);
+	void writeDoublingBraces(std::string_view s);
 	virtual void writePrintfWidth(const FuInterpolatedPart * part);
 	virtual void writePrintfPartFormat(const FuInterpolatedPart * part);
 	void writePrintfFormat(const FuInterpolatedString * expr);

@@ -530,6 +530,15 @@ public abstract class GenBase : FuVisitor
 		}
 	}
 
+	protected void WriteDoublingBraces!(string s)
+	{
+		foreach (int c in s) {
+			if (c == '{' || c == '}')
+				WriteChar(c);
+			WriteChar(c);
+		}
+	}
+
 	protected virtual void WritePrintfWidth!(FuInterpolatedPart part)
 	{
 		if (part.WidthExpr != null)
