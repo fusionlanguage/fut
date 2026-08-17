@@ -487,7 +487,7 @@ namespace Fusion
 						ReadChar();
 						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset);
 						if (interpolated)
-							this.StringValue = this.StringValue.Replace("{{", "{");
+							this.StringValue = this.StringValue.Replace("{{", "{").Replace("}}", "}");
 					}
 					return FuToken.LiteralString;
 				case '{':
@@ -497,7 +497,7 @@ namespace Fusion
 						if (EatChar('{'))
 							break;
 						if (!this.SkippingUnmet) {
-							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{");
+							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{").Replace("}}", "}");
 							return FuToken.InterpolatedString;
 						}
 						for (;;) {

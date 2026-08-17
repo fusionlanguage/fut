@@ -358,7 +358,7 @@ FuToken FuLexer::readString(bool interpolated)
 				readChar();
 				this->stringValue = std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset);
 				if (interpolated)
-					this->stringValue = FuString_Replace(this->stringValue, "{{", "{");
+					this->stringValue = FuString_Replace(FuString_Replace(this->stringValue, "{{", "{"), "}}", "}");
 			}
 			return FuToken::literalString;
 		case '{':
@@ -368,7 +368,7 @@ FuToken FuLexer::readString(bool interpolated)
 				if (eatChar('{'))
 					break;
 				if (!this->skippingUnmet) {
-					this->stringValue = FuString_Replace(std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset), "{{", "{");
+					this->stringValue = FuString_Replace(FuString_Replace(std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset), "{{", "{"), "}}", "}");
 					return FuToken::interpolatedString;
 				}
 				for (;;) {

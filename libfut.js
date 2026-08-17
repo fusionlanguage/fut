@@ -466,7 +466,7 @@ export class FuLexer
 					this.readChar();
 					this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset));
 					if (interpolated)
-						this.stringValue = this.stringValue.replaceAll("{{", "{");
+						this.stringValue = this.stringValue.replaceAll("{{", "{").replaceAll("}}", "}");
 				}
 				return FuToken.LITERAL_STRING;
 			case 123:
@@ -476,7 +476,7 @@ export class FuLexer
 					if (this.#eatChar(123))
 						break;
 					if (!this.#skippingUnmet) {
-						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset)).replaceAll("{{", "{");
+						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset)).replaceAll("{{", "{").replaceAll("}}", "}");
 						return FuToken.INTERPOLATED_STRING;
 					}
 					for (;;) {
