@@ -4,6 +4,10 @@ on:
     paths-ignore:
       - .travis.yml
       - '**.md'
+  pull_request:
+    paths-ignore:
+      - .travis.yml
+      - '**.md'
 jobs:
   c-cl-error:
     runs-on: ubuntu-24.04
