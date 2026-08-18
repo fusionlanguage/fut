@@ -1223,7 +1223,7 @@ public class GenCpp : GenCCpp
 			break;
 		case FuId.StringWriterToString:
 			StartMethodCall(obj);
-			Write("str()"); // TODO: C++20 view()
+			Write("view()");
 			break;
 		case FuId.BitConverterInt32BitsToSingle:
 		case FuId.BitConverterInt64BitsToDouble:

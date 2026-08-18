@@ -8624,7 +8624,7 @@ void GenBase::openStringWriter()
 
 void GenBase::closeStringWriter()
 {
-	*this->writer << this->stringWriter.str();
+	*this->writer << this->stringWriter.view();
 	this->stringWriter.str(std::string());
 }
 
@@ -16771,7 +16771,7 @@ void GenCpp::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMeth
 		break;
 	case FuId::stringWriterToString:
 		startMethodCall(obj);
-		write("str()");
+		write("view()");
 		break;
 	case FuId::bitConverterInt32BitsToSingle:
 	case FuId::bitConverterInt64BitsToDouble:

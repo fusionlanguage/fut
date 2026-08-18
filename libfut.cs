@@ -16356,7 +16356,7 @@ namespace Fusion
 				break;
 			case FuId.StringWriterToString:
 				StartMethodCall(obj!);
-				Write("str()");
+				Write("view()");
 				break;
 			case FuId.BitConverterInt32BitsToSingle:
 			case FuId.BitConverterInt64BitsToDouble:

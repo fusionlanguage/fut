@@ -16930,7 +16930,7 @@ export class GenCpp extends GenCCpp
 			break;
 		case FuId.STRING_WRITER_TO_STRING:
 			this.#startMethodCall(obj);
-			this.write("str()");
+			this.write("view()");
 			break;
 		case FuId.BIT_CONVERTER_INT32_BITS_TO_SINGLE:
 		case FuId.BIT_CONVERTER_INT64_BITS_TO_DOUBLE:
