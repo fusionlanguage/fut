@@ -6886,10 +6886,10 @@ std::shared_ptr<FuExpr> FuSema::visitBinaryExpr(std::shared_ptr<FuBinaryExpr> ex
 			}
 			else if (dynamic_cast<const FuStringType *>(left->type.get())) {
 				coerce(right.get(), this->host->program->system->stringPtrType.get());
-				const FuLiteral * leftLiteral;
-				const FuLiteral * rightLiteral;
-				if ((leftLiteral = dynamic_cast<const FuLiteral *>(left.get())) && (rightLiteral = dynamic_cast<const FuLiteral *>(right.get())))
-					return this->host->program->system->newLiteralString(leftLiteral->getLiteralString() + rightLiteral->getLiteralString(), expr->loc);
+				const FuLiteralString * leftLiteral;
+				const FuLiteralString * rightLiteral;
+				if ((leftLiteral = dynamic_cast<const FuLiteralString *>(left.get())) && (rightLiteral = dynamic_cast<const FuLiteralString *>(right.get())))
+					return this->host->program->system->newLiteralString(leftLiteral->value + rightLiteral->value, expr->loc);
 				if (dynamic_cast<const FuInterpolatedString *>(left.get()) || dynamic_cast<const FuInterpolatedString *>(right.get()))
 					return concatenate(toInterpolatedString(left).get(), toInterpolatedString(right).get());
 				type = this->host->program->system->stringStorageType;

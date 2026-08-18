@@ -6687,8 +6687,8 @@ export class FuSema
 				this.#coerce(right, this.#host.program.system.stringPtrType);
 				let leftLiteral;
 				let rightLiteral;
-				if ((leftLiteral = left) instanceof FuLiteral && (rightLiteral = right) instanceof FuLiteral)
-					return this.#host.program.system.newLiteralString(leftLiteral.getLiteralString() + rightLiteral.getLiteralString(), expr.loc);
+				if ((leftLiteral = left) instanceof FuLiteralString && (rightLiteral = right) instanceof FuLiteralString)
+					return this.#host.program.system.newLiteralString(leftLiteral.value + rightLiteral.value, expr.loc);
 				if (left instanceof FuInterpolatedString || right instanceof FuInterpolatedString)
 					return this.#concatenate(this.#toInterpolatedString(left), this.#toInterpolatedString(right));
 				type = this.#host.program.system.stringStorageType;

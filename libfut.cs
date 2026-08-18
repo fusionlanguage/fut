@@ -6329,8 +6329,8 @@ namespace Fusion
 				}
 				else if (left.Type is FuStringType) {
 					Coerce(right, this.Host.Program.System.StringPtrType);
-					if (left is FuLiteral leftLiteral && right is FuLiteral rightLiteral)
-						return this.Host.Program.System.NewLiteralString(leftLiteral.GetLiteralString() + rightLiteral.GetLiteralString(), expr.Loc);
+					if (left is FuLiteralString leftLiteral && right is FuLiteralString rightLiteral)
+						return this.Host.Program.System.NewLiteralString(leftLiteral.Value + rightLiteral.Value, expr.Loc);
 					if (left is FuInterpolatedString || right is FuInterpolatedString)
 						return Concatenate(ToInterpolatedString(left), ToInterpolatedString(right));
 					type = this.Host.Program.System.StringStorageType;
