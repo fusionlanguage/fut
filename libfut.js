@@ -15766,16 +15766,20 @@ export class GenCpp extends GenCCpp
 		this.writeMemberOp(obj, null);
 	}
 
-	writeInterpolatedStringArg(part)
+	#writeToString(expr, parent)
 	{
-		let expr = part.argument;
 		let klass;
 		if ((klass = expr.type) instanceof FuClassType && klass.class.id != FuId.STRING_CLASS) {
 			this.#startMethodCall(expr);
 			this.write("toString()");
 		}
 		else
-			super.writeInterpolatedStringArg(part);
+			expr.accept(this, parent);
+	}
+
+	writeInterpolatedStringArg(part)
+	{
+		this.#writeToString(part.argument, FuPriority.ARGUMENT);
 	}
 
 	visitInterpolatedString(expr, parent)
@@ -16359,7 +16363,7 @@ export class GenCpp extends GenCCpp
 		if ((expr.isIndexing() && (expr.type.id == FuId.BYTE_RANGE || expr.type.id == FuId.S_BYTE_RANGE)) || expr instanceof FuLiteralChar)
 			this.writeCall("static_cast<int>", expr);
 		else
-			expr.accept(this, FuPriority.MUL);
+			this.#writeToString(expr, FuPriority.MUL);
 	}
 
 	#writeWrite(args, newLine)

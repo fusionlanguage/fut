@@ -15204,15 +15204,19 @@ namespace Fusion
 			WriteMemberOp(obj, null);
 		}
 
-		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)
+		void WriteToString(FuExpr expr, FuPriority parent)
 		{
-			FuExpr expr = part.Argument;
 			if (expr.Type is FuClassType klass && klass.Class.Id != FuId.StringClass) {
 				StartMethodCall(expr);
 				Write("toString()");
 			}
 			else
-				base.WriteInterpolatedStringArg(part);
+				expr.Accept(this, parent);
+		}
+
+		protected override void WriteInterpolatedStringArg(FuInterpolatedPart part)
+		{
+			WriteToString(part.Argument, FuPriority.Argument);
 		}
 
 		internal override void VisitInterpolatedString(FuInterpolatedString expr, FuPriority parent)
@@ -15794,7 +15798,7 @@ namespace Fusion
 			if ((expr.IsIndexing() && (expr.Type!.Id == FuId.ByteRange || expr.Type!.Id == FuId.SByteRange)) || expr is FuLiteralChar)
 				WriteCall("static_cast<int>", expr);
 			else
-				expr.Accept(this, FuPriority.Mul);
+				WriteToString(expr, FuPriority.Mul);
 		}
 
 		void WriteWrite(List<FuExpr> args, bool newLine)

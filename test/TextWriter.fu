@@ -1,5 +1,7 @@
-public static class Test
+public class Test
 {
+	public string ToString() => "Object";
+
 	public static bool Run()
 	{
 		TextWriter! w = Console.Error; //FAIL: swift ts cl
@@ -14,6 +16,8 @@ public static class Test
 		long l = 5;
 		w.WriteLine(l);
 		w.WriteLine($"l={l}");
+		Test() o;
+		w.WriteLine(o);
 		w.Write('c');
 		w.WriteChar('c');
 		int newLine = '\n';

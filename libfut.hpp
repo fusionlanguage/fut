@@ -3155,6 +3155,7 @@ private:
 	bool stringToLower;
 	bool stringToUpper;
 	void startMethodCall(const FuExpr * obj);
+	void writeToString(const FuExpr * expr, FuPriority parent);
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeSharedUnique(std::string_view prefix, bool unique, std::string_view suffix);
 	void writeCollectionType(const FuClassType * klass);

@@ -15701,16 +15701,20 @@ void GenCpp::startMethodCall(const FuExpr * obj)
 	writeMemberOp(obj, nullptr);
 }
 
-void GenCpp::writeInterpolatedStringArg(const FuInterpolatedPart * part)
+void GenCpp::writeToString(const FuExpr * expr, FuPriority parent)
 {
-	const FuExpr * expr = part->argument.get();
 	const FuClassType * klass;
 	if ((klass = dynamic_cast<const FuClassType *>(expr->type.get())) && klass->class_->id != FuId::stringClass) {
 		startMethodCall(expr);
 		write("toString()");
 	}
 	else
-		GenBase::writeInterpolatedStringArg(part);
+		expr->accept(this, parent);
+}
+
+void GenCpp::writeInterpolatedStringArg(const FuInterpolatedPart * part)
+{
+	writeToString(part->argument.get(), FuPriority::argument);
 }
 
 void GenCpp::visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent)
@@ -16197,7 +16201,7 @@ void GenCpp::writeWriteArgument(const FuExpr * expr)
 	if ((expr->isIndexing() && (expr->type->id == FuId::byteRange || expr->type->id == FuId::sByteRange)) || dynamic_cast<const FuLiteralChar *>(expr))
 		writeCall("static_cast<int>", expr);
 	else
-		expr->accept(this, FuPriority::mul);
+		writeToString(expr, FuPriority::mul);
 }
 
 void GenCpp::writeWrite(const std::vector<std::shared_ptr<FuExpr>> * args, bool newLine)
