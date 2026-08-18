@@ -640,8 +640,8 @@ public class FuSema
 		if (expr is FuInterpolatedString# interpolated)
 			return interpolated;
 		FuInterpolatedString# result = new FuInterpolatedString { Loc = expr.Loc, Type = this.Host.Program.System.StringStorageType };
-		if (expr is FuLiteral literal)
-			result.Suffix = literal.GetLiteralString();
+		if (expr is FuLiteralString literal)
+			result.Suffix = literal.Value;
 		else {
 			result.AddPart("", expr);
 			result.Suffix = "";

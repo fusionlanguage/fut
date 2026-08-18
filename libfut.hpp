@@ -967,7 +967,6 @@ public:
 	virtual ~FuLiteral() = default;
 	bool isConst(bool varIsConst) const override;
 	virtual bool isDefaultValue() const = 0;
-	virtual std::string getLiteralString() const;
 protected:
 	FuLiteral() = default;
 };
@@ -1012,7 +1011,6 @@ public:
 	int intValue() const override;
 	bool isDefaultValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-	std::string getLiteralString() const override;
 	std::string toString() const override;
 private: // internal
 	int64_t value;
@@ -1046,7 +1044,6 @@ public:
 	FuLiteralDouble() = default;
 	bool isDefaultValue() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-	std::string getLiteralString() const override;
 	std::string toString() const override;
 private: // internal
 	double value;
@@ -1063,7 +1060,6 @@ public:
 	bool isDefaultValue() const override;
 	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
-	std::string getLiteralString() const override;
 	std::string toString() const override;
 	int getAsciiLength() const;
 	int getAsciiAt(int i) const;

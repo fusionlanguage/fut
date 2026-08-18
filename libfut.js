@@ -1709,11 +1709,6 @@ export class FuLiteral extends FuExpr
 	{
 		return true;
 	}
-
-	getLiteralString()
-	{
-		throw new Error();
-	}
 }
 
 class FuLiteralNull extends FuLiteral
@@ -1817,11 +1812,6 @@ class FuLiteralLong extends FuLiteral
 		visitor.visitLiteralLong(this.value, parent);
 	}
 
-	getLiteralString()
-	{
-		return `${this.value}`;
-	}
-
 	toString()
 	{
 		return `${this.value}`;
@@ -1880,11 +1870,6 @@ class FuLiteralDouble extends FuLiteral
 		visitor.visitLiteralDouble(this.value);
 	}
 
-	getLiteralString()
-	{
-		return `${this.value}`;
-	}
-
 	toString()
 	{
 		return `${this.value}`;
@@ -1908,11 +1893,6 @@ class FuLiteralString extends FuLiteral
 	accept(visitor, parent)
 	{
 		visitor.visitLiteralString(this.value);
-	}
-
-	getLiteralString()
-	{
-		return this.value;
 	}
 
 	toString()
@@ -6338,8 +6318,8 @@ export class FuSema
 			return interpolated;
 		let result = Object.assign(new FuInterpolatedString(), { loc: expr.loc, type: this.#host.program.system.stringStorageType });
 		let literal;
-		if ((literal = expr) instanceof FuLiteral)
-			result.suffix = literal.getLiteralString();
+		if ((literal = expr) instanceof FuLiteralString)
+			result.suffix = literal.value;
 		else {
 			result.addPart("", expr);
 			result.suffix = "";

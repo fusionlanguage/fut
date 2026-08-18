@@ -431,7 +431,6 @@ public abstract class FuLiteral : FuExpr
 {
 	public override bool IsConst(bool varIsConst) => true;
 	public abstract bool IsDefaultValue();
-	public virtual string() GetLiteralString() { assert false; }
 }
 
 class FuLiteralNull : FuLiteral
@@ -466,7 +465,6 @@ class FuLiteralLong : FuLiteral
 	public override int IntValue() => this.Value;
 	public override bool IsDefaultValue() => this.Value == 0;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralLong(this.Value, parent); }
-	public override string() GetLiteralString() => $"{this.Value}";
 	public override string() ToString() => $"{this.Value}";
 }
 
@@ -494,7 +492,6 @@ class FuLiteralDouble : FuLiteral
 	internal double Value;
 	public override bool IsDefaultValue() => this.Value == 0 && 1.0 / this.Value > 0; // rule out -0.0
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralDouble(this.Value); }
-	public override string() GetLiteralString() => $"{this.Value}";
 	public override string() ToString() => $"{this.Value}";
 }
 
@@ -504,7 +501,6 @@ class FuLiteralString : FuLiteral
 	public override bool IsDefaultValue() => false;
 	public override int GetLocLength() => this.Value.Length + 2;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralString(this.Value); }
-	public override string() GetLiteralString() => this.Value;
 	public override string() ToString() => $"\"{this.Value}\"";
 	public int GetAsciiLength()
 	{

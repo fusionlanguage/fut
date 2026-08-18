@@ -1771,11 +1771,6 @@ namespace Fusion
 		public override bool IsConst(bool varIsConst) => true;
 
 		public abstract bool IsDefaultValue();
-
-		public virtual string GetLiteralString()
-		{
-			throw new NotImplementedException();
-		}
 	}
 
 	class FuLiteralNull : FuLiteral
@@ -1841,8 +1836,6 @@ namespace Fusion
 			visitor.VisitLiteralLong(this.Value, parent);
 		}
 
-		public override string GetLiteralString() => $"{this.Value}";
-
 		public override string ToString() => $"{this.Value}";
 	}
 
@@ -1890,8 +1883,6 @@ namespace Fusion
 			visitor.VisitLiteralDouble(this.Value);
 		}
 
-		public override string GetLiteralString() => $"{this.Value}";
-
 		public override string ToString() => $"{this.Value}";
 	}
 
@@ -1908,8 +1899,6 @@ namespace Fusion
 		{
 			visitor.VisitLiteralString(this.Value);
 		}
-
-		public override string GetLiteralString() => this.Value;
 
 		public override string ToString() => $"\"{this.Value}\"";
 
@@ -6013,8 +6002,8 @@ namespace Fusion
 			if (expr is FuInterpolatedString interpolated)
 				return interpolated;
 			FuInterpolatedString result = new FuInterpolatedString { Loc = expr.Loc, Type = this.Host.Program.System.StringStorageType };
-			if (expr is FuLiteral literal)
-				result.Suffix = literal.GetLiteralString();
+			if (expr is FuLiteralString literal)
+				result.Suffix = literal.Value;
 			else {
 				result.AddPart("", expr);
 				result.Suffix = "";

@@ -1289,11 +1289,6 @@ bool FuLiteral::isConst(bool varIsConst) const
 	return true;
 }
 
-std::string FuLiteral::getLiteralString() const
-{
-	std::abort();
-}
-
 int FuLiteralNull::getLocLength() const
 {
 	return 4;
@@ -1379,11 +1374,6 @@ void FuLiteralLong::accept(FuVisitor * visitor, FuPriority parent) const
 	visitor->visitLiteralLong(this->value, parent);
 }
 
-std::string FuLiteralLong::getLiteralString() const
-{
-	return std::format("{}", this->value);
-}
-
 std::string FuLiteralLong::toString() const
 {
 	return std::format("{}", this->value);
@@ -1437,11 +1427,6 @@ void FuLiteralDouble::accept(FuVisitor * visitor, FuPriority parent) const
 	visitor->visitLiteralDouble(this->value);
 }
 
-std::string FuLiteralDouble::getLiteralString() const
-{
-	return std::format("{}", this->value);
-}
-
 std::string FuLiteralDouble::toString() const
 {
 	return std::format("{}", this->value);
@@ -1460,11 +1445,6 @@ int FuLiteralString::getLocLength() const
 void FuLiteralString::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitLiteralString(this->value);
-}
-
-std::string FuLiteralString::getLiteralString() const
-{
-	return this->value;
 }
 
 std::string FuLiteralString::toString() const
@@ -6521,8 +6501,8 @@ std::shared_ptr<FuInterpolatedString> FuSema::toInterpolatedString(std::shared_p
 	std::shared_ptr<FuInterpolatedString> result = std::make_shared<FuInterpolatedString>();
 	result->loc = expr->loc;
 	result->type = this->host->program->system->stringStorageType;
-	if (const FuLiteral *literal = dynamic_cast<const FuLiteral *>(expr.get()))
-		result->suffix = literal->getLiteralString();
+	if (const FuLiteralString *literal = dynamic_cast<const FuLiteralString *>(expr.get()))
+		result->suffix = literal->value;
 	else {
 		result->addPart("", expr);
 		result->suffix = "";
