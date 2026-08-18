@@ -16,6 +16,9 @@ public static class Test
 		string() s7 = $"{d}";
 		bool b = false;
 		string() s8 = $"{b ? 1 : 0}";
+		byte[1] ba;
+		ba[0] = 66;
+		string() s9 = $"{'A'}{ba[0]}";
 		return s1 == "1 + 2 == 3"
 			&& s2 == "\"`{}$1$"
 			&& s3 == "1"
@@ -24,6 +27,7 @@ public static class Test
 			&& s6 == "10.5"
 			&& s7 == "10.5"
 			&& s8 == "0"
+			&& s9 == "6566"
 			&& $"{{}}" == "{}";
 	}
 }
