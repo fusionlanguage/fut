@@ -2012,21 +2012,27 @@ namespace Fusion
 
 		public override string ToString()
 		{
-			string result = "$\"";
+			StringWriter result = new StringWriter();
+			result.Write("$\"");
 			foreach (FuInterpolatedPart part in this.Parts) {
-				result += part.Prefix.Replace("{", "{{").Replace("}", "}}");
-				result += $"{{{part.Argument}";
-				if (part.WidthExpr != null)
-					result += $",{part.WidthExpr}";
-				if (part.Format != ' ') {
-					result += $":{char.ConvertFromUtf32(part.Format)}";
-					if (part.Precision >= 0)
-						result += $"{part.Precision}";
+				result.Write(part.Prefix.Replace("{", "{{").Replace("}", "}}"));
+				result.Write('{');
+				result.Write(part.Argument);
+				if (part.WidthExpr != null) {
+					result.Write(',');
+					result.Write(part.WidthExpr);
 				}
-				result += "}";
+				if (part.Format != ' ') {
+					result.Write(':');
+					result.Write((char) part.Format);
+					if (part.Precision >= 0)
+						result.Write(part.Precision);
+				}
+				result.Write('}');
 			}
-			result += this.Suffix.Replace("{", "{{").Replace("}", "}}");
-			return result + "\"";
+			result.Write(this.Suffix.Replace("{", "{{").Replace("}", "}}"));
+			result.Write('"');
+			return result.ToString();
 		}
 	}
 

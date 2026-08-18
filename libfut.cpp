@@ -1555,21 +1555,27 @@ bool FuInterpolatedString::isToString(int format) const
 
 std::string FuInterpolatedString::toString() const
 {
-	std::string result{"$\""};
+	std::ostringstream result;
+	result << "$\"";
 	for (const FuInterpolatedPart &part : this->parts) {
-		result += FuString_Replace(FuString_Replace(part.prefix, "{", "{{"), "}", "}}");
-		result += std::format("{{{}", part.argument->toString());
-		if (part.widthExpr != nullptr)
-			result += std::format(",{}", part.widthExpr->toString());
-		if (part.format != ' ') {
-			result += std::format(":{:c}", part.format);
-			if (part.precision >= 0)
-				result += std::format("{}", part.precision);
+		result << FuString_Replace(FuString_Replace(part.prefix, "{", "{{"), "}", "}}");
+		result << '{';
+		result << part.argument->toString();
+		if (part.widthExpr != nullptr) {
+			result << ',';
+			result << part.widthExpr->toString();
 		}
-		result += "}";
+		if (part.format != ' ') {
+			result << ':';
+			result << static_cast<char>(part.format);
+			if (part.precision >= 0)
+				result << part.precision;
+		}
+		result << '}';
 	}
-	result += FuString_Replace(FuString_Replace(this->suffix, "{", "{{"), "}", "}}");
-	return result + "\"";
+	result << FuString_Replace(FuString_Replace(this->suffix, "{", "{{"), "}", "}}");
+	result << '"';
+	return std::string(result.view());
 }
 
 int FuImplicitEnumValue::intValue() const

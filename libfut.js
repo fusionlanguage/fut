@@ -2017,21 +2017,27 @@ export class FuInterpolatedString extends FuExpr
 
 	toString()
 	{
-		let result = "$\"";
+		const result = new StringWriter();
+		result.write("$\"");
 		for (const part of this.parts) {
-			result += part.prefix.replaceAll("{", "{{").replaceAll("}", "}}");
-			result += `{${part.argument}`;
-			if (part.widthExpr != null)
-				result += `,${part.widthExpr}`;
-			if (part.format != 32) {
-				result += `:${String.fromCodePoint(part.format)}`;
-				if (part.precision >= 0)
-					result += `${part.precision}`;
+			result.write(part.prefix.replaceAll("{", "{{").replaceAll("}", "}}"));
+			result.write(String.fromCharCode(123));
+			result.write(String(part.argument));
+			if (part.widthExpr != null) {
+				result.write(String.fromCharCode(44));
+				result.write(String(part.widthExpr));
 			}
-			result += "}";
+			if (part.format != 32) {
+				result.write(String.fromCharCode(58));
+				result.write(String.fromCharCode(part.format));
+				if (part.precision >= 0)
+					result.write(String(part.precision));
+			}
+			result.write(String.fromCharCode(125));
 		}
-		result += this.suffix.replaceAll("{", "{{").replaceAll("}", "}}");
-		return result + "\"";
+		result.write(this.suffix.replaceAll("{", "{{").replaceAll("}", "}}"));
+		result.write(String.fromCharCode(34));
+		return result.toString();
 	}
 }
 
