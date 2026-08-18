@@ -1408,6 +1408,25 @@ void FuLiteralChar::accept(FuVisitor * visitor, FuPriority parent) const
 	visitor->visitLiteralChar(static_cast<int>(this->value));
 }
 
+std::string FuLiteralChar::toString() const
+{
+	int c = static_cast<int>(this->value);
+	switch (c) {
+	case '\n':
+		return "'\\n'";
+	case '\r':
+		return "'\\r'";
+	case '\t':
+		return "'\\t'";
+	case '\\':
+		return "'\\\\'";
+	case '\'':
+		return "'\\''";
+	default:
+		return std::format("'{:c}'", c);
+	}
+}
+
 bool FuLiteralDouble::isDefaultValue() const
 {
 	return this->value == 0 && 1.0 / this->value > 0;
@@ -1532,6 +1551,25 @@ bool FuInterpolatedString::isNewString(bool substringOffset) const
 bool FuInterpolatedString::isToString(int format) const
 {
 	return this->suffix.empty() && std::ssize(this->parts) == 1 && this->parts[0].prefix.empty() && this->parts[0].widthExpr == nullptr && (this->parts[0].format | 32) == format;
+}
+
+std::string FuInterpolatedString::toString() const
+{
+	std::string result{"$\""};
+	for (const FuInterpolatedPart &part : this->parts) {
+		result += FuString_Replace(FuString_Replace(part.prefix, "{", "{{"), "}", "}}");
+		result += std::format("{{{}", part.argument->toString());
+		if (part.widthExpr != nullptr)
+			result += std::format(",{}", part.widthExpr->toString());
+		if (part.format != ' ') {
+			result += std::format(":{:c}", part.format);
+			if (part.precision >= 0)
+				result += std::format("{}", part.precision);
+		}
+		result += "}";
+	}
+	result += FuString_Replace(FuString_Replace(this->suffix, "{", "{{"), "}", "}}");
+	return result + "\"";
 }
 
 int FuImplicitEnumValue::intValue() const

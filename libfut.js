@@ -1845,6 +1845,25 @@ class FuLiteralChar extends FuLiteralLong
 	{
 		visitor.visitLiteralChar(Number(this.value));
 	}
+
+	toString()
+	{
+		let c = Number(this.value);
+		switch (c) {
+		case 10:
+			return "'\\n'";
+		case 13:
+			return "'\\r'";
+		case 9:
+			return "'\\t'";
+		case 92:
+			return "'\\\\'";
+		case 39:
+			return "'\\''";
+		default:
+			return `'${String.fromCodePoint(c)}'`;
+		}
+	}
 }
 
 class FuLiteralDouble extends FuLiteral
@@ -1994,6 +2013,25 @@ export class FuInterpolatedString extends FuExpr
 	isToString(format)
 	{
 		return this.suffix.length == 0 && this.parts.length == 1 && this.parts[0].prefix.length == 0 && this.parts[0].widthExpr == null && (this.parts[0].format | 32) == format;
+	}
+
+	toString()
+	{
+		let result = "$\"";
+		for (const part of this.parts) {
+			result += part.prefix.replaceAll("{", "{{").replaceAll("}", "}}");
+			result += `{${part.argument}`;
+			if (part.widthExpr != null)
+				result += `,${part.widthExpr}`;
+			if (part.format != 32) {
+				result += `:${String.fromCodePoint(part.format)}`;
+				if (part.precision >= 0)
+					result += `${part.precision}`;
+			}
+			result += "}";
+		}
+		result += this.suffix.replaceAll("{", "{{").replaceAll("}", "}}");
+		return result + "\"";
 	}
 }
 

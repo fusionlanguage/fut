@@ -475,17 +475,18 @@ class FuLiteralChar : FuLiteralLong
 	public static FuLiteralChar# New(int value, int loc) => new FuLiteralChar { Loc = loc, Type = FuRangeType.New(value, value), Value = value };
 	public override int GetLocLength() => this.Value >= 0x10000 || this.Value == '\n' || this.Value == '\r' || this.Value == '\t' || this.Value == '\\' || this.Value == '\'' ? 4 : 3;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralChar(this.Value); }
-//	public override string() ToString()
-//	{
-//		switch (this.Value) {
-//		case '\n': return "'\\n'";
-//		case '\r': return "'\\r'";
-//		case '\t': return "'\\t'";
-//		case '\\': return "'\\\\'";
-//		case '\'': return "'\\''";
-//		default: return $"'{(char) this.Value}'";
-//		}
-//	}
+	public override string() ToString()
+	{
+		int c = this.Value;
+		switch (c) {
+		case '\n': return "'\\n'";
+		case '\r': return "'\\r'";
+		case '\t': return "'\\t'";
+		case '\\': return "'\\\\'";
+		case '\'': return "'\\''";
+		default: return $"'{c:u}'";
+		}
+	}
 }
 
 class FuLiteralDouble : FuLiteral
@@ -588,30 +589,24 @@ public class FuInterpolatedString : FuExpr
 			&& this.Parts[0].WidthExpr == null
 			&& (this.Parts[0].Format | 0x20) == format;
 	}
-//	public override string() ToString()
-//	{
-//		StringBuilder sb = new StringBuilder();
-//		sb.Append("$\"");
-//		foreach (FuInterpolatedPart part in this.Parts) {
-//			sb.Append(part.Prefix.Replace("{", "{{"));
-//			sb.Append('{');
-//			sb.Append(part.Argument);
-//			if (part.WidthExpr != null) {
-//				sb.Append(',');
-//				sb.Append(part.WidthExpr);
-//			}
-//			if (part.Format != ' ') {
-//				sb.Append(':');
-//				sb.Append((char) part.Format);
-//				if (part.Precision >= 0)
-//					sb.Append(part.Precision);
-//			}
-//			sb.Append('}');
-//		}
-//		sb.Append(this.Suffix.Replace("{", "{{"));
-//		sb.Append('"');
-//		return sb.ToString();
-//	}
+	public override string() ToString()
+	{
+		string() result = "$\"";
+		foreach (FuInterpolatedPart part in this.Parts) {
+			result += part.Prefix.Replace("{", "{{").Replace("}", "}}");
+			result += $"{{{part.Argument}";
+			if (part.WidthExpr != null)
+				result += $",{part.WidthExpr}";
+			if (part.Format != ' ') {
+				result += $":{part.Format:u}";
+				if (part.Precision >= 0)
+					result += $"{part.Precision}";
+			}
+			result += "}";
+		}
+		result += this.Suffix.Replace("{", "{{").Replace("}", "}}");
+		return result + "\"";
+	}
 }
 
 class FuImplicitEnumValue : FuExpr

@@ -1037,6 +1037,7 @@ public:
 	static std::shared_ptr<FuLiteralChar> new_(int value, int loc);
 	int getLocLength() const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	std::string toString() const override;
 };
 
 class FuLiteralDouble : public FuLiteral
@@ -1112,6 +1113,7 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isNewString(bool substringOffset) const override;
 	bool isToString(int format) const;
+	std::string toString() const override;
 private: // internal
 	std::vector<FuInterpolatedPart> parts;
 	std::string suffix;

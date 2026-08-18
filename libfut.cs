@@ -1857,6 +1857,25 @@ namespace Fusion
 		{
 			visitor.VisitLiteralChar((int) this.Value);
 		}
+
+		public override string ToString()
+		{
+			int c = (int) this.Value;
+			switch (c) {
+			case '\n':
+				return "'\\n'";
+			case '\r':
+				return "'\\r'";
+			case '\t':
+				return "'\\t'";
+			case '\\':
+				return "'\\\\'";
+			case '\'':
+				return "'\\''";
+			default:
+				return $"'{char.ConvertFromUtf32(c)}'";
+			}
+		}
 	}
 
 	class FuLiteralDouble : FuLiteral
@@ -1989,6 +2008,25 @@ namespace Fusion
 		public bool IsToString(int format)
 		{
 			return this.Suffix.Length == 0 && this.Parts.Count == 1 && this.Parts[0].Prefix.Length == 0 && this.Parts[0].WidthExpr == null && (this.Parts[0].Format | 32) == format;
+		}
+
+		public override string ToString()
+		{
+			string result = "$\"";
+			foreach (FuInterpolatedPart part in this.Parts) {
+				result += part.Prefix.Replace("{", "{{").Replace("}", "}}");
+				result += $"{{{part.Argument}";
+				if (part.WidthExpr != null)
+					result += $",{part.WidthExpr}";
+				if (part.Format != ' ') {
+					result += $":{char.ConvertFromUtf32(part.Format)}";
+					if (part.Precision >= 0)
+						result += $"{part.Precision}";
+				}
+				result += "}";
+			}
+			result += this.Suffix.Replace("{", "{{").Replace("}", "}}");
+			return result + "\"";
 		}
 	}
 
