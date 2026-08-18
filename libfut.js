@@ -492,6 +492,11 @@ export class FuLexer
 				else
 					this.readChar();
 				break;
+			case 125:
+				this.readChar();
+				if (interpolated && !this.#eatChar(125))
+					this.reportError("'}' must be escaped by doubling");
+				break;
 			default:
 				this.#readCharLiteral();
 				break;

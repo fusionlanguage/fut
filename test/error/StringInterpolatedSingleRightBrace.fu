@@ -1,0 +1,9 @@
+public static class Test
+{
+	public static bool Run()
+	{
+		string() s = $"}"; //ERROR: '}' must be escaped by doubling
+		s = $"}}}"; //ERROR: '}' must be escaped by doubling
+		return true;
+	}
+}

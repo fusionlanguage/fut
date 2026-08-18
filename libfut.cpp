@@ -384,6 +384,11 @@ FuToken FuLexer::readString(bool interpolated)
 			else
 				readChar();
 			break;
+		case '}':
+			readChar();
+			if (interpolated && !eatChar('}'))
+				reportError("'}' must be escaped by doubling");
+			break;
 		default:
 			readCharLiteral();
 			break;

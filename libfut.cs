@@ -513,6 +513,11 @@ namespace Fusion
 					else
 						ReadChar();
 					break;
+				case '}':
+					ReadChar();
+					if (interpolated && !EatChar('}'))
+						ReportError("'}' must be escaped by doubling");
+					break;
 				default:
 					ReadCharLiteral();
 					break;
