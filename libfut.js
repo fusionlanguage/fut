@@ -25622,7 +25622,7 @@ export class GenSwift extends GenPySwift
 			this.#writeUnwrapped(obj, FuPriority.ARGUMENT, true);
 			this.write(", ");
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
-			this.write(", 0, .backwards)");
+			this.write(", 0, [.literal, .backwards])");
 			break;
 		case FuId.STRING_REPLACE:
 			this.#writeUnwrapped(obj, FuPriority.PRIMARY, true);

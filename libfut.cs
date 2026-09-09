@@ -24871,7 +24871,7 @@ namespace Fusion
 				WriteUnwrapped(obj!, FuPriority.Argument, true);
 				Write(", ");
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
-				Write(", 0, .backwards)");
+				Write(", 0, [.literal, .backwards])");
 				break;
 			case FuId.StringReplace:
 				WriteUnwrapped(obj!, FuPriority.Primary, true);

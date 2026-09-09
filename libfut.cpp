@@ -24878,7 +24878,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writeUnwrapped(obj, FuPriority::argument, true);
 		write(", ");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
-		write(", 0, .backwards)");
+		write(", 0, [.literal, .backwards])");
 		break;
 	case FuId::stringReplace:
 		writeUnwrapped(obj, FuPriority::primary, true);
