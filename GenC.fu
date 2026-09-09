@@ -1709,7 +1709,7 @@ public class GenC : GenCCpp
 	{
 		Include("string.h");
 		Write("FuString_");
-		WriteCall(name, obj, args[0]);
+		WriteCall(name, obj, args[0], args.Count == 2 ? args[1] : null);
 	}
 
 	void WriteSizeofCompare!(FuType elementType)
@@ -2113,7 +2113,16 @@ public class GenC : GenCCpp
 		case FuId.StringIndexOf:
 			this.StringIndexOf = true;
 			IncludeStdDef();
-			WriteStringMethod("IndexOf", obj, args);
+			if (args.Count == 1) {
+				Include("string.h");
+				Write("FuString_IndexOf(");
+				obj.Accept(this, FuPriority.Argument);
+				Write(", ");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(", 0)");
+			}
+			else
+				WriteStringMethod("IndexOf", obj, args);
 			break;
 		case FuId.StringLastIndexOf:
 			this.StringLastIndexOf = true;
@@ -3804,9 +3813,9 @@ public class GenC : GenCCpp
 		}
 		if (this.StringIndexOf) {
 			WriteNewLine();
-			WriteLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
+			WriteLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle, size_t startIndex)");
 			OpenBlock();
-			WriteLine("const char *p = strstr(str, needle);");
+			WriteLine("const char *p = strstr(str + startIndex, needle);");
 			WriteLine("return p == NULL ? -1 : p - str;");
 			CloseBlock();
 		}

@@ -3715,7 +3715,7 @@ export class FuSystem extends FuScope
 		this.add(this.boolType);
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_CONTAINS, "Contains", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_ENDS_WITH, "EndsWith", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.addMethod(this.nIntType, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"));
+		this.#stringClass.addMethod(this.nIntType, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "startIndex", this.newLiteralLong(0n)));
 		this.#stringClass.addMethod(this.nIntType, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value"));
 		let stringLengthProperty = FuProperty.new(this.nIntType, FuId.STRING_LENGTH, "Length");
 		this.#stringClass.add(stringLengthProperty);
@@ -10864,6 +10864,23 @@ export class GenTyped extends GenBase
 		this.writeIndexing(expr.left, expr.right);
 	}
 
+	writeStringMethodArgs(method, args)
+	{
+		let c = this.getOneAscii(args[0]);
+		if (c >= 0) {
+			this.writeChar(40);
+			this.visitLiteralChar(c);
+			if (args.length != 1) {
+				console.assert(args.length == 2);
+				this.write(", ");
+				args[1].accept(this, FuPriority.ARGUMENT);
+			}
+			this.writeChar(41);
+		}
+		else
+			this.writeCoercedArgsInParentheses(method, args);
+	}
+
 	writeMathFloating(type, method, args)
 	{
 		this.writeLowercase(method.name);
@@ -12972,7 +12989,7 @@ export class GenC extends GenCCpp
 	{
 		this.include("string.h");
 		this.write("FuString_");
-		this.writeCall(name, obj, args[0]);
+		this.writeCall(name, obj, args[0], args.length == 2 ? args[1] : null);
 	}
 
 	#writeSizeofCompare(elementType)
@@ -13386,7 +13403,16 @@ export class GenC extends GenCCpp
 		case FuId.STRING_INDEX_OF:
 			this.#stringIndexOf = true;
 			this.includeStdDef();
-			this.#writeStringMethod("IndexOf", obj, args);
+			if (args.length == 1) {
+				this.include("string.h");
+				this.write("FuString_IndexOf(");
+				obj.accept(this, FuPriority.ARGUMENT);
+				this.write(", ");
+				args[0].accept(this, FuPriority.ARGUMENT);
+				this.write(", 0)");
+			}
+			else
+				this.#writeStringMethod("IndexOf", obj, args);
 			break;
 		case FuId.STRING_LAST_INDEX_OF:
 			this.#stringLastIndexOf = true;
@@ -15086,9 +15112,9 @@ export class GenC extends GenCCpp
 		}
 		if (this.#stringIndexOf) {
 			this.writeNewLine();
-			this.writeLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
+			this.writeLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle, size_t startIndex)");
 			this.openBlock();
-			this.writeLine("const char *p = strstr(str, needle);");
+			this.writeLine("const char *p = strstr(str + startIndex, needle);");
 			this.writeLine("return p == NULL ? -1 : p - str;");
 			this.closeBlock();
 		}
@@ -16490,14 +16516,7 @@ export class GenCpp extends GenCCpp
 		this.#writeNotRawStringLiteral(obj, FuPriority.PRIMARY);
 		this.writeChar(46);
 		this.write(name);
-		let c = this.getOneAscii(args[0]);
-		if (c >= 0) {
-			this.writeChar(40);
-			this.visitLiteralChar(c);
-			this.writeChar(41);
-		}
-		else
-			this.writeCoercedArgsInParentheses(method, args);
+		this.writeStringMethodArgs(method, args);
 	}
 
 	#writeAllAnyContains(function_, obj, args)
@@ -18827,13 +18846,7 @@ export class GenCs extends GenTyped
 			obj.accept(this, FuPriority.PRIMARY);
 			this.writeMemberOp(obj, null);
 			this.write(method.name);
-			this.writeChar(40);
-			let c = this.getOneAscii(args[0]);
-			if (c >= 0)
-				this.visitLiteralChar(c);
-			else
-				args[0].accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeStringMethodArgs(method, args);
 			break;
 		case FuId.ARRAY_BINARY_SEARCH_ALL:
 		case FuId.ARRAY_BINARY_SEARCH_PART:
@@ -20256,7 +20269,7 @@ export class GenD extends GenCCppD
 			break;
 		case FuId.STRING_INDEX_OF:
 			this.include("std.string");
-			this.writeMethodCall(obj, "indexOf", args[0]);
+			this.writeMethodCall(obj, "indexOf", args[0], args.length == 2 ? args[1] : null);
 			break;
 		case FuId.STRING_LAST_INDEX_OF:
 			this.include("std.string");
@@ -25596,6 +25609,10 @@ export class GenSwift extends GenPySwift
 			this.#writeUnwrapped(obj, FuPriority.ARGUMENT, true);
 			this.write(", ");
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
+			if (args.length == 2) {
+				this.write(", ");
+				args[1].accept(this, FuPriority.ARGUMENT);
+			}
 			this.writeChar(41);
 			break;
 		case FuId.STRING_LAST_INDEX_OF:
@@ -25605,7 +25622,7 @@ export class GenSwift extends GenPySwift
 			this.#writeUnwrapped(obj, FuPriority.ARGUMENT, true);
 			this.write(", ");
 			this.#writeUnwrapped(args[0], FuPriority.ARGUMENT, true);
-			this.write(", .backwards)");
+			this.write(", 0, .backwards)");
 			break;
 		case FuId.STRING_REPLACE:
 			this.#writeUnwrapped(obj, FuPriority.PRIMARY, true);
@@ -27101,9 +27118,10 @@ export class GenSwift extends GenPySwift
 		}
 		if (this.#stringIndexOf) {
 			this.writeNewLine();
-			this.writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+			this.writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 			this.openBlock();
-			this.writeLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
+			this.writeLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
+			this.writeLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 			this.writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 			this.closeBlock();
 		}
@@ -28067,7 +28085,7 @@ export class GenPy extends GenPySwift
 			this.writeMethodCall(obj, "endswith", args[0]);
 			break;
 		case FuId.STRING_INDEX_OF:
-			this.writeMethodCall(obj, "find", args[0]);
+			this.writeMethodCall(obj, "find", args[0], args.length == 2 ? args[1] : null);
 			break;
 		case FuId.STRING_LAST_INDEX_OF:
 			this.writeMethodCall(obj, "rfind", args[0]);

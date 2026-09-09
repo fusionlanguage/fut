@@ -2978,7 +2978,7 @@ FuSystem::FuSystem()
 	add(this->boolType);
 	this->stringClass->addMethod(this->boolType, FuId::stringContains, "Contains", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->boolType, FuId::stringEndsWith, "EndsWith", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->addMethod(this->nIntType, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"));
+	this->stringClass->addMethod(this->nIntType, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "startIndex", newLiteralLong(0)));
 	this->stringClass->addMethod(this->nIntType, FuId::stringLastIndexOf, "LastIndexOf", false, FuVar::new_(this->stringPtrType, "value"));
 	std::shared_ptr<FuProperty> stringLengthProperty = FuProperty::new_(this->nIntType, FuId::stringLength, "Length");
 	this->stringClass->add(stringLengthProperty);
@@ -10957,6 +10957,23 @@ void GenTyped::writeCharAt(const FuBinaryExpr * expr)
 	writeIndexing(expr->left.get(), expr->right.get());
 }
 
+void GenTyped::writeStringMethodArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
+{
+	int c = getOneAscii((*args)[0].get());
+	if (c >= 0) {
+		writeChar('(');
+		visitLiteralChar(c);
+		if (std::ssize(*args) != 1) {
+			assert(std::ssize(*args) == 2);
+			write(", ");
+			(*args)[1]->accept(this, FuPriority::argument);
+		}
+		writeChar(')');
+	}
+	else
+		writeCoercedArgsInParentheses(method, args);
+}
+
 void GenTyped::writeMathFloating(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args)
 {
 	writeLowercase(method->name);
@@ -12938,7 +12955,7 @@ void GenC::writeStringMethod(std::string_view name, const FuExpr * obj, const st
 {
 	include("string.h");
 	write("FuString_");
-	writeCall(name, obj, (*args)[0].get());
+	writeCall(name, obj, (*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 }
 
 void GenC::writeSizeofCompare(const FuType * elementType)
@@ -13344,7 +13361,16 @@ void GenC::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::stringIndexOf:
 		this->stringIndexOf = true;
 		includeStdDef();
-		writeStringMethod("IndexOf", obj, args);
+		if (std::ssize(*args) == 1) {
+			include("string.h");
+			write("FuString_IndexOf(");
+			obj->accept(this, FuPriority::argument);
+			write(", ");
+			(*args)[0]->accept(this, FuPriority::argument);
+			write(", 0)");
+		}
+		else
+			writeStringMethod("IndexOf", obj, args);
 		break;
 	case FuId::stringLastIndexOf:
 		this->stringLastIndexOf = true;
@@ -15048,9 +15074,9 @@ void GenC::writeLibrary(const FuProgram * program)
 	}
 	if (this->stringIndexOf) {
 		writeNewLine();
-		writeLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
+		writeLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle, size_t startIndex)");
 		openBlock();
-		writeLine("const char *p = strstr(str, needle);");
+		writeLine("const char *p = strstr(str + startIndex, needle);");
 		writeLine("return p == NULL ? -1 : p - str;");
 		closeBlock();
 	}
@@ -16323,14 +16349,7 @@ void GenCpp::writeStringMethod(const FuExpr * obj, std::string_view name, const 
 	writeNotRawStringLiteral(obj, FuPriority::primary);
 	writeChar('.');
 	write(name);
-	int c = getOneAscii((*args)[0].get());
-	if (c >= 0) {
-		writeChar('(');
-		visitLiteralChar(c);
-		writeChar(')');
-	}
-	else
-		writeCoercedArgsInParentheses(method, args);
+	writeStringMethodArgs(method, args);
 }
 
 void GenCpp::writeAllAnyContains(std::string_view function, const FuExpr * obj, const std::vector<std::shared_ptr<FuExpr>> * args)
@@ -18570,16 +18589,8 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		obj->accept(this, FuPriority::primary);
 		writeMemberOp(obj, nullptr);
 		write(method->name);
-		writeChar('(');
-		{
-			int c = getOneAscii((*args)[0].get());
-			if (c >= 0)
-				visitLiteralChar(c);
-			else
-				(*args)[0]->accept(this, FuPriority::argument);
-			writeChar(')');
-			break;
-		}
+		writeStringMethodArgs(method, args);
+		break;
 	case FuId::arrayBinarySearchAll:
 	case FuId::arrayBinarySearchPart:
 		include("System");
@@ -19801,7 +19812,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		break;
 	case FuId::stringIndexOf:
 		include("std.string");
-		writeMethodCall(obj, "indexOf", (*args)[0].get());
+		writeMethodCall(obj, "indexOf", (*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 		break;
 	case FuId::stringLastIndexOf:
 		include("std.string");
@@ -24854,6 +24865,10 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writeUnwrapped(obj, FuPriority::argument, true);
 		write(", ");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
+		if (std::ssize(*args) == 2) {
+			write(", ");
+			(*args)[1]->accept(this, FuPriority::argument);
+		}
 		writeChar(')');
 		break;
 	case FuId::stringLastIndexOf:
@@ -24863,7 +24878,7 @@ void GenSwift::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMe
 		writeUnwrapped(obj, FuPriority::argument, true);
 		write(", ");
 		writeUnwrapped((*args)[0].get(), FuPriority::argument, true);
-		write(", .backwards)");
+		write(", 0, .backwards)");
 		break;
 	case FuId::stringReplace:
 		writeUnwrapped(obj, FuPriority::primary, true);
@@ -26344,9 +26359,10 @@ void GenSwift::writeLibrary()
 	}
 	if (this->stringIndexOf) {
 		writeNewLine();
-		writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+		writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 		openBlock();
-		writeLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
+		writeLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
+		writeLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 		writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 		closeBlock();
 	}
@@ -27211,7 +27227,7 @@ void GenPy::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writeMethodCall(obj, "endswith", (*args)[0].get());
 		break;
 	case FuId::stringIndexOf:
-		writeMethodCall(obj, "find", (*args)[0].get());
+		writeMethodCall(obj, "find", (*args)[0].get(), std::ssize(*args) == 2 ? (*args)[1].get() : nullptr);
 		break;
 	case FuId::stringLastIndexOf:
 		writeMethodCall(obj, "rfind", (*args)[0].get());

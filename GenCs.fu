@@ -565,13 +565,7 @@ public class GenCs : GenTyped
 			obj.Accept(this, FuPriority.Primary);
 			WriteMemberOp(obj, null);
 			Write(method.Name);
-			WriteChar('(');
-			int c = GetOneAscii(args[0]);
-			if (c >= 0)
-				VisitLiteralChar(c);
-			else
-				args[0].Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteStringMethodArgs(method, args);
 			break;
 		case FuId.ArrayBinarySearchAll:
 		case FuId.ArrayBinarySearchPart:

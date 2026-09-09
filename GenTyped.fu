@@ -241,6 +241,23 @@ public abstract class GenTyped : GenBase
 		WriteIndexing(expr.Left, expr.Right);
 	}
 
+	protected void WriteStringMethodArgs!(FuMethod method, List<FuExpr#> args)
+	{
+		int c = GetOneAscii(args[0]);
+		if (c >= 0) {
+			WriteChar('(');
+			VisitLiteralChar(c);
+			if (args.Count != 1) {
+				assert args.Count == 2;
+				Write(", ");
+				args[1].Accept(this, FuPriority.Argument);
+			}
+			WriteChar(')');
+		}
+		else
+			WriteCoercedArgsInParentheses(method, args);
+	}
+
 	protected void WriteMathFloating!(FuType type, FuMethod method, List<FuExpr#> args)
 	{
 		WriteLowercase(method.Name);

@@ -323,8 +323,9 @@ Possible string operations include the following:
 * _Code unit_ retrieval with `str[index]`.
 * `str1.StartsWith(str2)`, `str1.EndsWith(str2)` and `str1.Contains(str2)`
   return a boolean value.
-* `str1.IndexOf(str2)`, `str1.LastIndexOf(str2)` return an index
-  to the beginning of `str2` within `str1`, or -1 if not found.
+* `str1.IndexOf(str2)`, `str1.IndexOf(str2, startIndex)`,
+  `str1.LastIndexOf(str2)` return an index to the beginning of `str2`
+  within `str1`, or -1 if not found.
 * `str.Substring(offset, length)` evaluates to the selected part of the string.
 * `str.Substring(offset)` returns the part of the string
   from the specified position until the end of the string.

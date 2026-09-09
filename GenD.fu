@@ -876,7 +876,7 @@ public class GenD : GenCCppD
 			break;
 		case FuId.StringIndexOf:
 			Include("std.string");
-			WriteMethodCall(obj, "indexOf", args[0]);
+			WriteMethodCall(obj, "indexOf", args[0], args.Count == 2 ? args[1] : null);
 			break;
 		case FuId.StringLastIndexOf:
 			Include("std.string");

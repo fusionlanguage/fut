@@ -2792,6 +2792,7 @@ protected:
 	void writeAssignRight(const FuBinaryExpr * expr) override;
 	void writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
+	void writeStringMethodArgs(const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void writeMathFloating(const FuType * type, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args);
 	void startTemporaryVar(const FuType * type) override;
 	void writeAssertCast(const FuBinaryExpr * expr) override;

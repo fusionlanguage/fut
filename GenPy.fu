@@ -890,7 +890,7 @@ public class GenPy : GenPySwift
 			WriteMethodCall(obj, "endswith", args[0]);
 			break;
 		case FuId.StringIndexOf:
-			WriteMethodCall(obj, "find", args[0]);
+			WriteMethodCall(obj, "find", args[0], args.Count == 2 ? args[1] : null);
 			break;
 		case FuId.StringLastIndexOf:
 			WriteMethodCall(obj, "rfind", args[0]);

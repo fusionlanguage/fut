@@ -622,6 +622,10 @@ public class GenSwift : GenPySwift
 			WriteUnwrapped(obj, FuPriority.Argument, true);
 			Write(", ");
 			WriteUnwrapped(args[0], FuPriority.Argument, true);
+			if (args.Count == 2) {
+				Write(", ");
+				args[1].Accept(this, FuPriority.Argument);
+			}
 			WriteChar(')');
 			break;
 		case FuId.StringLastIndexOf:
@@ -631,7 +635,7 @@ public class GenSwift : GenPySwift
 			WriteUnwrapped(obj, FuPriority.Argument, true);
 			Write(", ");
 			WriteUnwrapped(args[0], FuPriority.Argument, true);
-			Write(", .backwards)");
+			Write(", 0, .backwards)");
 			break;
 		case FuId.StringReplace:
 			WriteUnwrapped(obj, FuPriority.Primary, true);
@@ -2135,9 +2139,10 @@ public class GenSwift : GenPySwift
 		}
 		if (this.StringIndexOf) {
 			WriteNewLine();
-			WriteLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+			WriteLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 			OpenBlock();
-			WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
+			WriteLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
+			WriteLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 			WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 			CloseBlock();
 		}

@@ -1938,7 +1938,7 @@ public class FuSystem : FuScope
 		Add(BoolType);
 		StringClass.AddMethod(BoolType, FuId.StringContains, "Contains", false, FuVar.New(StringPtrType, "value"));
 		StringClass.AddMethod(BoolType, FuId.StringEndsWith, "EndsWith", false, FuVar.New(StringPtrType, "value"));
-		StringClass.AddMethod(NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(StringPtrType, "value"));
+		StringClass.AddMethod(NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(StringPtrType, "value"), FuVar.New(IntType, "startIndex", NewLiteralLong(0)));
 		StringClass.AddMethod(NIntType, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(StringPtrType, "value"));
 		FuProperty# stringLengthProperty = FuProperty.New(NIntType, FuId.StringLength, "Length");
 		StringClass.Add(stringLengthProperty);

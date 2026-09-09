@@ -624,14 +624,7 @@ public class GenCpp : GenCCpp
 		WriteNotRawStringLiteral(obj, FuPriority.Primary);
 		WriteChar('.');
 		Write(name);
-		int c = GetOneAscii(args[0]);
-		if (c >= 0) {
-			WriteChar('(');
-			VisitLiteralChar(c);
-			WriteChar(')');
-		}
-		else
-			WriteCoercedArgsInParentheses(method, args);
+		WriteStringMethodArgs(method, args);
 	}
 
 	void WriteAllAnyContains!(string function, FuExpr obj, List<FuExpr#> args)

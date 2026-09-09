@@ -23,6 +23,8 @@ public class Test
 			&& p.IndexOf("r") == 5
 			&& p.IndexOf("barek") == -1
 			&& "afoobarek".IndexOf(s) == 1
-			&& "afoobarek".IndexOf(p) == 1;
+			&& "afoobarek".IndexOf(p) == 1
+			&& s.IndexOf("o", 2) == 2
+			&& p.IndexOf("o", 2) == 2;
 	}
 }

@@ -3434,7 +3434,7 @@ namespace Fusion
 			Add(this.BoolType);
 			this.StringClass.AddMethod(this.BoolType, FuId.StringContains, "Contains", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringEndsWith, "EndsWith", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.AddMethod(this.NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"));
+			this.StringClass.AddMethod(this.NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "startIndex", NewLiteralLong(0)));
 			this.StringClass.AddMethod(this.NIntType, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(this.StringPtrType, "value"));
 			FuProperty stringLengthProperty = FuProperty.New(this.NIntType, FuId.StringLength, "Length");
 			this.StringClass.Add(stringLengthProperty);
@@ -10332,6 +10332,23 @@ namespace Fusion
 			WriteIndexing(expr.Left, expr.Right!);
 		}
 
+		protected void WriteStringMethodArgs(FuMethod method, List<FuExpr> args)
+		{
+			int c = GetOneAscii(args[0]);
+			if (c >= 0) {
+				WriteChar('(');
+				VisitLiteralChar(c);
+				if (args.Count != 1) {
+					Debug.Assert(args.Count == 2);
+					Write(", ");
+					args[1].Accept(this, FuPriority.Argument);
+				}
+				WriteChar(')');
+			}
+			else
+				WriteCoercedArgsInParentheses(method, args);
+		}
+
 		protected void WriteMathFloating(FuType type, FuMethod method, List<FuExpr> args)
 		{
 			WriteLowercase(method.Name);
@@ -12417,7 +12434,7 @@ namespace Fusion
 		{
 			Include("string.h");
 			Write("FuString_");
-			WriteCall(name, obj, args[0]);
+			WriteCall(name, obj, args[0], args.Count == 2 ? args[1] : null);
 		}
 
 		void WriteSizeofCompare(FuType elementType)
@@ -12820,7 +12837,16 @@ namespace Fusion
 			case FuId.StringIndexOf:
 				this.StringIndexOf = true;
 				IncludeStdDef();
-				WriteStringMethod("IndexOf", obj!, args);
+				if (args.Count == 1) {
+					Include("string.h");
+					Write("FuString_IndexOf(");
+					obj!.Accept(this, FuPriority.Argument);
+					Write(", ");
+					args[0].Accept(this, FuPriority.Argument);
+					Write(", 0)");
+				}
+				else
+					WriteStringMethod("IndexOf", obj!, args);
 				break;
 			case FuId.StringLastIndexOf:
 				this.StringLastIndexOf = true;
@@ -14496,9 +14522,9 @@ namespace Fusion
 			}
 			if (this.StringIndexOf) {
 				WriteNewLine();
-				WriteLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle)");
+				WriteLine("static ptrdiff_t FuString_IndexOf(const char *str, const char *needle, size_t startIndex)");
 				OpenBlock();
-				WriteLine("const char *p = strstr(str, needle);");
+				WriteLine("const char *p = strstr(str + startIndex, needle);");
 				WriteLine("return p == NULL ? -1 : p - str;");
 				CloseBlock();
 			}
@@ -15895,14 +15921,7 @@ namespace Fusion
 			WriteNotRawStringLiteral(obj, FuPriority.Primary);
 			WriteChar('.');
 			Write(name);
-			int c = GetOneAscii(args[0]);
-			if (c >= 0) {
-				WriteChar('(');
-				VisitLiteralChar(c);
-				WriteChar(')');
-			}
-			else
-				WriteCoercedArgsInParentheses(method, args);
+			WriteStringMethodArgs(method, args);
 		}
 
 		void WriteAllAnyContains(string function, FuExpr obj, List<FuExpr> args)
@@ -18180,13 +18199,7 @@ namespace Fusion
 				obj!.Accept(this, FuPriority.Primary);
 				WriteMemberOp(obj!, null);
 				Write(method.Name);
-				WriteChar('(');
-				int c = GetOneAscii(args[0]);
-				if (c >= 0)
-					VisitLiteralChar(c);
-				else
-					args[0].Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteStringMethodArgs(method, args);
 				break;
 			case FuId.ArrayBinarySearchAll:
 			case FuId.ArrayBinarySearchPart:
@@ -19585,7 +19598,7 @@ namespace Fusion
 				break;
 			case FuId.StringIndexOf:
 				Include("std.string");
-				WriteMethodCall(obj!, "indexOf", args[0]);
+				WriteMethodCall(obj!, "indexOf", args[0], args.Count == 2 ? args[1] : null);
 				break;
 			case FuId.StringLastIndexOf:
 				Include("std.string");
@@ -24845,6 +24858,10 @@ namespace Fusion
 				WriteUnwrapped(obj!, FuPriority.Argument, true);
 				Write(", ");
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
+				if (args.Count == 2) {
+					Write(", ");
+					args[1].Accept(this, FuPriority.Argument);
+				}
 				WriteChar(')');
 				break;
 			case FuId.StringLastIndexOf:
@@ -24854,7 +24871,7 @@ namespace Fusion
 				WriteUnwrapped(obj!, FuPriority.Argument, true);
 				Write(", ");
 				WriteUnwrapped(args[0], FuPriority.Argument, true);
-				Write(", .backwards)");
+				Write(", 0, .backwards)");
 				break;
 			case FuId.StringReplace:
 				WriteUnwrapped(obj!, FuPriority.Primary, true);
@@ -26341,9 +26358,10 @@ namespace Fusion
 			}
 			if (this.StringIndexOf) {
 				WriteNewLine();
-				WriteLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ options: String.CompareOptions = .literal) -> Int");
+				WriteLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 				OpenBlock();
-				WriteLine("guard let index = haystack.range(of: needle, options: options) else { return -1 }");
+				WriteLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
+				WriteLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 				WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
 				CloseBlock();
 			}
@@ -27293,7 +27311,7 @@ namespace Fusion
 				WriteMethodCall(obj!, "endswith", args[0]);
 				break;
 			case FuId.StringIndexOf:
-				WriteMethodCall(obj!, "find", args[0]);
+				WriteMethodCall(obj!, "find", args[0], args.Count == 2 ? args[1] : null);
 				break;
 			case FuId.StringLastIndexOf:
 				WriteMethodCall(obj!, "rfind", args[0]);
