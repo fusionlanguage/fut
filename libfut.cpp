@@ -26361,6 +26361,7 @@ void GenSwift::writeLibrary()
 		writeNewLine();
 		writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 		openBlock();
+		writeLine("if needle.isEmpty { return startIndex }");
 		writeLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
 		writeLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 		writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");

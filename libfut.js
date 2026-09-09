@@ -27120,6 +27120,7 @@ export class GenSwift extends GenPySwift
 			this.writeNewLine();
 			this.writeLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 			this.openBlock();
+			this.writeLine("if needle.isEmpty { return startIndex }");
 			this.writeLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
 			this.writeLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 			this.writeLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");

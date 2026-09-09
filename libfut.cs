@@ -26360,6 +26360,7 @@ namespace Fusion
 				WriteNewLine();
 				WriteLine("fileprivate func fuStringIndexOf<S1: StringProtocol, S2: StringProtocol>(_ haystack: S1, _ needle: S2, _ startIndex: Int = 0, _ options: String.CompareOptions = .literal) -> Int");
 				OpenBlock();
+				WriteLine("if needle.isEmpty { return startIndex }");
 				WriteLine("let range = haystack.index(haystack.startIndex, offsetBy: startIndex)..<haystack.endIndex");
 				WriteLine("guard let index = haystack.range(of: needle, options: options, range: range) else { return -1 }");
 				WriteLine("return haystack.distance(from: haystack.startIndex, to: index.lowerBound)");
