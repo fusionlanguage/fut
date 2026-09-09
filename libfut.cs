@@ -3434,7 +3434,7 @@ namespace Fusion
 			Add(this.BoolType);
 			this.StringClass.AddMethod(this.BoolType, FuId.StringContains, "Contains", false, FuVar.New(this.StringPtrType, "value"));
 			this.StringClass.AddMethod(this.BoolType, FuId.StringEndsWith, "EndsWith", false, FuVar.New(this.StringPtrType, "value"));
-			this.StringClass.AddMethod(this.NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.IntType, "startIndex", NewLiteralLong(0)));
+			this.StringClass.AddMethod(this.NIntType, FuId.StringIndexOf, "IndexOf", false, FuVar.New(this.StringPtrType, "value"), FuVar.New(this.NIntType, "startIndex", NewLiteralLong(0)));
 			this.StringClass.AddMethod(this.NIntType, FuId.StringLastIndexOf, "LastIndexOf", false, FuVar.New(this.StringPtrType, "value"));
 			FuProperty stringLengthProperty = FuProperty.New(this.NIntType, FuId.StringLength, "Length");
 			this.StringClass.Add(stringLengthProperty);

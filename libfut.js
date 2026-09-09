@@ -3715,7 +3715,7 @@ export class FuSystem extends FuScope
 		this.add(this.boolType);
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_CONTAINS, "Contains", false, FuVar.new(this.stringPtrType, "value"));
 		this.#stringClass.addMethod(this.boolType, FuId.STRING_ENDS_WITH, "EndsWith", false, FuVar.new(this.stringPtrType, "value"));
-		this.#stringClass.addMethod(this.nIntType, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.intType, "startIndex", this.newLiteralLong(0n)));
+		this.#stringClass.addMethod(this.nIntType, FuId.STRING_INDEX_OF, "IndexOf", false, FuVar.new(this.stringPtrType, "value"), FuVar.new(this.nIntType, "startIndex", this.newLiteralLong(0n)));
 		this.#stringClass.addMethod(this.nIntType, FuId.STRING_LAST_INDEX_OF, "LastIndexOf", false, FuVar.new(this.stringPtrType, "value"));
 		let stringLengthProperty = FuProperty.new(this.nIntType, FuId.STRING_LENGTH, "Length");
 		this.#stringClass.add(stringLengthProperty);

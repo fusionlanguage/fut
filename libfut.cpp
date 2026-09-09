@@ -2978,7 +2978,7 @@ FuSystem::FuSystem()
 	add(this->boolType);
 	this->stringClass->addMethod(this->boolType, FuId::stringContains, "Contains", false, FuVar::new_(this->stringPtrType, "value"));
 	this->stringClass->addMethod(this->boolType, FuId::stringEndsWith, "EndsWith", false, FuVar::new_(this->stringPtrType, "value"));
-	this->stringClass->addMethod(this->nIntType, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->intType, "startIndex", newLiteralLong(0)));
+	this->stringClass->addMethod(this->nIntType, FuId::stringIndexOf, "IndexOf", false, FuVar::new_(this->stringPtrType, "value"), FuVar::new_(this->nIntType, "startIndex", newLiteralLong(0)));
 	this->stringClass->addMethod(this->nIntType, FuId::stringLastIndexOf, "LastIndexOf", false, FuVar::new_(this->stringPtrType, "value"));
 	std::shared_ptr<FuProperty> stringLengthProperty = FuProperty::new_(this->nIntType, FuId::stringLength, "Length");
 	this->stringClass->add(stringLengthProperty);
