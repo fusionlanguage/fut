@@ -68,12 +68,13 @@ jobs:
       - run: make -j4 test-error FUT_HOST=java
       - run: rm test/bin/*/error.txt
       - run: make -j4 test-error FUT_HOST=node
-  vscode:
+  lsp-vscode:
     runs-on: ubuntu-24.04
     steps:
       - uses: actions/setup-node@main
       - uses: actions/checkout@main
       - run: make FUT_HOST=node
+      - run: make -C editors/lsp FUT_HOST=node
       - run: make -C editors/vscode src/fucheck.js FUT_HOST=node
       - run: cd editors/vscode && npm i && npx @vscode/vsce package
   macos:

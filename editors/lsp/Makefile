@@ -9,4 +9,8 @@ fusion-lsp: main.cpp lsp.cpp
 endif
 
 lsp.cpp: lsp.fu ../../Lexer.fu ../../AST.fu ../../Parser.fu ../../Sema.fu ../../SymbolReferenceVisitor.fu
+ifeq ($(FUT_HOST),node)
+	node ../../fut.js -o $@ $^
+else
 	fut -o $@ $^
+endif
