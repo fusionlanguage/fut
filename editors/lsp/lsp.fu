@@ -18,11 +18,58 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public abstract class FusionLanguageServer
+public abstract class FusionLanguageServer : FuSemaHost
 {
+	Dictionary<string(), string()>() OpenFiles;
+	bool HasErrors;
+
+	public override void ReportError!(string filename, int line, int startUtf16Column, int endUtf16Column, string message)
+	{
+		this.HasErrors = true;
+	}
+
 	protected abstract string() ReadStdin(int length);
 
-	protected abstract void watchClientProcess(int pid);
+	protected abstract void WatchClientProcess(int pid);
+
+	protected abstract string GetFileScheme();
+
+	static int GetHexDigit(int c)
+	{
+		if (c >= '0' && c <= '9')
+			return c - '0';
+		if (c >= 'A' && c <= 'F')
+			return c - 'A' + 10;
+		if (c >= 'a' && c <= 'f')
+			return c - 'a' + 10;
+		assert false;
+	}
+
+	string() UriToPath(string uri)
+	{
+		if (!uri.StartsWith("file:///"))
+			return "";
+		StringWriter() result;
+		byte[256] decoded;
+		int decodedCount = 0;
+		nint pos = GetFileScheme().Length;
+		for (;;) {
+			nint percentPos = uri.IndexOf("%", pos);
+			if (percentPos != pos || decodedCount == decoded.Length) {
+				if (decodedCount > 0)
+					result.Write(Encoding.UTF8.GetString(decoded, 0, decodedCount));
+				if (percentPos < 0) {
+					result.Write(uri.Substring(pos));
+					return result.ToString();
+				}
+				result.Write(uri.Substring(pos, percentPos - pos));
+				decodedCount = 0;
+			}
+			assert percentPos + 2 < uri.Length;
+			decoded[decodedCount++] = GetHexDigit(uri[percentPos + 1]) << 4 | GetHexDigit(uri[percentPos + 2]);
+			pos = percentPos + 3;
+		}
+	}
 
 	static int GetInt(JsonElement json) => Math.Truncate(json.GetDouble());
 
@@ -40,16 +87,51 @@ public abstract class FusionLanguageServer
 		Respond(request, $"\"error\": {{ \"code\": {code}, \"message\": \"{message}\" }}");
 	}
 
+	void SetOpenFile!(string uri, string text)
+	{
+		OpenFiles[uri] = text;
+	}
+
+	void ParseOpenFile(string uri, FuParser! parser)
+	{
+		string text = OpenFiles[uri]; // TODO: check if exists
+		nint inputLength = Encoding.UTF8.GetByteCount(text);
+		byte[]# input = new byte[inputLength];
+		Encoding.UTF8.GetBytes(text, input, 0);
+		parser.Parse(uri, input, inputLength);
+	}
+
+	void DoSema!()
+	{
+		if (this.HasErrors)
+			return;
+		FuSema() sema;
+		sema.SetHost(this);
+		sema.Process();
+	}
+
+	FuSymbol? FindSymbol!(Dictionary<string(), JsonElement#> textDocument, Dictionary<string(), JsonElement#> position)
+	{
+		string uri = textDocument["uri"].GetString();
+		FuParser() parser;
+		this.HasErrors = false;
+		parser.SetHost(this);
+		parser.FindName(uri, GetInt(position["line"]), GetInt(position["character"]));
+		ParseOpenFile(uri, parser);
+		DoSema();
+		return parser.GetFoundDefinition();
+	}
+
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
 		string method = request["method"].GetString();
 		switch (method) {
 		case "initialize":
-			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"positionEncoding\": \"utf-8\", \"textDocumentSync\": 1, \"hoverProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
+			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
 			JsonElement pid = params["processId"];
 			if (pid.IsNumber())
-				watchClientProcess(GetInt(pid));
+				WatchClientProcess(GetInt(pid));
 			break;
 		case "shutdown":
 			Respond(request, "\"result\": null");
@@ -58,23 +140,32 @@ public abstract class FusionLanguageServer
 			return true;
 		case "textDocument/didOpen":
 			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-			// TODO
-			// string uri = textDocument["uri"].GetString();
-			// string text = textDocument["text"].GetString();
+			SetOpenFile(textDocument["uri"].GetString(), textDocument["text"].GetString());
 			break;
 		case "textDocument/didChange":
 			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-			// TODO
-			// string uri = textDocument["uri"].GetString();
-			// string text = params["contentChanges"].GetArray()[0].GetObject()["text"].GetString();
+			SetOpenFile(textDocument["uri"].GetString(), params["contentChanges"].GetArray()[0].GetObject()["text"].GetString());
+			break;
+		case "textDocument/didClose":
+			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
+			OpenFiles.Remove(textDocument["uri"].GetString());
 			break;
 		case "textDocument/hover":
 			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
 			Dictionary<string(), JsonElement#> position = params["position"].GetObject();
-			int line = GetInt(position["line"]);
-			int character = GetInt(position["character"]);
-			// TODO
-			Respond(request, $"\"result\": {{ \"contents\": \"Hello, LSP! Position {line},{character}\" }}");
+			FuSystem# system = FuSystem.New();
+			FuProgram() program;
+			program.Parent = system;
+			program.System = system;
+			this.Program = program;
+			FuSymbol? symbol = FindSymbol(textDocument, position);
+			if (symbol == null)
+				Respond(request, "\"result\": null");
+			// TODO: escape
+			// else if (symbol.Documentation != null) {
+			// }
+			else
+				Respond(request, $"\"result\": {{ \"contents\": {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }} }}");
 			break;
 		default:
 			if (request.ContainsKey("id"))

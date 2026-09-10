@@ -1688,6 +1688,11 @@ export class FuSymbol extends FuName
 	{
 		return this.name;
 	}
+
+	getHover()
+	{
+		return this.name;
+	}
 }
 
 export class FuScope extends FuSymbol
@@ -3021,6 +3026,11 @@ export class FuMember extends FuNamedValue
 	startColumn;
 	endLine;
 	endColumn;
+
+	getHover()
+	{
+		return `${this.type} ${this.name}`;
+	}
 }
 
 export class FuVar extends FuNamedValue
@@ -3046,6 +3056,11 @@ export class FuVar extends FuNamedValue
 	{
 		let def = this.next;
 		return def;
+	}
+
+	getHover()
+	{
+		return `(${this.parent instanceof FuParameters ? "parameter" : "local variable"}) ${this.type} ${this.name}`;
 	}
 }
 
@@ -3075,6 +3090,11 @@ export class FuConst extends FuMember
 	{
 		return true;
 	}
+
+	getHover()
+	{
+		return `const ${this.type} ${this.name}`;
+	}
 }
 
 export class FuField extends FuMember
@@ -3083,6 +3103,11 @@ export class FuField extends FuMember
 	isStatic()
 	{
 		return false;
+	}
+
+	getHover()
+	{
+		return `(field) ${this.type} ${this.name}`;
 	}
 }
 
@@ -3242,7 +3267,7 @@ export class FuMethod extends FuMethodBase
 		return (ret = this.body) instanceof FuReturn && ret.value.isConst(true);
 	}
 
-	getSignature()
+	getHover()
 	{
 		const w = new StringWriter();
 		if (this.callType != FuCallType.NORMAL) {
@@ -3323,6 +3348,11 @@ export class FuEnum extends FuContainerType
 				previous = konst;
 			}
 		}
+	}
+
+	getHover()
+	{
+		return `enum ${this.name}`;
 	}
 }
 
@@ -3419,6 +3449,11 @@ export class FuClass extends FuContainerType
 	{
 		let method;
 		return this.dict.hasOwnProperty("ToString") && (method = this.dict["ToString"]) instanceof FuMethod && method.id == FuId.CLASS_TO_STRING && method.callType != FuCallType.OVERRIDE && method.callType != FuCallType.SEALED;
+	}
+
+	getHover()
+	{
+		return `class ${this.name}`;
 	}
 }
 

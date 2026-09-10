@@ -68,6 +68,16 @@ protected:
 				std::exit(0);
 			}).detach();
 	}
+
+	std::string_view getFileScheme() const override
+	{
+#ifdef _WIN32
+		return "file:///";
+#else
+		return "file://";
+#endif
+	}
+
 };
 
 int main()

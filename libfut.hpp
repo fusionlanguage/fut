@@ -795,7 +795,10 @@ private: // internal
 	std::shared_ptr<FuType> type;
 	friend FuBinaryExpr;
 	friend FuCallExpr;
+	friend FuConst;
+	friend FuField;
 	friend FuLiteralChar;
+	friend FuMember;
 	friend FuMethod;
 	friend FuMethodBase;
 	friend FuNamedValue;
@@ -838,6 +841,10 @@ private: // internal
 	friend FuCallExpr;
 	friend FuClass;
 	friend FuClassType;
+	friend FuConst;
+	friend FuEnum;
+	friend FuField;
+	friend FuMember;
 	friend FuMethod;
 	friend FuMethodGroup;
 	friend FuNamedValue;
@@ -872,6 +879,7 @@ public:
 	virtual ~FuSymbol() = default;
 	const FuSymbol * getSymbol() const override;
 	std::string toString() const override;
+	virtual std::string getHover() const;
 protected:
 	FuSymbol() = default;
 private: // internal
@@ -1759,6 +1767,7 @@ class FuMember : public FuNamedValue
 public:
 	virtual ~FuMember() = default;
 	virtual bool isStatic() const = 0;
+	std::string getHover() const override;
 protected:
 	FuMember();
 private: // internal
@@ -1794,6 +1803,7 @@ public:
 	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	FuVar * nextVar() const;
+	std::string getHover() const override;
 private: // internal
 	bool isAssigned = false;
 	friend FuParser;
@@ -1809,6 +1819,7 @@ public:
 	bool isConst(bool varIsConst) const override;
 	void acceptStatement(FuVisitor * visitor) const override;
 	bool isStatic() const override;
+	std::string getHover() const override;
 private: // internal
 	const FuMethodBase * inMethod;
 	int inMethodIndex = 0;
@@ -1827,6 +1838,7 @@ class FuField : public FuMember
 public:
 	FuField() = default;
 	bool isStatic() const override;
+	std::string getHover() const override;
 };
 
 class FuProperty : public FuMember
@@ -1901,7 +1913,7 @@ public:
 	int getParametersCount() const;
 	const FuMethod * getDeclaringMethod() const;
 	bool isPure() const;
-	std::string getSignature() const;
+	std::string getHover() const override;
 private: // internal
 	FuCallType callType;
 	static std::string_view callTypeToString(FuCallType callType);
@@ -1960,6 +1972,7 @@ public:
 	virtual ~FuEnum() = default;
 	const FuSymbol * getFirstValue() const;
 	void acceptValues(FuVisitor * visitor) const;
+	std::string getHover() const override;
 private: // internal
 	bool hasExplicitValue = false;
 	friend FuSema;
@@ -1986,6 +1999,7 @@ public:
 	const FuClass * getLowestCommonAncestor(const FuClass * other) const;
 	bool hasToString() const;
 	bool addsToString() const;
+	std::string getHover() const override;
 private: // internal
 	FuCallType callType;
 	int typeParameterCount = 0;

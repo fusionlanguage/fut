@@ -406,6 +406,7 @@ public abstract class FuSymbol : FuName
 	internal FuCodeDoc#? Documentation = null;
 	public override FuSymbol? GetSymbol() => this;
 	public override string() ToString() => this.Name;
+	public virtual string() GetHover() => this.Name;
 }
 
 public abstract class FuScope : FuSymbol
@@ -1248,6 +1249,7 @@ public abstract class FuMember : FuNamedValue
 	{
 	}
 	public abstract bool IsStatic();
+	public override string() GetHover() => $"{this.Type} {this.Name}"; // property
 }
 
 public class FuVar : FuNamedValue
@@ -1262,6 +1264,7 @@ public class FuVar : FuNamedValue
 		assert this.Next is FuVar! def; // FIXME: FuVar!?
 		return def;
 	}
+	public override string() GetHover() => $"({this.Parent is FuParameters ? "parameter" : "local variable"}) {this.Type} {this.Name}";
 }
 
 enum FuVisitStatus
@@ -1279,11 +1282,13 @@ public class FuConst : FuMember
 	public override bool IsConst(bool VarIsConst) => true;
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitConst(this); }
 	public override bool IsStatic() => true;
+	public override string() GetHover() => $"const {this.Type} {this.Name}";
 }
 
 public class FuField : FuMember
 {
 	public override bool IsStatic() => false;
+	public override string() GetHover() => $"(field) {this.Type} {this.Name}";
 }
 
 class FuProperty : FuMember
@@ -1393,7 +1398,7 @@ public class FuMethod : FuMethodBase
 		}
 		return this.Body is FuReturn ret && ret.Value.IsConst(true);
 	}
-	public string() GetSignature()
+	public override string() GetHover()
 	{
 		StringWriter() w;
 		if (this.CallType != FuCallType.Normal) {
@@ -1462,6 +1467,7 @@ public class FuEnum : FuContainerType
 			}
 		}
 	}
+	public override string() GetHover() => $"enum {this.Name}";
 }
 
 class FuEnumFlags : FuEnum
@@ -1540,6 +1546,8 @@ public class FuClass : FuContainerType
 
 	public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.Id == FuId.ClassToString
 		&& method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
+
+	public override string() GetHover() => $"class {this.Name}";
 }
 
 public class FuClassType : FuType

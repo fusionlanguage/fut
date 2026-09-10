@@ -158,22 +158,7 @@ class VsCodeSymbolLocator extends VsCodeHost
 		const symbol = await this.findSymbol(document, position);
 		if (symbol == null)
 			return null;
-		let code = symbol.name;
-		if (symbol instanceof FuClass)
-			code = `class ${code}`;
-		else if (symbol instanceof FuEnum)
-			code = `enum ${code}`;
-		else if (symbol instanceof FuConst)
-			code = `const ${symbol.type} ${code}`;
-		else if (symbol instanceof FuVar)
-			code = `(${symbol.parent instanceof FuParameters ? "parameter" : "local variable"}) ${symbol.type} ${code}`;
-		else if (symbol instanceof FuMethod)
-			code = symbol.getSignature();
-		else if (symbol instanceof FuField)
-			code = `(field) ${symbol.type} ${code}`;
-		else if (symbol instanceof FuMember) // property
-			code = `${symbol.type} ${code}`;
-		const hover = new vscode.MarkdownString().appendCodeblock(code, "fusion");
+		const hover = new vscode.MarkdownString().appendCodeblock(symbol.getHover(), "fusion");
 		if (symbol.documentation != null)
 			hover.appendMarkdown((symbol.documentation as FuCodeDoc).toString());
 		return new vscode.Hover(hover);

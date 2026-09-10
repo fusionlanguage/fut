@@ -1741,6 +1741,8 @@ namespace Fusion
 		public override FuSymbol? GetSymbol() => this;
 
 		public override string ToString() => this.Name;
+
+		public virtual string GetHover() => this.Name;
 	}
 
 	public abstract class FuScope : FuSymbol
@@ -2866,6 +2868,8 @@ namespace Fusion
 		internal int EndColumn;
 
 		public abstract bool IsStatic();
+
+		public override string GetHover() => $"{this.Type} {this.Name}";
 	}
 
 	public class FuVar : FuNamedValue
@@ -2887,6 +2891,8 @@ namespace Fusion
 			FuVar def = (FuVar) this.Next!;
 			return def;
 		}
+
+		public override string GetHover() => $"({(this.Parent is FuParameters ? "parameter" : "local variable")}) {this.Type} {this.Name}";
 	}
 
 	enum FuVisitStatus
@@ -2913,12 +2919,16 @@ namespace Fusion
 		}
 
 		public override bool IsStatic() => true;
+
+		public override string GetHover() => $"const {this.Type} {this.Name}";
 	}
 
 	public class FuField : FuMember
 	{
 
 		public override bool IsStatic() => false;
+
+		public override string GetHover() => $"(field) {this.Type} {this.Name}";
 	}
 
 	class FuProperty : FuMember
@@ -3057,7 +3067,7 @@ namespace Fusion
 			return this.Body is FuReturn ret && ret.Value!.IsConst(true);
 		}
 
-		public string GetSignature()
+		public override string GetHover()
 		{
 			StringWriter w = new StringWriter();
 			if (this.CallType != FuCallType.Normal) {
@@ -3141,6 +3151,8 @@ namespace Fusion
 				}
 			}
 		}
+
+		public override string GetHover() => $"enum {this.Name}";
 	}
 
 	class FuEnumFlags : FuEnum
@@ -3228,6 +3240,8 @@ namespace Fusion
 		public bool HasToString() => TryLookup("ToString", false) is FuMethod method && method.Id == FuId.ClassToString;
 
 		public bool AddsToString() => this.Dict.ContainsKey("ToString") && this.Dict["ToString"] is FuMethod method && method.Id == FuId.ClassToString && method.CallType != FuCallType.Override && method.CallType != FuCallType.Sealed;
+
+		public override string GetHover() => $"class {this.Name}";
 	}
 
 	public class FuClassType : FuType

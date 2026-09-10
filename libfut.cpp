@@ -1284,6 +1284,11 @@ std::string FuSymbol::toString() const
 	return this->name;
 }
 
+std::string FuSymbol::getHover() const
+{
+	return this->name;
+}
+
 int FuScope::count() const
 {
 	return static_cast<int>(std::ssize(this->dict));
@@ -2368,6 +2373,11 @@ FuMember::FuMember()
 {
 }
 
+std::string FuMember::getHover() const
+{
+	return std::format("{} {}", this->type->toString(), this->name);
+}
+
 std::shared_ptr<FuVar> FuVar::new_(std::shared_ptr<FuType> type, std::string_view name, std::shared_ptr<FuExpr> defaultValue)
 {
 	std::shared_ptr<FuVar> futemp0 = std::make_shared<FuVar>();
@@ -2393,6 +2403,11 @@ FuVar * FuVar::nextVar() const
 	return def;
 }
 
+std::string FuVar::getHover() const
+{
+	return std::format("({}) {} {}", dynamic_cast<const FuParameters *>(this->parent) ? "parameter" : "local variable", this->type->toString(), this->name);
+}
+
 bool FuConst::isConst(bool varIsConst) const
 {
 	return true;
@@ -2408,9 +2423,19 @@ bool FuConst::isStatic() const
 	return true;
 }
 
+std::string FuConst::getHover() const
+{
+	return std::format("const {} {}", this->type->toString(), this->name);
+}
+
 bool FuField::isStatic() const
 {
 	return false;
+}
+
+std::string FuField::getHover() const
+{
+	return std::format("(field) {} {}", this->type->toString(), this->name);
 }
 
 bool FuProperty::isStatic() const
@@ -2559,7 +2584,7 @@ bool FuMethod::isPure() const
 	return (ret = dynamic_cast<const FuReturn *>(this->body.get())) && ret->value->isConst(true);
 }
 
-std::string FuMethod::getSignature() const
+std::string FuMethod::getHover() const
 {
 	std::ostringstream w;
 	if (this->callType != FuCallType::normal) {
@@ -2621,6 +2646,11 @@ void FuEnum::acceptValues(FuVisitor * visitor) const
 			previous = konst;
 		}
 	}
+}
+
+std::string FuEnum::getHover() const
+{
+	return std::format("enum {}", this->name);
 }
 
 bool FuClass::hasBaseClass() const
@@ -2704,6 +2734,11 @@ bool FuClass::addsToString() const
 {
 	const FuMethod * method;
 	return this->dict.count("ToString") != 0 && (method = dynamic_cast<const FuMethod *>(this->dict.find("ToString")->second.get())) && method->id == FuId::classToString && method->callType != FuCallType::override_ && method->callType != FuCallType::sealed;
+}
+
+std::string FuClass::getHover() const
+{
+	return std::format("class {}", this->name);
 }
 
 std::shared_ptr<FuType> FuClassType::getElementType() const
