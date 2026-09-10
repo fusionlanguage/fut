@@ -337,6 +337,8 @@ Possible string operations include the following:
   array part as a Base64 string.
 * `Encoding.UTF8.GetByteCount(str)` calculates the number of bytes needed
   for UTF-8 encoding of the string.
+* `Encoding.UTF8.GetBytes(str)` returns a UTF-8 `byte` array reference
+  which is valid as long as the string isn't modified.
 * `Encoding.UTF8.GetBytes(str, byteArray, byteArrayIndex)` writes UTF-8
   to the specified `byte` array, starting from the given index.
 * `Encoding.UTF8.GetString(byteArray, offset, length)`

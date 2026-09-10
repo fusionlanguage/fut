@@ -1250,7 +1250,16 @@ public class GenCpp : GenCCpp
 			else
 				WriteStringLength(args[0]);
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			IncludeStdInt();
+			Write("reinterpret_cast<const uint8_t *>(");
+			if (args[0] is FuLiteral)
+				args[0].Accept(this, FuPriority.Primary);
+			else
+				WritePostfix(args[0], ".data()");
+			WriteChar(')');
+			break;
+		case FuId.UTF8GetBytesCopy:
 			if (args[0] is FuLiteral) {
 				Include("algorithm");
 				Write("std::copy_n(");

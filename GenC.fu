@@ -2506,7 +2506,16 @@ public class GenC : GenCCpp
 		case FuId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			if (parent == FuPriority.Primary)
+				WriteChar('(');
+			IncludeStdInt();
+			Write("(const uint8_t *) ");
+			args[0].Accept(this, FuPriority.Primary);
+			if (parent == FuPriority.Primary)
+				WriteChar(')');
+			break;
+		case FuId.UTF8GetBytesCopy:
 			Include("string.h");
 			Write("memcpy("); // NOT strcpy because without the NUL terminator
 			WriteArrayPtrAdd(args[1], args[2]);

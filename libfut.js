@@ -1446,43 +1446,44 @@ export const FuId = {
 	BIT_CONVERTER_DOUBLE_TO_INT64_BITS : 148,
 	CONVERT_TO_BASE64_STRING : 149,
 	U_T_F8_GET_BYTE_COUNT : 150,
-	U_T_F8_GET_BYTES : 151,
-	U_T_F8_GET_STRING : 152,
-	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 153,
-	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 154,
-	REGEX_COMPILE : 155,
-	REGEX_ESCAPE : 156,
-	REGEX_IS_MATCH_STR : 157,
-	REGEX_IS_MATCH_REGEX : 158,
-	MATCH_FIND_STR : 159,
-	MATCH_FIND_REGEX : 160,
-	MATCH_GET_CAPTURE : 161,
-	JSON_ELEMENT_PARSE : 162,
-	JSON_ELEMENT_IS_OBJECT : 163,
-	JSON_ELEMENT_IS_ARRAY : 164,
-	JSON_ELEMENT_IS_STRING : 165,
-	JSON_ELEMENT_IS_NUMBER : 166,
-	JSON_ELEMENT_IS_BOOLEAN : 167,
-	JSON_ELEMENT_IS_NULL : 168,
-	JSON_ELEMENT_GET_OBJECT : 169,
-	JSON_ELEMENT_GET_ARRAY : 170,
-	JSON_ELEMENT_GET_STRING : 171,
-	JSON_ELEMENT_GET_DOUBLE : 172,
-	JSON_ELEMENT_GET_BOOLEAN : 173,
-	MATH_METHOD : 174,
-	MATH_ABS : 175,
-	MATH_CEILING : 176,
-	MATH_CLAMP : 177,
-	MATH_FUSED_MULTIPLY_ADD : 178,
-	MATH_IS_FINITE : 179,
-	MATH_IS_INFINITY : 180,
-	MATH_IS_NA_N : 181,
-	MATH_LOG2 : 182,
-	MATH_MAX : 183,
-	MATH_MIN : 184,
-	MATH_ROUND : 185,
-	MATH_SQRT : 186,
-	MATH_TRUNCATE : 187
+	U_T_F8_GET_BYTES_ALLOC : 151,
+	U_T_F8_GET_BYTES_COPY : 152,
+	U_T_F8_GET_STRING : 153,
+	ENVIRONMENT_GET_ENVIRONMENT_VARIABLE : 154,
+	DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS : 155,
+	REGEX_COMPILE : 156,
+	REGEX_ESCAPE : 157,
+	REGEX_IS_MATCH_STR : 158,
+	REGEX_IS_MATCH_REGEX : 159,
+	MATCH_FIND_STR : 160,
+	MATCH_FIND_REGEX : 161,
+	MATCH_GET_CAPTURE : 162,
+	JSON_ELEMENT_PARSE : 163,
+	JSON_ELEMENT_IS_OBJECT : 164,
+	JSON_ELEMENT_IS_ARRAY : 165,
+	JSON_ELEMENT_IS_STRING : 166,
+	JSON_ELEMENT_IS_NUMBER : 167,
+	JSON_ELEMENT_IS_BOOLEAN : 168,
+	JSON_ELEMENT_IS_NULL : 169,
+	JSON_ELEMENT_GET_OBJECT : 170,
+	JSON_ELEMENT_GET_ARRAY : 171,
+	JSON_ELEMENT_GET_STRING : 172,
+	JSON_ELEMENT_GET_DOUBLE : 173,
+	JSON_ELEMENT_GET_BOOLEAN : 174,
+	MATH_METHOD : 175,
+	MATH_ABS : 176,
+	MATH_CEILING : 177,
+	MATH_CLAMP : 178,
+	MATH_FUSED_MULTIPLY_ADD : 179,
+	MATH_IS_FINITE : 180,
+	MATH_IS_INFINITY : 181,
+	MATH_IS_NA_N : 182,
+	MATH_LOG2 : 183,
+	MATH_MAX : 184,
+	MATH_MIN : 185,
+	MATH_ROUND : 186,
+	MATH_SQRT : 187,
+	MATH_TRUNCATE : 188
 }
 
 export class FuDocInline
@@ -3847,7 +3848,7 @@ export class FuSystem extends FuScope
 		this.add(convertClass);
 		let utf8EncodingClass = FuClass.new(FuCallType.SEALED, FuId.NONE, "UTF8Encoding");
 		utf8EncodingClass.addMethod(this.nIntType, FuId.U_T_F8_GET_BYTE_COUNT, "GetByteCount", false, FuVar.new(this.stringPtrType, "str"));
-		utf8EncodingClass.addMethod(this.voidType, FuId.U_T_F8_GET_BYTES, "GetBytes", false, FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.nIntType, "byteIndex"));
+		utf8EncodingClass.add(FuMethodGroup.new(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), FuId.U_T_F8_GET_BYTES_ALLOC, "GetBytes", false, FuVar.new(this.stringPtrType, "str")), FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.voidType, FuId.U_T_F8_GET_BYTES_COPY, "GetBytes", false, FuVar.new(this.stringPtrType, "str"), FuVar.new(Object.assign(new FuReadWriteClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.nIntType, "byteIndex"))));
 		utf8EncodingClass.addMethod(this.stringStorageType, FuId.U_T_F8_GET_STRING, "GetString", false, FuVar.new(Object.assign(new FuClassType(), { class: this.arrayPtrClass, typeArg0: this.byteType }), "bytes"), FuVar.new(this.nIntType, "offset"), FuVar.new(this.nIntType, "length"));
 		let encodingClass = FuClass.new(FuCallType.STATIC, FuId.NONE, "Encoding");
 		encodingClass.add(FuStaticProperty.new(utf8EncodingClass, FuId.NONE, "UTF8"));
@@ -13830,7 +13831,16 @@ export class GenC extends GenCCpp
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writeStringLength(args[0]);
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			if (parent == FuPriority.PRIMARY)
+				this.writeChar(40);
+			this.includeStdInt();
+			this.write("(const uint8_t *) ");
+			args[0].accept(this, FuPriority.PRIMARY);
+			if (parent == FuPriority.PRIMARY)
+				this.writeChar(41);
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.include("string.h");
 			this.write("memcpy(");
 			this.writeArrayPtrAdd(args[1], args[2]);
@@ -15805,7 +15815,7 @@ export class GenCl extends GenC
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writeStringLength(args[0]);
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.write("for (size_t _i = 0; ");
 			args[0].accept(this, FuPriority.PRIMARY);
 			this.writeLine("[_i] != '\\0'; _i++)");
@@ -17181,7 +17191,16 @@ export class GenCpp extends GenCCpp
 			else
 				this.writeStringLength(args[0]);
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.includeStdInt();
+			this.write("reinterpret_cast<const uint8_t *>(");
+			if (args[0] instanceof FuLiteral)
+				args[0].accept(this, FuPriority.PRIMARY);
+			else
+				this.writePostfix(args[0], ".data()");
+			this.writeChar(41);
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			if (args[0] instanceof FuLiteral) {
 				this.include("algorithm");
 				this.write("std::copy_n(");
@@ -19027,7 +19046,11 @@ export class GenCs extends GenTyped
 			this.include("System.Text");
 			this.writeCall("Encoding.UTF8.GetByteCount", args[0]);
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.include("System.Text");
+			this.writeCall("Encoding.UTF8.GetBytes", args[0]);
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.include("System.Text");
 			this.write("Encoding.UTF8.GetBytes(");
 			args[0].accept(this, FuPriority.ARGUMENT);
@@ -20568,7 +20591,11 @@ export class GenD extends GenCCppD
 		case FuId.U_T_F8_GET_BYTE_COUNT:
 			this.writePostfix(args[0], ".length");
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.include("std.string");
+			this.writePostfix(args[0], ".representation");
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.include("std.string");
 			this.include("std.algorithm");
 			this.writePostfix(args[0], ".representation.copy(");
@@ -22120,7 +22147,11 @@ export class GenJava extends GenTyped
 			this.include("java.nio.charset.StandardCharsets");
 			this.writePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length");
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.include("java.nio.charset.StandardCharsets");
+			this.writePostfix(args[0], ".getBytes(StandardCharsets.UTF_8)");
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.include("java.nio.ByteBuffer");
 			this.include("java.nio.CharBuffer");
 			this.include("java.nio.charset.StandardCharsets");
@@ -23618,7 +23649,10 @@ export class GenJsNoModule extends GenBase
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(").length");
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.writeCall("new TextEncoder().encode", args[0]);
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.write("new TextEncoder().encodeInto(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
@@ -25998,7 +26032,13 @@ export class GenSwift extends GenPySwift
 			this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
 			this.write(".utf8.count");
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.#arrayRef = true;
+			this.write("ArrayRef<UInt8>([UInt8](");
+			this.#writeUnwrapped(args[0], FuPriority.PRIMARY, true);
+			this.write(".utf8))");
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			if (this.#addVar("fubytes"))
 				this.write(this.#varBytesAtIndent[this.indent] ? "var " : "let ");
 			this.write("fubytes = [UInt8](");
@@ -26541,7 +26581,7 @@ export class GenSwift extends GenPySwift
 		let count = 0;
 		for (const statement of statements) {
 			let call;
-			if ((call = statement) instanceof FuCallExpr && call.method.symbol.id == FuId.U_T_F8_GET_BYTES) {
+			if ((call = statement) instanceof FuCallExpr && call.method.symbol.id == FuId.U_T_F8_GET_BYTES_COPY) {
 				if (++count == 2)
 					return true;
 			}
@@ -28356,7 +28396,10 @@ export class GenPy extends GenPySwift
 			this.write("len(");
 			this.writePostfix(args[0], ".encode(\"utf8\"))");
 			break;
-		case FuId.U_T_F8_GET_BYTES:
+		case FuId.U_T_F8_GET_BYTES_ALLOC:
+			this.writePostfix(args[0], ".encode(\"utf8\")");
+			break;
+		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.write("fubytes = ");
 			args[0].accept(this, FuPriority.PRIMARY);
 			this.writeLine(".encode(\"utf8\")");

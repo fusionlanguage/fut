@@ -970,7 +970,11 @@ public class GenJava : GenTyped
 			Include("java.nio.charset.StandardCharsets");
 			WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length"); // FIXME: quick&dirty!
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			Include("java.nio.charset.StandardCharsets");
+			WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8)");
+			break;
+		case FuId.UTF8GetBytesCopy:
 			Include("java.nio.ByteBuffer");
 			Include("java.nio.CharBuffer");
 			Include("java.nio.charset.StandardCharsets");

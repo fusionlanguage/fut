@@ -97,10 +97,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 	void ParseOpenFile(string uri, FuParser! parser)
 	{
 		string text = OpenFiles[uri]; // TODO: check if exists
-		nint inputLength = Encoding.UTF8.GetByteCount(text);
-		byte[]# input = new byte[inputLength];
-		Encoding.UTF8.GetBytes(text, input, 0);
-		parser.Parse(uri, input, inputLength);
+		parser.Parse(uri, Encoding.UTF8.GetBytes(text), Encoding.UTF8.GetByteCount(text));
 	}
 
 	void DoSema!()

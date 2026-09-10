@@ -817,7 +817,10 @@ public class GenJsNoModule : GenBase
 			args[0].Accept(this, FuPriority.Argument);
 			Write(").length");
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			WriteCall("new TextEncoder().encode", args[0]);
+			break;
+		case FuId.UTF8GetBytesCopy:
 			Write("new TextEncoder().encodeInto(");
 			args[0].Accept(this, FuPriority.Argument);
 			Write(", ");

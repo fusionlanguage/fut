@@ -970,7 +970,13 @@ public class GenSwift : GenPySwift
 			WriteUnwrapped(args[0], FuPriority.Primary, true);
 			Write(".utf8.count");
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			this.ArrayRef = true;
+			Write("ArrayRef<UInt8>([UInt8](");
+			WriteUnwrapped(args[0], FuPriority.Primary, true);
+			Write(".utf8))");
+			break;
+		case FuId.UTF8GetBytesCopy:
 			if (AddVar("fubytes"))
 				Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
 			Write("fubytes = [UInt8](");
@@ -1520,10 +1526,10 @@ public class GenSwift : GenPySwift
 
 	static bool NeedsVarBytes(List<FuStatement#> statements)
 	{
-		// Encoding.UTF8.GetBytes returns void, so it can only be called as a statement
+		// Encoding.UTF8.GetBytesCopy returns void, so it can only be called as a statement
 		int count = 0;
 		foreach (FuStatement statement in statements) {
-			if (statement is FuCallExpr call && call.Method.Symbol.Id == FuId.UTF8GetBytes) {
+			if (statement is FuCallExpr call && call.Method.Symbol.Id == FuId.UTF8GetBytesCopy) {
 				if (++count == 2)
 					return true;
 			}

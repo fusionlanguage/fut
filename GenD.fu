@@ -1140,7 +1140,11 @@ public class GenD : GenCCppD
 		case FuId.UTF8GetByteCount:
 			WritePostfix(args[0], ".length");
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			Include("std.string");
+			WritePostfix(args[0], ".representation");
+			break;
+		case FuId.UTF8GetBytesCopy:
 			Include("std.string");
 			Include("std.algorithm");
 			WritePostfix(args[0], ".representation.copy(");

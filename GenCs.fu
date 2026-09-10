@@ -710,7 +710,11 @@ public class GenCs : GenTyped
 			Include("System.Text");
 			WriteCall("Encoding.UTF8.GetByteCount", args[0]);
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			Include("System.Text");
+			WriteCall("Encoding.UTF8.GetBytes", args[0]);
+			break;
+		case FuId.UTF8GetBytesCopy:
 			Include("System.Text");
 			Write("Encoding.UTF8.GetBytes(");
 			args[0].Accept(this, FuPriority.Argument);

@@ -250,7 +250,7 @@ public class GenCl : GenC
 		case FuId.UTF8GetByteCount:
 			WriteStringLength(args[0]);
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesCopy:
 			Write("for (size_t _i = 0; ");
 			args[0].Accept(this, FuPriority.Primary); // FIXME: side effect in every iteration
 			WriteLine("[_i] != '\\0'; _i++)");

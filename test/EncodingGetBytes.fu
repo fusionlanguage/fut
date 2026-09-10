@@ -9,8 +9,11 @@ public static class Test
 		Encoding.UTF8.GetBytes(s, p, 0);
 		if (a[0] == 'f')
 			Encoding.UTF8.GetBytes("ek", a, 6);
+		byte[] ra = Encoding.UTF8.GetBytes(s); //FAIL: cl
 		return a[0] == 'f' && a[1] == 'o' && a[2] == 'o'
 			&& a[3] == 'b' && a[4] == 'a' && a[5] == 'r'
-			&& a[6] == 'e' && a[7] == 'k';
+			&& a[6] == 'e' && a[7] == 'k'
+			&& ra[0] == 'f' && ra[1] == 'o' && ra[2] == 'o'
+			&& Encoding.UTF8.GetBytes("x")[0] == 'x';
 	}
 }

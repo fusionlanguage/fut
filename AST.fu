@@ -211,7 +211,8 @@ public enum FuId
 	BitConverterDoubleToInt64Bits,
 	ConvertToBase64String,
 	UTF8GetByteCount,
-	UTF8GetBytes,
+	UTF8GetBytesAlloc,
+	UTF8GetBytesCopy,
 	UTF8GetString,
 	EnvironmentGetEnvironmentVariable,
 	DateTimeOffsetUtcNowToUnixTimeMilliseconds,
@@ -2056,8 +2057,10 @@ public class FuSystem : FuScope
 		Add(convertClass);
 		FuClass# utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
 		utf8EncodingClass.AddMethod(NIntType, FuId.UTF8GetByteCount, "GetByteCount", false, FuVar.New(StringPtrType, "str"));
-		utf8EncodingClass.AddMethod(VoidType, FuId.UTF8GetBytes, "GetBytes", false,
-			FuVar.New(StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "byteIndex"));
+		utf8EncodingClass.Add(FuMethodGroup.New(
+			FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, FuId.UTF8GetBytesAlloc, "GetBytes", false, FuVar.New(StringPtrType, "str")),
+			FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, VoidType, FuId.UTF8GetBytesCopy, "GetBytes", false,
+				FuVar.New(StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "byteIndex"))));
 		utf8EncodingClass.AddMethod(StringStorageType, FuId.UTF8GetString, "GetString", false,
 			FuVar.New(new FuClassType { Class = ArrayPtrClass, TypeArg0 = ByteType }, "bytes"), FuVar.New(NIntType, "offset"), FuVar.New(NIntType, "length"));
 		FuClass# encodingClass = FuClass.New(FuCallType.Static, FuId.None, "Encoding");

@@ -1460,7 +1460,8 @@ namespace Fusion
 		BitConverterDoubleToInt64Bits,
 		ConvertToBase64String,
 		UTF8GetByteCount,
-		UTF8GetBytes,
+		UTF8GetBytesAlloc,
+		UTF8GetBytesCopy,
 		UTF8GetString,
 		EnvironmentGetEnvironmentVariable,
 		DateTimeOffsetUtcNowToUnixTimeMilliseconds,
@@ -3545,7 +3546,7 @@ namespace Fusion
 			Add(convertClass);
 			FuClass utf8EncodingClass = FuClass.New(FuCallType.Sealed, FuId.None, "UTF8Encoding");
 			utf8EncodingClass.AddMethod(this.NIntType, FuId.UTF8GetByteCount, "GetByteCount", false, FuVar.New(this.StringPtrType, "str"));
-			utf8EncodingClass.AddMethod(this.VoidType, FuId.UTF8GetBytes, "GetBytes", false, FuVar.New(this.StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "byteIndex"));
+			utf8EncodingClass.Add(FuMethodGroup.New(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, FuId.UTF8GetBytesAlloc, "GetBytes", false, FuVar.New(this.StringPtrType, "str")), FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.VoidType, FuId.UTF8GetBytesCopy, "GetBytes", false, FuVar.New(this.StringPtrType, "str"), FuVar.New(new FuReadWriteClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "byteIndex"))));
 			utf8EncodingClass.AddMethod(this.StringStorageType, FuId.UTF8GetString, "GetString", false, FuVar.New(new FuClassType { Class = this.ArrayPtrClass, TypeArg0 = this.ByteType }, "bytes"), FuVar.New(this.NIntType, "offset"), FuVar.New(this.NIntType, "length"));
 			FuClass encodingClass = FuClass.New(FuCallType.Static, FuId.None, "Encoding");
 			encodingClass.Add(FuStaticProperty.New(utf8EncodingClass, FuId.None, "UTF8"));
@@ -13241,7 +13242,16 @@ namespace Fusion
 			case FuId.UTF8GetByteCount:
 				WriteStringLength(args[0]);
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				if (parent == FuPriority.Primary)
+					WriteChar('(');
+				IncludeStdInt();
+				Write("(const uint8_t *) ");
+				args[0].Accept(this, FuPriority.Primary);
+				if (parent == FuPriority.Primary)
+					WriteChar(')');
+				break;
+			case FuId.UTF8GetBytesCopy:
 				Include("string.h");
 				Write("memcpy(");
 				WriteArrayPtrAdd(args[1], args[2]);
@@ -15188,7 +15198,7 @@ namespace Fusion
 			case FuId.UTF8GetByteCount:
 				WriteStringLength(args[0]);
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesCopy:
 				Write("for (size_t _i = 0; ");
 				args[0].Accept(this, FuPriority.Primary);
 				WriteLine("[_i] != '\\0'; _i++)");
@@ -16556,7 +16566,16 @@ namespace Fusion
 				else
 					WriteStringLength(args[0]);
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				IncludeStdInt();
+				Write("reinterpret_cast<const uint8_t *>(");
+				if (args[0] is FuLiteral)
+					args[0].Accept(this, FuPriority.Primary);
+				else
+					WritePostfix(args[0], ".data()");
+				WriteChar(')');
+				break;
+			case FuId.UTF8GetBytesCopy:
 				if (args[0] is FuLiteral) {
 					Include("algorithm");
 					Write("std::copy_n(");
@@ -18357,7 +18376,11 @@ namespace Fusion
 				Include("System.Text");
 				WriteCall("Encoding.UTF8.GetByteCount", args[0]);
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				Include("System.Text");
+				WriteCall("Encoding.UTF8.GetBytes", args[0]);
+				break;
+			case FuId.UTF8GetBytesCopy:
 				Include("System.Text");
 				Write("Encoding.UTF8.GetBytes(");
 				args[0].Accept(this, FuPriority.Argument);
@@ -19876,7 +19899,11 @@ namespace Fusion
 			case FuId.UTF8GetByteCount:
 				WritePostfix(args[0], ".length");
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				Include("std.string");
+				WritePostfix(args[0], ".representation");
+				break;
+			case FuId.UTF8GetBytesCopy:
 				Include("std.string");
 				Include("std.algorithm");
 				WritePostfix(args[0], ".representation.copy(");
@@ -21398,7 +21425,11 @@ namespace Fusion
 				Include("java.nio.charset.StandardCharsets");
 				WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8).length");
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				Include("java.nio.charset.StandardCharsets");
+				WritePostfix(args[0], ".getBytes(StandardCharsets.UTF_8)");
+				break;
+			case FuId.UTF8GetBytesCopy:
 				Include("java.nio.ByteBuffer");
 				Include("java.nio.CharBuffer");
 				Include("java.nio.charset.StandardCharsets");
@@ -22866,7 +22897,10 @@ namespace Fusion
 				args[0].Accept(this, FuPriority.Argument);
 				Write(").length");
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				WriteCall("new TextEncoder().encode", args[0]);
+				break;
+			case FuId.UTF8GetBytesCopy:
 				Write("new TextEncoder().encodeInto(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
@@ -25220,7 +25254,13 @@ namespace Fusion
 				WriteUnwrapped(args[0], FuPriority.Primary, true);
 				Write(".utf8.count");
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				this.ArrayRef = true;
+				Write("ArrayRef<UInt8>([UInt8](");
+				WriteUnwrapped(args[0], FuPriority.Primary, true);
+				Write(".utf8))");
+				break;
+			case FuId.UTF8GetBytesCopy:
 				if (AddVar("fubytes"))
 					Write(this.VarBytesAtIndent[this.Indent] ? "var " : "let ");
 				Write("fubytes = [UInt8](");
@@ -25763,7 +25803,7 @@ namespace Fusion
 		{
 			int count = 0;
 			foreach (FuStatement statement in statements) {
-				if (statement is FuCallExpr call && call.Method.Symbol!.Id == FuId.UTF8GetBytes) {
+				if (statement is FuCallExpr call && call.Method.Symbol!.Id == FuId.UTF8GetBytesCopy) {
 					if (++count == 2)
 						return true;
 				}
@@ -27560,7 +27600,10 @@ namespace Fusion
 				Write("len(");
 				WritePostfix(args[0], ".encode(\"utf8\"))");
 				break;
-			case FuId.UTF8GetBytes:
+			case FuId.UTF8GetBytesAlloc:
+				WritePostfix(args[0], ".encode(\"utf8\")");
+				break;
+			case FuId.UTF8GetBytesCopy:
 				Write("fubytes = ");
 				args[0].Accept(this, FuPriority.Primary);
 				WriteLine(".encode(\"utf8\")");

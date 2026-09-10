@@ -1124,7 +1124,10 @@ public class GenPy : GenPySwift
 			Write("len(");
 			WritePostfix(args[0], ".encode(\"utf8\"))");
 			break;
-		case FuId.UTF8GetBytes:
+		case FuId.UTF8GetBytesAlloc:
+			WritePostfix(args[0], ".encode(\"utf8\")");
+			break;
+		case FuId.UTF8GetBytesCopy:
 			Write("fubytes = ");
 			args[0].Accept(this, FuPriority.Primary);
 			WriteLine(".encode(\"utf8\")");
