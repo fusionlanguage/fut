@@ -18,16 +18,15 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-public abstract class FuSymbolReferenceVisitor : FuVisitor
+public class FuSymbolReferenceVisitor : FuVisitor
 {
 	FuSymbol Symbol;
-
-	public abstract void VisitFound!(FuStatement reference);
+	List<int>() FoundLocs;
 
 	void VisitReference!(FuStatement reference, FuSymbol symbol)
 	{
-		if (symbol == this.Symbol)
-			VisitFound(reference);
+		if (symbol == this.Symbol && reference.Loc > 0)
+			this.FoundLocs.Add(reference.Loc);
 	}
 
 	void VisitType!(FuType type)
@@ -271,9 +270,10 @@ public abstract class FuSymbolReferenceVisitor : FuVisitor
 		}
 	}
 
-	public void FindReferences!(FuProgram program, FuSymbol symbol)
+	public List<int> FindReferences!(FuProgram program, FuSymbol symbol)
 	{
 		this.Symbol = symbol;
+		this.FoundLocs.Clear();
 		for (FuSymbol? type = program.First; type != null; type = type.Next) {
 			switch (type) {
 			case FuClass klass:
@@ -289,5 +289,6 @@ public abstract class FuSymbolReferenceVisitor : FuVisitor
 				assert false;
 			}
 		}
+		return this.FoundLocs;
 	}
 }

@@ -165,33 +165,21 @@ class VsCodeSymbolLocator extends VsCodeHost
 	}
 }
 
-class VsCodeReferenceCollector extends FuSymbolReferenceVisitor
-{
-	provider: VsCodeGotoProvider;
-
-	constructor(provider: VsCodeGotoProvider)
-	{
-		super();
-		this.provider = provider;
-	}
-
-	visitFound(reference: FuStatement): void
-	{
-		this.provider.pushLocation(reference);
-	}
-}
-
 class VsCodeGotoProvider extends VsCodeSymbolLocator
 {
 	#locations: vscode.Location[] = [];
 
+	convertLoc(loc: number): vscode.Location
+	{
+		const line = this.program.getLine(loc);
+		const file = this.program.getSourceFile(line);
+		return new vscode.Location(vscode.Uri.parse(file.filename), new vscode.Position(line - file.line, loc - this.program.lineLocs[line]));
+	}
+
 	pushLocation(statement: FuStatement): void
 	{
-		if (statement.loc > 0) {
-			const line = this.program.getLine(statement.loc);
-			const file = this.program.getSourceFile(line);
-			this.#locations.push(new vscode.Location(vscode.Uri.parse(file.filename), new vscode.Position(line - file.line, statement.loc - this.program.lineLocs[line])));
-		}
+		if (statement.loc > 0)
+			this.#locations.push(this.convertLoc(statement.loc));
 	}
 
 	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
@@ -228,7 +216,7 @@ class VsCodeGotoProvider extends VsCodeSymbolLocator
 	{
 		const symbol = await this.findSymbol(document, position);
 		if (symbol != null)
-			new VsCodeReferenceCollector(this).findReferences(this.program, symbol);
+			return new FuSymbolReferenceVisitor().findReferences(this.program, symbol).map(loc => this.convertLoc(loc));
 		return this.#locations;
 	}
 }

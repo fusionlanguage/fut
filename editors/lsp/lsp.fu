@@ -18,45 +18,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
-class FusionLocationCollector : FuSymbolReferenceVisitor
-{
-	FuProgram Program;
-	StringWriter() Writer;
-	bool HaveLocation = false;
-
-	internal void SetProgram!(FuProgram program)
-	{
-		this.Program = program;
-	}
-
-	internal static string() GetLocation(int loc, FuProgram program)
-	{
-		int line = program.GetLine(loc);
-		FuSourceFile file = program.GetSourceFile(line);
-		int character = loc - program.LineLocs[line];
-		line -= file.Line;
-		return $"{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
-	}
-
-	public override void VisitFound!(FuStatement reference)
-	{
-		if (reference.Loc > 0) {
-			if (this.HaveLocation)
-				this.Writer.Write(", ");
-			this.Writer.Write(GetLocation(reference.Loc, this.Program));
-			this.HaveLocation = true;
-		}
-	}
-
-	internal void Respond(Dictionary<string(), JsonElement#> request)
-	{
-		if (this.HaveLocation)
-			FusionLanguageServer.Respond(request, $"\"result\": [ {this.Writer.ToString()} ]");
-		else
-			FusionLanguageServer.Respond(request, "\"result\": null");
-	}
-}
-
 public abstract class FusionLanguageServer : FuSemaHost
 {
 	Dictionary<string(), string()>() OpenFiles;
@@ -173,6 +134,31 @@ public abstract class FusionLanguageServer : FuSemaHost
 		return FindSymbol(textDocument, position);
 	}
 
+	string() GetLocation(string prefix, int loc)
+	{
+		int line = this.Program.GetLine(loc);
+		FuSourceFile file = this.Program.GetSourceFile(line);
+		int character = loc - this.Program.LineLocs[line];
+		line -= file.Line;
+		return $"{prefix}{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
+	}
+
+	void RespondLocations(Dictionary<string(), JsonElement#> request, List<int> locs)
+	{
+		if (locs.Count == 0)
+			Respond(request, "\"result\": null");
+		else {
+			StringWriter() w;
+			string prefix = "\"result\": [ ";
+			foreach (int loc in locs) {
+				w.Write(GetLocation(prefix, loc));
+				prefix = ", ";
+			}
+			w.Write(" ]");
+			Respond(request, w.ToString());
+		}
+	}
+
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
@@ -219,46 +205,49 @@ public abstract class FusionLanguageServer : FuSemaHost
 			if (symbol == null || symbol.Loc <= 0)
 				Respond(request, "\"result\": null");
 			else
-				Respond(request, "\"result\": " + FusionLocationCollector.GetLocation(symbol.Loc, program));
+				Respond(request, GetLocation("\"result\": ", symbol.Loc));
 			break;
 		case "textDocument/implementation":
 			FuProgram() program;
 			this.Program = program;
-			FusionLocationCollector() collector;
-			collector.SetProgram(program);
+			List<int>() locs;
 			FuSymbol? symbol = FindDefinition(params);
 			switch (symbol) {
 			case null:
 				break;
 			case FuClass klass:
 				foreach (FuClass subclass in program.Classes) {
-					if (klass.IsSameOrBaseOf(subclass))
-						collector.VisitFound(subclass);
+					if (subclass.Loc > 0 && klass.IsSameOrBaseOf(subclass))
+						locs.Add(subclass.Loc);
 				}
 				break;
 			case FuMethod:
 				assert symbol.Parent is FuClass klass;
 				foreach (FuClass subclass in program.Classes) {
-					if (klass.IsSameOrBaseOf(subclass) && subclass.Contains(symbol))
-						collector.VisitFound(subclass.TryLookup(symbol.Name, false));
+					if (klass.IsSameOrBaseOf(subclass) && subclass.Contains(symbol)) {
+						int loc = subclass.TryLookup(symbol.Name, false).Loc;
+						if (loc > 0)
+							locs.Add(loc);
+					}
 				}
 				break;
 			default:
-				collector.VisitFound(symbol);
+				if (symbol.Loc > 0)
+					locs.Add(symbol.Loc);
 				break;
 			}
-			collector.Respond(request);
+			RespondLocations(request, locs);
 			break;
 		case "textDocument/references":
 			FuProgram() program;
 			this.Program = program;
-			FusionLocationCollector() collector;
 			FuSymbol? symbol = FindDefinition(params);
-			if (symbol != null) {
-				collector.SetProgram(program);
-				collector.FindReferences(program, symbol);
+			if (symbol == null)
+				Respond(request, "\"result\": null");
+			else {
+				FuSymbolReferenceVisitor() collector;
+				RespondLocations(request, collector.FindReferences(program, symbol));
 			}
-			collector.Respond(request);
 			break;
 		default:
 			if (request.ContainsKey("id"))
