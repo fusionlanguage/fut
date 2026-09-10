@@ -143,13 +143,23 @@ public abstract class FusionLanguageServer : FuSemaHost
 		return $"{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
 	}
 
+	bool PushLocation(int loc, StringWriter! writer, bool haveLocation)
+	{
+		if (loc <= 0)
+			return haveLocation;
+		if (haveLocation)
+			writer.Write(", ");
+		writer.Write(GetLocation(loc));
+		return true;
+	}
+
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
 		string method = request["method"].GetString();
 		switch (method) {
 		case "initialize":
-			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
+			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
 			JsonElement pid = params["processId"];
 			if (pid.IsNumber())
 				WatchClientProcess(GetInt(pid));
@@ -190,6 +200,37 @@ public abstract class FusionLanguageServer : FuSemaHost
 				Respond(request, "\"result\": null");
 			else
 				Respond(request, "\"result\": " + GetLocation(symbol.Loc));
+			break;
+		case "textDocument/implementation":
+			FuProgram() program;
+			this.Program = program;
+			FuSymbol? symbol = FindDefinition(params);
+			StringWriter() writer;
+			bool haveLocation = false;
+			switch (symbol) {
+			case null:
+				break;
+			case FuClass klass:
+				foreach (FuClass subclass in program.Classes) {
+					if (klass.IsSameOrBaseOf(subclass))
+						haveLocation = PushLocation(subclass.Loc, writer, haveLocation);
+				}
+				break;
+			case FuMethod:
+				assert symbol.Parent is FuClass klass;
+				foreach (FuClass subclass in program.Classes) {
+					if (klass.IsSameOrBaseOf(subclass) && subclass.Contains(symbol))
+						haveLocation = PushLocation(subclass.TryLookup(symbol.Name, false).Loc, writer, haveLocation);
+				}
+				break;
+			default:
+				haveLocation = PushLocation(symbol.Loc, writer, false);
+				break;
+			}
+			if (haveLocation)
+				Respond(request, $"\"result\": [ {writer.ToString()} ]");
+			else
+				Respond(request, "\"result\": null");
 			break;
 		default:
 			if (request.ContainsKey("id"))
