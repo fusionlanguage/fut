@@ -73,10 +73,12 @@ public abstract class FusionLanguageServer : FuSemaHost
 
 	static int GetInt(JsonElement json) => Math.Truncate(json.GetDouble());
 
+	static string() EscapeString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
+
 	static void Respond(Dictionary<string(), JsonElement#> request, string resultOrError)
 	{
 		JsonElement idElement = request["id"];
-		string() id = idElement.IsNumber() ? $"{GetInt(idElement)}" : $"\"{idElement.GetString()}\""; // TODO: escape the string?
+		string() id = idElement.IsNumber() ? $"{GetInt(idElement)}" : $"\"{EscapeString(idElement.GetString())}\"";
 		string() content = $"{{ \"jsonrpc\": \"2.0\", \"id\": {id}, {resultOrError} }}";
 		Console.Write($"Content-Length: {Encoding.UTF8.GetByteCount(content)}\r\n\r\n{content}");
 		Console.Out.Flush();
@@ -161,9 +163,8 @@ public abstract class FusionLanguageServer : FuSemaHost
 			FuSymbol? symbol = FindSymbol(textDocument, position);
 			if (symbol == null)
 				Respond(request, "\"result\": null");
-			// TODO: escape
-			// else if (symbol.Documentation != null) {
-			// }
+			else if (symbol.Documentation != null)
+				Respond(request, $"\"result\": {{ \"contents\": [ {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }}, \"{EscapeString(symbol.Documentation.ToString())}\" ] }}");
 			else
 				Respond(request, $"\"result\": {{ \"contents\": {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }} }}");
 			break;
