@@ -124,13 +124,32 @@ public abstract class FusionLanguageServer : FuSemaHost
 		return parser.GetFoundDefinition();
 	}
 
+	FuSymbol? FindDefinition!(Dictionary<string(), JsonElement#> params)
+	{
+		Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
+		Dictionary<string(), JsonElement#> position = params["position"].GetObject();
+		FuSystem# system = FuSystem.New();
+		this.Program.Parent = system;
+		this.Program.System = system;
+		return FindSymbol(textDocument, position);
+	}
+
+	string() GetLocation(int loc)
+	{
+		int line = this.Program.GetLine(loc);
+		FuSourceFile file = this.Program.GetSourceFile(line);
+		int character = loc - this.Program.LineLocs[line];
+		line -= file.Line;
+		return $"{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
+	}
+
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
 		string method = request["method"].GetString();
 		switch (method) {
 		case "initialize":
-			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
+			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
 			JsonElement pid = params["processId"];
 			if (pid.IsNumber())
 				WatchClientProcess(GetInt(pid));
@@ -153,20 +172,24 @@ public abstract class FusionLanguageServer : FuSemaHost
 			OpenFiles.Remove(textDocument["uri"].GetString());
 			break;
 		case "textDocument/hover":
-			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-			Dictionary<string(), JsonElement#> position = params["position"].GetObject();
-			FuSystem# system = FuSystem.New();
 			FuProgram() program;
-			program.Parent = system;
-			program.System = system;
 			this.Program = program;
-			FuSymbol? symbol = FindSymbol(textDocument, position);
+			FuSymbol? symbol = FindDefinition(params);
 			if (symbol == null)
 				Respond(request, "\"result\": null");
 			else if (symbol.Documentation != null)
 				Respond(request, $"\"result\": {{ \"contents\": [ {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }}, \"{EscapeString(symbol.Documentation.ToString())}\" ] }}");
 			else
 				Respond(request, $"\"result\": {{ \"contents\": {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }} }}");
+			break;
+		case "textDocument/definition":
+			FuProgram() program;
+			this.Program = program;
+			FuSymbol? symbol = FindDefinition(params);
+			if (symbol == null || symbol.Loc <= 0)
+				Respond(request, "\"result\": null");
+			else
+				Respond(request, "\"result\": " + GetLocation(symbol.Loc));
 			break;
 		default:
 			if (request.ContainsKey("id"))
