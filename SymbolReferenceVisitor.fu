@@ -22,15 +22,15 @@ public abstract class FuSymbolReferenceVisitor : FuVisitor
 {
 	FuSymbol Symbol;
 
-	protected abstract void VisitFound(FuStatement reference);
+	public abstract void VisitFound!(FuStatement reference);
 
-	void VisitReference(FuStatement reference, FuSymbol symbol)
+	void VisitReference!(FuStatement reference, FuSymbol symbol)
 	{
 		if (symbol == this.Symbol)
 			VisitFound(reference);
 	}
 
-	void VisitType(FuType type)
+	void VisitType!(FuType type)
 	{
 		if (type is FuClassType klass) {
 			VisitReference(klass, klass.Class);

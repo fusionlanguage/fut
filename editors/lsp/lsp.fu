@@ -18,6 +18,36 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
+class FusionLocationCollector : FuSymbolReferenceVisitor
+{
+	FusionLanguageServer Server;
+	StringWriter() Writer;
+	bool HaveLocation = false;
+
+	internal void SetServer!(FusionLanguageServer server)
+	{
+		this.Server = server;
+	}
+
+	public override void VisitFound!(FuStatement reference)
+	{
+		if (reference.Loc > 0) {
+			if (this.HaveLocation)
+				this.Writer.Write(", ");
+			this.Writer.Write(this.Server.GetLocation(reference.Loc));
+			this.HaveLocation = true;
+		}
+	}
+
+	internal void Respond(Dictionary<string(), JsonElement#> request)
+	{
+		if (this.HaveLocation)
+			FusionLanguageServer.Respond(request, $"\"result\": [ {this.Writer.ToString()} ]");
+		else
+			FusionLanguageServer.Respond(request, "\"result\": null");
+	}
+}
+
 public abstract class FusionLanguageServer : FuSemaHost
 {
 	Dictionary<string(), string()>() OpenFiles;
@@ -75,7 +105,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 
 	static string() EscapeString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
 
-	static void Respond(Dictionary<string(), JsonElement#> request, string resultOrError)
+	internal static void Respond(Dictionary<string(), JsonElement#> request, string resultOrError)
 	{
 		JsonElement idElement = request["id"];
 		string() id = idElement.IsNumber() ? $"{GetInt(idElement)}" : $"\"{EscapeString(idElement.GetString())}\"";
@@ -134,7 +164,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 		return FindSymbol(textDocument, position);
 	}
 
-	string() GetLocation(int loc)
+	internal string() GetLocation(int loc)
 	{
 		int line = this.Program.GetLine(loc);
 		FuSourceFile file = this.Program.GetSourceFile(line);
@@ -143,23 +173,13 @@ public abstract class FusionLanguageServer : FuSemaHost
 		return $"{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
 	}
 
-	bool PushLocation(int loc, StringWriter! writer, bool haveLocation)
-	{
-		if (loc <= 0)
-			return haveLocation;
-		if (haveLocation)
-			writer.Write(", ");
-		writer.Write(GetLocation(loc));
-		return true;
-	}
-
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
 		string method = request["method"].GetString();
 		switch (method) {
 		case "initialize":
-			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
+			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true, \"referencesProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
 			JsonElement pid = params["processId"];
 			if (pid.IsNumber())
 				WatchClientProcess(GetInt(pid));
@@ -204,33 +224,41 @@ public abstract class FusionLanguageServer : FuSemaHost
 		case "textDocument/implementation":
 			FuProgram() program;
 			this.Program = program;
+			FusionLocationCollector() collector;
+			collector.SetServer(this);
 			FuSymbol? symbol = FindDefinition(params);
-			StringWriter() writer;
-			bool haveLocation = false;
 			switch (symbol) {
 			case null:
 				break;
 			case FuClass klass:
 				foreach (FuClass subclass in program.Classes) {
 					if (klass.IsSameOrBaseOf(subclass))
-						haveLocation = PushLocation(subclass.Loc, writer, haveLocation);
+						collector.VisitFound(subclass);
 				}
 				break;
 			case FuMethod:
 				assert symbol.Parent is FuClass klass;
 				foreach (FuClass subclass in program.Classes) {
 					if (klass.IsSameOrBaseOf(subclass) && subclass.Contains(symbol))
-						haveLocation = PushLocation(subclass.TryLookup(symbol.Name, false).Loc, writer, haveLocation);
+						collector.VisitFound(subclass.TryLookup(symbol.Name, false));
 				}
 				break;
 			default:
-				haveLocation = PushLocation(symbol.Loc, writer, false);
+				collector.VisitFound(symbol);
 				break;
 			}
-			if (haveLocation)
-				Respond(request, $"\"result\": [ {writer.ToString()} ]");
-			else
-				Respond(request, "\"result\": null");
+			collector.Respond(request);
+			break;
+		case "textDocument/references":
+			FuProgram() program;
+			this.Program = program;
+			FusionLocationCollector() collector;
+			FuSymbol? symbol = FindDefinition(params);
+			if (symbol != null) {
+				collector.SetServer(this);
+				collector.FindReferences(program, symbol);
+			}
+			collector.Respond(request);
 			break;
 		default:
 			if (request.ContainsKey("id"))
