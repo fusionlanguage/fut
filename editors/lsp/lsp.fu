@@ -20,13 +20,22 @@
 
 class FusionLocationCollector : FuSymbolReferenceVisitor
 {
-	FusionLanguageServer Server;
+	FuProgram Program;
 	StringWriter() Writer;
 	bool HaveLocation = false;
 
-	internal void SetServer!(FusionLanguageServer server)
+	internal void SetProgram!(FuProgram program)
 	{
-		this.Server = server;
+		this.Program = program;
+	}
+
+	internal static string() GetLocation(int loc, FuProgram program)
+	{
+		int line = program.GetLine(loc);
+		FuSourceFile file = program.GetSourceFile(line);
+		int character = loc - program.LineLocs[line];
+		line -= file.Line;
+		return $"{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
 	}
 
 	public override void VisitFound!(FuStatement reference)
@@ -34,7 +43,7 @@ class FusionLocationCollector : FuSymbolReferenceVisitor
 		if (reference.Loc > 0) {
 			if (this.HaveLocation)
 				this.Writer.Write(", ");
-			this.Writer.Write(this.Server.GetLocation(reference.Loc));
+			this.Writer.Write(GetLocation(reference.Loc, this.Program));
 			this.HaveLocation = true;
 		}
 	}
@@ -164,15 +173,6 @@ public abstract class FusionLanguageServer : FuSemaHost
 		return FindSymbol(textDocument, position);
 	}
 
-	internal string() GetLocation(int loc)
-	{
-		int line = this.Program.GetLine(loc);
-		FuSourceFile file = this.Program.GetSourceFile(line);
-		int character = loc - this.Program.LineLocs[line];
-		line -= file.Line;
-		return $"{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
-	}
-
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
@@ -219,13 +219,13 @@ public abstract class FusionLanguageServer : FuSemaHost
 			if (symbol == null || symbol.Loc <= 0)
 				Respond(request, "\"result\": null");
 			else
-				Respond(request, "\"result\": " + GetLocation(symbol.Loc));
+				Respond(request, "\"result\": " + FusionLocationCollector.GetLocation(symbol.Loc, program));
 			break;
 		case "textDocument/implementation":
 			FuProgram() program;
 			this.Program = program;
 			FusionLocationCollector() collector;
-			collector.SetServer(this);
+			collector.SetProgram(program);
 			FuSymbol? symbol = FindDefinition(params);
 			switch (symbol) {
 			case null:
@@ -255,7 +255,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 			FusionLocationCollector() collector;
 			FuSymbol? symbol = FindDefinition(params);
 			if (symbol != null) {
-				collector.SetServer(this);
+				collector.SetProgram(program);
 				collector.FindReferences(program, symbol);
 			}
 			collector.Respond(request);
