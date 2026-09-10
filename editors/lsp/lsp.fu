@@ -75,13 +75,18 @@ public abstract class FusionLanguageServer : FuSemaHost
 
 	static string() EscapeString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
 
-	internal static void Respond(Dictionary<string(), JsonElement#> request, string resultOrError)
+	static void Respond(Dictionary<string(), JsonElement#> request, string resultOrError)
 	{
 		JsonElement idElement = request["id"];
 		string() id = idElement.IsNumber() ? $"{GetInt(idElement)}" : $"\"{EscapeString(idElement.GetString())}\"";
 		string() content = $"{{ \"jsonrpc\": \"2.0\", \"id\": {id}, {resultOrError} }}";
 		Console.Write($"Content-Length: {Encoding.UTF8.GetByteCount(content)}\r\n\r\n{content}");
 		Console.Out.Flush();
+	}
+
+	static void RespondNull(Dictionary<string(), JsonElement#> request)
+	{
+		Respond(request, "\"result\": null");
 	}
 
 	static void RespondError(Dictionary<string(), JsonElement#> request, int code, string message)
@@ -143,7 +148,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 	void RespondLocations(Dictionary<string(), JsonElement#> request, List<int> locs)
 	{
 		if (locs.Count == 0)
-			Respond(request, "\"result\": null");
+			RespondNull(request);
 		else {
 			StringWriter() w;
 			string prefix = "\"result\": [ ";
@@ -168,7 +173,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 				WatchClientProcess(GetInt(pid));
 			break;
 		case "shutdown":
-			Respond(request, "\"result\": null");
+			RespondNull(request);
 			break;
 		case "exit":
 			return true;
@@ -189,7 +194,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 			this.Program = program;
 			FuSymbol? symbol = FindDefinition(params);
 			if (symbol == null)
-				Respond(request, "\"result\": null");
+				RespondNull(request);
 			else if (symbol.Documentation != null)
 				Respond(request, $"\"result\": {{ \"contents\": [ {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }}, \"{EscapeString(symbol.Documentation.ToString())}\" ] }}");
 			else
@@ -200,7 +205,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 			this.Program = program;
 			FuSymbol? symbol = FindDefinition(params);
 			if (symbol == null || symbol.Loc <= 0)
-				Respond(request, "\"result\": null");
+				RespondNull(request);
 			else
 				Respond(request, GetLocation("\"result\": ", symbol.Loc));
 			break;
@@ -240,7 +245,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 			this.Program = program;
 			FuSymbol? symbol = FindDefinition(params);
 			if (symbol == null)
-				Respond(request, "\"result\": null");
+				RespondNull(request);
 			else {
 				FuSymbolReferenceVisitor() collector;
 				RespondLocations(request, collector.FindReferences(program, symbol));
