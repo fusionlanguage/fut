@@ -167,55 +167,29 @@ class VsCodeSymbolLocator extends VsCodeHost
 
 class VsCodeGotoProvider extends VsCodeSymbolLocator
 {
-	#locations: vscode.Location[] = [];
-
-	convertLoc(loc: number): vscode.Location
+	#convertLoc(loc: number): vscode.Location
 	{
 		const line = this.program.getLine(loc);
 		const file = this.program.getSourceFile(line);
 		return new vscode.Location(vscode.Uri.parse(file.filename), new vscode.Position(line - file.line, loc - this.program.lineLocs[line]));
 	}
 
-	pushLocation(statement: FuStatement): void
-	{
-		if (statement.loc > 0)
-			this.#locations.push(this.convertLoc(statement.loc));
-	}
-
-	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
+	async findDefinition(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location | null>
 	{
 		const symbol = await this.findSymbol(document, position);
-		if (symbol != null)
-			this.pushLocation(symbol);
-		return this.#locations;
+		return symbol != null ? this.#convertLoc(symbol.loc) : null;
 	}
 
 	async findImplementations(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
 		const symbol = await this.findSymbol(document, position);
-		if (symbol != null) {
-			if (symbol instanceof FuClass) {
-				for (const subclass of this.program.classes) {
-					if (symbol.isSameOrBaseOf(subclass))
-						this.pushLocation(subclass);
-				}
-			}
-			else if (symbol instanceof FuMethod && symbol.isAbstractVirtualOrOverride()) {
-				for (const subclass of this.program.classes) {
-					if (symbol.parent.isSameOrBaseOf(subclass) && subclass.contains(symbol))
-						this.pushLocation(subclass.tryLookup(symbol.name, false));
-				}
-			}
-			else
-				this.pushLocation(symbol);
-		}
-		return this.#locations;
+		return this.program.findImplementations(symbol).map((loc: number) => this.#convertLoc(loc));
 	}
 
 	async findReferences(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
 		const symbol = await this.findSymbol(document, position);
-		return new FuSymbolReferenceVisitor().findReferences(this.program, symbol).map(loc => this.convertLoc(loc));
+		return new FuSymbolReferenceVisitor().findReferences(this.program, symbol).map(loc => this.#convertLoc(loc));
 	}
 }
 

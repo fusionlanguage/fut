@@ -768,6 +768,7 @@ private: // internal
 	friend FuLiteralChar;
 	friend FuParser;
 	friend FuParserHost;
+	friend FuProgram;
 	friend FuSema;
 	friend FuSystem;
 };
@@ -850,6 +851,7 @@ private: // internal
 	friend FuMethodGroup;
 	friend FuNamedValue;
 	friend FuParser;
+	friend FuProgram;
 	friend FuProperty;
 	friend FuRangeType;
 	friend FuScope;
@@ -2261,6 +2263,7 @@ class FuProgram : public FuScope
 public:
 	FuProgram() = default;
 	void init(FuScope * parent, const FuSystem * system, FuParserHost * host);
+	std::vector<int> findImplementations(const FuSymbol * symbol) const;
 private: // internal
 	const FuSystem * system;
 	std::vector<std::string> topLevelNatives;

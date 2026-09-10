@@ -4272,6 +4272,36 @@ namespace Fusion
 			}
 			return this.SourceFiles[l];
 		}
+
+		public List<int> FindImplementations(FuSymbol? symbol)
+		{
+			List<int> locs = new List<int>();
+			switch (symbol) {
+			case null:
+				break;
+			case FuClass klass:
+				foreach (FuClass subclass in this.Classes) {
+					if (subclass.Loc > 0 && klass.IsSameOrBaseOf(subclass))
+						locs.Add(subclass.Loc);
+				}
+				break;
+			case FuMethod:
+				FuClass methodClass = (FuClass) symbol!.Parent!;
+				foreach (FuClass subclass in this.Classes) {
+					if (methodClass.IsSameOrBaseOf(subclass) && subclass.Contains(symbol!)) {
+						int loc = subclass.TryLookup(symbol!.Name, false)!.Loc;
+						if (loc > 0)
+							locs.Add(loc);
+					}
+				}
+				break;
+			default:
+				if (symbol!.Loc > 0)
+					locs.Add(symbol!.Loc);
+				break;
+			}
+			return locs;
+		}
 	}
 
 	public class FuParser : FuLexer

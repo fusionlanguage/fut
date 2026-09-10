@@ -4579,6 +4579,35 @@ export class FuProgram extends FuScope
 		}
 		return this.sourceFiles[l];
 	}
+
+	findImplementations(symbol)
+	{
+		const locs = [];
+		if (symbol == null) {
+		}
+		else if (symbol instanceof FuClass) {
+			const klass = symbol;
+			for (const subclass of this.classes) {
+				if (subclass.loc > 0 && klass.isSameOrBaseOf(subclass))
+					locs.push(subclass.loc);
+			}
+		}
+		else if (symbol instanceof FuMethod) {
+			let methodClass = symbol.parent;
+			for (const subclass of this.classes) {
+				if (methodClass.isSameOrBaseOf(subclass) && subclass.contains(symbol)) {
+					let loc = subclass.tryLookup(symbol.name, false).loc;
+					if (loc > 0)
+						locs.push(loc);
+				}
+			}
+		}
+		else {
+			if (symbol.loc > 0)
+				locs.push(symbol.loc);
+		}
+		return locs;
+	}
 }
 
 export class FuParser extends FuLexer

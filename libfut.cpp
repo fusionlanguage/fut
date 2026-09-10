@@ -4567,6 +4567,33 @@ const FuSourceFile * FuProgram::getSourceFile(int line) const
 	return &this->sourceFiles[l];
 }
 
+std::vector<int> FuProgram::findImplementations(const FuSymbol * symbol) const
+{
+	std::vector<int> locs;
+	if (symbol == nullptr) {
+	}
+	else if (const FuClass *klass = dynamic_cast<const FuClass *>(symbol))
+		for (const FuClass * subclass : this->classes) {
+			if (subclass->loc > 0 && klass->isSameOrBaseOf(subclass))
+				locs.push_back(subclass->loc);
+		}
+	else if (dynamic_cast<const FuMethod *>(symbol)) {
+		const FuClass * methodClass = static_cast<const FuClass *>(symbol->parent);
+		for (const FuClass * subclass : this->classes) {
+			if (methodClass->isSameOrBaseOf(subclass) && subclass->contains(symbol)) {
+				int loc = subclass->tryLookup(symbol->name, false)->loc;
+				if (loc > 0)
+					locs.push_back(loc);
+			}
+		}
+	}
+	else {
+		if (symbol->loc > 0)
+			locs.push_back(symbol->loc);
+	}
+	return locs;
+}
+
 void FuParser::findName(std::string_view filename, int line, int column)
 {
 	this->findNameFilename = filename;

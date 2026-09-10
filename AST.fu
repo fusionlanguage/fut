@@ -2592,4 +2592,34 @@ public class FuProgram : FuScope
 		}
 		return this.SourceFiles[l];
 	}
+
+	public List<int>() FindImplementations(FuSymbol? symbol)
+	{
+		List<int>() locs;
+		switch (symbol) {
+		case null:
+			break;
+		case FuClass klass:
+			foreach (FuClass subclass in this.Classes) {
+				if (subclass.Loc > 0 && klass.IsSameOrBaseOf(subclass))
+					locs.Add(subclass.Loc);
+			}
+			break;
+		case FuMethod:
+			assert symbol.Parent is FuClass methodClass;
+			foreach (FuClass subclass in this.Classes) {
+				if (methodClass.IsSameOrBaseOf(subclass) && subclass.Contains(symbol)) {
+					int loc = subclass.TryLookup(symbol.Name, false).Loc;
+					if (loc > 0)
+						locs.Add(loc);
+				}
+			}
+			break;
+		default:
+			if (symbol.Loc > 0)
+				locs.Add(symbol.Loc);
+			break;
+		}
+		return locs;
+	}
 }
