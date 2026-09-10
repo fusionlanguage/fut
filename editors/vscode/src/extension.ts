@@ -215,9 +215,7 @@ class VsCodeGotoProvider extends VsCodeSymbolLocator
 	async findReferences(document: vscode.TextDocument, position: vscode.Position): Promise<vscode.Location[]>
 	{
 		const symbol = await this.findSymbol(document, position);
-		if (symbol != null)
-			return new FuSymbolReferenceVisitor().findReferences(this.program, symbol).map(loc => this.convertLoc(loc));
-		return this.#locations;
+		return new FuSymbolReferenceVisitor().findReferences(this.program, symbol).map(loc => this.convertLoc(loc));
 	}
 }
 

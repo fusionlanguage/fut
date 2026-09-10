@@ -270,10 +270,12 @@ public class FuSymbolReferenceVisitor : FuVisitor
 		}
 	}
 
-	public List<int> FindReferences!(FuProgram program, FuSymbol symbol)
+	public List<int> FindReferences!(FuProgram program, FuSymbol? symbol)
 	{
-		this.Symbol = symbol;
 		this.FoundLocs.Clear();
+		if (symbol == null)
+			return this.FoundLocs;
+		this.Symbol = symbol;
 		for (FuSymbol? type = program.First; type != null; type = type.Next) {
 			switch (type) {
 			case FuClass klass:

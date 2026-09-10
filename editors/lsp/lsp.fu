@@ -244,12 +244,8 @@ public abstract class FusionLanguageServer : FuSemaHost
 			FuProgram() program;
 			this.Program = program;
 			FuSymbol? symbol = FindDefinition(params);
-			if (symbol == null)
-				RespondNull(request);
-			else {
-				FuSymbolReferenceVisitor() collector;
-				RespondLocations(request, collector.FindReferences(program, symbol));
-			}
+			FuSymbolReferenceVisitor() collector;
+			RespondLocations(request, collector.FindReferences(program, symbol));
 			break;
 		default:
 			if (request.ContainsKey("id"))
