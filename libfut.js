@@ -1648,6 +1648,11 @@ export class FuExpr extends FuStatement
 		return false;
 	}
 
+	isSimple()
+	{
+		return false;
+	}
+
 	isNewString(substringOffset)
 	{
 		return false;
@@ -1762,6 +1767,11 @@ export class FuLiteral extends FuExpr
 {
 
 	isConst(varIsConst)
+	{
+		return true;
+	}
+
+	isSimple()
 	{
 		return true;
 	}
@@ -2113,6 +2123,11 @@ export class FuSymbolReference extends FuName
 		return this.symbol == symbol;
 	}
 
+	isSimple()
+	{
+		return this.left == null || this.left.isLocalReference();
+	}
+
 	isConst(varIsConst)
 	{
 		return this.symbol.isConst(varIsConst) && (this.left == null || this.left.isConst(varIsConst));
@@ -2291,6 +2306,11 @@ export class FuBinaryExpr extends FuExpr
 	accept(visitor, parent)
 	{
 		visitor.visitBinaryExpr(this, parent);
+	}
+
+	isSimple()
+	{
+		return this.op == FuToken.LEFT_BRACKET && this.left.isLocalReference() && (this.right.isConst(false) || this.right.isLocalReference());
 	}
 
 	isNewString(substringOffset)
@@ -10329,16 +10349,7 @@ export class GenBase extends FuVisitor
 
 	needsSwitchVar(expr)
 	{
-		if (expr instanceof FuSymbolReference) {
-			const symbol = expr;
-			return symbol.left != null && !symbol.left.isLocalReference();
-		}
-		else if (expr instanceof FuBinaryExpr) {
-			const indexing = expr;
-			return indexing.op != FuToken.LEFT_BRACKET || !indexing.left.isLocalReference() || !(indexing.right instanceof FuLiteral || indexing.right.isLocalReference());
-		}
-		else
-			return true;
+		return !expr.isSimple();
 	}
 
 	writeSwitchVar(expr)
@@ -20459,25 +20470,47 @@ export class GenD extends GenCCppD
 		case FuId.LIST_ANY:
 			this.include("std.algorithm");
 			this.#writeClassReference(obj);
-			this.write("[].any!(");
-			args[0].accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeCall("[].any!", args[0]);
 			break;
 		case FuId.LIST_INSERT:
-			this.#hasListInsert = true;
-			this.writePostfix(obj, ".insertInPlace(");
-			args[0].accept(this, FuPriority.ARGUMENT);
-			this.write(", ");
-			this.#writeInsertedArg(obj.type.asClassType().getElementType(), args, 1);
+			if (obj.isSimple()) {
+				this.writePostfix(obj, ".insertAfter((*");
+				this.writePostfix(obj, ")[0 .. ");
+				args[0].accept(this, FuPriority.ARGUMENT);
+				this.write("], ");
+				this.#writeInsertedArg(obj.type.asClassType().getElementType(), args, 1);
+			}
+			else {
+				this.#hasListInsert = true;
+				this.writePostfix(obj, ".insertInPlace(");
+				args[0].accept(this, FuPriority.ARGUMENT);
+				this.write(", ");
+				this.#writeInsertedArg(obj.type.asClassType().getElementType(), args, 1);
+			}
 			break;
 		case FuId.LIST_LAST:
 			this.writePostfix(obj, ".back");
 			break;
 		case FuId.LIST_REMOVE_AT:
 		case FuId.LIST_REMOVE_RANGE:
-			this.#hasListRemoveAt = true;
-			this.writePostfix(obj, ".removeAt");
-			this.writeInParentheses(args);
+			if (obj.isSimple() && args[0].isSimple()) {
+				this.writePostfix(obj, ".linearRemove((*");
+				this.writePostfix(obj, ")[");
+				args[0].accept(this, FuPriority.ARGUMENT);
+				this.write(" .. ");
+				if (method.id == FuId.LIST_REMOVE_AT) {
+					this.startAdd(args[0]);
+					this.writeChar(49);
+				}
+				else
+					this.writeAdd(args[0], args[1]);
+				this.write("])");
+			}
+			else {
+				this.#hasListRemoveAt = true;
+				this.writePostfix(obj, ".removeAt");
+				this.writeInParentheses(args);
+			}
 			break;
 		case FuId.LIST_INDEX_OF:
 			this.include("std.algorithm");
@@ -20485,10 +20518,14 @@ export class GenD extends GenCCppD
 			this.writeCall("[].countUntil", args[0]);
 			break;
 		case FuId.QUEUE_DEQUEUE:
-			this.#hasQueueDequeue = true;
-			this.include("std.container.dlist");
 			this.#writeClassReference(obj);
-			this.write(".dequeue()");
+			if (parent == FuPriority.STATEMENT)
+				this.write(".removeFront");
+			else {
+				this.#hasQueueDequeue = true;
+				this.include("std.container.dlist");
+				this.write(".dequeue()");
+			}
 			break;
 		case FuId.QUEUE_PEEK:
 			this.writePostfix(obj, ".front");
@@ -20502,9 +20539,13 @@ export class GenD extends GenCCppD
 			this.writeCoercedExpr(obj.type.asClassType().getElementType(), args[0]);
 			break;
 		case FuId.STACK_POP:
-			this.#hasStackPop = true;
 			this.#writeClassReference(obj);
-			this.write(".pop()");
+			if (parent == FuPriority.STATEMENT)
+				this.write(".removeBack");
+			else {
+				this.#hasStackPop = true;
+				this.write(".pop()");
+			}
 			break;
 		case FuId.HASH_SET_ADD:
 			this.writePostfix(obj, ".require(");
@@ -20604,9 +20645,7 @@ export class GenD extends GenCCppD
 			this.writeType(type, false);
 			this.write(", ");
 			this.writeType(method.firstParameter().type, false);
-			this.write(")(");
-			args[0].accept(this, FuPriority.ARGUMENT);
-			this.writeChar(41);
+			this.writeCall(")", args[0]);
 			break;
 		case FuId.CONVERT_TO_BASE64_STRING:
 			this.include("std.base64");

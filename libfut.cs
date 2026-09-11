@@ -1709,6 +1709,8 @@ namespace Fusion
 
 		public virtual bool IsReferenceTo(FuSymbol symbol) => false;
 
+		public virtual bool IsSimple() => false;
+
 		public virtual bool IsNewString(bool substringOffset) => false;
 
 		public virtual bool IsUnique() => false;
@@ -1810,6 +1812,8 @@ namespace Fusion
 	{
 
 		public override bool IsConst(bool varIsConst) => true;
+
+		public override bool IsSimple() => true;
 
 		public abstract bool IsDefaultValue();
 	}
@@ -2096,6 +2100,8 @@ namespace Fusion
 
 		public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
 
+		public override bool IsSimple() => this.Left == null || this.Left!.IsLocalReference();
+
 		public override bool IsConst(bool varIsConst) => this.Symbol!.IsConst(varIsConst) && (this.Left == null || this.Left!.IsConst(varIsConst));
 
 		public override bool IsNewString(bool substringOffset) => this.Symbol!.Id == FuId.MatchValue;
@@ -2248,6 +2254,8 @@ namespace Fusion
 		{
 			visitor.VisitBinaryExpr(this, parent);
 		}
+
+		public override bool IsSimple() => this.Op == FuToken.LeftBracket && this.Left.IsLocalReference() && (this.Right!.IsConst(false) || this.Right!.IsLocalReference());
 
 		public override bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type!.Id == FuId.StringStorageType;
 
@@ -9791,17 +9799,7 @@ namespace Fusion
 				WriteSwitchCase(statement, kase);
 		}
 
-		protected virtual bool NeedsSwitchVar(FuExpr expr)
-		{
-			switch (expr) {
-			case FuSymbolReference symbol:
-				return symbol.Left != null && !symbol.Left!.IsLocalReference();
-			case FuBinaryExpr indexing:
-				return indexing.Op != FuToken.LeftBracket || !indexing.Left.IsLocalReference() || !(indexing.Right is FuLiteral || indexing.Right!.IsLocalReference());
-			default:
-				return true;
-			}
-		}
+		protected virtual bool NeedsSwitchVar(FuExpr expr) => !expr.IsSimple();
 
 		protected virtual void WriteSwitchVar(FuExpr expr)
 		{
@@ -19768,25 +19766,47 @@ namespace Fusion
 			case FuId.ListAny:
 				Include("std.algorithm");
 				WriteClassReference(obj!);
-				Write("[].any!(");
-				args[0].Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteCall("[].any!", args[0]);
 				break;
 			case FuId.ListInsert:
-				this.HasListInsert = true;
-				WritePostfix(obj!, ".insertInPlace(");
-				args[0].Accept(this, FuPriority.Argument);
-				Write(", ");
-				WriteInsertedArg(obj!.Type!.AsClassType().GetElementType(), args, 1);
+				if (obj!.IsSimple()) {
+					WritePostfix(obj!, ".insertAfter((*");
+					WritePostfix(obj!, ")[0 .. ");
+					args[0].Accept(this, FuPriority.Argument);
+					Write("], ");
+					WriteInsertedArg(obj!.Type!.AsClassType().GetElementType(), args, 1);
+				}
+				else {
+					this.HasListInsert = true;
+					WritePostfix(obj!, ".insertInPlace(");
+					args[0].Accept(this, FuPriority.Argument);
+					Write(", ");
+					WriteInsertedArg(obj!.Type!.AsClassType().GetElementType(), args, 1);
+				}
 				break;
 			case FuId.ListLast:
 				WritePostfix(obj!, ".back");
 				break;
 			case FuId.ListRemoveAt:
 			case FuId.ListRemoveRange:
-				this.HasListRemoveAt = true;
-				WritePostfix(obj!, ".removeAt");
-				WriteInParentheses(args);
+				if (obj!.IsSimple() && args[0].IsSimple()) {
+					WritePostfix(obj!, ".linearRemove((*");
+					WritePostfix(obj!, ")[");
+					args[0].Accept(this, FuPriority.Argument);
+					Write(" .. ");
+					if (method.Id == FuId.ListRemoveAt) {
+						StartAdd(args[0]);
+						WriteChar('1');
+					}
+					else
+						WriteAdd(args[0], args[1]);
+					Write("])");
+				}
+				else {
+					this.HasListRemoveAt = true;
+					WritePostfix(obj!, ".removeAt");
+					WriteInParentheses(args);
+				}
 				break;
 			case FuId.ListIndexOf:
 				Include("std.algorithm");
@@ -19794,10 +19814,14 @@ namespace Fusion
 				WriteCall("[].countUntil", args[0]);
 				break;
 			case FuId.QueueDequeue:
-				this.HasQueueDequeue = true;
-				Include("std.container.dlist");
 				WriteClassReference(obj!);
-				Write(".dequeue()");
+				if (parent == FuPriority.Statement)
+					Write(".removeFront");
+				else {
+					this.HasQueueDequeue = true;
+					Include("std.container.dlist");
+					Write(".dequeue()");
+				}
 				break;
 			case FuId.QueuePeek:
 				WritePostfix(obj!, ".front");
@@ -19811,9 +19835,13 @@ namespace Fusion
 				WriteCoercedExpr(obj!.Type!.AsClassType().GetElementType(), args[0]);
 				break;
 			case FuId.StackPop:
-				this.HasStackPop = true;
 				WriteClassReference(obj!);
-				Write(".pop()");
+				if (parent == FuPriority.Statement)
+					Write(".removeBack");
+				else {
+					this.HasStackPop = true;
+					Write(".pop()");
+				}
 				break;
 			case FuId.HashSetAdd:
 				WritePostfix(obj!, ".require(");
@@ -19913,9 +19941,7 @@ namespace Fusion
 				WriteType(type, false);
 				Write(", ");
 				WriteType(method.FirstParameter()!.Type!, false);
-				Write(")(");
-				args[0].Accept(this, FuPriority.Argument);
-				WriteChar(')');
+				WriteCall(")", args[0]);
 				break;
 			case FuId.ConvertToBase64String:
 				Include("std.base64");

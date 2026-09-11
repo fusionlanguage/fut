@@ -788,6 +788,7 @@ public:
 	void acceptStatement(FuVisitor * visitor) const override;
 	virtual bool isLocalReference() const;
 	virtual bool isReferenceTo(const FuSymbol * symbol) const;
+	virtual bool isSimple() const;
 	virtual bool isNewString(bool substringOffset) const;
 	virtual bool isUnique() const;
 	virtual void setShared() const;
@@ -987,6 +988,7 @@ class FuLiteral : public FuExpr
 public:
 	virtual ~FuLiteral() = default;
 	bool isConst(bool varIsConst) const override;
+	bool isSimple() const override;
 	virtual bool isDefaultValue() const = 0;
 protected:
 	FuLiteral() = default;
@@ -1166,6 +1168,7 @@ public:
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
 	bool isLocalReference() const override;
 	bool isReferenceTo(const FuSymbol * symbol) const override;
+	bool isSimple() const override;
 	bool isConst(bool varIsConst) const override;
 	bool isNewString(bool substringOffset) const override;
 	void setShared() const override;
@@ -1246,6 +1249,7 @@ public:
 	int intValue() const override;
 	bool isConst(bool varIsConst) const override;
 	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	bool isSimple() const override;
 	bool isNewString(bool substringOffset) const override;
 	bool isRel() const;
 	bool hasSideEffect() const override;

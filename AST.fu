@@ -387,6 +387,7 @@ public abstract class FuExpr : FuStatement
 	public override void AcceptStatement(FuVisitor! visitor) { visitor.VisitExpr(this); }
 	public virtual bool IsLocalReference() => false;
 	public virtual bool IsReferenceTo(FuSymbol symbol) => false;
+	public virtual bool IsSimple() => false;
 	public virtual bool IsNewString(bool substringOffset) => false;
 	public virtual bool IsUnique() => false;
 	public virtual void SetShared() { }
@@ -465,6 +466,7 @@ public class FuAggregateInitializer : FuExpr
 public abstract class FuLiteral : FuExpr
 {
 	public override bool IsConst(bool varIsConst) => true;
+	public override bool IsSimple() => true;
 	public abstract bool IsDefaultValue();
 }
 
@@ -664,6 +666,7 @@ public class FuSymbolReference : FuName
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitSymbolReference(this, parent); }
 	public override bool IsLocalReference() => this.Left == null;
 	public override bool IsReferenceTo(FuSymbol symbol) => this.Symbol == symbol;
+	public override bool IsSimple() => this.Left == null || this.Left.IsLocalReference();
 	public override bool IsConst(bool varIsConst) => this.Symbol.IsConst(varIsConst) && (this.Left == null || this.Left.IsConst(varIsConst));
 	public override bool IsNewString(bool substringOffset) => this.Symbol.Id == FuId.MatchValue;
 	public override void SetShared()
@@ -785,6 +788,7 @@ public class FuBinaryExpr : FuExpr
 	}
 	public override bool IsConst(bool varIsConst) => this.Left.IsConst(varIsConst) && this.Right.IsConst(varIsConst);
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitBinaryExpr(this, parent); }
+	public override bool IsSimple() => this.Op == FuToken.LeftBracket && this.Left.IsLocalReference() && (this.Right.IsConst(false) || this.Right.IsLocalReference());
 	public override bool IsNewString(bool substringOffset) => this.Op == FuToken.Plus && this.Type.Id == FuId.StringStorageType;
 	public bool IsRel()
 	{

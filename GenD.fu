@@ -979,25 +979,47 @@ public class GenD : GenCCppD
 		case FuId.ListAny:
 			Include("std.algorithm");
 			WriteClassReference(obj);
-			Write("[].any!(");
-			args[0].Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteCall("[].any!", args[0]);
 			break;
 		case FuId.ListInsert:
-			this.HasListInsert = true;
-			WritePostfix(obj, ".insertInPlace(");
-			args[0].Accept(this, FuPriority.Argument);
-			Write(", ");
-			WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args, 1);
+			if (obj.IsSimple()) {
+				WritePostfix(obj, ".insertAfter((*");
+				WritePostfix(obj, ")[0 .. ");
+				args[0].Accept(this, FuPriority.Argument);
+				Write("], ");
+				WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args, 1);
+			}
+			else {
+				this.HasListInsert = true;
+				WritePostfix(obj, ".insertInPlace(");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(", ");
+				WriteInsertedArg(obj.Type.AsClassType().GetElementType(), args, 1);
+			}
 			break;
 		case FuId.ListLast:
 			WritePostfix(obj, ".back");
 			break;
 		case FuId.ListRemoveAt:
 		case FuId.ListRemoveRange:
-			this.HasListRemoveAt = true;
-			WritePostfix(obj, ".removeAt");
-			WriteInParentheses(args);
+			if (obj.IsSimple() && args[0].IsSimple()) {
+				WritePostfix(obj, ".linearRemove((*");
+				WritePostfix(obj, ")[");
+				args[0].Accept(this, FuPriority.Argument);
+				Write(" .. ");
+				if (method.Id == FuId.ListRemoveAt) {
+					StartAdd(args[0]);
+					WriteChar('1');
+				}
+				else
+					WriteAdd(args[0], args[1]);
+				Write("])");
+			}
+			else {
+				this.HasListRemoveAt = true;
+				WritePostfix(obj, ".removeAt");
+				WriteInParentheses(args);
+			}
 			break;
 		case FuId.ListIndexOf:
 			Include("std.algorithm");
@@ -1005,10 +1027,14 @@ public class GenD : GenCCppD
 			WriteCall("[].countUntil", args[0]);
 			break;
 		case FuId.QueueDequeue:
-			this.HasQueueDequeue = true;
-			Include("std.container.dlist");
 			WriteClassReference(obj);
-			Write(".dequeue()");
+			if (parent == FuPriority.Statement)
+				Write(".removeFront");
+			else {
+				this.HasQueueDequeue = true;
+				Include("std.container.dlist");
+				Write(".dequeue()");
+			}
 			break;
 		case FuId.QueuePeek:
 			WritePostfix(obj, ".front");
@@ -1022,9 +1048,13 @@ public class GenD : GenCCppD
 			WriteCoercedExpr(obj.Type.AsClassType().GetElementType(), args[0]);
 			break;
 		case FuId.StackPop:
-			this.HasStackPop = true;
 			WriteClassReference(obj);
-			Write(".pop()");
+			if (parent == FuPriority.Statement)
+				Write(".removeBack");
+			else {
+				this.HasStackPop = true;
+				Write(".pop()");
+			}
 			break;
 		case FuId.HashSetAdd:
 			WritePostfix(obj, ".require(");
@@ -1124,9 +1154,7 @@ public class GenD : GenCCppD
 			WriteType(type, false);
 			Write(", ");
 			WriteType(method.FirstParameter().Type, false);
-			Write(")(");
-			args[0].Accept(this, FuPriority.Argument);
-			WriteChar(')');
+			WriteCall(")", args[0]);
 			break;
 		case FuId.ConvertToBase64String:
 			Include("std.base64");

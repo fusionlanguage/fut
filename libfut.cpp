@@ -1255,6 +1255,11 @@ bool FuExpr::isReferenceTo(const FuSymbol * symbol) const
 	return false;
 }
 
+bool FuExpr::isSimple() const
+{
+	return false;
+}
+
 bool FuExpr::isNewString(bool substringOffset) const
 {
 	return false;
@@ -1340,6 +1345,11 @@ void FuAggregateInitializer::accept(FuVisitor * visitor, FuPriority parent) cons
 }
 
 bool FuLiteral::isConst(bool varIsConst) const
+{
+	return true;
+}
+
+bool FuLiteral::isSimple() const
 {
 	return true;
 }
@@ -1639,6 +1649,11 @@ bool FuSymbolReference::isReferenceTo(const FuSymbol * symbol) const
 	return this->symbol == symbol;
 }
 
+bool FuSymbolReference::isSimple() const
+{
+	return this->left == nullptr || this->left->isLocalReference();
+}
+
 bool FuSymbolReference::isConst(bool varIsConst) const
 {
 	return this->symbol->isConst(varIsConst) && (this->left == nullptr || this->left->isConst(varIsConst));
@@ -1796,6 +1811,11 @@ bool FuBinaryExpr::isConst(bool varIsConst) const
 void FuBinaryExpr::accept(FuVisitor * visitor, FuPriority parent) const
 {
 	visitor->visitBinaryExpr(this, parent);
+}
+
+bool FuBinaryExpr::isSimple() const
+{
+	return this->op == FuToken::leftBracket && this->left->isLocalReference() && (this->right->isConst(false) || this->right->isLocalReference());
 }
 
 bool FuBinaryExpr::isNewString(bool substringOffset) const
@@ -10447,12 +10467,7 @@ void GenBase::startSwitch(const FuSwitch * statement)
 
 bool GenBase::needsSwitchVar(const FuExpr * expr) const
 {
-	if (const FuSymbolReference *symbol = dynamic_cast<const FuSymbolReference *>(expr))
-		return symbol->left != nullptr && !symbol->left->isLocalReference();
-	else if (const FuBinaryExpr *indexing = dynamic_cast<const FuBinaryExpr *>(expr))
-		return indexing->op != FuToken::leftBracket || !indexing->left->isLocalReference() || !(dynamic_cast<const FuLiteral *>(indexing->right.get()) || indexing->right->isLocalReference());
-	else
-		return true;
+	return !expr->isSimple();
 }
 
 void GenBase::writeSwitchVar(const FuExpr * expr)
@@ -20002,25 +20017,47 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 	case FuId::listAny:
 		include("std.algorithm");
 		writeClassReference(obj);
-		write("[].any!(");
-		(*args)[0]->accept(this, FuPriority::argument);
-		writeChar(')');
+		writeCall("[].any!", (*args)[0].get());
 		break;
 	case FuId::listInsert:
-		this->hasListInsert = true;
-		writePostfix(obj, ".insertInPlace(");
-		(*args)[0]->accept(this, FuPriority::argument);
-		write(", ");
-		writeInsertedArg(obj->type->asClassType()->getElementType().get(), args, 1);
+		if (obj->isSimple()) {
+			writePostfix(obj, ".insertAfter((*");
+			writePostfix(obj, ")[0 .. ");
+			(*args)[0]->accept(this, FuPriority::argument);
+			write("], ");
+			writeInsertedArg(obj->type->asClassType()->getElementType().get(), args, 1);
+		}
+		else {
+			this->hasListInsert = true;
+			writePostfix(obj, ".insertInPlace(");
+			(*args)[0]->accept(this, FuPriority::argument);
+			write(", ");
+			writeInsertedArg(obj->type->asClassType()->getElementType().get(), args, 1);
+		}
 		break;
 	case FuId::listLast:
 		writePostfix(obj, ".back");
 		break;
 	case FuId::listRemoveAt:
 	case FuId::listRemoveRange:
-		this->hasListRemoveAt = true;
-		writePostfix(obj, ".removeAt");
-		writeInParentheses(args);
+		if (obj->isSimple() && (*args)[0]->isSimple()) {
+			writePostfix(obj, ".linearRemove((*");
+			writePostfix(obj, ")[");
+			(*args)[0]->accept(this, FuPriority::argument);
+			write(" .. ");
+			if (method->id == FuId::listRemoveAt) {
+				startAdd((*args)[0].get());
+				writeChar('1');
+			}
+			else
+				writeAdd((*args)[0].get(), (*args)[1].get());
+			write("])");
+		}
+		else {
+			this->hasListRemoveAt = true;
+			writePostfix(obj, ".removeAt");
+			writeInParentheses(args);
+		}
 		break;
 	case FuId::listIndexOf:
 		include("std.algorithm");
@@ -20028,10 +20065,14 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writeCall("[].countUntil", (*args)[0].get());
 		break;
 	case FuId::queueDequeue:
-		this->hasQueueDequeue = true;
-		include("std.container.dlist");
 		writeClassReference(obj);
-		write(".dequeue()");
+		if (parent == FuPriority::statement)
+			write(".removeFront");
+		else {
+			this->hasQueueDequeue = true;
+			include("std.container.dlist");
+			write(".dequeue()");
+		}
 		break;
 	case FuId::queuePeek:
 		writePostfix(obj, ".front");
@@ -20045,9 +20086,13 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writeCoercedExpr(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 		break;
 	case FuId::stackPop:
-		this->hasStackPop = true;
 		writeClassReference(obj);
-		write(".pop()");
+		if (parent == FuPriority::statement)
+			write(".removeBack");
+		else {
+			this->hasStackPop = true;
+			write(".pop()");
+		}
 		break;
 	case FuId::hashSetAdd:
 		writePostfix(obj, ".require(");
@@ -20147,9 +20192,7 @@ void GenD::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod
 		writeType(type, false);
 		write(", ");
 		writeType(method->firstParameter()->type.get(), false);
-		write(")(");
-		(*args)[0]->accept(this, FuPriority::argument);
-		writeChar(')');
+		writeCall(")", (*args)[0].get());
 		break;
 	case FuId::convertToBase64String:
 		include("std.base64");

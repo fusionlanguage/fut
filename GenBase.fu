@@ -1970,19 +1970,7 @@ public abstract class GenBase : FuVisitor
 			WriteSwitchCase(statement, kase);
 	}
 
-	protected virtual bool NeedsSwitchVar(FuExpr expr)
-	{
-		switch (expr) {
-		case FuSymbolReference symbol:
-			return symbol.Left != null && !symbol.Left.IsLocalReference();
-		case FuBinaryExpr indexing:
-			return indexing.Op != FuToken.LeftBracket
-				|| !indexing.Left.IsLocalReference()
-				|| !(indexing.Right is FuLiteral || indexing.Right.IsLocalReference());
-		default:
-			return true;
-		}
-	}
+	protected virtual bool NeedsSwitchVar(FuExpr expr) => !expr.IsSimple();
 
 	protected virtual void WriteSwitchVar!(FuExpr expr)
 	{
