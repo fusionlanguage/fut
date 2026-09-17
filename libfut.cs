@@ -18220,7 +18220,6 @@ namespace Fusion
 			case FuId.BitConverterSingleToInt32Bits:
 			case FuId.BitConverterDoubleToInt64Bits:
 			case FuId.ConvertToBase64String:
-			case FuId.JsonElementGetString:
 			case FuId.JsonElementGetDouble:
 			case FuId.JsonElementGetBoolean:
 				if (obj != null) {
@@ -18503,6 +18502,9 @@ namespace Fusion
 			case FuId.JsonElementGetArray:
 				Include("System.Linq");
 				WritePostfix(obj!, ".EnumerateArray().ToList()");
+				break;
+			case FuId.JsonElementGetString:
+				WritePostfix(obj!, ".GetString()!");
 				break;
 			case FuId.MathMethod:
 			case FuId.MathCeiling:

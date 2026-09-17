@@ -18646,7 +18646,6 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::bitConverterSingleToInt32Bits:
 	case FuId::bitConverterDoubleToInt64Bits:
 	case FuId::convertToBase64String:
-	case FuId::jsonElementGetString:
 	case FuId::jsonElementGetDouble:
 	case FuId::jsonElementGetBoolean:
 		if (obj != nullptr) {
@@ -18936,6 +18935,9 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::jsonElementGetArray:
 		include("System.Linq");
 		writePostfix(obj, ".EnumerateArray().ToList()");
+		break;
+	case FuId::jsonElementGetString:
+		writePostfix(obj, ".GetString()!");
 		break;
 	case FuId::mathMethod:
 	case FuId::mathCeiling:

@@ -18899,7 +18899,6 @@ export class GenCs extends GenTyped
 		case FuId.BIT_CONVERTER_SINGLE_TO_INT32_BITS:
 		case FuId.BIT_CONVERTER_DOUBLE_TO_INT64_BITS:
 		case FuId.CONVERT_TO_BASE64_STRING:
-		case FuId.JSON_ELEMENT_GET_STRING:
 		case FuId.JSON_ELEMENT_GET_DOUBLE:
 		case FuId.JSON_ELEMENT_GET_BOOLEAN:
 			if (obj != null) {
@@ -19185,6 +19184,9 @@ export class GenCs extends GenTyped
 		case FuId.JSON_ELEMENT_GET_ARRAY:
 			this.include("System.Linq");
 			this.writePostfix(obj, ".EnumerateArray().ToList()");
+			break;
+		case FuId.JSON_ELEMENT_GET_STRING:
+			this.writePostfix(obj, ".GetString()!");
 			break;
 		case FuId.MATH_METHOD:
 		case FuId.MATH_CEILING:
