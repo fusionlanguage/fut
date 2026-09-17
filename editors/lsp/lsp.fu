@@ -161,13 +161,91 @@ public abstract class FusionLanguageServer : FuSemaHost
 		}
 	}
 
+	string() GetContainerSymbol(string prefix, FuContainerType source, int kind)
+	{
+		int line = this.Program.GetLine(source.Loc);
+		int character = source.Loc - this.Program.LineLocs[line];
+		return $"{prefix}{{ \"name\": \"{source.Name}\", \"kind\": {kind}, \"range\": {{ \"start\": {{ \"line\": {source.StartLine}, \"character\" : {source.StartColumn} }}, \"end\": {{ \"line\": {source.EndLine}, \"character\" : {source.EndColumn} }} }}, " +
+			$"\"selectionRange\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character + source.GetLocLength()} }} }}, \"children\": [";
+	}
+
+	string() GetMemberSymbol(string prefix, FuSymbol symbol, int kind)
+	{
+		assert symbol is FuMember source;
+		int line = this.Program.GetLine(source.Loc);
+		int character = source.Loc - this.Program.LineLocs[line];
+		return $"{prefix}{{ \"name\": \"{source.Name}\", \"kind\": {kind}, \"range\": {{ \"start\": {{ \"line\": {source.StartLine}, \"character\" : {source.StartColumn} }}, \"end\": {{ \"line\": {source.EndLine}, \"character\" : {source.EndColumn} }} }}, " +
+			$"\"selectionRange\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character + source.GetLocLength()} }} }} }}";
+	}
+
+	void HandleDocumentSymbol!(Dictionary<string(), JsonElement#> request, string uri)
+	{
+		FuProgram() program;
+		this.Program = program;
+		FuSystem# system = FuSystem.New();
+		program.Parent = system;
+		program.System = system;
+		FuParser() parser;
+		this.HasErrors = false;
+		parser.SetHost(this);
+		ParseOpenFile(uri, parser);
+		StringWriter() w;
+		w.Write("\"result\": [");
+		string prefix = " ";
+		for (FuSymbol? container = program.First; container != null; container = container.Next) {
+			switch (container) {
+			case FuClass klass:
+				w.Write(GetContainerSymbol(prefix, klass, 5));
+				prefix = " ";
+				if (klass.Constructor != null) {
+					w.Write(GetMemberSymbol(prefix, klass.Constructor, 9));
+					prefix = ", ";
+				}
+				for (FuSymbol? member = klass.First; member != null; member = member.Next) {
+					int kind;
+					switch (member) {
+					case FuMethod:
+						kind = 6;
+						break;
+					case FuField:
+						kind = 8;
+						break;
+					case FuConst:
+						kind = 14;
+						break;
+					default:
+						assert false;
+					}
+					w.Write(GetMemberSymbol(prefix, member, kind));
+					prefix = ", ";
+				}
+				w.Write(" ] }");
+				break;
+			case FuEnum enu:
+				w.Write(GetContainerSymbol(prefix, enu, 10));
+				prefix = " ";
+				for (FuSymbol? value = enu.GetFirstValue(); value != null; value = value.Next) {
+					w.Write(GetMemberSymbol(prefix, value, 22));
+					prefix = ", ";
+				}
+				w.Write(" ] }");
+				break;
+			default:
+				assert false;
+			}
+			prefix = ", ";
+		}
+		w.Write(" ]");
+		Respond(request, w.ToString());
+	}
+
 	bool Handle!(Dictionary<string(), JsonElement#> request)
 	{
 		Dictionary<string(), JsonElement#> params = request["params"].GetObject();
 		string method = request["method"].GetString();
 		switch (method) {
 		case "initialize":
-			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true, \"referencesProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
+			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true, \"referencesProvider\": true, \"documentSymbolProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
 			JsonElement pid = params["processId"];
 			if (pid.IsNumber())
 				WatchClientProcess(GetInt(pid));
@@ -235,6 +313,9 @@ public abstract class FusionLanguageServer : FuSemaHost
 				FuSymbolReferenceVisitor() collector;
 				RespondLocations(request, collector.FindReferences(program, symbol));
 			}
+			break;
+		case "textDocument/documentSymbol":
+			HandleDocumentSymbol(request, params["textDocument"].GetObject()["uri"].GetString());
 			break;
 		default:
 			if (request.ContainsKey("id"))
