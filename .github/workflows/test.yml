@@ -46,7 +46,7 @@ jobs:
     runs-on: ubuntu-24.04
     steps:
       - run: sudo apt install mypy
-      - uses: swift-actions/setup-swift@main
+      - uses: pfusik/setup-swift@swiftly-1.1.4
         with:
           skip-verify-signature: true
       - uses: actions/checkout@main
