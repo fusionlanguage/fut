@@ -1006,6 +1006,7 @@ public class FuParser : FuLexer
 			int callTypeLine = GetCurrentLine();
 			int callTypeColumn = GetTokenColumn();
 			callType = ParseCallType();
+			bool foundName = IsFindName();
 			FuExpr# type = Eat(FuToken.Void) ? this.Host.Program.System.VoidType : ParseType();
 			if (See(FuToken.LeftBrace) && type is FuCallExpr call) {
 				// constructor
@@ -1028,10 +1029,12 @@ public class FuParser : FuLexer
 				klass.Constructor.Parameters.Parent = klass;
 				klass.Constructor.AddThis(klass, true);
 				klass.Constructor.Body = ParseBlock(klass.Constructor);
+				if (foundName)
+					this.FoundName = klass.Constructor;
 				continue;
 			}
 
-			bool foundName = IsFindName();
+			foundName = IsFindName();
 			int loc = this.TokenLoc;
 			string() name = this.StringValue;
 			if (!Expect(FuToken.Id))

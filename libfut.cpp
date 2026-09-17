@@ -2493,6 +2493,11 @@ std::shared_ptr<FuStaticProperty> FuStaticProperty::new_(std::shared_ptr<FuType>
 	return futemp0;
 }
 
+std::string FuMethodBase::getHover() const
+{
+	return "(constructor)";
+}
+
 bool FuMethodBase::isStatic() const
 {
 	return false;
@@ -5808,6 +5813,7 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 		int callTypeLine = getCurrentLine();
 		int callTypeColumn = getTokenColumn();
 		callType = parseCallType();
+		bool foundName = isFindName();
 		std::shared_ptr<FuExpr> type = eat(FuToken::void_) ? this->host->program->system->voidType : parseType();
 		const FuCallExpr * call;
 		if (see(FuToken::leftBrace) && (call = dynamic_cast<const FuCallExpr *>(type.get()))) {
@@ -5838,9 +5844,11 @@ void FuParser::parseClass(std::shared_ptr<FuCodeDoc> doc, int line, int column, 
 			klass->constructor->parameters.parent = klass.get();
 			klass->constructor->addThis(klass.get(), true);
 			klass->constructor->body = parseBlock(klass->constructor.get());
+			if (foundName)
+				this->foundName = klass->constructor.get();
 			continue;
 		}
-		bool foundName = isFindName();
+		foundName = isFindName();
 		int loc = this->tokenLoc;
 		std::string name{this->stringValue};
 		if (!expect(FuToken::id))

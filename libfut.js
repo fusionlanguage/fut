@@ -3178,6 +3178,11 @@ export class FuMethodBase extends FuMember
 	isLive = false;
 	calls = new Set();
 
+	getHover()
+	{
+		return "(constructor)";
+	}
+
 	isStatic()
 	{
 		return false;
@@ -5626,6 +5631,7 @@ export class FuParser extends FuLexer
 			let callTypeLine = this.#getCurrentLine();
 			let callTypeColumn = this.#getTokenColumn();
 			callType = this.#parseCallType();
+			let foundName = this.#isFindName();
 			let type = this.eat(FuToken.VOID) ? this.host.program.system.voidType : this.#parseType();
 			let call;
 			if (this.see(FuToken.LEFT_BRACE) && (call = type) instanceof FuCallExpr) {
@@ -5647,9 +5653,11 @@ export class FuParser extends FuLexer
 				klass.constructor_.parameters.parent = klass;
 				klass.constructor_.addThis(klass, true);
 				klass.constructor_.body = this.#parseBlock(klass.constructor_);
+				if (foundName)
+					this.#foundName = klass.constructor_;
 				continue;
 			}
-			let foundName = this.#isFindName();
+			foundName = this.#isFindName();
 			let loc = this.tokenLoc;
 			let name = this.stringValue;
 			if (!this.expect(FuToken.ID))

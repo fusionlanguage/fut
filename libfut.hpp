@@ -1884,6 +1884,7 @@ class FuMethodBase : public FuMember
 public:
 	FuMethodBase() = default;
 	virtual ~FuMethodBase() = default;
+	std::string getHover() const override;
 	bool isStatic() const override;
 	void addThis(const FuClass * klass, bool isMutator);
 	bool isMutator() const;

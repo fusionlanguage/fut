@@ -1323,6 +1323,7 @@ public class FuMethodBase : FuMember
 	internal FuScope#? Body;
 	internal bool IsLive = false;
 	internal HashSet<FuMethod!>() Calls;
+	public override string() GetHover() => "(constructor)";
 	public override bool IsStatic() => false; // constructor
 	public void AddThis!(FuClass? klass, bool isMutator)
 	{

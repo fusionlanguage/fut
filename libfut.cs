@@ -2977,6 +2977,8 @@ namespace Fusion
 
 		internal readonly HashSet<FuMethod> Calls = new HashSet<FuMethod>();
 
+		public override string GetHover() => "(constructor)";
+
 		public override bool IsStatic() => false;
 
 		public void AddThis(FuClass? klass, bool isMutator)
@@ -5301,6 +5303,7 @@ namespace Fusion
 				int callTypeLine = GetCurrentLine();
 				int callTypeColumn = GetTokenColumn();
 				callType = ParseCallType();
+				bool foundName = IsFindName();
 				FuExpr type = Eat(FuToken.Void) ? this.Host.Program.System.VoidType : ParseType();
 				if (See(FuToken.LeftBrace) && type is FuCallExpr call) {
 					if (call.Method.Name != klass.Name)
@@ -5321,9 +5324,11 @@ namespace Fusion
 					klass.Constructor!.Parameters.Parent = klass;
 					klass.Constructor!.AddThis(klass, true);
 					klass.Constructor!.Body = ParseBlock(klass.Constructor);
+					if (foundName)
+						this.FoundName = klass.Constructor;
 					continue;
 				}
-				bool foundName = IsFindName();
+				foundName = IsFindName();
 				int loc = this.TokenLoc;
 				string name = this.StringValue;
 				if (!Expect(FuToken.Id))
