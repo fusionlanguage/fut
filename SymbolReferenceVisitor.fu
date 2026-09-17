@@ -282,8 +282,8 @@ public class FuSymbolReferenceVisitor : FuVisitor
 				VisitClass(klass);
 				break;
 			case FuEnum enu:
-				for (FuSymbol? symbol = enu.First; symbol != null; symbol = symbol.Next) {
-					if (symbol is FuConst konst && !(konst.Value is FuImplicitEnumValue))
+				for (FuSymbol? value = enu.First; value != null; value = symbol.Next) {
+					if (value is FuConst konst && !(konst.Value is FuImplicitEnumValue))
 						konst.Value.Accept(this, FuPriority.Statement);
 				}
 				break;

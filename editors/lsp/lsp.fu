@@ -178,49 +178,63 @@ public abstract class FusionLanguageServer : FuSemaHost
 		case "exit":
 			return true;
 		case "textDocument/didOpen":
-			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-			SetOpenFile(textDocument["uri"].GetString(), textDocument["text"].GetString());
+			{
+				Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
+				SetOpenFile(textDocument["uri"].GetString(), textDocument["text"].GetString());
+			}
 			break;
 		case "textDocument/didChange":
-			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-			SetOpenFile(textDocument["uri"].GetString(), params["contentChanges"].GetArray()[0].GetObject()["text"].GetString());
+			{
+				Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
+				SetOpenFile(textDocument["uri"].GetString(), params["contentChanges"].GetArray()[0].GetObject()["text"].GetString());
+			}
 			break;
 		case "textDocument/didClose":
-			Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-			OpenFiles.Remove(textDocument["uri"].GetString());
+			{
+				Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
+				OpenFiles.Remove(textDocument["uri"].GetString());
+			}
 			break;
 		case "textDocument/hover":
-			FuProgram() program;
-			this.Program = program;
-			FuSymbol? symbol = FindDefinition(params);
-			if (symbol == null)
-				RespondNull(request);
-			else if (symbol.Documentation != null)
-				Respond(request, $"\"result\": {{ \"contents\": [ {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }}, \"{EscapeString(symbol.Documentation.ToString())}\" ] }}");
-			else
-				Respond(request, $"\"result\": {{ \"contents\": {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }} }}");
+			{
+				FuProgram() program;
+				this.Program = program;
+				FuSymbol? symbol = FindDefinition(params);
+				if (symbol == null)
+					RespondNull(request);
+				else if (symbol.Documentation != null)
+					Respond(request, $"\"result\": {{ \"contents\": [ {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }}, \"{EscapeString(symbol.Documentation.ToString())}\" ] }}");
+				else
+					Respond(request, $"\"result\": {{ \"contents\": {{ \"language\": \"fusion\", \"value\": \"{symbol.GetHover()}\" }} }}");
+			}
 			break;
 		case "textDocument/definition":
-			FuProgram() program;
-			this.Program = program;
-			FuSymbol? symbol = FindDefinition(params);
-			if (symbol == null || symbol.Loc <= 0)
-				RespondNull(request);
-			else
-				Respond(request, GetLocation("\"result\": ", symbol.Loc));
+			{
+				FuProgram() program;
+				this.Program = program;
+				FuSymbol? symbol = FindDefinition(params);
+				if (symbol == null || symbol.Loc <= 0)
+					RespondNull(request);
+				else
+					Respond(request, GetLocation("\"result\": ", symbol.Loc));
+			}
 			break;
 		case "textDocument/implementation":
-			FuProgram() program;
-			this.Program = program;
-			FuSymbol? symbol = FindDefinition(params);
-			RespondLocations(request, program.FindImplementations(symbol));
+			{
+				FuProgram() program;
+				this.Program = program;
+				FuSymbol? symbol = FindDefinition(params);
+				RespondLocations(request, program.FindImplementations(symbol));
+			}
 			break;
 		case "textDocument/references":
-			FuProgram() program;
-			this.Program = program;
-			FuSymbol? symbol = FindDefinition(params);
-			FuSymbolReferenceVisitor() collector;
-			RespondLocations(request, collector.FindReferences(program, symbol));
+			{
+				FuProgram() program;
+				this.Program = program;
+				FuSymbol? symbol = FindDefinition(params);
+				FuSymbolReferenceVisitor() collector;
+				RespondLocations(request, collector.FindReferences(program, symbol));
+			}
 			break;
 		default:
 			if (request.ContainsKey("id"))
