@@ -18,14 +18,31 @@
 // You should have received a copy of the GNU General Public License
 // along with Fusion Transpiler.  If not, see http://www.gnu.org/licenses/
 
+class FusionError
+{
+	internal int Line;
+	internal int StartCharacter;
+	internal int EndCharacter;
+	internal string() Message;
+
+	internal void Set!(int line, int startCharacter, int endCharacter, string message)
+	{
+		this.Line = line;
+		this.StartCharacter = startCharacter;
+		this.EndCharacter = endCharacter;
+		this.Message = message;
+	}
+}
+
 public abstract class FusionLanguageServer : FuSemaHost
 {
 	Dictionary<string(), string()>() OpenFiles;
-	bool HasErrors;
+	List<FusionError()>() Errors;
 
 	public override void ReportError!(string filename, int line, int startUtf16Column, int endUtf16Column, string message)
 	{
-		this.HasErrors = true;
+		this.Errors.Add();
+		this.Errors.Last().Set(line, startUtf16Column, endUtf16Column, message);
 	}
 
 	protected abstract string() ReadStdin(int length);
@@ -73,15 +90,20 @@ public abstract class FusionLanguageServer : FuSemaHost
 
 	static int GetInt(JsonElement json) => Math.Truncate(json.GetDouble());
 
+	static void Send(string body)
+	{
+		string() content = $"{{ \"jsonrpc\": \"2.0\", {body} }}";
+		Console.Write($"Content-Length: {Encoding.UTF8.GetByteCount(content)}\r\n\r\n{content}");
+		Console.Out.Flush();
+	}
+
 	static string() EscapeString(string s) => s.Replace("\\", "\\\\").Replace("\"", "\\\"").Replace("\n", "\\n");
 
 	static void Respond(Dictionary<string(), JsonElement#> request, string resultOrError)
 	{
 		JsonElement idElement = request["id"];
 		string() id = idElement.IsNumber() ? $"{GetInt(idElement)}" : $"\"{EscapeString(idElement.GetString())}\"";
-		string() content = $"{{ \"jsonrpc\": \"2.0\", \"id\": {id}, {resultOrError} }}";
-		Console.Write($"Content-Length: {Encoding.UTF8.GetByteCount(content)}\r\n\r\n{content}");
-		Console.Out.Flush();
+		Send($"\"id\": {id}, {resultOrError}");
 	}
 
 	static void RespondNull(Dictionary<string(), JsonElement#> request)
@@ -94,20 +116,42 @@ public abstract class FusionLanguageServer : FuSemaHost
 		Respond(request, $"\"error\": {{ \"code\": {code}, \"message\": \"{message}\" }}");
 	}
 
-	void SetOpenFile!(string uri, string text)
-	{
-		OpenFiles[uri] = text;
-	}
-
 	void ParseOpenFile(string uri, FuParser! parser)
 	{
 		string text = OpenFiles[uri]; // TODO: check if exists
 		parser.Parse(uri, Encoding.UTF8.GetBytes(text), Encoding.UTF8.GetByteCount(text));
 	}
 
+	static string() GetRange(int startLine, int startCharacter, int endLine, int endCharacter)
+		=> $"{{ \"start\": {{ \"line\": {startLine}, \"character\" : {startCharacter} }}, \"end\": {{ \"line\": {endLine}, \"character\" : {endCharacter} }} }}";
+
+	void SetOpenFile!(string uri, string text)
+	{
+		OpenFiles[uri] = text;
+
+		FuProgram() program;
+		this.Program = program;
+		FuSystem# system = FuSystem.New();
+		program.Parent = system;
+		program.System = system;
+		FuParser() parser;
+		this.Errors.Clear();
+		parser.SetHost(this);
+		ParseOpenFile(uri, parser);
+		StringWriter() w;
+		w.Write($"\"method\": \"textDocument/publishDiagnostics\", \"params\": {{ \"uri\": \"{uri}\", \"diagnostics\": [");
+		string prefix = "\n";
+		foreach (FusionError error in this.Errors) {
+			w.Write($"{prefix}{{ \"range\": {GetRange(error.Line, error.StartCharacter, error.Line, error.EndCharacter)}, \"severity\": 1, \"source\": \"fusion\", \"message\": \"{EscapeString(error.Message)}\" }}");
+			prefix = ",\n";
+		}
+		w.Write("\n] }");
+		Send(w.ToString());
+	}
+
 	void DoSema!()
 	{
-		if (this.HasErrors)
+		if (this.Errors.Count > 0)
 			return;
 		FuSema() sema;
 		sema.SetHost(this);
@@ -118,7 +162,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 	{
 		string uri = textDocument["uri"].GetString();
 		FuParser() parser;
-		this.HasErrors = false;
+		this.Errors.Clear();
 		parser.SetHost(this);
 		parser.FindName(uri, GetInt(position["line"]), GetInt(position["character"]));
 		ParseOpenFile(uri, parser);
@@ -142,7 +186,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 		FuSourceFile file = this.Program.GetSourceFile(line);
 		int character = loc - this.Program.LineLocs[line];
 		line -= file.Line;
-		return $"{prefix}{{ \"uri\": \"{file.Filename}\", \"range\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character} }} }} }}";
+		return $"{prefix}{{ \"uri\": \"{file.Filename}\", \"range\": {GetRange(line, character, line, character)} }}";
 	}
 
 	void RespondLocations(Dictionary<string(), JsonElement#> request, List<int> locs)
@@ -151,12 +195,12 @@ public abstract class FusionLanguageServer : FuSemaHost
 			RespondNull(request);
 		else {
 			StringWriter() w;
-			string prefix = "\"result\": [ ";
+			string prefix = "\"result\": [\n";
 			foreach (int loc in locs) {
 				w.Write(GetLocation(prefix, loc));
-				prefix = ", ";
+				prefix = ",\n";
 			}
-			w.Write(" ]");
+			w.Write("\n]");
 			Respond(request, w.ToString());
 		}
 	}
@@ -165,8 +209,8 @@ public abstract class FusionLanguageServer : FuSemaHost
 	{
 		int line = this.Program.GetLine(source.Loc);
 		int character = source.Loc - this.Program.LineLocs[line];
-		return $"{prefix}{{ \"name\": \"{source.Name}\", \"kind\": {kind}, \"range\": {{ \"start\": {{ \"line\": {source.StartLine}, \"character\" : {source.StartColumn} }}, \"end\": {{ \"line\": {source.EndLine}, \"character\" : {source.EndColumn} }} }}, " +
-			$"\"selectionRange\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character + source.GetLocLength()} }} }}, \"children\": [";
+		return $"{prefix}{{ \"name\": \"{source.Name}\", \"kind\": {kind}, \"range\": {GetRange(source.StartLine, source.StartColumn, source.EndLine, source.EndColumn)}, " +
+			$"\"selectionRange\": {GetRange(line, character, line, character + source.GetLocLength())}, \"children\": [";
 	}
 
 	string() GetMemberSymbol(string prefix, FuSymbol symbol, int kind)
@@ -174,8 +218,8 @@ public abstract class FusionLanguageServer : FuSemaHost
 		assert symbol is FuMember source;
 		int line = this.Program.GetLine(source.Loc);
 		int character = source.Loc - this.Program.LineLocs[line];
-		return $"{prefix}{{ \"name\": \"{source.Name}\", \"kind\": {kind}, \"range\": {{ \"start\": {{ \"line\": {source.StartLine}, \"character\" : {source.StartColumn} }}, \"end\": {{ \"line\": {source.EndLine}, \"character\" : {source.EndColumn} }} }}, " +
-			$"\"selectionRange\": {{ \"start\": {{ \"line\": {line}, \"character\" : {character} }}, \"end\": {{ \"line\": {line}, \"character\" : {character + source.GetLocLength()} }} }} }}";
+		return $"{prefix}{{ \"name\": \"{source.Name}\", \"kind\": {kind}, \"range\": {GetRange(source.StartLine, source.StartColumn, source.EndLine, source.EndColumn)}, " +
+			$"\"selectionRange\": {GetRange(line, character, line, character + source.GetLocLength())} }}";
 	}
 
 	void HandleDocumentSymbol!(Dictionary<string(), JsonElement#> request, string uri)
@@ -186,20 +230,20 @@ public abstract class FusionLanguageServer : FuSemaHost
 		program.Parent = system;
 		program.System = system;
 		FuParser() parser;
-		this.HasErrors = false;
+		this.Errors.Clear();
 		parser.SetHost(this);
 		ParseOpenFile(uri, parser);
 		StringWriter() w;
 		w.Write("\"result\": [");
-		string prefix = " ";
+		string prefix = "\n";
 		for (FuSymbol? container = program.First; container != null; container = container.Next) {
 			switch (container) {
 			case FuClass klass:
 				w.Write(GetContainerSymbol(prefix, klass, 5));
-				prefix = " ";
+				prefix = "\n";
 				if (klass.Constructor != null) {
 					w.Write(GetMemberSymbol(prefix, klass.Constructor, 9));
-					prefix = ", ";
+					prefix = ",\n";
 				}
 				for (FuSymbol? member = klass.First; member != null; member = member.Next) {
 					int kind;
@@ -217,25 +261,25 @@ public abstract class FusionLanguageServer : FuSemaHost
 						assert false;
 					}
 					w.Write(GetMemberSymbol(prefix, member, kind));
-					prefix = ", ";
+					prefix = ",\n";
 				}
-				w.Write(" ] }");
+				w.Write("\n] }");
 				break;
 			case FuEnum enu:
 				w.Write(GetContainerSymbol(prefix, enu, 10));
-				prefix = " ";
+				prefix = "\n";
 				for (FuSymbol? value = enu.GetFirstValue(); value != null; value = value.Next) {
 					w.Write(GetMemberSymbol(prefix, value, 22));
-					prefix = ", ";
+					prefix = ",\n";
 				}
-				w.Write(" ] }");
+				w.Write("\n] }");
 				break;
 			default:
 				assert false;
 			}
-			prefix = ", ";
+			prefix = ",\n";
 		}
-		w.Write(" ]");
+		w.Write("\n]");
 		Respond(request, w.ToString());
 	}
 
@@ -263,14 +307,15 @@ public abstract class FusionLanguageServer : FuSemaHost
 			break;
 		case "textDocument/didChange":
 			{
-				Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-				SetOpenFile(textDocument["uri"].GetString(), params["contentChanges"].GetArray()[0].GetObject()["text"].GetString());
+				string uri = params["textDocument"].GetObject()["uri"].GetString();
+				SetOpenFile(uri, params["contentChanges"].GetArray()[0].GetObject()["text"].GetString());
 			}
 			break;
 		case "textDocument/didClose":
 			{
-				Dictionary<string(), JsonElement#> textDocument = params["textDocument"].GetObject();
-				OpenFiles.Remove(textDocument["uri"].GetString());
+				string uri = params["textDocument"].GetObject()["uri"].GetString();
+				OpenFiles.Remove(uri);
+				Send($"\"method\": \"textDocument/publishDiagnostics\", \"params\": {{ \"uri\": \"{uri}\", \"diagnostics\": [ ] }}");
 			}
 			break;
 		case "textDocument/hover":
