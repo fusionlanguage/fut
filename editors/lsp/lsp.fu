@@ -289,7 +289,7 @@ public abstract class FusionLanguageServer : FuSemaHost
 		string method = request["method"].GetString();
 		switch (method) {
 		case "initialize":
-			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true, \"referencesProvider\": true, \"documentSymbolProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.7\" }} }}"); // TODO: version
+			Respond(request, $"\"result\": {{ \"capabilities\": {{ \"textDocumentSync\": 1, \"hoverProvider\": true, \"definitionProvider\": true, \"implementationProvider\": true, \"referencesProvider\": true, \"documentSymbolProvider\": true }}, \"serverInfo\": {{ \"name\": \"Fusion\", \"version\": \"3.3.8\" }} }}"); // TODO: version
 			JsonElement pid = params["processId"];
 			if (pid.IsNumber())
 				WatchClientProcess(GetInt(pid));

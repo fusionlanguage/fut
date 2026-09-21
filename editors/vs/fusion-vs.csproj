@@ -38,6 +38,6 @@
     </PackageReference>
   </ItemGroup>
   <Target Name="VsixSign" AfterTargets="CreateVsixContainer" Condition="'$(Configuration)' == 'Release'">
-    <Exec Command="sign code certificate-store -cfp b52b77a370cf4a0f79beaef55d8d436d4c47aaba236fc6e7f21efeb75384f224 -csp &quot;Microsoft Smart Card Key Storage Provider&quot; -k 787187EFEE81C777958D6909A793C28131739BF -i -t http://time.certum.pl $(TargetVsixContainer)" />
+    <Exec Command="sign code certificate-store -cfp 89e22aa4003b327e1c68fdb8abc09e10e1cd3330e46119c795a99a6f55a48398 -csp &quot;Microsoft Smart Card Key Storage Provider&quot; -k A9109BEAA67F7E7DA4839BB34BEDA29A85CF5D8 -i -t http://time.certum.pl $(TargetVsixContainer)" />
   </Target>
 </Project>

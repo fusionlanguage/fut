@@ -1,3 +1,9 @@
+fut (3.3.8-1) UNRELEASED; urgency=low
+
+  * New release.
+
+ -- Piotr Fusik <piotr@fusion-lang.org>  Mon, 21 Sep 2026 12:10:52 +0200
+
 fut (3.3.7-1) UNRELEASED; urgency=low
 
   * New release.
