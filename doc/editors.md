@@ -54,3 +54,8 @@ Linux:
 ## Notepad++
 
     copy editors\notepad-plus-plus\Fusion.udl.xml %AppData%\"Notepad++"\userDefineLangs\
+
+## Language Server Protocol (LSP) server
+
+The language server is in early development. See [#126](https://github.com/fusionlanguage/fut/issues/126).
+You can build it with the `make` command in the `editors/lsp` directory.
