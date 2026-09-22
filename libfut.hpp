@@ -3294,6 +3294,7 @@ private:
 	void writeVisibility(FuVisibility visibility);
 	void writeCallType(FuCallType callType, std::string_view sealedString);
 	void writeElementType(const FuType * elementType);
+	void writeNotNullArgument(const FuExpr * expr);
 	void writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent);
 	void writeLib();
 	void writeResources(const std::map<std::string, std::vector<uint8_t>> * resources);

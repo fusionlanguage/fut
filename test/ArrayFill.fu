@@ -1,6 +1,6 @@
 public static class Test
 {
-	public static void FillInts(int[]! a, int value, int startIndex, nint count)
+	public static void FillInts(int[]!? a, int value, int startIndex, nint count)
 	{
 		a.Fill(value, startIndex, count);
 	}

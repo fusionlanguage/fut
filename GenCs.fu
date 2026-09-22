@@ -462,6 +462,16 @@ public class GenCs : GenTyped
 		}
 	}
 
+	void WriteNotNullArgument!(FuExpr expr)
+	{
+		if (expr.Type.Nullable) {
+			expr.Accept(this, FuPriority.Primary);
+			WriteChar('!');
+		}
+		else
+			expr.Accept(this, FuPriority.Argument);
+	}
+
 	void WriteJsonElementIs!(FuExpr obj, string name, FuPriority parent)
 	{
 		if (parent > FuPriority.Equality)
@@ -548,7 +558,7 @@ public class GenCs : GenTyped
 		case FuId.DoubleTryParse:
 			WriteType(obj.Type, false);
 			Write(".TryParse(");
-			args[0].Accept(this, FuPriority.Argument);
+			WriteNotNullArgument(args[0]);
 			if (args.Count == 2) {
 				if (!(args[1] is FuLiteralLong radix) || radix.Value != 16)
 					NotSupported(args[1], "Radix");
@@ -570,7 +580,7 @@ public class GenCs : GenTyped
 		case FuId.ArrayBinarySearchPart:
 			Include("System");
 			Write("Array.BinarySearch(");
-			obj.Accept(this, FuPriority.Argument);
+			WriteNotNullArgument(obj);
 			Write(", ");
 			if (args.Count == 3) {
 				args[1].Accept(this, FuPriority.Argument);
@@ -588,7 +598,7 @@ public class GenCs : GenTyped
 		case FuId.ArrayCopyTo:
 			Include("System");
 			Write("Array.Copy(");
-			obj.Accept(this, FuPriority.Argument);
+			WriteNotNullArgument(obj);
 			Write(", ");
 			WriteCoercedArgs(method, args);
 			WriteChar(')');
@@ -598,7 +608,7 @@ public class GenCs : GenTyped
 			Include("System");
 			if (args[0] is FuLiteral literal && literal.IsDefaultValue()) {
 				Write("Array.Clear(");
-				obj.Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(obj);
 				if (args.Count == 1) {
 					// .NET Framework compatibility
 					Write(", 0, ");
@@ -607,7 +617,7 @@ public class GenCs : GenTyped
 			}
 			else {
 				Write("Array.Fill(");
-				obj.Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(obj);
 				Write(", ");
 				WriteNotPromoted(obj.Type.AsClassType().GetElementType(), args[0]);
 			}
@@ -716,7 +726,7 @@ public class GenCs : GenTyped
 		case FuId.UTF8GetBytesCopy:
 			Include("System.Text");
 			Write("Encoding.UTF8.GetBytes(");
-			args[0].Accept(this, FuPriority.Argument);
+			WriteNotNullArgument(args[0]);
 			Write(", 0, ");
 			WritePostfix(args[0], ".Length, "); // FIXME: side effect
 			args[1].Accept(this, FuPriority.Argument);
@@ -775,7 +785,7 @@ public class GenCs : GenTyped
 			break;
 		case FuId.JsonElementParse:
 			Write("JsonDocument.Parse(");
-			args[0].Accept(this, FuPriority.Argument);
+			WriteNotNullArgument(args[0]);
 			Write(").RootElement");
 			break;
 		case FuId.JsonElementIsObject:

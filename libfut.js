@@ -18844,6 +18844,16 @@ export class GenCs extends GenTyped
 		}
 	}
 
+	#writeNotNullArgument(expr)
+	{
+		if (expr.type.nullable) {
+			expr.accept(this, FuPriority.PRIMARY);
+			this.writeChar(33);
+		}
+		else
+			expr.accept(this, FuPriority.ARGUMENT);
+	}
+
 	#writeJsonElementIs(obj, name, parent)
 	{
 		if (parent > FuPriority.EQUALITY)
@@ -18930,7 +18940,7 @@ export class GenCs extends GenTyped
 		case FuId.DOUBLE_TRY_PARSE:
 			this.writeType(obj.type, false);
 			this.write(".TryParse(");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.#writeNotNullArgument(args[0]);
 			if (args.length == 2) {
 				let radix;
 				if (!((radix = args[1]) instanceof FuLiteralLong) || radix.value != 16)
@@ -18953,7 +18963,7 @@ export class GenCs extends GenTyped
 		case FuId.ARRAY_BINARY_SEARCH_PART:
 			this.include("System");
 			this.write("Array.BinarySearch(");
-			obj.accept(this, FuPriority.ARGUMENT);
+			this.#writeNotNullArgument(obj);
 			this.write(", ");
 			if (args.length == 3) {
 				args[1].accept(this, FuPriority.ARGUMENT);
@@ -18971,7 +18981,7 @@ export class GenCs extends GenTyped
 		case FuId.ARRAY_COPY_TO:
 			this.include("System");
 			this.write("Array.Copy(");
-			obj.accept(this, FuPriority.ARGUMENT);
+			this.#writeNotNullArgument(obj);
 			this.write(", ");
 			this.writeCoercedArgs(method, args);
 			this.writeChar(41);
@@ -18982,7 +18992,7 @@ export class GenCs extends GenTyped
 			let literal;
 			if ((literal = args[0]) instanceof FuLiteral && literal.isDefaultValue()) {
 				this.write("Array.Clear(");
-				obj.accept(this, FuPriority.ARGUMENT);
+				this.#writeNotNullArgument(obj);
 				if (args.length == 1) {
 					this.write(", 0, ");
 					this.writeArrayStorageLength(obj, FuPriority.ARGUMENT);
@@ -18990,7 +19000,7 @@ export class GenCs extends GenTyped
 			}
 			else {
 				this.write("Array.Fill(");
-				obj.accept(this, FuPriority.ARGUMENT);
+				this.#writeNotNullArgument(obj);
 				this.write(", ");
 				this.writeNotPromoted(obj.type.asClassType().getElementType(), args[0]);
 			}
@@ -19100,7 +19110,7 @@ export class GenCs extends GenTyped
 		case FuId.U_T_F8_GET_BYTES_COPY:
 			this.include("System.Text");
 			this.write("Encoding.UTF8.GetBytes(");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.#writeNotNullArgument(args[0]);
 			this.write(", 0, ");
 			this.writePostfix(args[0], ".Length, ");
 			args[1].accept(this, FuPriority.ARGUMENT);
@@ -19159,7 +19169,7 @@ export class GenCs extends GenTyped
 			break;
 		case FuId.JSON_ELEMENT_PARSE:
 			this.write("JsonDocument.Parse(");
-			args[0].accept(this, FuPriority.ARGUMENT);
+			this.#writeNotNullArgument(args[0]);
 			this.write(").RootElement");
 			break;
 		case FuId.JSON_ELEMENT_IS_OBJECT:

@@ -18591,6 +18591,16 @@ void GenCs::visitSymbolReference(const FuSymbolReference * expr, FuPriority pare
 	}
 }
 
+void GenCs::writeNotNullArgument(const FuExpr * expr)
+{
+	if (expr->type->nullable) {
+		expr->accept(this, FuPriority::primary);
+		writeChar('!');
+	}
+	else
+		expr->accept(this, FuPriority::argument);
+}
+
 void GenCs::writeJsonElementIs(const FuExpr * obj, std::string_view name, FuPriority parent)
 {
 	if (parent > FuPriority::equality)
@@ -18677,7 +18687,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::doubleTryParse:
 		writeType(obj->type.get(), false);
 		write(".TryParse(");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeNotNullArgument((*args)[0].get());
 		if (std::ssize(*args) == 2) {
 			const FuLiteralLong * radix;
 			if (!(radix = dynamic_cast<const FuLiteralLong *>((*args)[1].get())) || radix->value != 16)
@@ -18700,7 +18710,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::arrayBinarySearchPart:
 		include("System");
 		write("Array.BinarySearch(");
-		obj->accept(this, FuPriority::argument);
+		writeNotNullArgument(obj);
 		write(", ");
 		if (std::ssize(*args) == 3) {
 			(*args)[1]->accept(this, FuPriority::argument);
@@ -18718,7 +18728,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::arrayCopyTo:
 		include("System");
 		write("Array.Copy(");
-		obj->accept(this, FuPriority::argument);
+		writeNotNullArgument(obj);
 		write(", ");
 		writeCoercedArgs(method, args);
 		writeChar(')');
@@ -18730,7 +18740,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 			const FuLiteral * literal;
 			if ((literal = dynamic_cast<const FuLiteral *>((*args)[0].get())) && literal->isDefaultValue()) {
 				write("Array.Clear(");
-				obj->accept(this, FuPriority::argument);
+				writeNotNullArgument(obj);
 				if (std::ssize(*args) == 1) {
 					write(", 0, ");
 					writeArrayStorageLength(obj, FuPriority::argument);
@@ -18738,7 +18748,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 			}
 			else {
 				write("Array.Fill(");
-				obj->accept(this, FuPriority::argument);
+				writeNotNullArgument(obj);
 				write(", ");
 				writeNotPromoted(obj->type->asClassType()->getElementType().get(), (*args)[0].get());
 			}
@@ -18851,7 +18861,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 	case FuId::uTF8GetBytesCopy:
 		include("System.Text");
 		write("Encoding.UTF8.GetBytes(");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeNotNullArgument((*args)[0].get());
 		write(", 0, ");
 		writePostfix((*args)[0].get(), ".Length, ");
 		(*args)[1]->accept(this, FuPriority::argument);
@@ -18910,7 +18920,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		break;
 	case FuId::jsonElementParse:
 		write("JsonDocument.Parse(");
-		(*args)[0]->accept(this, FuPriority::argument);
+		writeNotNullArgument((*args)[0].get());
 		write(").RootElement");
 		break;
 	case FuId::jsonElementIsObject:

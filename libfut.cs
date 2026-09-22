@@ -18162,6 +18162,16 @@ namespace Fusion
 			}
 		}
 
+		void WriteNotNullArgument(FuExpr expr)
+		{
+			if (expr.Type!.Nullable) {
+				expr.Accept(this, FuPriority.Primary);
+				WriteChar('!');
+			}
+			else
+				expr.Accept(this, FuPriority.Argument);
+		}
+
 		void WriteJsonElementIs(FuExpr obj, string name, FuPriority parent)
 		{
 			if (parent > FuPriority.Equality)
@@ -18248,7 +18258,7 @@ namespace Fusion
 			case FuId.DoubleTryParse:
 				WriteType(obj!.Type!, false);
 				Write(".TryParse(");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(args[0]);
 				if (args.Count == 2) {
 					if (!(args[1] is FuLiteralLong radix) || radix.Value != 16)
 						NotSupported(args[1], "Radix");
@@ -18270,7 +18280,7 @@ namespace Fusion
 			case FuId.ArrayBinarySearchPart:
 				Include("System");
 				Write("Array.BinarySearch(");
-				obj!.Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(obj!);
 				Write(", ");
 				if (args.Count == 3) {
 					args[1].Accept(this, FuPriority.Argument);
@@ -18288,7 +18298,7 @@ namespace Fusion
 			case FuId.ArrayCopyTo:
 				Include("System");
 				Write("Array.Copy(");
-				obj!.Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(obj!);
 				Write(", ");
 				WriteCoercedArgs(method, args);
 				WriteChar(')');
@@ -18298,7 +18308,7 @@ namespace Fusion
 				Include("System");
 				if (args[0] is FuLiteral literal && literal.IsDefaultValue()) {
 					Write("Array.Clear(");
-					obj!.Accept(this, FuPriority.Argument);
+					WriteNotNullArgument(obj!);
 					if (args.Count == 1) {
 						Write(", 0, ");
 						WriteArrayStorageLength(obj!, FuPriority.Argument);
@@ -18306,7 +18316,7 @@ namespace Fusion
 				}
 				else {
 					Write("Array.Fill(");
-					obj!.Accept(this, FuPriority.Argument);
+					WriteNotNullArgument(obj!);
 					Write(", ");
 					WriteNotPromoted(obj!.Type!.AsClassType().GetElementType(), args[0]);
 				}
@@ -18415,7 +18425,7 @@ namespace Fusion
 			case FuId.UTF8GetBytesCopy:
 				Include("System.Text");
 				Write("Encoding.UTF8.GetBytes(");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(args[0]);
 				Write(", 0, ");
 				WritePostfix(args[0], ".Length, ");
 				args[1].Accept(this, FuPriority.Argument);
@@ -18474,7 +18484,7 @@ namespace Fusion
 				break;
 			case FuId.JsonElementParse:
 				Write("JsonDocument.Parse(");
-				args[0].Accept(this, FuPriority.Argument);
+				WriteNotNullArgument(args[0]);
 				Write(").RootElement");
 				break;
 			case FuId.JsonElementIsObject:
