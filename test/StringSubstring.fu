@@ -11,6 +11,8 @@ public class Test
 		return s2.Substring(0, 1);
 	}
 
+	static string() CharAtConst(int i) => "foo".Substring(i, 1);
+
 	public static bool Run()
 	{
 		Test() o;
@@ -34,6 +36,7 @@ public class Test
 			&& o.Ptr.Substring(1) == "oobar" && ptr.Substring(1) == "arek"
 			&& ptr.Substring(1, three) == "are" && ptr.Substring(1, three) != "ARE"
 			&& initial == "A" && initial2 == "E" && initial3 == "L"
+			&& CharAtConst(1) == "o"
 			&& foo.Substring(1, 0) == "";
 	}
 }

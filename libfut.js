@@ -17404,7 +17404,7 @@ export class GenCpp extends GenCCpp
 	writeArrayPtr(expr, parent)
 	{
 		let klass;
-		if (expr.type instanceof FuArrayStorageType || expr.type instanceof FuStringType)
+		if (expr.type instanceof FuArrayStorageType || (expr.type instanceof FuStringType && !(expr instanceof FuLiteralString)))
 			this.writePostfix(expr, ".data()");
 		else if (expr.type instanceof FuDynamicPtrType)
 			this.writePostfix(expr, ".get()");

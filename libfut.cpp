@@ -17244,7 +17244,7 @@ void GenCpp::writeResource(std::string_view name, int length)
 void GenCpp::writeArrayPtr(const FuExpr * expr, FuPriority parent)
 {
 	const FuClassType * klass;
-	if (dynamic_cast<const FuArrayStorageType *>(expr->type.get()) || dynamic_cast<const FuStringType *>(expr->type.get()))
+	if (dynamic_cast<const FuArrayStorageType *>(expr->type.get()) || (dynamic_cast<const FuStringType *>(expr->type.get()) && !dynamic_cast<const FuLiteralString *>(expr)))
 		writePostfix(expr, ".data()");
 	else if (dynamic_cast<const FuDynamicPtrType *>(expr->type.get()))
 		writePostfix(expr, ".get()");

@@ -16765,7 +16765,7 @@ namespace Fusion
 		{
 			switch (expr.Type) {
 			case FuArrayStorageType:
-			case FuStringType:
+			case FuStringType when !(expr is FuLiteralString):
 				WritePostfix(expr, ".data()");
 				break;
 			case FuDynamicPtrType:
