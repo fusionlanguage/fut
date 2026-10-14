@@ -9824,8 +9824,11 @@ export class GenBase extends FuVisitor
 	getRegexOptions(args)
 	{
 		let expr = args.at(-1);
-		if (expr.type instanceof FuEnum)
-			return expr.intValue();
+		if (expr.type instanceof FuEnum) {
+			if (expr.isConst(false))
+				return expr.intValue();
+			this.notSupported(expr, "Non-constant RegexOptions");
+		}
 		return RegexOptions.NONE;
 	}
 

@@ -9972,8 +9972,11 @@ void GenBase::writeRegexLiteral(std::string_view s)
 RegexOptions GenBase::getRegexOptions(const std::vector<std::shared_ptr<FuExpr>> * args) const
 {
 	const FuExpr * expr = args->back().get();
-	if (dynamic_cast<const FuEnum *>(expr->type.get()))
-		return static_cast<RegexOptions>(expr->intValue());
+	if (dynamic_cast<const FuEnum *>(expr->type.get())) {
+		if (expr->isConst(false))
+			return static_cast<RegexOptions>(expr->intValue());
+		notSupported(expr, "Non-constant RegexOptions");
+	}
 	return RegexOptions::none;
 }
 

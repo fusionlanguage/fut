@@ -9294,8 +9294,11 @@ namespace Fusion
 		protected RegexOptions GetRegexOptions(List<FuExpr> args)
 		{
 			FuExpr expr = args[^1];
-			if (expr.Type is FuEnum)
-				return (RegexOptions) expr.IntValue();
+			if (expr.Type is FuEnum) {
+				if (expr.IsConst(false))
+					return (RegexOptions) expr.IntValue();
+				NotSupported(expr, "Non-constant RegexOptions");
+			}
 			return RegexOptions.None;
 		}
 

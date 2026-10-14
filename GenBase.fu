@@ -1460,8 +1460,11 @@ public abstract class GenBase : FuVisitor
 	protected RegexOptions GetRegexOptions(List<FuExpr#> args)
 	{
 		FuExpr expr = args.Last();
-		if (expr.Type is FuEnum)
-			return RegexOptions.FromInt(expr.IntValue());
+		if (expr.Type is FuEnum) {
+			if (expr.IsConst(false))
+				return RegexOptions.FromInt(expr.IntValue());
+			NotSupported(expr, "Non-constant RegexOptions");
+		}
 		return RegexOptions.None;
 	}
 
