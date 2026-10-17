@@ -2193,6 +2193,8 @@ public class GenSwift : GenPySwift
 	void WriteMain!(FuMethod main)
 	{
 		WriteNewLine();
+		if (main.Throws.Count > 0)
+			Write("try ");
 		if (main.Type.Id == FuId.IntType)
 			Write("exit(Int32(");
 		Write(main.Parent.Name);

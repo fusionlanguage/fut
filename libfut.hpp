@@ -3059,7 +3059,7 @@ private:
 	void writeDestruct(const FuSymbol * symbol);
 	void writeDestructAll(const FuVar * exceptVar = nullptr);
 	void writeRangeThrowReturnValue(const FuRangeType * range);
-	void writeThrowReturnValue(const FuType * type, bool include);
+	void writeThrowReturnValue(const FuMethodBase * method, bool include);
 	void writeThrow();
 	void endForwardThrow(const FuMethod * throwingMethod);
 	void writeMemberAccess(const FuType * leftType, const FuSymbol * symbolClass);
@@ -3082,6 +3082,7 @@ private:
 	void trimVarsToDestruct(int i);
 	void startForeachHashTable(const FuForeach * statement);
 	void writeDictIterVar(const FuNamedValue * iter, std::string_view value);
+	void writeReturnVoidNoException();
 	bool tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>> * statements, int lastCallIndex, const FuExpr * returnValue);
 	void writeTypedef(const FuClass * klass);
 	void writeInstanceParameters(const FuMethod * method);

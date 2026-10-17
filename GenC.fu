@@ -69,7 +69,7 @@ public class GenC : GenCCpp
 		if (method.Throws.Count == 0)
 			return;
 		Write(" * @return <code>");
-		WriteThrowReturnValue(method.Type, false);
+		WriteThrowReturnValue(method, false);
 		WriteLine("</code> on error.");
 	}
 
@@ -1416,11 +1416,11 @@ public class GenC : GenCCpp
 		VisitLiteralLong(range.Min - 1, FuPriority.Equality);
 	}
 
-	void WriteThrowReturnValue!(FuType type, bool include)
+	void WriteThrowReturnValue!(FuMethodBase method, bool include)
 	{
-		switch (type.Id) {
+		switch (method.Type.Id) {
 		case FuId.VoidType:
-			Write("false");
+			Write(method.Id == FuId.Main ? "1" : "false");
 			break;
 		case FuId.FloatType:
 		case FuId.DoubleType:
@@ -1429,7 +1429,7 @@ public class GenC : GenCCpp
 			Write("NAN");
 			break;
 		default:
-			if (type is FuRangeType range)
+			if (method.Type is FuRangeType range)
 				WriteRangeThrowReturnValue(range);
 			else
 				Write("NULL");
@@ -1441,7 +1441,7 @@ public class GenC : GenCCpp
 	{
 		WriteDestructAll();
 		Write("return ");
-		WriteThrowReturnValue(this.CurrentMethod.Type, true);
+		WriteThrowReturnValue(this.CurrentMethod, true);
 		WriteCharLine(';');
 	}
 
@@ -3087,6 +3087,11 @@ public class GenC : GenCCpp
 		WriteLine(");");
 	}
 
+	void WriteReturnVoidNoException!()
+	{
+		WriteLine(this.CurrentMethod.Id == FuId.Main ? "return 0;" : "return true;");
+	}
+
 	internal override void VisitReturn!(FuReturn statement)
 	{
 		switch (statement.Value) {
@@ -3094,7 +3099,7 @@ public class GenC : GenCCpp
 		case FuLiteral:
 			WriteDestructAll();
 			if (statement.Value == null && this.CurrentMethod.Throws.Count > 0)
-				WriteLine("return true;");
+				WriteReturnVoidNoException();
 			else
 				base.VisitReturn(statement);
 			break;
@@ -3216,8 +3221,10 @@ public class GenC : GenCCpp
 			Write(" ? ");
 			returnValue.Accept(this, FuPriority.Select);
 			Write(" : ");
-			WriteThrowReturnValue(this.CurrentMethod.Type, true);
+			WriteThrowReturnValue(this.CurrentMethod, true);
 		}
+		else if (this.CurrentMethod.Id == FuId.Main)
+			Write(" ? 0 : 1");
 		WriteCharLine(';');
 		return true;
 	}
@@ -3662,7 +3669,7 @@ public class GenC : GenCCpp
 				if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 					WriteStatements(statements);
 					WriteDestructAll();
-					WriteLine("return true;");
+					WriteReturnVoidNoException();
 				}
 			}
 			else {

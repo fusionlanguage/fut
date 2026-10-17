@@ -1,0 +1,12 @@
+public static class Runner
+{
+	public static void Main() throws Exception //FAIL: cl
+	{
+		int i = 42;
+		if (i == 42) {
+			Console.WriteLine("PASSED");
+			return;
+		}
+		throw Exception();
+	}
+}

@@ -10888,7 +10888,7 @@ namespace Fusion
 			if (method.Throws.Count == 0)
 				return;
 			Write(" * @return <code>");
-			WriteThrowReturnValue(method.Type!, false);
+			WriteThrowReturnValue(method, false);
 			WriteLine("</code> on error.");
 		}
 
@@ -12211,11 +12211,11 @@ namespace Fusion
 			VisitLiteralLong(range.Min - 1, FuPriority.Equality);
 		}
 
-		void WriteThrowReturnValue(FuType type, bool include)
+		void WriteThrowReturnValue(FuMethodBase method, bool include)
 		{
-			switch (type.Id) {
+			switch (method.Type!.Id) {
 			case FuId.VoidType:
-				Write("false");
+				Write(method.Id == FuId.Main ? "1" : "false");
 				break;
 			case FuId.FloatType:
 			case FuId.DoubleType:
@@ -12224,7 +12224,7 @@ namespace Fusion
 				Write("NAN");
 				break;
 			default:
-				if (type is FuRangeType range)
+				if (method.Type is FuRangeType range)
 					WriteRangeThrowReturnValue(range);
 				else
 					Write("NULL");
@@ -12236,7 +12236,7 @@ namespace Fusion
 		{
 			WriteDestructAll();
 			Write("return ");
-			WriteThrowReturnValue(this.CurrentMethod!.Type!, true);
+			WriteThrowReturnValue(this.CurrentMethod!, true);
 			WriteCharLine(';');
 		}
 
@@ -13877,6 +13877,11 @@ namespace Fusion
 			WriteLine(");");
 		}
 
+		void WriteReturnVoidNoException()
+		{
+			WriteLine(this.CurrentMethod!.Id == FuId.Main ? "return 0;" : "return true;");
+		}
+
 		internal override void VisitReturn(FuReturn statement)
 		{
 			switch (statement.Value) {
@@ -13884,7 +13889,7 @@ namespace Fusion
 			case FuLiteral:
 				WriteDestructAll();
 				if (statement.Value == null && this.CurrentMethod!.Throws.Count > 0)
-					WriteLine("return true;");
+					WriteReturnVoidNoException();
 				else
 					base.VisitReturn(statement);
 				break;
@@ -13999,8 +14004,10 @@ namespace Fusion
 				Write(" ? ");
 				returnValue!.Accept(this, FuPriority.Select);
 				Write(" : ");
-				WriteThrowReturnValue(this.CurrentMethod!.Type!, true);
+				WriteThrowReturnValue(this.CurrentMethod!, true);
 			}
+			else if (this.CurrentMethod!.Id == FuId.Main)
+				Write(" ? 0 : 1");
 			WriteCharLine(';');
 			return true;
 		}
@@ -14441,7 +14448,7 @@ namespace Fusion
 					if (statements.Count == 0 || !TryWriteCallAndReturn(statements, statements.Count - 1, null)) {
 						WriteStatements(statements);
 						WriteDestructAll();
-						WriteLine("return true;");
+						WriteReturnVoidNoException();
 					}
 				}
 				else {
@@ -26555,6 +26562,8 @@ namespace Fusion
 		void WriteMain(FuMethod main)
 		{
 			WriteNewLine();
+			if (main.Throws.Count > 0)
+				Write("try ");
 			if (main.Type!.Id == FuId.IntType)
 				Write("exit(Int32(");
 			Write(main.Parent!.Name);

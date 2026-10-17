@@ -11428,7 +11428,7 @@ export class GenC extends GenCCpp
 		if (method.throws.length == 0)
 			return;
 		this.write(" * @return <code>");
-		this.#writeThrowReturnValue(method.type, false);
+		this.#writeThrowReturnValue(method, false);
 		this.writeLine("</code> on error.");
 	}
 
@@ -12790,11 +12790,11 @@ export class GenC extends GenCCpp
 		this.visitLiteralLong(BigInt(range.min - 1), FuPriority.EQUALITY);
 	}
 
-	#writeThrowReturnValue(type, include)
+	#writeThrowReturnValue(method, include)
 	{
-		switch (type.id) {
+		switch (method.type.id) {
 		case FuId.VOID_TYPE:
-			this.write("false");
+			this.write(method.id == FuId.MAIN ? "1" : "false");
 			break;
 		case FuId.FLOAT_TYPE:
 		case FuId.DOUBLE_TYPE:
@@ -12804,7 +12804,7 @@ export class GenC extends GenCCpp
 			break;
 		default:
 			let range;
-			if ((range = type) instanceof FuRangeType)
+			if ((range = method.type) instanceof FuRangeType)
 				this.#writeRangeThrowReturnValue(range);
 			else
 				this.write("NULL");
@@ -12816,7 +12816,7 @@ export class GenC extends GenCCpp
 	{
 		this.#writeDestructAll();
 		this.write("return ");
-		this.#writeThrowReturnValue(this.currentMethod.type, true);
+		this.#writeThrowReturnValue(this.currentMethod, true);
 		this.writeCharLine(59);
 	}
 
@@ -14485,6 +14485,11 @@ export class GenC extends GenCCpp
 		this.writeLine(");");
 	}
 
+	#writeReturnVoidNoException()
+	{
+		this.writeLine(this.currentMethod.id == FuId.MAIN ? "return 0;" : "return true;");
+	}
+
 	visitReturn(statement)
 	{
 		let symbol;
@@ -14492,7 +14497,7 @@ export class GenC extends GenCCpp
 		if (statement.value == null || statement.value instanceof FuLiteral) {
 			this.#writeDestructAll();
 			if (statement.value == null && this.currentMethod.throws.length > 0)
-				this.writeLine("return true;");
+				this.#writeReturnVoidNoException();
 			else
 				super.visitReturn(statement);
 		}
@@ -14614,8 +14619,10 @@ export class GenC extends GenCCpp
 			this.write(" ? ");
 			returnValue.accept(this, FuPriority.SELECT);
 			this.write(" : ");
-			this.#writeThrowReturnValue(this.currentMethod.type, true);
+			this.#writeThrowReturnValue(this.currentMethod, true);
 		}
+		else if (this.currentMethod.id == FuId.MAIN)
+			this.write(" ? 0 : 1");
 		this.writeCharLine(59);
 		return true;
 	}
@@ -15066,7 +15073,7 @@ export class GenC extends GenCCpp
 				if (statements.length == 0 || !this.#tryWriteCallAndReturn(statements, statements.length - 1, null)) {
 					this.writeStatements(statements);
 					this.#writeDestructAll();
-					this.writeLine("return true;");
+					this.#writeReturnVoidNoException();
 				}
 			}
 			else {
@@ -27350,6 +27357,8 @@ export class GenSwift extends GenPySwift
 	#writeMain(main)
 	{
 		this.writeNewLine();
+		if (main.throws.length > 0)
+			this.write("try ");
 		if (main.type.id == FuId.INT_TYPE)
 			this.write("exit(Int32(");
 		this.write(main.parent.name);

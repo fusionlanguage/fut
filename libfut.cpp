@@ -11482,7 +11482,7 @@ void GenC::writeReturnDoc(const FuMethod * method)
 	if (std::ssize(method->throws) == 0)
 		return;
 	write(" * @return <code>");
-	writeThrowReturnValue(method->type.get(), false);
+	writeThrowReturnValue(method, false);
 	writeLine("</code> on error.");
 }
 
@@ -12764,11 +12764,11 @@ void GenC::writeRangeThrowReturnValue(const FuRangeType * range)
 	visitLiteralLong(range->min - 1, FuPriority::equality);
 }
 
-void GenC::writeThrowReturnValue(const FuType * type, bool include)
+void GenC::writeThrowReturnValue(const FuMethodBase * method, bool include)
 {
-	switch (type->id) {
+	switch (method->type->id) {
 	case FuId::voidType:
-		write("false");
+		write(method->id == FuId::main ? "1" : "false");
 		break;
 	case FuId::floatType:
 	case FuId::doubleType:
@@ -12777,7 +12777,7 @@ void GenC::writeThrowReturnValue(const FuType * type, bool include)
 		write("NAN");
 		break;
 	default:
-		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(type))
+		if (const FuRangeType *range = dynamic_cast<const FuRangeType *>(method->type.get()))
 			writeRangeThrowReturnValue(range);
 		else
 			write("NULL");
@@ -12789,7 +12789,7 @@ void GenC::writeThrow()
 {
 	writeDestructAll();
 	write("return ");
-	writeThrowReturnValue(this->currentMethod->type.get(), true);
+	writeThrowReturnValue(this->currentMethod, true);
 	writeCharLine(';');
 }
 
@@ -14463,6 +14463,11 @@ void GenC::visitLock(const FuLock * statement)
 	writeLine(");");
 }
 
+void GenC::writeReturnVoidNoException()
+{
+	writeLine(this->currentMethod->id == FuId::main ? "return 0;" : "return true;");
+}
+
 void GenC::visitReturn(const FuReturn * statement)
 {
 	const FuSymbolReference * symbol;
@@ -14470,7 +14475,7 @@ void GenC::visitReturn(const FuReturn * statement)
 	if (statement->value == nullptr || dynamic_cast<const FuLiteral *>(statement->value.get())) {
 		writeDestructAll();
 		if (statement->value == nullptr && std::ssize(this->currentMethod->throws) > 0)
-			writeLine("return true;");
+			writeReturnVoidNoException();
 		else
 			GenCCpp::visitReturn(statement);
 	}
@@ -14590,8 +14595,10 @@ bool GenC::tryWriteCallAndReturn(const std::vector<std::shared_ptr<FuStatement>>
 		write(" ? ");
 		returnValue->accept(this, FuPriority::select);
 		write(" : ");
-		writeThrowReturnValue(this->currentMethod->type.get(), true);
+		writeThrowReturnValue(this->currentMethod, true);
 	}
+	else if (this->currentMethod->id == FuId::main)
+		write(" ? 0 : 1");
 	writeCharLine(';');
 	return true;
 }
@@ -15031,7 +15038,7 @@ void GenC::writeMethod(const FuMethod * method)
 			if (std::ssize(*statements) == 0 || !tryWriteCallAndReturn(statements, static_cast<int>(std::ssize(*statements) - 1), nullptr)) {
 				writeStatements(statements);
 				writeDestructAll();
-				writeLine("return true;");
+				writeReturnVoidNoException();
 			}
 		}
 		else {
@@ -26594,6 +26601,8 @@ void GenSwift::writeResources(const std::map<std::string, std::vector<uint8_t>> 
 void GenSwift::writeMain(const FuMethod * main)
 {
 	writeNewLine();
+	if (std::ssize(main->throws) > 0)
+		write("try ");
 	if (main->type->id == FuId::intType)
 		write("exit(Int32(");
 	write(main->parent->name);
