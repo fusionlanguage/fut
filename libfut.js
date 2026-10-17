@@ -476,22 +476,10 @@ export class FuLexer
 					this.readChar();
 					if (this.#eatChar(123))
 						break;
-					if (!this.#skippingUnmet && !this.parsingNative) {
-						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset)).replaceAll("{{", "{").replaceAll("}}", "}");
-						return FuToken.INTERPOLATED_STRING;
-					}
-					for (;;) {
-						let token = this.#readPreToken();
-						if (token == FuToken.RIGHT_BRACE)
-							break;
-						if (token == FuToken.END_OF_FILE) {
-							this.reportError("Unterminated string literal");
-							return FuToken.END_OF_FILE;
-						}
-					}
+					this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset)).replaceAll("{{", "{").replaceAll("}}", "}");
+					return FuToken.INTERPOLATED_STRING;
 				}
-				else
-					this.readChar();
+				this.readChar();
 				break;
 			case 125:
 				this.readChar();
@@ -707,6 +695,8 @@ export class FuLexer
 			case 34:
 				return this.readString(false);
 			case 36:
+				if (this.#skippingUnmet || this.parsingNative)
+					return FuToken.INTERPOLATED_STRING;
 				if (this.#eatChar(34))
 					return this.readString(true);
 				this.reportError("Expected interpolated string");

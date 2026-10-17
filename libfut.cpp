@@ -367,22 +367,10 @@ FuToken FuLexer::readString(bool interpolated)
 				readChar();
 				if (eatChar('{'))
 					break;
-				if (!this->skippingUnmet && !this->parsingNative) {
-					this->stringValue = FuString_Replace(FuString_Replace(std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset), "{{", "{"), "}}", "}");
-					return FuToken::interpolatedString;
-				}
-				for (;;) {
-					FuToken token = readPreToken();
-					if (token == FuToken::rightBrace)
-						break;
-					if (token == FuToken::endOfFile) {
-						reportError("Unterminated string literal");
-						return FuToken::endOfFile;
-					}
-				}
+				this->stringValue = FuString_Replace(FuString_Replace(std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset), "{{", "{"), "}}", "}");
+				return FuToken::interpolatedString;
 			}
-			else
-				readChar();
+			readChar();
 			break;
 		case '}':
 			readChar();
@@ -598,6 +586,8 @@ FuToken FuLexer::readPreToken()
 		case '"':
 			return readString(false);
 		case '$':
+			if (this->skippingUnmet || this->parsingNative)
+				return FuToken::interpolatedString;
 			if (eatChar('"'))
 				return readString(true);
 			reportError("Expected interpolated string");

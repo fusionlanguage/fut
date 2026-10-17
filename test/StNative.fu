@@ -16,6 +16,11 @@ public static class Test
 			string s = $"{1}";
 		}
 #endif
+#if SWIFT
+		native {
+			[1, 2, 3].reduce(0) { $0 + $1 }
+		}
+#endif
 		return a == 42;
 	}
 }

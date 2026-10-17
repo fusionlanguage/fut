@@ -498,22 +498,10 @@ namespace Fusion
 						ReadChar();
 						if (EatChar('{'))
 							break;
-						if (!this.SkippingUnmet && !this.ParsingNative) {
-							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{").Replace("}}", "}");
-							return FuToken.InterpolatedString;
-						}
-						for (;;) {
-							FuToken token = ReadPreToken();
-							if (token == FuToken.RightBrace)
-								break;
-							if (token == FuToken.EndOfFile) {
-								ReportError("Unterminated string literal");
-								return FuToken.EndOfFile;
-							}
-						}
+						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{").Replace("}}", "}");
+						return FuToken.InterpolatedString;
 					}
-					else
-						ReadChar();
+					ReadChar();
 					break;
 				case '}':
 					ReadChar();
@@ -723,6 +711,8 @@ namespace Fusion
 				case '"':
 					return ReadString(false);
 				case '$':
+					if (this.SkippingUnmet || this.ParsingNative)
+						return FuToken.InterpolatedString;
 					if (EatChar('"'))
 						return ReadString(true);
 					ReportError("Expected interpolated string");
