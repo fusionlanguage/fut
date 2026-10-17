@@ -2561,7 +2561,7 @@ protected:
 	void include(std::string_view name);
 	void writeIncludes(std::string_view prefix, std::string_view suffix);
 	virtual void startDocLine();
-	void writeXmlDoc(std::string_view text);
+	void writeXmlDoc(std::string_view text, bool multiline);
 	virtual void writeDocCode(std::string_view s);
 	virtual void writeDocPara(const FuDocPara * para, bool many);
 	virtual void writeDocList(const FuDocList * list);

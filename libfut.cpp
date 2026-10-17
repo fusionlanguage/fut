@@ -8833,8 +8833,9 @@ void GenBase::startDocLine()
 	write(" * ");
 }
 
-void GenBase::writeXmlDoc(std::string_view text)
+void GenBase::writeXmlDoc(std::string_view text, bool multiline)
 {
+	int last = 0;
 	for (int c : text) {
 		switch (c) {
 		case '&':
@@ -8846,16 +8847,29 @@ void GenBase::writeXmlDoc(std::string_view text)
 		case '>':
 			write("&gt;");
 			break;
+		case '*':
+			if (multiline && last == '/')
+				write("&#42;");
+			else
+				writeChar(c);
+			break;
+		case '/':
+			if (multiline && last == '*')
+				write("&#47;");
+			else
+				writeChar(c);
+			break;
 		default:
 			writeChar(c);
 			break;
 		}
+		last = c;
 	}
 }
 
 void GenBase::writeDocCode(std::string_view s)
 {
-	writeXmlDoc(s);
+	writeXmlDoc(s, true);
 }
 
 void GenBase::writeDocPara(const FuDocPara * para, bool many)
@@ -8866,7 +8880,7 @@ void GenBase::writeDocPara(const FuDocPara * para, bool many)
 	}
 	for (const std::shared_ptr<FuDocInline> &inline_ : para->children) {
 		if (const FuDocText *text = dynamic_cast<const FuDocText *>(inline_.get()))
-			writeXmlDoc(text->text);
+			writeXmlDoc(text->text, true);
 		else if (const FuDocCode *code = dynamic_cast<const FuDocCode *>(inline_.get())) {
 			write("<code>");
 			writeDocCode(code->text);
@@ -11162,7 +11176,7 @@ void GenCCpp::writeDocCode(std::string_view s)
 	if (s == "null")
 		visitLiteralNull();
 	else
-		writeXmlDoc(s);
+		writeXmlDoc(s, true);
 }
 
 void GenCCpp::writeCIncludes()
@@ -18209,7 +18223,7 @@ void GenCs::writeDocPara(const FuDocPara * para, bool many)
 	}
 	for (const std::shared_ptr<FuDocInline> &inline_ : para->children) {
 		if (const FuDocText *text = dynamic_cast<const FuDocText *>(inline_.get()))
-			writeXmlDoc(text->text);
+			writeXmlDoc(text->text, false);
 		else if (const FuDocCode *code = dynamic_cast<const FuDocCode *>(inline_.get())) {
 			if (code->text == "true" || code->text == "false" || code->text == "null") {
 				write("<see langword=\"");
@@ -18218,7 +18232,7 @@ void GenCs::writeDocPara(const FuDocPara * para, bool many)
 			}
 			else {
 				write("<c>");
-				writeXmlDoc(code->text);
+				writeXmlDoc(code->text, false);
 				write("</c>");
 			}
 		}
@@ -19284,10 +19298,10 @@ void GenD::writeDocPara(const FuDocPara * para, bool many)
 	}
 	for (const std::shared_ptr<FuDocInline> &inline_ : para->children) {
 		if (const FuDocText *text = dynamic_cast<const FuDocText *>(inline_.get()))
-			writeXmlDoc(text->text);
+			writeXmlDoc(text->text, false);
 		else if (const FuDocCode *code = dynamic_cast<const FuDocCode *>(inline_.get())) {
 			writeChar('`');
-			writeXmlDoc(code->text);
+			writeXmlDoc(code->text, false);
 			writeChar('`');
 		}
 		else if (dynamic_cast<const FuDocLine *>(inline_.get())) {

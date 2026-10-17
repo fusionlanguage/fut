@@ -8662,8 +8662,9 @@ export class GenBase extends FuVisitor
 		this.write(" * ");
 	}
 
-	writeXmlDoc(text)
+	writeXmlDoc(text, multiline)
 	{
+		let last = 0;
 		for (const c of text) {
 			switch (c.codePointAt(0)) {
 			case 38:
@@ -8675,16 +8676,29 @@ export class GenBase extends FuVisitor
 			case 62:
 				this.write("&gt;");
 				break;
+			case 42:
+				if (multiline && last == 47)
+					this.write("&#42;");
+				else
+					this.writeChar(c.codePointAt(0));
+				break;
+			case 47:
+				if (multiline && last == 42)
+					this.write("&#47;");
+				else
+					this.writeChar(c.codePointAt(0));
+				break;
 			default:
 				this.writeChar(c.codePointAt(0));
 				break;
 			}
+			last = c.codePointAt(0);
 		}
 	}
 
 	writeDocCode(s)
 	{
-		this.writeXmlDoc(s);
+		this.writeXmlDoc(s, true);
 	}
 
 	writeDocPara(para, many)
@@ -8696,7 +8710,7 @@ export class GenBase extends FuVisitor
 		for (const inline of para.children) {
 			if (inline instanceof FuDocText) {
 				const text = inline;
-				this.writeXmlDoc(text.text);
+				this.writeXmlDoc(text.text, true);
 			}
 			else if (inline instanceof FuDocCode) {
 				const code = inline;
@@ -11075,7 +11089,7 @@ export class GenCCpp extends GenCCppD
 		if (s == "null")
 			this.visitLiteralNull();
 		else
-			this.writeXmlDoc(s);
+			this.writeXmlDoc(s, true);
 	}
 
 	#writeCIncludes()
@@ -18416,7 +18430,7 @@ export class GenCs extends GenTyped
 		for (const inline of para.children) {
 			if (inline instanceof FuDocText) {
 				const text = inline;
-				this.writeXmlDoc(text.text);
+				this.writeXmlDoc(text.text, false);
 			}
 			else if (inline instanceof FuDocCode) {
 				const code = inline;
@@ -18430,7 +18444,7 @@ export class GenCs extends GenTyped
 					break;
 				default:
 					this.write("<c>");
-					this.writeXmlDoc(code.text);
+					this.writeXmlDoc(code.text, false);
 					this.write("</c>");
 					break;
 				}
@@ -19546,12 +19560,12 @@ export class GenD extends GenCCppD
 		for (const inline of para.children) {
 			if (inline instanceof FuDocText) {
 				const text = inline;
-				this.writeXmlDoc(text.text);
+				this.writeXmlDoc(text.text, false);
 			}
 			else if (inline instanceof FuDocCode) {
 				const code = inline;
 				this.writeChar(96);
-				this.writeXmlDoc(code.text);
+				this.writeXmlDoc(code.text, false);
 				this.writeChar(96);
 			}
 			else if (inline instanceof FuDocLine) {

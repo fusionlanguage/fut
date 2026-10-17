@@ -38,7 +38,7 @@ public class GenCs : GenTyped
 		foreach (FuDocInline inline in para.Children) {
 			switch (inline) {
 			case FuDocText text:
-				WriteXmlDoc(text.Text);
+				WriteXmlDoc(text.Text, false);
 				break;
 			case FuDocCode code:
 				switch (code.Text) {
@@ -51,7 +51,7 @@ public class GenCs : GenTyped
 					break;
 				default:
 					Write("<c>");
-					WriteXmlDoc(code.Text);
+					WriteXmlDoc(code.Text, false);
 					Write("</c>");
 					break;
 				}

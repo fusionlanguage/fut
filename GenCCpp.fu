@@ -27,7 +27,7 @@ public abstract class GenCCpp : GenCCppD
 		if (s == "null")
 			VisitLiteralNull();
 		else
-			WriteXmlDoc(s);
+			WriteXmlDoc(s, true);
 	}
 
 	protected abstract void IncludeStdInt!();

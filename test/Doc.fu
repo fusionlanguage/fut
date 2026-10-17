@@ -10,6 +10,8 @@
 /// 2 * 3 < 7
 ///
 /// M&Ms :->
+/// foo/*.foo
+/// bar*/
 public class Test
 {
 	/// Constructs a test.

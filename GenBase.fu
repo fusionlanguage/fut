@@ -310,8 +310,9 @@ public abstract class GenBase : FuVisitor
 		Write(" * ");
 	}
 
-	protected void WriteXmlDoc!(string text)
+	protected void WriteXmlDoc!(string text, bool multiline)
 	{
+		int last = 0;
 		foreach (int c in text) {
 			switch (c) {
 			case '&':
@@ -323,16 +324,29 @@ public abstract class GenBase : FuVisitor
 			case '>':
 				Write("&gt;");
 				break;
+			case '*':
+				if (multiline && last == '/')
+					Write("&#42;");
+				else
+					WriteChar(c);
+				break;
+			case '/':
+				if (multiline && last == '*')
+					Write("&#47;");
+				else
+					WriteChar(c);
+				break;
 			default:
 				WriteChar(c);
 				break;
 			}
+			last = c;
 		}
 	}
 
 	protected virtual void WriteDocCode!(string s)
 	{
-		WriteXmlDoc(s);
+		WriteXmlDoc(s, true);
 	}
 
 	protected virtual void WriteDocPara!(FuDocPara para, bool many)
@@ -344,7 +358,7 @@ public abstract class GenBase : FuVisitor
 		foreach (FuDocInline inline in para.Children) {
 			switch (inline) {
 			case FuDocText text:
-				WriteXmlDoc(text.Text);
+				WriteXmlDoc(text.Text, true);
 				break;
 			case FuDocCode code:
 				Write("<code>");

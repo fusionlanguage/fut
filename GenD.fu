@@ -45,11 +45,11 @@ public class GenD : GenCCppD
 		foreach (FuDocInline inline in para.Children) {
 			switch (inline) {
 			case FuDocText text:
-				WriteXmlDoc(text.Text);
+				WriteXmlDoc(text.Text, false);
 				break;
 			case FuDocCode code:
 				WriteChar('`');
-				WriteXmlDoc(code.Text);
+				WriteXmlDoc(code.Text, false);
 				WriteChar('`');
 				break;
 			case FuDocLine:

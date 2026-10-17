@@ -8155,8 +8155,9 @@ namespace Fusion
 			Write(" * ");
 		}
 
-		protected void WriteXmlDoc(string text)
+		protected void WriteXmlDoc(string text, bool multiline)
 		{
+			int last = 0;
 			foreach (int c in text) {
 				switch (c) {
 				case '&':
@@ -8168,16 +8169,29 @@ namespace Fusion
 				case '>':
 					Write("&gt;");
 					break;
+				case '*':
+					if (multiline && last == '/')
+						Write("&#42;");
+					else
+						WriteChar(c);
+					break;
+				case '/':
+					if (multiline && last == '*')
+						Write("&#47;");
+					else
+						WriteChar(c);
+					break;
 				default:
 					WriteChar(c);
 					break;
 				}
+				last = c;
 			}
 		}
 
 		protected virtual void WriteDocCode(string s)
 		{
-			WriteXmlDoc(s);
+			WriteXmlDoc(s, true);
 		}
 
 		protected virtual void WriteDocPara(FuDocPara para, bool many)
@@ -8189,7 +8203,7 @@ namespace Fusion
 			foreach (FuDocInline inline in para.Children) {
 				switch (inline) {
 				case FuDocText text:
-					WriteXmlDoc(text.Text);
+					WriteXmlDoc(text.Text, true);
 					break;
 				case FuDocCode code:
 					Write("<code>");
@@ -10509,7 +10523,7 @@ namespace Fusion
 			if (s == "null")
 				VisitLiteralNull();
 			else
-				WriteXmlDoc(s);
+				WriteXmlDoc(s, true);
 		}
 
 		protected abstract void IncludeStdInt();
@@ -17747,7 +17761,7 @@ namespace Fusion
 			foreach (FuDocInline inline in para.Children) {
 				switch (inline) {
 				case FuDocText text:
-					WriteXmlDoc(text.Text);
+					WriteXmlDoc(text.Text, false);
 					break;
 				case FuDocCode code:
 					switch (code.Text) {
@@ -17760,7 +17774,7 @@ namespace Fusion
 						break;
 					default:
 						Write("<c>");
-						WriteXmlDoc(code.Text);
+						WriteXmlDoc(code.Text, false);
 						Write("</c>");
 						break;
 					}
@@ -18862,11 +18876,11 @@ namespace Fusion
 			foreach (FuDocInline inline in para.Children) {
 				switch (inline) {
 				case FuDocText text:
-					WriteXmlDoc(text.Text);
+					WriteXmlDoc(text.Text, false);
 					break;
 				case FuDocCode code:
 					WriteChar('`');
-					WriteXmlDoc(code.Text);
+					WriteXmlDoc(code.Text, false);
 					WriteChar('`');
 					break;
 				case FuDocLine:
