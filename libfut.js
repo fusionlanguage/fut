@@ -153,6 +153,7 @@ export class FuLexer
 	#lineMode = false;
 	#skippingUnmet = false;
 	parsingTypeArg = false;
+	parsingNative = false;
 	#preElseStack = [];
 
 	setHost(host)
@@ -475,7 +476,7 @@ export class FuLexer
 					this.readChar();
 					if (this.#eatChar(123))
 						break;
-					if (!this.#skippingUnmet) {
+					if (!this.#skippingUnmet && !this.parsingNative) {
 						this.stringValue = new TextDecoder().decode(this.input.subarray(offset, offset + endOffset - offset)).replaceAll("{{", "{").replaceAll("}}", "}");
 						return FuToken.INTERPOLATED_STRING;
 					}
@@ -608,7 +609,7 @@ export class FuLexer
 			case 47:
 				if (this.#eatChar(47)) {
 					c = this.readChar();
-					if (c == 47 && !this.#skippingUnmet) {
+					if (c == 47 && !this.#skippingUnmet && !this.parsingNative) {
 						this.#skipWhitespace();
 						switch (this.peekChar()) {
 						case 10:
@@ -5332,10 +5333,12 @@ export class FuParser extends FuLexer
 			result.content = this.stringValue;
 		else {
 			let offset = this.charOffset;
+			this.parsingNative = true;
 			this.expect(FuToken.LEFT_BRACE);
 			let nesting = 1;
 			for (;;) {
 				if (this.see(FuToken.END_OF_FILE)) {
+					this.parsingNative = false;
 					this.expect(FuToken.RIGHT_BRACE);
 					return result;
 				}
@@ -5347,6 +5350,7 @@ export class FuParser extends FuLexer
 				}
 				this.nextToken();
 			}
+			this.parsingNative = false;
 			console.assert(this.input[this.charOffset - 1] == 125);
 			result.content = new TextDecoder().decode(this.input.subarray(offset, offset + this.charOffset - 1 - offset));
 		}

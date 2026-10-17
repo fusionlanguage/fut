@@ -367,7 +367,7 @@ FuToken FuLexer::readString(bool interpolated)
 				readChar();
 				if (eatChar('{'))
 					break;
-				if (!this->skippingUnmet) {
+				if (!this->skippingUnmet && !this->parsingNative) {
 					this->stringValue = FuString_Replace(FuString_Replace(std::string_view(reinterpret_cast<const char *>(this->input + offset), endOffset - offset), "{{", "{"), "}}", "}");
 					return FuToken::interpolatedString;
 				}
@@ -500,7 +500,7 @@ FuToken FuLexer::readPreToken()
 		case '/':
 			if (eatChar('/')) {
 				c = readChar();
-				if (c == '/' && !this->skippingUnmet) {
+				if (c == '/' && !this->skippingUnmet && !this->parsingNative) {
 					skipWhitespace();
 					switch (peekChar()) {
 					case '\n':
@@ -5497,10 +5497,12 @@ std::shared_ptr<FuNative> FuParser::parseNative()
 		result->content = this->stringValue;
 	else {
 		int offset = this->charOffset;
+		this->parsingNative = true;
 		expect(FuToken::leftBrace);
 		int nesting = 1;
 		for (;;) {
 			if (see(FuToken::endOfFile)) {
+				this->parsingNative = false;
 				expect(FuToken::rightBrace);
 				return result;
 			}
@@ -5512,6 +5514,7 @@ std::shared_ptr<FuNative> FuParser::parseNative()
 			}
 			nextToken();
 		}
+		this->parsingNative = false;
 		assert(this->input[this->charOffset - 1] == '}');
 		result->content = std::string_view(reinterpret_cast<const char *>(this->input + offset), this->charOffset - 1 - offset);
 	}

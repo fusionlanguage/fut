@@ -165,6 +165,7 @@ public abstract class FuLexer
 	bool LineMode = false;
 	bool SkippingUnmet = false;
 	protected bool ParsingTypeArg = false;
+	protected bool ParsingNative = false;
 	Stack<bool>() PreElseStack;
 
 	public void SetHost!(FuParserHost! host)
@@ -481,7 +482,7 @@ public abstract class FuLexer
 					ReadChar();
 					if (EatChar('{'))
 						break;
-					if (!this.SkippingUnmet) {
+					if (!this.SkippingUnmet && !this.ParsingNative) {
 						this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{").Replace("}}", "}");
 						return FuToken.InterpolatedString;
 					}
@@ -592,7 +593,7 @@ public abstract class FuLexer
 			case '/':
 				if (EatChar('/')) {
 					c = ReadChar();
-					if (c == '/' && !this.SkippingUnmet) {
+					if (c == '/' && !this.SkippingUnmet && !this.ParsingNative) {
 						SkipWhitespace();
 						switch (PeekChar()) {
 						case '\n':

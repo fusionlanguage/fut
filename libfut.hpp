@@ -525,6 +525,7 @@ protected:
 	int64_t longValue;
 	std::string stringValue;
 	bool parsingTypeArg = false;
+	bool parsingNative = false;
 	void open(std::string_view filename, uint8_t const * input, int inputLength);
 	void reportError(std::string_view message) const;
 	int peekChar() const;

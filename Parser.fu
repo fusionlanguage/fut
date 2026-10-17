@@ -708,10 +708,12 @@ public class FuParser : FuLexer
 			result.Content = this.StringValue;
 		else {
 			int offset = this.CharOffset;
+			this.ParsingNative = true;
 			Expect(FuToken.LeftBrace);
 			int nesting = 1;
 			for (;;) {
 				if (See(FuToken.EndOfFile)) {
+					this.ParsingNative = false;
 					Expect(FuToken.RightBrace);
 					return result;
 				}
@@ -723,6 +725,7 @@ public class FuParser : FuLexer
 				}
 				NextToken();
 			}
+			this.ParsingNative = false;
 			assert this.Input[this.CharOffset - 1] == '}';
 			result.Content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset);
 		}

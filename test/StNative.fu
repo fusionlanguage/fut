@@ -6,6 +6,16 @@ public static class Test
 		a = 1;
 		native {a = 42;
 		}
+#if !PY
+		native {
+			/// didn't work
+		}
+#endif
+#if CS
+		native {
+			string s = $"{1}";
+		}
+#endif
 		return a == 42;
 	}
 }

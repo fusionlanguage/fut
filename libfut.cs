@@ -175,6 +175,8 @@ namespace Fusion
 
 		protected bool ParsingTypeArg = false;
 
+		protected bool ParsingNative = false;
+
 		readonly Stack<bool> PreElseStack = new Stack<bool>();
 
 		public void SetHost(FuParserHost host)
@@ -496,7 +498,7 @@ namespace Fusion
 						ReadChar();
 						if (EatChar('{'))
 							break;
-						if (!this.SkippingUnmet) {
+						if (!this.SkippingUnmet && !this.ParsingNative) {
 							this.StringValue = Encoding.UTF8.GetString(this.Input, offset, endOffset - offset).Replace("{{", "{").Replace("}}", "}");
 							return FuToken.InterpolatedString;
 						}
@@ -623,7 +625,7 @@ namespace Fusion
 				case '/':
 					if (EatChar('/')) {
 						c = ReadChar();
-						if (c == '/' && !this.SkippingUnmet) {
+						if (c == '/' && !this.SkippingUnmet && !this.ParsingNative) {
 							SkipWhitespace();
 							switch (PeekChar()) {
 							case '\n':
@@ -5010,10 +5012,12 @@ namespace Fusion
 				result.Content = this.StringValue;
 			else {
 				int offset = this.CharOffset;
+				this.ParsingNative = true;
 				Expect(FuToken.LeftBrace);
 				int nesting = 1;
 				for (;;) {
 					if (See(FuToken.EndOfFile)) {
+						this.ParsingNative = false;
 						Expect(FuToken.RightBrace);
 						return result;
 					}
@@ -5025,6 +5029,7 @@ namespace Fusion
 					}
 					NextToken();
 				}
+				this.ParsingNative = false;
 				Debug.Assert(this.Input[this.CharOffset - 1] == '}');
 				result.Content = Encoding.UTF8.GetString(this.Input, offset, this.CharOffset - 1 - offset);
 			}
