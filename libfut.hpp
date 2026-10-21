@@ -3495,6 +3495,7 @@ protected:
 	void writeStringLength(const FuExpr * expr) override;
 	void writeCharAt(const FuBinaryExpr * expr) override;
 	void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary) override;
+	virtual void writeNonNullOp();
 	virtual void writeDictionaryClearCast(const FuExpr * obj);
 	void writeCallExpr(const FuType * type, const FuExpr * obj, const FuMethod * method, const std::vector<std::shared_ptr<FuExpr>> * args, FuPriority parent) override;
 	void writeAssign(const FuBinaryExpr * expr, FuPriority parent) override;
@@ -3504,7 +3505,7 @@ protected:
 	virtual void writeBoolAndOr(const FuBinaryExpr * expr);
 	void startTemporaryVar(const FuType * type) override;
 	void defineObjectLiteralTemporary(const FuUnaryExpr * expr) override;
-	virtual void writeAsType(const FuVar * def);
+	virtual void writeAsType(const FuExpr * expr, const FuVar * def);
 	void writeAssertCast(const FuBinaryExpr * expr) override;
 	void writeAssert(const FuAssert * statement) override;
 	void startBreakGoto() override;
@@ -3538,6 +3539,7 @@ private:
 	bool consoleReadLine = false;
 	void writeCamelCaseNotKeyword(std::string_view name);
 	void writeInterpolatedLiteral(std::string_view s);
+	void writeProperty(const FuExpr * expr, std::string_view s);
 	void writeSlice(const FuExpr * array, const FuExpr * offset, const FuExpr * length, FuPriority parent, std::string_view method);
 	void endWrite(const FuExpr * arg);
 	void writeWriteLine(std::string_view method, const std::vector<std::shared_ptr<FuExpr>> * args);
@@ -3572,11 +3574,15 @@ protected:
 	std::string_view getTargetName() const override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeTypeAndName(const FuNamedValue * value) override;
-	void writeAsType(const FuVar * def) override;
+	void writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol) override;
+	void writeIndexingInfix(const FuExpr * collection) override;
+	void writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent) override;
 	void writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary) override;
 	void writeEqualOperand(const FuExpr * expr, const FuExpr * other) override;
 	void writeBoolAndOr(const FuBinaryExpr * expr) override;
 	void defineIsVar(const FuBinaryExpr * binary) override;
+	void writeNonNullOp() override;
+	void writeAsType(const FuExpr * expr, const FuVar * def) override;
 	void writeDictionaryClearCast(const FuExpr * obj) override;
 	void writeConst(const FuConst * konst) override;
 	void writeField(const FuField * field) override;

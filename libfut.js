@@ -23244,8 +23244,10 @@ export class GenJsNoModule extends GenBase
 		}
 		this.writeName(symbol);
 		let forEach;
-		if ((forEach = symbol.parent) instanceof FuForeach && forEach.collection.type instanceof FuStringType)
+		if ((forEach = symbol.parent) instanceof FuForeach && forEach.collection.type instanceof FuStringType) {
 			this.write(".codePointAt(0)");
+			this.writeNonNullOp();
+		}
 	}
 
 	writeCoercedInternal(type, expr, parent)
@@ -23307,6 +23309,13 @@ export class GenJsNoModule extends GenBase
 		this.writeResourceName(name);
 	}
 
+	#writeProperty(expr, s)
+	{
+		expr.accept(this, FuPriority.PRIMARY);
+		this.writeMemberOp(expr, null);
+		this.write(s);
+	}
+
 	visitSymbolReference(expr, parent)
 	{
 		switch (expr.symbol.id) {
@@ -23319,12 +23328,12 @@ export class GenJsNoModule extends GenBase
 		case FuId.LIST_COUNT:
 		case FuId.QUEUE_COUNT:
 		case FuId.STACK_COUNT:
-			this.writePostfix(expr.left, ".length");
+			this.#writeProperty(expr.left, "length");
 			break;
 		case FuId.HASH_SET_COUNT:
 		case FuId.SORTED_SET_COUNT:
 		case FuId.ORDERED_DICTIONARY_COUNT:
-			this.writePostfix(expr.left, ".size");
+			this.#writeProperty(expr.left, "size");
 			break;
 		case FuId.DICTIONARY_COUNT:
 		case FuId.SORTED_DICTIONARY_COUNT:
@@ -23332,7 +23341,7 @@ export class GenJsNoModule extends GenBase
 			this.write(".length");
 			break;
 		case FuId.MATCH_START:
-			this.writePostfix(expr.left, ".index");
+			this.#writeProperty(expr.left, "index");
 			break;
 		case FuId.MATCH_END:
 			if (parent > FuPriority.ADD)
@@ -23365,7 +23374,7 @@ export class GenJsNoModule extends GenBase
 
 	writeStringLength(expr)
 	{
-		this.writePostfix(expr, ".length");
+		this.#writeProperty(expr, "length");
 	}
 
 	writeCharAt(expr)
@@ -23383,13 +23392,15 @@ export class GenJsNoModule extends GenBase
 		if (this.isWholeArray(array, offset, length))
 			array.accept(this, parent);
 		else {
-			array.accept(this, FuPriority.PRIMARY);
-			this.writeChar(46);
-			this.write(method);
+			this.#writeProperty(array, method);
 			this.writeChar(40);
 			this.writeStartEnd(offset, length);
 			this.writeChar(41);
 		}
+	}
+
+	writeNonNullOp()
+	{
 	}
 
 	writeDictionaryClearCast(obj)
@@ -23503,10 +23514,11 @@ export class GenJsNoModule extends GenBase
 				this.writeLocalName(method, FuPriority.PRIMARY);
 			else {
 				if (GenJsNoModule.isReferenceTo(obj, FuId.BASE_PTR))
-					this.write("super");
-				else
+					this.write("super.");
+				else {
 					obj.accept(this, FuPriority.PRIMARY);
-				this.writeChar(46);
+					this.writeMemberOp(obj, null);
+				}
 				this.writeName(method);
 			}
 			this.writeCoercedArgsInParentheses(method, args);
@@ -23557,7 +23569,7 @@ export class GenJsNoModule extends GenBase
 			this.writeMethodCall(obj, "replaceAll", args[0], args[1]);
 			break;
 		case FuId.STRING_SUBSTRING:
-			this.writePostfix(obj, ".substring(");
+			this.#writeProperty(obj, "substring(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			if (args.length == 2) {
 				this.write(", ");
@@ -23566,14 +23578,14 @@ export class GenJsNoModule extends GenBase
 			this.writeChar(41);
 			break;
 		case FuId.STRING_TO_LOWER:
-			this.writePostfix(obj, ".toLowerCase()");
+			this.#writeProperty(obj, "toLowerCase()");
 			break;
 		case FuId.STRING_TO_UPPER:
-			this.writePostfix(obj, ".toUpperCase()");
+			this.#writeProperty(obj, "toUpperCase()");
 			break;
 		case FuId.ARRAY_FILL_ALL:
 		case FuId.ARRAY_FILL_PART:
-			this.writePostfix(obj, ".fill(");
+			this.#writeProperty(obj, "fill(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			if (args.length == 3) {
 				this.write(", ");
@@ -23584,8 +23596,9 @@ export class GenJsNoModule extends GenBase
 		case FuId.ARRAY_COPY_TO:
 		case FuId.LIST_COPY_TO:
 			args[1].accept(this, FuPriority.PRIMARY);
+			this.writeMemberOp(args[1], null);
 			if (obj.type.asClassType().getElementType() instanceof FuNumericType) {
-				this.write(".set(");
+				this.write("set(");
 				this.#writeSlice(obj, args[0], args[3], FuPriority.ARGUMENT, method.id == FuId.ARRAY_COPY_TO ? "subarray" : "slice");
 				if (!args[2].isLiteralZero()) {
 					this.write(", ");
@@ -23593,7 +23606,7 @@ export class GenJsNoModule extends GenBase
 				}
 			}
 			else {
-				this.write(".splice(");
+				this.write("splice(");
 				args[2].accept(this, FuPriority.ARGUMENT);
 				this.write(", ");
 				args[3].accept(this, FuPriority.ARGUMENT);
@@ -23603,7 +23616,7 @@ export class GenJsNoModule extends GenBase
 			this.writeChar(41);
 			break;
 		case FuId.ARRAY_SORT_PART:
-			this.writePostfix(obj, ".subarray(");
+			this.#writeProperty(obj, "subarray(");
 			this.writeStartEnd(args[0], args[1]);
 			this.write(").sort()");
 			break;
@@ -23611,7 +23624,7 @@ export class GenJsNoModule extends GenBase
 			this.writeListAdd(obj, "push", args);
 			break;
 		case FuId.LIST_ADD_RANGE:
-			this.writePostfix(obj, ".push(...");
+			this.#writeProperty(obj, "push(...");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.writeChar(41);
 			break;
@@ -23624,17 +23637,18 @@ export class GenJsNoModule extends GenBase
 		case FuId.LIST_CLEAR:
 		case FuId.QUEUE_CLEAR:
 		case FuId.STACK_CLEAR:
-			this.writePostfix(obj, ".length = 0");
+			this.#writeProperty(obj, "length = 0");
 			break;
 		case FuId.LIST_INSERT:
 			this.writeListInsert(obj, "splice", args, ", 0, ");
 			break;
 		case FuId.LIST_LAST:
 		case FuId.STACK_PEEK:
-			this.writePostfix(obj, ".at(-1)");
+			this.#writeProperty(obj, "at(-1)");
+			this.writeNonNullOp();
 			break;
 		case FuId.LIST_REMOVE_AT:
-			this.writePostfix(obj, ".splice(");
+			this.#writeProperty(obj, "splice(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", 1)");
 			break;
@@ -23642,10 +23656,10 @@ export class GenJsNoModule extends GenBase
 			this.writeMethodCall(obj, "splice", args[0], args[1]);
 			break;
 		case FuId.LIST_SORT_ALL:
-			this.writePostfix(obj, ".sort((a, b) => a - b)");
+			this.#writeProperty(obj, "sort((a, b) => a - b)");
 			break;
 		case FuId.LIST_SORT_PART:
-			this.writePostfix(obj, ".splice(");
+			this.#writeProperty(obj, "splice(");
 			args[0].accept(this, FuPriority.ARGUMENT);
 			this.write(", ");
 			args[1].accept(this, FuPriority.ARGUMENT);
@@ -23654,7 +23668,7 @@ export class GenJsNoModule extends GenBase
 			this.write(".sort((a, b) => a - b))");
 			break;
 		case FuId.QUEUE_DEQUEUE:
-			this.writePostfix(obj, ".shift()");
+			this.#writeProperty(obj, "shift()");
 			break;
 		case FuId.QUEUE_ENQUEUE:
 			this.writeMethodCall(obj, "push", args[0]);
@@ -23697,7 +23711,7 @@ export class GenJsNoModule extends GenBase
 		case FuId.TEXT_WRITER_FLUSH:
 			break;
 		case FuId.TEXT_WRITER_WRITE:
-			this.writePostfix(obj, ".write(");
+			this.#writeProperty(obj, "write(");
 			this.#endWrite(args[0]);
 			break;
 		case FuId.TEXT_WRITER_WRITE_CHAR:
@@ -23714,7 +23728,7 @@ export class GenJsNoModule extends GenBase
 			else if (GenJsNoModule.isReferenceTo(obj, FuId.CONSOLE_OUT))
 				this.#writeWriteLine("console.log", args);
 			else {
-				this.writePostfix(obj, ".write(");
+				this.#writeProperty(obj, "write(");
 				if (args.length != 0) {
 					args[0].accept(this, FuPriority.ADD);
 					this.write(" + ");
@@ -23774,6 +23788,8 @@ export class GenJsNoModule extends GenBase
 			this.writeChar(41);
 			break;
 		case FuId.ENVIRONMENT_GET_ENVIRONMENT_VARIABLE:
+			if (parent > FuPriority.COND_OR)
+				this.writeChar(40);
 			let literal;
 			if ((literal = args[0]) instanceof FuLiteralString && GenJsNoModule.#isIdentifier(literal.value)) {
 				this.write("process.env.");
@@ -23784,6 +23800,9 @@ export class GenJsNoModule extends GenBase
 				args[0].accept(this, FuPriority.ARGUMENT);
 				this.writeChar(93);
 			}
+			this.write(" ?? null");
+			if (parent > FuPriority.COND_OR)
+				this.writeChar(41);
 			break;
 		case FuId.DATE_TIME_OFFSET_UTC_NOW_TO_UNIX_TIME_MILLISECONDS:
 			this.write("BigInt(Date.now())");
@@ -23813,6 +23832,7 @@ export class GenJsNoModule extends GenBase
 			else
 				args[1].accept(this, FuPriority.PRIMARY);
 			this.writeCall(".exec", args[0]);
+			this.writeNonNullOp();
 			this.write(") != null");
 			if (parent > FuPriority.EQUALITY)
 				this.writeChar(41);
@@ -24049,8 +24069,9 @@ export class GenJsNoModule extends GenBase
 	{
 	}
 
-	writeAsType(def)
+	writeAsType(expr, def)
 	{
+		expr.accept(this, FuPriority.ARGUMENT);
 	}
 
 	#writeVarCast(def, value)
@@ -24058,8 +24079,7 @@ export class GenJsNoModule extends GenBase
 		this.write(def.isAssigned ? "let " : "const ");
 		this.#writeCamelCaseNotKeyword(def.name);
 		this.write(" = ");
-		value.accept(this, FuPriority.ARGUMENT);
-		this.writeAsType(def);
+		this.writeAsType(value, def);
 		this.writeCharLine(59);
 	}
 
@@ -24560,10 +24580,33 @@ export class GenTs extends GenJs
 			this.write(type.name);
 	}
 
-	writeAsType(def)
+	writeMemberOp(left, symbol)
 	{
-		this.write(" as ");
-		this.write(def.type.name);
+		if (left.type != null && left.type.nullable)
+			this.writeChar(33);
+		this.writeChar(46);
+	}
+
+	writeIndexingInfix(collection)
+	{
+		if (collection.type.nullable)
+			this.writeChar(33);
+	}
+
+	writeIndexingExpr(expr, parent)
+	{
+		let dict;
+		if ((dict = expr.left.type) instanceof FuClassType && dict.class.id == FuId.ORDERED_DICTIONARY_CLASS) {
+			if (parent > FuPriority.REL)
+				this.writeChar(40);
+			this.writeMethodCall(expr.left, "get", expr.right);
+			this.write(" as ");
+			this.#writeType(expr.type);
+			if (parent > FuPriority.REL)
+				this.writeChar(41);
+		}
+		else
+			super.writeIndexingExpr(expr, parent);
 	}
 
 	writeBinaryOperand(expr, parent, binary)
@@ -24605,6 +24648,18 @@ export class GenTs extends GenJs
 			this.#writeType(binary.left.type);
 			this.endStatement();
 		}
+	}
+
+	writeNonNullOp()
+	{
+		this.writeChar(33);
+	}
+
+	writeAsType(expr, def)
+	{
+		expr.accept(this, FuPriority.REL);
+		this.write(" as ");
+		this.write(def.type.name);
 	}
 
 	writeDictionaryClearCast(obj)
@@ -24653,7 +24708,7 @@ export class GenTs extends GenJs
 	{
 		this.writeDoc(field.documentation);
 		this.#writeVisibility(field.visibility);
-		if (field.value == null && !field.type.isFinal()) {
+		if (field.type.isFinal() ? !(field.type instanceof FuArrayStorageType) && field.value instanceof FuLiteralNull : field.value == null) {
 			this.writeName(field);
 			this.write("!: ");
 			this.#writeType(field.type);

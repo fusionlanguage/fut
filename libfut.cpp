@@ -22649,8 +22649,10 @@ void GenJsNoModule::writeLocalName(const FuSymbol * symbol, FuPriority parent)
 	}
 	writeName(symbol);
 	const FuForeach * forEach;
-	if ((forEach = dynamic_cast<const FuForeach *>(symbol->parent)) && dynamic_cast<const FuStringType *>(forEach->collection->type.get()))
+	if ((forEach = dynamic_cast<const FuForeach *>(symbol->parent)) && dynamic_cast<const FuStringType *>(forEach->collection->type.get())) {
 		write(".codePointAt(0)");
+		writeNonNullOp();
+	}
 }
 
 void GenJsNoModule::writeCoercedInternal(const FuType * type, const FuExpr * expr, FuPriority parent)
@@ -22712,6 +22714,13 @@ void GenJsNoModule::writeResource(std::string_view name, int length)
 	writeResourceName(name);
 }
 
+void GenJsNoModule::writeProperty(const FuExpr * expr, std::string_view s)
+{
+	expr->accept(this, FuPriority::primary);
+	writeMemberOp(expr, nullptr);
+	write(s);
+}
+
 void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPriority parent)
 {
 	switch (expr->symbol->id) {
@@ -22724,12 +22733,12 @@ void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPrior
 	case FuId::listCount:
 	case FuId::queueCount:
 	case FuId::stackCount:
-		writePostfix(expr->left.get(), ".length");
+		writeProperty(expr->left.get(), "length");
 		break;
 	case FuId::hashSetCount:
 	case FuId::sortedSetCount:
 	case FuId::orderedDictionaryCount:
-		writePostfix(expr->left.get(), ".size");
+		writeProperty(expr->left.get(), "size");
 		break;
 	case FuId::dictionaryCount:
 	case FuId::sortedDictionaryCount:
@@ -22737,7 +22746,7 @@ void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPrior
 		write(".length");
 		break;
 	case FuId::matchStart:
-		writePostfix(expr->left.get(), ".index");
+		writeProperty(expr->left.get(), "index");
 		break;
 	case FuId::matchEnd:
 		if (parent > FuPriority::add)
@@ -22770,7 +22779,7 @@ void GenJsNoModule::visitSymbolReference(const FuSymbolReference * expr, FuPrior
 
 void GenJsNoModule::writeStringLength(const FuExpr * expr)
 {
-	writePostfix(expr, ".length");
+	writeProperty(expr, "length");
 }
 
 void GenJsNoModule::writeCharAt(const FuBinaryExpr * expr)
@@ -22788,13 +22797,15 @@ void GenJsNoModule::writeSlice(const FuExpr * array, const FuExpr * offset, cons
 	if (isWholeArray(array, offset, length))
 		array->accept(this, parent);
 	else {
-		array->accept(this, FuPriority::primary);
-		writeChar('.');
-		write(method);
+		writeProperty(array, method);
 		writeChar('(');
 		writeStartEnd(offset, length);
 		writeChar(')');
 	}
+}
+
+void GenJsNoModule::writeNonNullOp()
+{
 }
 
 void GenJsNoModule::writeDictionaryClearCast(const FuExpr * obj)
@@ -22907,10 +22918,11 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 			writeLocalName(method, FuPriority::primary);
 		else {
 			if (isReferenceTo(obj, FuId::basePtr))
-				write("super");
-			else
+				write("super.");
+			else {
 				obj->accept(this, FuPriority::primary);
-			writeChar('.');
+				writeMemberOp(obj, nullptr);
+			}
 			writeName(method);
 		}
 		writeCoercedArgsInParentheses(method, args);
@@ -22961,7 +22973,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeMethodCall(obj, "replaceAll", (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::stringSubstring:
-		writePostfix(obj, ".substring(");
+		writeProperty(obj, "substring(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		if (std::ssize(*args) == 2) {
 			write(", ");
@@ -22970,14 +22982,14 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeChar(')');
 		break;
 	case FuId::stringToLower:
-		writePostfix(obj, ".toLowerCase()");
+		writeProperty(obj, "toLowerCase()");
 		break;
 	case FuId::stringToUpper:
-		writePostfix(obj, ".toUpperCase()");
+		writeProperty(obj, "toUpperCase()");
 		break;
 	case FuId::arrayFillAll:
 	case FuId::arrayFillPart:
-		writePostfix(obj, ".fill(");
+		writeProperty(obj, "fill(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		if (std::ssize(*args) == 3) {
 			write(", ");
@@ -22988,8 +23000,9 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 	case FuId::arrayCopyTo:
 	case FuId::listCopyTo:
 		(*args)[1]->accept(this, FuPriority::primary);
+		writeMemberOp((*args)[1].get(), nullptr);
 		if (dynamic_cast<const FuNumericType *>(obj->type->asClassType()->getElementType().get())) {
-			write(".set(");
+			write("set(");
 			writeSlice(obj, (*args)[0].get(), (*args)[3].get(), FuPriority::argument, method->id == FuId::arrayCopyTo ? "subarray" : "slice");
 			if (!(*args)[2]->isLiteralZero()) {
 				write(", ");
@@ -22997,7 +23010,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 			}
 		}
 		else {
-			write(".splice(");
+			write("splice(");
 			(*args)[2]->accept(this, FuPriority::argument);
 			write(", ");
 			(*args)[3]->accept(this, FuPriority::argument);
@@ -23007,7 +23020,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeChar(')');
 		break;
 	case FuId::arraySortPart:
-		writePostfix(obj, ".subarray(");
+		writeProperty(obj, "subarray(");
 		writeStartEnd((*args)[0].get(), (*args)[1].get());
 		write(").sort()");
 		break;
@@ -23015,7 +23028,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeListAdd(obj, "push", args);
 		break;
 	case FuId::listAddRange:
-		writePostfix(obj, ".push(...");
+		writeProperty(obj, "push(...");
 		(*args)[0]->accept(this, FuPriority::argument);
 		writeChar(')');
 		break;
@@ -23028,17 +23041,18 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 	case FuId::listClear:
 	case FuId::queueClear:
 	case FuId::stackClear:
-		writePostfix(obj, ".length = 0");
+		writeProperty(obj, "length = 0");
 		break;
 	case FuId::listInsert:
 		writeListInsert(obj, "splice", args, ", 0, ");
 		break;
 	case FuId::listLast:
 	case FuId::stackPeek:
-		writePostfix(obj, ".at(-1)");
+		writeProperty(obj, "at(-1)");
+		writeNonNullOp();
 		break;
 	case FuId::listRemoveAt:
-		writePostfix(obj, ".splice(");
+		writeProperty(obj, "splice(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write(", 1)");
 		break;
@@ -23046,10 +23060,10 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeMethodCall(obj, "splice", (*args)[0].get(), (*args)[1].get());
 		break;
 	case FuId::listSortAll:
-		writePostfix(obj, ".sort((a, b) => a - b)");
+		writeProperty(obj, "sort((a, b) => a - b)");
 		break;
 	case FuId::listSortPart:
-		writePostfix(obj, ".splice(");
+		writeProperty(obj, "splice(");
 		(*args)[0]->accept(this, FuPriority::argument);
 		write(", ");
 		(*args)[1]->accept(this, FuPriority::argument);
@@ -23058,7 +23072,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		write(".sort((a, b) => a - b))");
 		break;
 	case FuId::queueDequeue:
-		writePostfix(obj, ".shift()");
+		writeProperty(obj, "shift()");
 		break;
 	case FuId::queueEnqueue:
 		writeMethodCall(obj, "push", (*args)[0].get());
@@ -23101,7 +23115,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 	case FuId::textWriterFlush:
 		break;
 	case FuId::textWriterWrite:
-		writePostfix(obj, ".write(");
+		writeProperty(obj, "write(");
 		endWrite((*args)[0].get());
 		break;
 	case FuId::textWriterWriteChar:
@@ -23118,7 +23132,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		else if (isReferenceTo(obj, FuId::consoleOut))
 			writeWriteLine("console.log", args);
 		else {
-			writePostfix(obj, ".write(");
+			writeProperty(obj, "write(");
 			if (std::ssize(*args) != 0) {
 				(*args)[0]->accept(this, FuPriority::add);
 				write(" + ");
@@ -23178,6 +23192,8 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		writeChar(')');
 		break;
 	case FuId::environmentGetEnvironmentVariable:
+		if (parent > FuPriority::condOr)
+			writeChar('(');
 		{
 			const FuLiteralString * literal;
 			if ((literal = dynamic_cast<const FuLiteralString *>((*args)[0].get())) && isIdentifier(literal->value)) {
@@ -23189,6 +23205,9 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 				(*args)[0]->accept(this, FuPriority::argument);
 				writeChar(']');
 			}
+			write(" ?? null");
+			if (parent > FuPriority::condOr)
+				writeChar(')');
 			break;
 		}
 	case FuId::dateTimeOffsetUtcNowToUnixTimeMilliseconds:
@@ -23219,6 +23238,7 @@ void GenJsNoModule::writeCallExpr(const FuType * type, const FuExpr * obj, const
 		else
 			(*args)[1]->accept(this, FuPriority::primary);
 		writeCall(".exec", (*args)[0].get());
+		writeNonNullOp();
 		write(") != null");
 		if (parent > FuPriority::equality)
 			writeChar(')');
@@ -23455,8 +23475,9 @@ void GenJsNoModule::defineObjectLiteralTemporary(const FuUnaryExpr * expr)
 {
 }
 
-void GenJsNoModule::writeAsType(const FuVar * def)
+void GenJsNoModule::writeAsType(const FuExpr * expr, const FuVar * def)
 {
+	expr->accept(this, FuPriority::argument);
 }
 
 void GenJsNoModule::writeVarCast(const FuVar * def, const FuExpr * value)
@@ -23464,8 +23485,7 @@ void GenJsNoModule::writeVarCast(const FuVar * def, const FuExpr * value)
 	write(def->isAssigned ? "let " : "const ");
 	writeCamelCaseNotKeyword(def->name);
 	write(" = ");
-	value->accept(this, FuPriority::argument);
-	writeAsType(def);
+	writeAsType(value, def);
 	writeCharLine(';');
 }
 
@@ -23949,10 +23969,33 @@ void GenTs::writeType(const FuType * type, bool readOnly)
 		write(type->name);
 }
 
-void GenTs::writeAsType(const FuVar * def)
+void GenTs::writeMemberOp(const FuExpr * left, const FuSymbolReference * symbol)
 {
-	write(" as ");
-	write(def->type->name);
+	if (left->type != nullptr && left->type->nullable)
+		writeChar('!');
+	writeChar('.');
+}
+
+void GenTs::writeIndexingInfix(const FuExpr * collection)
+{
+	if (collection->type->nullable)
+		writeChar('!');
+}
+
+void GenTs::writeIndexingExpr(const FuBinaryExpr * expr, FuPriority parent)
+{
+	const FuClassType * dict;
+	if ((dict = dynamic_cast<const FuClassType *>(expr->left->type.get())) && dict->class_->id == FuId::orderedDictionaryClass) {
+		if (parent > FuPriority::rel)
+			writeChar('(');
+		writeMethodCall(expr->left.get(), "get", expr->right.get());
+		write(" as ");
+		writeType(expr->type.get());
+		if (parent > FuPriority::rel)
+			writeChar(')');
+	}
+	else
+		GenJsNoModule::writeIndexingExpr(expr, parent);
 }
 
 void GenTs::writeBinaryOperand(const FuExpr * expr, FuPriority parent, const FuBinaryExpr * binary)
@@ -23993,6 +24036,18 @@ void GenTs::defineIsVar(const FuBinaryExpr * binary)
 		writeType(binary->left->type.get());
 		endStatement();
 	}
+}
+
+void GenTs::writeNonNullOp()
+{
+	writeChar('!');
+}
+
+void GenTs::writeAsType(const FuExpr * expr, const FuVar * def)
+{
+	expr->accept(this, FuPriority::rel);
+	write(" as ");
+	write(def->type->name);
 }
 
 void GenTs::writeDictionaryClearCast(const FuExpr * obj)
@@ -24040,7 +24095,7 @@ void GenTs::writeField(const FuField * field)
 {
 	writeDoc(field->documentation.get());
 	writeVisibility(field->visibility);
-	if (field->value == nullptr && !field->type->isFinal()) {
+	if (field->type->isFinal() ? !dynamic_cast<const FuArrayStorageType *>(field->type.get()) && dynamic_cast<const FuLiteralNull *>(field->value.get()) : field->value == nullptr) {
 		writeName(field);
 		write("!: ");
 		writeType(field->type.get());

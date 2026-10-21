@@ -310,8 +310,10 @@ public class GenJsNoModule : GenBase
 			WriteChar('.');
 		}
 		WriteName(symbol);
-		if (symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuStringType)
+		if (symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuStringType) {
 			Write(".codePointAt(0)");
+			WriteNonNullOp();
+		}
 	}
 
 	protected override void WriteCoercedInternal!(FuType type, FuExpr expr, FuPriority parent)
@@ -370,6 +372,13 @@ public class GenJsNoModule : GenBase
 		WriteResourceName(name);
 	}
 
+	void WriteProperty!(FuExpr expr, string s)
+	{
+		expr.Accept(this, FuPriority.Primary);
+		WriteMemberOp(expr, null);
+		Write(s);
+	}
+
 	internal override void VisitSymbolReference!(FuSymbolReference expr, FuPriority parent)
 	{
 		switch (expr.Symbol.Id) {
@@ -382,12 +391,12 @@ public class GenJsNoModule : GenBase
 		case FuId.ListCount:
 		case FuId.QueueCount:
 		case FuId.StackCount:
-			WritePostfix(expr.Left, ".length");
+			WriteProperty(expr.Left, "length");
 			break;
 		case FuId.HashSetCount:
 		case FuId.SortedSetCount:
 		case FuId.OrderedDictionaryCount:
-			WritePostfix(expr.Left, ".size");
+			WriteProperty(expr.Left, "size");
 			break;
 		case FuId.DictionaryCount:
 		case FuId.SortedDictionaryCount:
@@ -395,7 +404,7 @@ public class GenJsNoModule : GenBase
 			Write(".length");
 			break;
 		case FuId.MatchStart:
-			WritePostfix(expr.Left, ".index");
+			WriteProperty(expr.Left, "index");
 			break;
 		case FuId.MatchEnd:
 			if (parent > FuPriority.Add)
@@ -428,7 +437,7 @@ public class GenJsNoModule : GenBase
 
 	protected override void WriteStringLength!(FuExpr expr)
 	{
-		WritePostfix(expr, ".length");
+		WriteProperty(expr, "length");
 	}
 
 	protected override void WriteCharAt!(FuBinaryExpr expr)
@@ -446,13 +455,15 @@ public class GenJsNoModule : GenBase
 		if (IsWholeArray(array, offset, length))
 			array.Accept(this, parent);
 		else {
-			array.Accept(this, FuPriority.Primary);
-			WriteChar('.');
-			Write(method);
+			WriteProperty(array, method);
 			WriteChar('(');
 			WriteStartEnd(offset, length);
 			WriteChar(')');
 		}
+	}
+
+	protected virtual void WriteNonNullOp!()
+	{
 	}
 
 	protected virtual void WriteDictionaryClearCast!(FuExpr obj)
@@ -562,10 +573,11 @@ public class GenJsNoModule : GenBase
 				WriteLocalName(method, FuPriority.Primary);
 			else {
 				if (IsReferenceTo(obj, FuId.BasePtr))
-					Write("super");
-				else
+					Write("super.");
+				else {
 					obj.Accept(this, FuPriority.Primary);
-				WriteChar('.');
+					WriteMemberOp(obj, null);
+				}
 				WriteName(method);
 			}
 			WriteCoercedArgsInParentheses(method, args);
@@ -617,7 +629,7 @@ public class GenJsNoModule : GenBase
 			WriteMethodCall(obj, "replaceAll", args[0], args[1]);
 			break;
 		case FuId.StringSubstring:
-			WritePostfix(obj, ".substring(");
+			WriteProperty(obj, "substring(");
 			args[0].Accept(this, FuPriority.Argument);
 			if (args.Count == 2) {
 				Write(", ");
@@ -626,14 +638,14 @@ public class GenJsNoModule : GenBase
 			WriteChar(')');
 			break;
 		case FuId.StringToLower:
-			WritePostfix(obj, ".toLowerCase()");
+			WriteProperty(obj, "toLowerCase()");
 			break;
 		case FuId.StringToUpper:
-			WritePostfix(obj, ".toUpperCase()");
+			WriteProperty(obj, "toUpperCase()");
 			break;
 		case FuId.ArrayFillAll:
 		case FuId.ArrayFillPart:
-			WritePostfix(obj, ".fill(");
+			WriteProperty(obj, "fill(");
 			args[0].Accept(this, FuPriority.Argument);
 			if (args.Count == 3) {
 				Write(", ");
@@ -644,8 +656,9 @@ public class GenJsNoModule : GenBase
 		case FuId.ArrayCopyTo:
 		case FuId.ListCopyTo:
 			args[1].Accept(this, FuPriority.Primary);
+			WriteMemberOp(args[1], null);
 			if (obj.Type.AsClassType().GetElementType() is FuNumericType) {
-				Write(".set(");
+				Write("set(");
 				WriteSlice(obj, args[0], args[3], FuPriority.Argument, method.Id == FuId.ArrayCopyTo ? "subarray" : "slice");
 				if (!args[2].IsLiteralZero()) {
 					Write(", ");
@@ -653,7 +666,7 @@ public class GenJsNoModule : GenBase
 				}
 			}
 			else {
-				Write(".splice(");
+				Write("splice(");
 				args[2].Accept(this, FuPriority.Argument);
 				Write(", ");
 				args[3].Accept(this, FuPriority.Argument);
@@ -663,7 +676,7 @@ public class GenJsNoModule : GenBase
 			WriteChar(')');
 			break;
 		case FuId.ArraySortPart:
-			WritePostfix(obj, ".subarray(");
+			WriteProperty(obj, "subarray(");
 			WriteStartEnd(args[0], args[1]);
 			Write(").sort()");
 			break;
@@ -671,7 +684,7 @@ public class GenJsNoModule : GenBase
 			WriteListAdd(obj, "push", args);
 			break;
 		case FuId.ListAddRange:
-			WritePostfix(obj, ".push(...");
+			WriteProperty(obj, "push(...");
 			args[0].Accept(this, FuPriority.Argument);
 			WriteChar(')');
 			break;
@@ -684,17 +697,18 @@ public class GenJsNoModule : GenBase
 		case FuId.ListClear:
 		case FuId.QueueClear:
 		case FuId.StackClear:
-			WritePostfix(obj, ".length = 0");
+			WriteProperty(obj, "length = 0");
 			break;
 		case FuId.ListInsert:
 			WriteListInsert(obj, "splice", args, ", 0, ");
 			break;
 		case FuId.ListLast:
 		case FuId.StackPeek:
-			WritePostfix(obj, ".at(-1)");
+			WriteProperty(obj, "at(-1)");
+			WriteNonNullOp();
 			break;
 		case FuId.ListRemoveAt:
-			WritePostfix(obj, ".splice(");
+			WriteProperty(obj, "splice(");
 			args[0].Accept(this, FuPriority.Argument);
 			Write(", 1)");
 			break;
@@ -702,10 +716,10 @@ public class GenJsNoModule : GenBase
 			WriteMethodCall(obj, "splice", args[0], args[1]);
 			break;
 		case FuId.ListSortAll:
-			WritePostfix(obj, ".sort((a, b) => a - b)");
+			WriteProperty(obj, "sort((a, b) => a - b)");
 			break;
 		case FuId.ListSortPart:
-			WritePostfix(obj, ".splice(");
+			WriteProperty(obj, "splice(");
 			args[0].Accept(this, FuPriority.Argument);
 			Write(", ");
 			args[1].Accept(this, FuPriority.Argument);
@@ -714,7 +728,7 @@ public class GenJsNoModule : GenBase
 			Write(".sort((a, b) => a - b))");
 			break;
 		case FuId.QueueDequeue:
-			WritePostfix(obj, ".shift()");
+			WriteProperty(obj, "shift()");
 			break;
 		case FuId.QueueEnqueue:
 			WriteMethodCall(obj, "push", args[0]);
@@ -758,7 +772,7 @@ public class GenJsNoModule : GenBase
 			// no operation
 			break;
 		case FuId.TextWriterWrite:
-			WritePostfix(obj, ".write(");
+			WriteProperty(obj, "write(");
 			EndWrite(args[0]);
 			break;
 		case FuId.TextWriterWriteChar:
@@ -775,7 +789,7 @@ public class GenJsNoModule : GenBase
 			else if (IsReferenceTo(obj, FuId.ConsoleOut))
 				WriteWriteLine("console.log", args);
 			else {
-				WritePostfix(obj, ".write(");
+				WriteProperty(obj, "write(");
 				if (args.Count != 0) {
 					// TODO: coalesce string literals
 					args[0].Accept(this, FuPriority.Add);
@@ -836,6 +850,8 @@ public class GenJsNoModule : GenBase
 			WriteChar(')');
 			break;
 		case FuId.EnvironmentGetEnvironmentVariable:
+			if (parent > FuPriority.CondOr)
+				WriteChar('(');
 			if (args[0] is FuLiteralString literal && IsIdentifier(literal.Value)) {
 				Write("process.env.");
 				Write(literal.Value);
@@ -845,6 +861,9 @@ public class GenJsNoModule : GenBase
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(']');
 			}
+			Write(" ?? null");
+			if (parent > FuPriority.CondOr)
+				WriteChar(')');
 			break;
 		case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
 			Write("BigInt(Date.now())");
@@ -874,6 +893,7 @@ public class GenJsNoModule : GenBase
 			else
 				args[1].Accept(this, FuPriority.Primary);
 			WriteCall(".exec", args[0]);
+			WriteNonNullOp();
 			Write(") != null");
 			if (parent > FuPriority.Equality)
 				WriteChar(')');
@@ -1113,8 +1133,9 @@ public class GenJsNoModule : GenBase
 	{
 	}
 
-	protected virtual void WriteAsType!(FuVar def)
+	protected virtual void WriteAsType!(FuExpr expr, FuVar def)
 	{
+		expr.Accept(this, FuPriority.Argument);
 	}
 
 	void WriteVarCast!(FuVar def, FuExpr value)
@@ -1122,8 +1143,7 @@ public class GenJsNoModule : GenBase
 		Write(def.IsAssigned ? "let " : "const ");
 		WriteCamelCaseNotKeyword(def.Name);
 		Write(" = ");
-		value.Accept(this, FuPriority.Argument);
-		WriteAsType(def);
+		WriteAsType(value, def);
 		WriteCharLine(';');
 	}
 

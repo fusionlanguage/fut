@@ -22485,8 +22485,10 @@ namespace Fusion
 				WriteChar('.');
 			}
 			WriteName(symbol);
-			if (symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuStringType)
+			if (symbol.Parent is FuForeach forEach && forEach.Collection.Type is FuStringType) {
 				Write(".codePointAt(0)");
+				WriteNonNullOp();
+			}
 		}
 
 		protected override void WriteCoercedInternal(FuType type, FuExpr expr, FuPriority parent)
@@ -22545,6 +22547,13 @@ namespace Fusion
 			WriteResourceName(name);
 		}
 
+		void WriteProperty(FuExpr expr, string s)
+		{
+			expr.Accept(this, FuPriority.Primary);
+			WriteMemberOp(expr, null);
+			Write(s);
+		}
+
 		internal override void VisitSymbolReference(FuSymbolReference expr, FuPriority parent)
 		{
 			switch (expr.Symbol!.Id) {
@@ -22557,12 +22566,12 @@ namespace Fusion
 			case FuId.ListCount:
 			case FuId.QueueCount:
 			case FuId.StackCount:
-				WritePostfix(expr.Left!, ".length");
+				WriteProperty(expr.Left!, "length");
 				break;
 			case FuId.HashSetCount:
 			case FuId.SortedSetCount:
 			case FuId.OrderedDictionaryCount:
-				WritePostfix(expr.Left!, ".size");
+				WriteProperty(expr.Left!, "size");
 				break;
 			case FuId.DictionaryCount:
 			case FuId.SortedDictionaryCount:
@@ -22570,7 +22579,7 @@ namespace Fusion
 				Write(".length");
 				break;
 			case FuId.MatchStart:
-				WritePostfix(expr.Left!, ".index");
+				WriteProperty(expr.Left!, "index");
 				break;
 			case FuId.MatchEnd:
 				if (parent > FuPriority.Add)
@@ -22603,7 +22612,7 @@ namespace Fusion
 
 		protected override void WriteStringLength(FuExpr expr)
 		{
-			WritePostfix(expr, ".length");
+			WriteProperty(expr, "length");
 		}
 
 		protected override void WriteCharAt(FuBinaryExpr expr)
@@ -22621,13 +22630,15 @@ namespace Fusion
 			if (IsWholeArray(array, offset, length))
 				array.Accept(this, parent);
 			else {
-				array.Accept(this, FuPriority.Primary);
-				WriteChar('.');
-				Write(method);
+				WriteProperty(array, method);
 				WriteChar('(');
 				WriteStartEnd(offset, length);
 				WriteChar(')');
 			}
+		}
+
+		protected virtual void WriteNonNullOp()
+		{
 		}
 
 		protected virtual void WriteDictionaryClearCast(FuExpr obj)
@@ -22737,10 +22748,11 @@ namespace Fusion
 					WriteLocalName(method, FuPriority.Primary);
 				else {
 					if (IsReferenceTo(obj!, FuId.BasePtr))
-						Write("super");
-					else
+						Write("super.");
+					else {
 						obj!.Accept(this, FuPriority.Primary);
-					WriteChar('.');
+						WriteMemberOp(obj!, null);
+					}
 					WriteName(method);
 				}
 				WriteCoercedArgsInParentheses(method, args);
@@ -22791,7 +22803,7 @@ namespace Fusion
 				WriteMethodCall(obj!, "replaceAll", args[0], args[1]);
 				break;
 			case FuId.StringSubstring:
-				WritePostfix(obj!, ".substring(");
+				WriteProperty(obj!, "substring(");
 				args[0].Accept(this, FuPriority.Argument);
 				if (args.Count == 2) {
 					Write(", ");
@@ -22800,14 +22812,14 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.StringToLower:
-				WritePostfix(obj!, ".toLowerCase()");
+				WriteProperty(obj!, "toLowerCase()");
 				break;
 			case FuId.StringToUpper:
-				WritePostfix(obj!, ".toUpperCase()");
+				WriteProperty(obj!, "toUpperCase()");
 				break;
 			case FuId.ArrayFillAll:
 			case FuId.ArrayFillPart:
-				WritePostfix(obj!, ".fill(");
+				WriteProperty(obj!, "fill(");
 				args[0].Accept(this, FuPriority.Argument);
 				if (args.Count == 3) {
 					Write(", ");
@@ -22818,8 +22830,9 @@ namespace Fusion
 			case FuId.ArrayCopyTo:
 			case FuId.ListCopyTo:
 				args[1].Accept(this, FuPriority.Primary);
+				WriteMemberOp(args[1], null);
 				if (obj!.Type!.AsClassType().GetElementType() is FuNumericType) {
-					Write(".set(");
+					Write("set(");
 					WriteSlice(obj!, args[0], args[3], FuPriority.Argument, method.Id == FuId.ArrayCopyTo ? "subarray" : "slice");
 					if (!args[2].IsLiteralZero()) {
 						Write(", ");
@@ -22827,7 +22840,7 @@ namespace Fusion
 					}
 				}
 				else {
-					Write(".splice(");
+					Write("splice(");
 					args[2].Accept(this, FuPriority.Argument);
 					Write(", ");
 					args[3].Accept(this, FuPriority.Argument);
@@ -22837,7 +22850,7 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.ArraySortPart:
-				WritePostfix(obj!, ".subarray(");
+				WriteProperty(obj!, "subarray(");
 				WriteStartEnd(args[0], args[1]);
 				Write(").sort()");
 				break;
@@ -22845,7 +22858,7 @@ namespace Fusion
 				WriteListAdd(obj!, "push", args);
 				break;
 			case FuId.ListAddRange:
-				WritePostfix(obj!, ".push(...");
+				WriteProperty(obj!, "push(...");
 				args[0].Accept(this, FuPriority.Argument);
 				WriteChar(')');
 				break;
@@ -22858,17 +22871,18 @@ namespace Fusion
 			case FuId.ListClear:
 			case FuId.QueueClear:
 			case FuId.StackClear:
-				WritePostfix(obj!, ".length = 0");
+				WriteProperty(obj!, "length = 0");
 				break;
 			case FuId.ListInsert:
 				WriteListInsert(obj!, "splice", args, ", 0, ");
 				break;
 			case FuId.ListLast:
 			case FuId.StackPeek:
-				WritePostfix(obj!, ".at(-1)");
+				WriteProperty(obj!, "at(-1)");
+				WriteNonNullOp();
 				break;
 			case FuId.ListRemoveAt:
-				WritePostfix(obj!, ".splice(");
+				WriteProperty(obj!, "splice(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write(", 1)");
 				break;
@@ -22876,10 +22890,10 @@ namespace Fusion
 				WriteMethodCall(obj!, "splice", args[0], args[1]);
 				break;
 			case FuId.ListSortAll:
-				WritePostfix(obj!, ".sort((a, b) => a - b)");
+				WriteProperty(obj!, "sort((a, b) => a - b)");
 				break;
 			case FuId.ListSortPart:
-				WritePostfix(obj!, ".splice(");
+				WriteProperty(obj!, "splice(");
 				args[0].Accept(this, FuPriority.Argument);
 				Write(", ");
 				args[1].Accept(this, FuPriority.Argument);
@@ -22888,7 +22902,7 @@ namespace Fusion
 				Write(".sort((a, b) => a - b))");
 				break;
 			case FuId.QueueDequeue:
-				WritePostfix(obj!, ".shift()");
+				WriteProperty(obj!, "shift()");
 				break;
 			case FuId.QueueEnqueue:
 				WriteMethodCall(obj!, "push", args[0]);
@@ -22931,7 +22945,7 @@ namespace Fusion
 			case FuId.TextWriterFlush:
 				break;
 			case FuId.TextWriterWrite:
-				WritePostfix(obj!, ".write(");
+				WriteProperty(obj!, "write(");
 				EndWrite(args[0]);
 				break;
 			case FuId.TextWriterWriteChar:
@@ -22948,7 +22962,7 @@ namespace Fusion
 				else if (IsReferenceTo(obj!, FuId.ConsoleOut))
 					WriteWriteLine("console.log", args);
 				else {
-					WritePostfix(obj!, ".write(");
+					WriteProperty(obj!, "write(");
 					if (args.Count != 0) {
 						args[0].Accept(this, FuPriority.Add);
 						Write(" + ");
@@ -23008,6 +23022,8 @@ namespace Fusion
 				WriteChar(')');
 				break;
 			case FuId.EnvironmentGetEnvironmentVariable:
+				if (parent > FuPriority.CondOr)
+					WriteChar('(');
 				if (args[0] is FuLiteralString literal && IsIdentifier(literal.Value)) {
 					Write("process.env.");
 					Write(literal.Value);
@@ -23017,6 +23033,9 @@ namespace Fusion
 					args[0].Accept(this, FuPriority.Argument);
 					WriteChar(']');
 				}
+				Write(" ?? null");
+				if (parent > FuPriority.CondOr)
+					WriteChar(')');
 				break;
 			case FuId.DateTimeOffsetUtcNowToUnixTimeMilliseconds:
 				Write("BigInt(Date.now())");
@@ -23046,6 +23065,7 @@ namespace Fusion
 				else
 					args[1].Accept(this, FuPriority.Primary);
 				WriteCall(".exec", args[0]);
+				WriteNonNullOp();
 				Write(") != null");
 				if (parent > FuPriority.Equality)
 					WriteChar(')');
@@ -23282,8 +23302,9 @@ namespace Fusion
 		{
 		}
 
-		protected virtual void WriteAsType(FuVar def)
+		protected virtual void WriteAsType(FuExpr expr, FuVar def)
 		{
+			expr.Accept(this, FuPriority.Argument);
 		}
 
 		void WriteVarCast(FuVar def, FuExpr value)
@@ -23291,8 +23312,7 @@ namespace Fusion
 			Write(def.IsAssigned ? "let " : "const ");
 			WriteCamelCaseNotKeyword(def.Name);
 			Write(" = ");
-			value.Accept(this, FuPriority.Argument);
-			WriteAsType(def);
+			WriteAsType(value, def);
 			WriteCharLine(';');
 		}
 
@@ -23798,10 +23818,32 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteAsType(FuVar def)
+		protected override void WriteMemberOp(FuExpr left, FuSymbolReference? symbol)
 		{
-			Write(" as ");
-			Write(def.Type!.Name);
+			if (left.Type != null && left.Type!.Nullable)
+				WriteChar('!');
+			WriteChar('.');
+		}
+
+		protected override void WriteIndexingInfix(FuExpr collection)
+		{
+			if (collection.Type!.Nullable)
+				WriteChar('!');
+		}
+
+		protected override void WriteIndexingExpr(FuBinaryExpr expr, FuPriority parent)
+		{
+			if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass) {
+				if (parent > FuPriority.Rel)
+					WriteChar('(');
+				WriteMethodCall(expr.Left, "get", expr.Right!);
+				Write(" as ");
+				WriteType(expr.Type!);
+				if (parent > FuPriority.Rel)
+					WriteChar(')');
+			}
+			else
+				base.WriteIndexingExpr(expr, parent);
 		}
 
 		protected override void WriteBinaryOperand(FuExpr expr, FuPriority parent, FuBinaryExpr binary)
@@ -23842,6 +23884,18 @@ namespace Fusion
 				WriteType(binary.Left.Type!);
 				EndStatement();
 			}
+		}
+
+		protected override void WriteNonNullOp()
+		{
+			WriteChar('!');
+		}
+
+		protected override void WriteAsType(FuExpr expr, FuVar def)
+		{
+			expr.Accept(this, FuPriority.Rel);
+			Write(" as ");
+			Write(def.Type!.Name);
 		}
 
 		protected override void WriteDictionaryClearCast(FuExpr obj)
@@ -23889,7 +23943,7 @@ namespace Fusion
 		{
 			WriteDoc(field.Documentation);
 			WriteVisibility(field.Visibility);
-			if (field.Value == null && !field.Type!.IsFinal()) {
+			if (field.Type!.IsFinal() ? !(field.Type is FuArrayStorageType) && field.Value is FuLiteralNull : field.Value == null) {
 				WriteName(field);
 				Write("!: ");
 				WriteType(field.Type!);

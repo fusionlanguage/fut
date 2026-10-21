@@ -154,10 +154,32 @@ public class GenTs : GenJs
 		}
 	}
 
-	protected override void WriteAsType!(FuVar def)
+	protected override void WriteMemberOp!(FuExpr left, FuSymbolReference? symbol)
 	{
-		Write(" as ");
-		Write(def.Type.Name);
+		if (left.Type != null && left.Type.Nullable)
+			WriteChar('!');
+		WriteChar('.');
+	}
+
+	protected override void WriteIndexingInfix!(FuExpr collection)
+	{
+		if (collection.Type.Nullable)
+			WriteChar('!');
+	}
+
+	protected override void WriteIndexingExpr!(FuBinaryExpr expr, FuPriority parent)
+	{
+		if (expr.Left.Type is FuClassType dict && dict.Class.Id == FuId.OrderedDictionaryClass) {
+			if (parent > FuPriority.Rel)
+				WriteChar('(');
+			WriteMethodCall(expr.Left, "get", expr.Right);
+			Write(" as ");
+			WriteType(expr.Type);
+			if (parent > FuPriority.Rel)
+				WriteChar(')');
+		}
+		else
+			base.WriteIndexingExpr(expr, parent);
 	}
 
 	protected override void WriteBinaryOperand!(FuExpr expr, FuPriority parent, FuBinaryExpr binary)
@@ -199,6 +221,18 @@ public class GenTs : GenJs
 			WriteType(binary.Left.Type);
 			EndStatement();
 		}
+	}
+
+	protected override void WriteNonNullOp!()
+	{
+		WriteChar('!');
+	}
+
+	protected override void WriteAsType!(FuExpr expr, FuVar def)
+	{
+		expr.Accept(this, FuPriority.Rel);
+		Write(" as ");
+		Write(def.Type.Name);
 	}
 
 	protected override void WriteDictionaryClearCast!(FuExpr obj)
@@ -246,7 +280,7 @@ public class GenTs : GenJs
 	{
 		WriteDoc(field.Documentation);
 		WriteVisibility(field.Visibility);
-		if (field.Value == null && !field.Type.IsFinal()) {
+		if (field.Type.IsFinal() ? !(field.Type is FuArrayStorageType) && field.Value is FuLiteralNull : field.Value == null) {
 			WriteName(field);
 			Write("!: ");
 			WriteType(field.Type);
