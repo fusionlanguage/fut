@@ -2399,7 +2399,7 @@ class FuConsoleHost : public GenHost
 {
 public:
 	virtual ~FuConsoleHost() = default;
-	static constexpr std::string_view version = "3.3.8";
+	static constexpr std::string_view version = "3.3.9";
 	static void usage(std::string_view app);
 	bool hasErrors() const;
 	void setErrors(bool value);
