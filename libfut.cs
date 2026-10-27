@@ -5714,6 +5714,14 @@ namespace Fusion
 			return expr;
 		}
 
+		void AddCppFriendMain()
+		{
+			if (this.CurrentMethod != null && this.CurrentMethod!.Id == FuId.Main) {
+				FuClass klass = (FuClass) this.CurrentMethod!.Parent!;
+				klass.CppFriends.Add(this.CurrentMethod!.Parameters.Count() == 1 ? "int main(int argc, char **argv)" : "int main()");
+			}
+		}
+
 		FuContainerType GetCurrentContainer()
 		{
 			for (FuScope? scope = this.CurrentScope; scope != null; scope = scope!.Parent) {
@@ -5726,10 +5734,12 @@ namespace Fusion
 		void AddCppFriend(FuMember member)
 		{
 			FuContainerType currentContainer = GetCurrentContainer();
-			if (member.Parent != currentContainer || (this.CurrentMethod != null && this.CurrentMethod!.Id == FuId.Main)) {
+			if (member.Parent != currentContainer) {
 				FuClass targetClass = (FuClass) member.Parent!;
 				targetClass.CppFriends.Add(currentContainer.Name);
 			}
+			else
+				AddCppFriendMain();
 		}
 
 		FuExpr VisitSymbolReference(FuSymbolReference expr)
@@ -5741,7 +5751,7 @@ namespace Fusion
 						if (memberClass != GetCurrentContainer())
 							ReportError(expr, $"Cannot access private member '{expr.Name}'");
 						else
-							AddCppFriend(nearMember);
+							AddCppFriendMain();
 					}
 					else if (nearMember.Visibility == FuVisibility.Internal)
 						AddCppFriend(nearMember);
@@ -5784,7 +5794,7 @@ namespace Fusion
 					if (member.Parent != this.CurrentMethod!.Parent || this.CurrentMethod!.Parent != scope)
 						ReportError(expr, $"Cannot access private member '{expr.Name}'");
 					else
-						AddCppFriend(member);
+						AddCppFriendMain();
 					break;
 				case FuVisibility.Internal:
 					AddCppFriend(member);
@@ -10744,7 +10754,7 @@ namespace Fusion
 			}
 		}
 
-		protected abstract void WriteClassInternal(FuClass klass, FuProgram program);
+		protected abstract void WriteClassInternal(FuClass klass);
 
 		protected override void WriteClass(FuClass klass, FuProgram program)
 		{
@@ -10754,7 +10764,7 @@ namespace Fusion
 				if (symbol is FuField field && field.Type!.GetBaseType() is FuStorageType storage && storage.Class.Id == FuId.None)
 					WriteClass(storage.Class, program);
 			}
-			WriteClassInternal(klass, program);
+			WriteClassInternal(klass);
 		}
 
 		static string ChangeExtension(string path, string ext)
@@ -14205,7 +14215,7 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteClassInternal(FuClass klass, FuProgram program)
+		protected override void WriteClassInternal(FuClass klass)
 		{
 			if (klass.Id == FuId.ExceptionClass)
 				return;
@@ -14918,7 +14928,7 @@ namespace Fusion
 				foreach (FuClass klass in program.System.JsonClasses)
 					WriteTypedef(klass);
 				foreach (FuClass klass in program.System.JsonClasses)
-					WriteClassInternal(klass, program);
+					WriteClassInternal(klass);
 				foreach (FuClass klass in program.System.JsonClasses)
 					WriteClassCode(klass);
 			}
@@ -17460,7 +17470,7 @@ namespace Fusion
 			}
 		}
 
-		protected override void WriteClassInternal(FuClass klass, FuProgram program)
+		protected override void WriteClassInternal(FuClass klass)
 		{
 			WriteNewLine();
 			WriteDoc(klass.Documentation);
@@ -17470,14 +17480,7 @@ namespace Fusion
 			WriteDeclarations(klass, FuVisibility.Internal, "private: // internal");
 			foreach (string name in klass.CppFriends) {
 				Write("friend ");
-				if (name == klass.Name) {
-					Write("int main(");
-					if (program.Main!.Parameters.Count() == 1)
-						Write("int argc, char **argv");
-					WriteChar(')');
-				}
-				else
-					Write(name);
+				Write(name);
 				WriteCharLine(';');
 			}
 			WriteDeclarations(klass, FuVisibility.Private, "private:");
@@ -17741,7 +17744,7 @@ namespace Fusion
 				foreach (FuClass klass in program.System.JsonClasses)
 					WriteForwardClass(klass);
 				foreach (FuClass klass in program.System.JsonClasses)
-					WriteClassInternal(klass, program);
+					WriteClassInternal(klass);
 				foreach (FuClass klass in program.System.JsonClasses)
 					WriteMethods(klass);
 			}

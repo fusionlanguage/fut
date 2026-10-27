@@ -2434,6 +2434,7 @@ private:
 	bool coercePermanent(const FuExpr * expr, const FuType * type) const;
 	std::shared_ptr<FuExpr> visitInterpolatedString(std::shared_ptr<FuInterpolatedString> expr);
 	std::shared_ptr<FuExpr> lookup(std::shared_ptr<FuSymbolReference> expr, const FuScope * scope);
+	void addCppFriendMain() const;
 	FuContainerType * getCurrentContainer() const;
 	void addCppFriend(const FuMember * member) const;
 	std::shared_ptr<FuExpr> visitSymbolReference(std::shared_ptr<FuSymbolReference> expr);
@@ -2869,7 +2870,7 @@ protected:
 	virtual void writeUnreachable(const FuAssert * statement);
 	void writeAssert(const FuAssert * statement) override;
 	void writeMethods(const FuClass * klass);
-	virtual void writeClassInternal(const FuClass * klass, const FuProgram * program) = 0;
+	virtual void writeClassInternal(const FuClass * klass) = 0;
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 	void createHeaderFile(std::string_view outputFile, std::string_view headerExt);
 	void createImplementationFile(const FuProgram * program, std::string_view outputFile, std::string_view headerExt);
@@ -2955,7 +2956,7 @@ protected:
 	void writeField(const FuField * field) override;
 	bool needsConstructor(const FuClass * klass) const override;
 	void writeSignatures(const FuClass * klass, bool pub);
-	void writeClassInternal(const FuClass * klass, const FuProgram * program) override;
+	void writeClassInternal(const FuClass * klass) override;
 	void writeConstructor(const FuClass * klass);
 	void writeDestructor(const FuClass * klass);
 	void writeMethod(const FuMethod * method) override;
@@ -3177,7 +3178,7 @@ protected:
 	void writeThrowMessage(const FuExpr * expr) override;
 	void writeEnum(const FuEnum * enu) override;
 	void writeField(const FuField * field) override;
-	void writeClassInternal(const FuClass * klass, const FuProgram * program) override;
+	void writeClassInternal(const FuClass * klass) override;
 	void writeMethod(const FuMethod * method) override;
 private: // internal
 	void visitLiteralNull() override;

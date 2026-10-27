@@ -2098,7 +2098,7 @@ public class GenCpp : GenCCpp
 		}
 	}
 
-	protected override void WriteClassInternal!(FuClass klass, FuProgram program)
+	protected override void WriteClassInternal!(FuClass klass)
 	{
 		WriteNewLine();
 		WriteDoc(klass.Documentation);
@@ -2108,14 +2108,7 @@ public class GenCpp : GenCCpp
 		WriteDeclarations(klass, FuVisibility.Internal, "private: // internal");
 		foreach (string name in klass.CppFriends) {
 			Write("friend ");
-			if (name == klass.Name) {
-				Write("int main(");
-				if (program.Main.Parameters.Count() == 1)
-					Write("int argc, char **argv");
-				WriteChar(')');
-			}
-			else
-				Write(name);
+			Write(name);
 			WriteCharLine(';');
 		}
 		WriteDeclarations(klass, FuVisibility.Private, "private:");
@@ -2382,7 +2375,7 @@ public class GenCpp : GenCCpp
 			foreach (FuClass klass in program.System.JsonClasses)
 				WriteForwardClass(klass);
 			foreach (FuClass klass in program.System.JsonClasses)
-				WriteClassInternal(klass, program);
+				WriteClassInternal(klass);
 			foreach (FuClass klass in program.System.JsonClasses)
 				WriteMethods(klass);
 		}

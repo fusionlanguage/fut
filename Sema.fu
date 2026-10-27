@@ -219,6 +219,14 @@ public class FuSema
 		return expr;
 	}
 
+	void AddCppFriendMain()
+	{
+		if (this.CurrentMethod != null && this.CurrentMethod.Id == FuId.Main) {
+			assert this.CurrentMethod.Parent is FuClass! klass;
+			klass.CppFriends.Add(this.CurrentMethod.Parameters.Count() == 1 ? "int main(int argc, char **argv)" : "int main()");
+		}
+	}
+
 	FuContainerType! GetCurrentContainer() // TODO: refactor to this.CurrentMethod.Parent ?
 	{
 		for (FuScope!? scope = this.CurrentScope; scope != null; scope = scope.Parent) {
@@ -231,11 +239,12 @@ public class FuSema
 	void AddCppFriend(FuMember member)
 	{
 		FuContainerType currentContainer = GetCurrentContainer();
-		if (member.Parent != currentContainer
-		 || (this.CurrentMethod != null && this.CurrentMethod.Id == FuId.Main)) {
+		if (member.Parent != currentContainer) {
 			assert member.Parent is FuClass! targetClass;
 			targetClass.CppFriends.Add(currentContainer.Name);
 		}
+		else
+			AddCppFriendMain();
 	}
 
 	FuExpr# VisitSymbolReference!(FuSymbolReference# expr)
@@ -248,7 +257,7 @@ public class FuSema
 					if (memberClass != GetCurrentContainer())
 						ReportError(expr, $"Cannot access private member '{expr.Name}'");
 					else
-						AddCppFriend(nearMember); // possibly from Main
+						AddCppFriendMain();
 				}
 				else if (nearMember.Visibility == FuVisibility.Internal)
 					AddCppFriend(nearMember);
@@ -294,7 +303,7 @@ public class FuSema
 				 || this.CurrentMethod.Parent != scope) // enforced by Java, but not C++/C#/TS
 					ReportError(expr, $"Cannot access private member '{expr.Name}'");
 				else
-					AddCppFriend(member); // possibly from Main
+					AddCppFriendMain();
 				break;
 			case FuVisibility.Internal:
 				AddCppFriend(member);
