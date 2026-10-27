@@ -231,7 +231,8 @@ public class FuSema
 	void AddCppFriend(FuMember member)
 	{
 		FuContainerType currentContainer = GetCurrentContainer();
-		if (member.Parent != currentContainer) {
+		if (member.Parent != currentContainer
+		 || (this.CurrentMethod != null && this.CurrentMethod.Id == FuId.Main)) {
 			assert member.Parent is FuClass! targetClass;
 			targetClass.CppFriends.Add(currentContainer.Name);
 		}
@@ -243,9 +244,12 @@ public class FuSema
 			FuExpr# resolved = Lookup(expr, this.CurrentScope);
 			if (expr.Symbol is FuMember nearMember) {
 				if (nearMember.Visibility == FuVisibility.Private
-				 && nearMember.Parent is FuClass memberClass // not local const
-				 && memberClass != GetCurrentContainer())
-					ReportError(expr, $"Cannot access private member '{expr.Name}'");
+				 && nearMember.Parent is FuClass memberClass) { // not local const
+					if (memberClass != GetCurrentContainer())
+						ReportError(expr, $"Cannot access private member '{expr.Name}'");
+					else
+						AddCppFriend(nearMember); // possibly from Main
+				}
 				else if (nearMember.Visibility == FuVisibility.Internal)
 					AddCppFriend(nearMember);
 				if (!nearMember.IsStatic()
@@ -289,6 +293,8 @@ public class FuSema
 				if (member.Parent != this.CurrentMethod.Parent
 				 || this.CurrentMethod.Parent != scope) // enforced by Java, but not C++/C#/TS
 					ReportError(expr, $"Cannot access private member '{expr.Name}'");
+				else
+					AddCppFriend(member); // possibly from Main
 				break;
 			case FuVisibility.Internal:
 				AddCppFriend(member);

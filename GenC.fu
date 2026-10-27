@@ -3428,7 +3428,7 @@ public class GenC : GenCCpp
 		}
 	}
 
-	protected override void WriteClassInternal!(FuClass klass)
+	protected override void WriteClassInternal!(FuClass klass, FuProgram program)
 	{
 		if (klass.Id == FuId.ExceptionClass)
 			return;
@@ -4144,7 +4144,7 @@ public class GenC : GenCCpp
 			foreach (FuClass klass in program.System.JsonClasses)
 				WriteTypedef(klass);
 			foreach (FuClass klass in program.System.JsonClasses)
-				WriteClassInternal(klass);
+				WriteClassInternal(klass, program);
 			foreach (FuClass klass in program.System.JsonClasses)
 				WriteClassCode(klass);
 		}

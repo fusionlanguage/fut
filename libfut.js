@@ -6064,7 +6064,7 @@ export class FuSema
 	#addCppFriend(member)
 	{
 		let currentContainer = this.#getCurrentContainer();
-		if (member.parent != currentContainer) {
+		if (member.parent != currentContainer || (this.#currentMethod != null && this.#currentMethod.id == FuId.MAIN)) {
 			let targetClass = member.parent;
 			targetClass.cppFriends.add(currentContainer.name);
 		}
@@ -6077,8 +6077,12 @@ export class FuSema
 			let nearMember;
 			if ((nearMember = expr.symbol) instanceof FuMember) {
 				let memberClass;
-				if (nearMember.visibility == FuVisibility.PRIVATE && (memberClass = nearMember.parent) instanceof FuClass && memberClass != this.#getCurrentContainer())
-					this.#reportError(expr, `Cannot access private member '${expr.name}'`);
+				if (nearMember.visibility == FuVisibility.PRIVATE && (memberClass = nearMember.parent) instanceof FuClass) {
+					if (memberClass != this.#getCurrentContainer())
+						this.#reportError(expr, `Cannot access private member '${expr.name}'`);
+					else
+						this.#addCppFriend(nearMember);
+				}
 				else if (nearMember.visibility == FuVisibility.INTERNAL)
 					this.#addCppFriend(nearMember);
 				if (!nearMember.isStatic() && (this.#currentMethod == null || this.#currentMethod.isStatic()))
@@ -6130,6 +6134,8 @@ export class FuSema
 			case FuVisibility.PRIVATE:
 				if (member.parent != this.#currentMethod.parent || this.#currentMethod.parent != scope)
 					this.#reportError(expr, `Cannot access private member '${expr.name}'`);
+				else
+					this.#addCppFriend(member);
 				break;
 			case FuVisibility.INTERNAL:
 				this.#addCppFriend(member);
@@ -11317,7 +11323,7 @@ export class GenCCpp extends GenCCppD
 			if ((field = symbol) instanceof FuField && (storage = field.type.getBaseType()) instanceof FuStorageType && storage.class.id == FuId.NONE)
 				this.writeClass(storage.class, program);
 		}
-		this.writeClassInternal(klass);
+		this.writeClassInternal(klass, program);
 	}
 
 	static #changeExtension(path, ext)
@@ -14821,7 +14827,7 @@ export class GenC extends GenCCpp
 		}
 	}
 
-	writeClassInternal(klass)
+	writeClassInternal(klass, program)
 	{
 		if (klass.id == FuId.EXCEPTION_CLASS)
 			return;
@@ -15537,7 +15543,7 @@ export class GenC extends GenCCpp
 			for (const klass of program.system.jsonClasses)
 				this.#writeTypedef(klass);
 			for (const klass of program.system.jsonClasses)
-				this.writeClassInternal(klass);
+				this.writeClassInternal(klass, program);
 			for (const klass of program.system.jsonClasses)
 				this.#writeClassCode(klass);
 		}
@@ -18121,7 +18127,7 @@ export class GenCpp extends GenCCpp
 		}
 	}
 
-	writeClassInternal(klass)
+	writeClassInternal(klass, program)
 	{
 		this.writeNewLine();
 		this.writeDoc(klass.documentation);
@@ -18131,7 +18137,14 @@ export class GenCpp extends GenCCpp
 		this.#writeDeclarations(klass, FuVisibility.INTERNAL, "private: // internal");
 		for (const name of Array.from(klass.cppFriends).sort()) {
 			this.write("friend ");
-			this.write(name);
+			if (name == klass.name) {
+				this.write("int main(");
+				if (program.main.parameters.count() == 1)
+					this.write("int argc, char **argv");
+				this.writeChar(41);
+			}
+			else
+				this.write(name);
 			this.writeCharLine(59);
 		}
 		this.#writeDeclarations(klass, FuVisibility.PRIVATE, "private:");
@@ -18395,7 +18408,7 @@ export class GenCpp extends GenCCpp
 			for (const klass of program.system.jsonClasses)
 				this.#writeForwardClass(klass);
 			for (const klass of program.system.jsonClasses)
-				this.writeClassInternal(klass);
+				this.writeClassInternal(klass, program);
 			for (const klass of program.system.jsonClasses)
 				this.writeMethods(klass);
 		}

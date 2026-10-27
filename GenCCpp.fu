@@ -258,7 +258,7 @@ public abstract class GenCCpp : GenCCppD
 		}
 	}
 
-	protected abstract void WriteClassInternal!(FuClass klass);
+	protected abstract void WriteClassInternal!(FuClass klass, FuProgram program);
 
 	protected override void WriteClass!(FuClass klass, FuProgram program)
 	{
@@ -269,7 +269,7 @@ public abstract class GenCCpp : GenCCppD
 			if (symbol is FuField field && field.Type.GetBaseType() is FuStorageType storage && storage.Class.Id == FuId.None)
 				WriteClass(storage.Class, program);
 		}
-		WriteClassInternal(klass);
+		WriteClassInternal(klass, program);
 	}
 
 	static string() ChangeExtension(string path, string ext)

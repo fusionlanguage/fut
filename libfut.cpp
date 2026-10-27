@@ -6241,7 +6241,7 @@ FuContainerType * FuSema::getCurrentContainer() const
 void FuSema::addCppFriend(const FuMember * member) const
 {
 	const FuContainerType * currentContainer = getCurrentContainer();
-	if (member->parent != currentContainer) {
+	if (member->parent != currentContainer || (this->currentMethod != nullptr && this->currentMethod->id == FuId::main)) {
 		FuClass * targetClass = static_cast<FuClass *>(member->parent);
 		targetClass->cppFriends.insert(currentContainer->name);
 	}
@@ -6253,8 +6253,12 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		std::shared_ptr<FuExpr> resolved = lookup(expr, this->currentScope);
 		if (const FuMember *nearMember = dynamic_cast<const FuMember *>(expr->symbol)) {
 			const FuClass * memberClass;
-			if (nearMember->visibility == FuVisibility::private_ && (memberClass = dynamic_cast<const FuClass *>(nearMember->parent)) && memberClass != getCurrentContainer())
-				reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
+			if (nearMember->visibility == FuVisibility::private_ && (memberClass = dynamic_cast<const FuClass *>(nearMember->parent))) {
+				if (memberClass != getCurrentContainer())
+					reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
+				else
+					addCppFriend(nearMember);
+			}
 			else if (nearMember->visibility == FuVisibility::internal)
 				addCppFriend(nearMember);
 			if (!nearMember->isStatic() && (this->currentMethod == nullptr || this->currentMethod->isStatic()))
@@ -6303,6 +6307,8 @@ std::shared_ptr<FuExpr> FuSema::visitSymbolReference(std::shared_ptr<FuSymbolRef
 		case FuVisibility::private_:
 			if (member->parent != this->currentMethod->parent || this->currentMethod->parent != scope)
 				reportError(expr.get(), std::format("Cannot access private member '{}'", expr->name));
+			else
+				addCppFriend(member);
 			break;
 		case FuVisibility::internal:
 			addCppFriend(member);
@@ -11407,7 +11413,7 @@ void GenCCpp::writeClass(const FuClass * klass, const FuProgram * program)
 		if ((field = dynamic_cast<const FuField *>(symbol)) && (storage = dynamic_cast<const FuStorageType *>(field->type->getBaseType())) && storage->class_->id == FuId::none)
 			writeClass(storage->class_, program);
 	}
-	writeClassInternal(klass);
+	writeClassInternal(klass, program);
 }
 
 std::string GenCCpp::changeExtension(std::string_view path, std::string_view ext)
@@ -14792,7 +14798,7 @@ void GenC::writeSignatures(const FuClass * klass, bool pub)
 	}
 }
 
-void GenC::writeClassInternal(const FuClass * klass)
+void GenC::writeClassInternal(const FuClass * klass, const FuProgram * program)
 {
 	if (klass->id == FuId::exceptionClass)
 		return;
@@ -15502,7 +15508,7 @@ void GenC::writeLibrary(const FuProgram * program)
 		for (const FuClass * klass : program->system->jsonClasses)
 			writeTypedef(klass);
 		for (const FuClass * klass : program->system->jsonClasses)
-			writeClassInternal(klass);
+			writeClassInternal(klass, program);
 		for (const FuClass * klass : program->system->jsonClasses)
 			writeClassCode(klass);
 	}
@@ -17924,7 +17930,7 @@ void GenCpp::writeDeclarations(const FuClass * klass, FuVisibility visibility, s
 	}
 }
 
-void GenCpp::writeClassInternal(const FuClass * klass)
+void GenCpp::writeClassInternal(const FuClass * klass, const FuProgram * program)
 {
 	writeNewLine();
 	writeDoc(klass->documentation.get());
@@ -17934,7 +17940,14 @@ void GenCpp::writeClassInternal(const FuClass * klass)
 	writeDeclarations(klass, FuVisibility::internal, "private: // internal");
 	for (std::string_view name : klass->cppFriends) {
 		write("friend ");
-		write(name);
+		if (name == klass->name) {
+			write("int main(");
+			if (program->main->parameters.count() == 1)
+				write("int argc, char **argv");
+			writeChar(')');
+		}
+		else
+			write(name);
 		writeCharLine(';');
 	}
 	writeDeclarations(klass, FuVisibility::private_, "private:");
@@ -18194,7 +18207,7 @@ void GenCpp::writeProgram(const FuProgram * program, std::string_view outputFile
 		for (const FuClass * klass : program->system->jsonClasses)
 			writeForwardClass(klass);
 		for (const FuClass * klass : program->system->jsonClasses)
-			writeClassInternal(klass);
+			writeClassInternal(klass, program);
 		for (const FuClass * klass : program->system->jsonClasses)
 			writeMethods(klass);
 	}

@@ -1,13 +1,13 @@
 public static class Runner
 {
-	public static bool Ok()
+	static bool Ok()
 	{
 		return true;
 	}
 
 	public static int Main() //FAIL: cl
 	{
-		if (Ok()) {
+		if (Ok() && Runner.Ok()) {
 			Console.WriteLine("PASSED");
 			return 0;
 		}
