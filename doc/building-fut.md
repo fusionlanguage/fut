@@ -13,8 +13,8 @@ Build with:
 
 ## Building a C# fut
 
-You need [.NET 8.0 or newer SDK](https://dotnet.microsoft.com/en-us/download).
-On Windows, it is included in Visual Studio 2022.
+You need [.NET 10.0 or newer SDK](https://dotnet.microsoft.com/en-us/download).
+On Windows, it is included in Visual Studio 2026.
 Build with:
 
     make FUT_HOST=cs
