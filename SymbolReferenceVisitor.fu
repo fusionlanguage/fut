@@ -167,6 +167,10 @@ public class FuSymbolReferenceVisitor : FuVisitor
 	{
 	}
 
+	internal override void VisitLiteralHex!(long value)
+	{
+	}
+
 	internal override void VisitLiteralChar!(int value)
 	{
 	}
