@@ -38,6 +38,7 @@ enum class FuToken
 	endOfFile,
 	id,
 	literalLong,
+	literalHex,
 	literalDouble,
 	literalChar,
 	literalString,
@@ -397,6 +398,7 @@ class FuLiteralNull;
 class FuLiteralFalse;
 class FuLiteralTrue;
 class FuLiteralLong;
+class FuLiteralHex;
 class FuLiteralChar;
 class FuLiteralDouble;
 class FuLiteralString;
@@ -556,7 +558,7 @@ private:
 	bool skippingUnmet = false;
 	std::stack<bool> preElseStack;
 	int readByte();
-	static constexpr int replacementChar = 65533;
+	static constexpr int replacementChar = 0xfffd;
 	int readContinuationByte(int hi);
 	void fillNextChar();
 	bool eatChar(int c);
@@ -706,6 +708,7 @@ private: // internal
 	virtual void visitLiteralFalse() = 0;
 	virtual void visitLiteralTrue() = 0;
 	virtual void visitLiteralLong(int64_t value, FuPriority parent) = 0;
+	virtual void visitLiteralHex(int64_t value) = 0;
 	virtual void visitLiteralChar(int value) = 0;
 	virtual void visitLiteralDouble(double value) = 0;
 	virtual void visitLiteralString(std::string_view value) = 0;
@@ -738,6 +741,7 @@ private: // internal
 	friend FuLiteralChar;
 	friend FuLiteralDouble;
 	friend FuLiteralFalse;
+	friend FuLiteralHex;
 	friend FuLiteralLong;
 	friend FuLiteralNull;
 	friend FuLiteralString;
@@ -1039,6 +1043,7 @@ public:
 private: // internal
 	int64_t value;
 	friend FuLiteralChar;
+	friend FuLiteralHex;
 	friend FuRangeType;
 	friend FuSema;
 	friend FuSystem;
@@ -1050,6 +1055,14 @@ private: // internal
 	friend GenJava;
 	friend GenPy;
 	friend GenTyped;
+};
+
+class FuLiteralHex : public FuLiteralLong
+{
+public:
+	FuLiteralHex() = default;
+	void accept(FuVisitor * visitor, FuPriority parent) const override;
+	std::string toString() const override;
 };
 
 class FuLiteralChar : public FuLiteralLong
@@ -2187,10 +2200,10 @@ private: // internal
 	std::shared_ptr<FuIntegerType> intType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuIntegerType> nIntType = std::make_shared<FuIntegerType>();
 	std::shared_ptr<FuIntegerType> longType = std::make_shared<FuIntegerType>();
-	std::shared_ptr<FuRangeType> byteType = FuRangeType::new_(0, 255);
+	std::shared_ptr<FuRangeType> byteType = FuRangeType::new_(0, 0xff);
 	std::shared_ptr<FuFloatingType> floatType = std::make_shared<FuFloatingType>();
 	std::shared_ptr<FuFloatingType> doubleType = std::make_shared<FuFloatingType>();
-	std::shared_ptr<FuRangeType> charType = FuRangeType::new_(-128, 65535);
+	std::shared_ptr<FuRangeType> charType = FuRangeType::new_(-128, 0xffff);
 	std::shared_ptr<FuEnum> boolType = std::make_shared<FuEnum>();
 	std::shared_ptr<FuStringType> stringPtrType = std::make_shared<FuStringType>();
 	std::shared_ptr<FuStringType> stringNullablePtrType = std::make_shared<FuStringType>();
@@ -2203,6 +2216,7 @@ private: // internal
 	std::unique_ptr<FuReadWriteClassType> lockPtrType = std::make_unique<FuReadWriteClassType>();
 	std::array<const FuClass *, 9> jsonClasses;
 	std::shared_ptr<FuLiteralLong> newLiteralLong(int64_t value, int loc = 0) const;
+	std::shared_ptr<FuLiteralHex> newLiteralHex(int64_t value, int loc) const;
 	std::shared_ptr<FuLiteralString> newLiteralString(std::string_view value, int loc = 0) const;
 	std::shared_ptr<FuType> promoteIntegerTypes(const FuType * left, const FuType * right) const;
 	std::shared_ptr<FuType> promoteFloatingTypes(const FuType * left, const FuType * right) const;
@@ -2739,6 +2753,7 @@ private: // internal
 	void visitLiteralFalse() override;
 	void visitLiteralTrue() override;
 	void visitLiteralLong(int64_t i, FuPriority parent) override;
+	void visitLiteralHex(int64_t i) override;
 	void visitLiteralChar(int c) override;
 	void visitLiteralDouble(double value) override;
 	void visitLiteralString(std::string_view value) override;
@@ -3428,6 +3443,7 @@ protected:
 	void writeClass(const FuClass * klass, const FuProgram * program) override;
 private: // internal
 	void visitLiteralLong(int64_t value, FuPriority parent) override;
+	void visitLiteralHex(int64_t value) override;
 	void visitInterpolatedString(const FuInterpolatedString * expr, FuPriority parent) override;
 	void visitPrefixExpr(const FuPrefixExpr * expr, FuPriority parent) override;
 	void visitPostfixExpr(const FuPostfixExpr * expr, FuPriority parent) override;

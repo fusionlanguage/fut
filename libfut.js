@@ -29,103 +29,104 @@ export const FuToken = {
 	END_OF_FILE : 0,
 	ID : 1,
 	LITERAL_LONG : 2,
-	LITERAL_DOUBLE : 3,
-	LITERAL_CHAR : 4,
-	LITERAL_STRING : 5,
-	INTERPOLATED_STRING : 6,
-	SEMICOLON : 7,
-	DOT : 8,
-	COMMA : 9,
-	LEFT_PARENTHESIS : 10,
-	RIGHT_PARENTHESIS : 11,
-	LEFT_BRACKET : 12,
-	RIGHT_BRACKET : 13,
-	LEFT_BRACE : 14,
-	RIGHT_BRACE : 15,
-	PLUS : 16,
-	MINUS : 17,
-	ASTERISK : 18,
-	SLASH : 19,
-	MOD : 20,
-	AND : 21,
-	OR : 22,
-	XOR : 23,
-	TILDE : 24,
-	SHIFT_LEFT : 25,
-	SHIFT_RIGHT : 26,
-	EQUAL : 27,
-	NOT_EQUAL : 28,
-	LESS : 29,
-	LESS_OR_EQUAL : 30,
-	GREATER : 31,
-	GREATER_OR_EQUAL : 32,
-	RIGHT_ANGLE : 33,
-	COND_AND : 34,
-	COND_OR : 35,
-	EXCLAMATION_MARK : 36,
-	HASH : 37,
-	ASSIGN : 38,
-	ADD_ASSIGN : 39,
-	SUB_ASSIGN : 40,
-	MUL_ASSIGN : 41,
-	DIV_ASSIGN : 42,
-	MOD_ASSIGN : 43,
-	AND_ASSIGN : 44,
-	OR_ASSIGN : 45,
-	XOR_ASSIGN : 46,
-	SHIFT_LEFT_ASSIGN : 47,
-	SHIFT_RIGHT_ASSIGN : 48,
-	INCREMENT : 49,
-	DECREMENT : 50,
-	QUESTION_MARK : 51,
-	COLON : 52,
-	FAT_ARROW : 53,
-	DOC_REGULAR : 54,
-	DOC_BULLET : 55,
-	DOC_BLANK : 56,
-	ABSTRACT : 57,
-	ASSERT : 58,
-	BREAK : 59,
-	CASE : 60,
-	CLASS : 61,
-	CONST : 62,
-	CONTINUE : 63,
-	DEFAULT : 64,
-	DO : 65,
-	ELSE : 66,
-	ENUM : 67,
-	FALSE : 68,
-	FOR : 69,
-	FOREACH : 70,
-	IF : 71,
-	IN : 72,
-	INTERNAL : 73,
-	IS : 74,
-	LOCK_ : 75,
-	NATIVE : 76,
-	NEW : 77,
-	NULL : 78,
-	OVERRIDE : 79,
-	PROTECTED : 80,
-	PUBLIC : 81,
-	RESOURCE : 82,
-	RETURN : 83,
-	SEALED : 84,
-	STATIC : 85,
-	SWITCH : 86,
-	THROW : 87,
-	THROWS : 88,
-	TRUE : 89,
-	VIRTUAL : 90,
-	VOID : 91,
-	WHEN : 92,
-	WHILE : 93,
-	END_OF_LINE : 94,
-	PRE_UNKNOWN : 95,
-	PRE_IF : 96,
-	PRE_EL_IF : 97,
-	PRE_ELSE : 98,
-	PRE_END_IF : 99
+	LITERAL_HEX : 3,
+	LITERAL_DOUBLE : 4,
+	LITERAL_CHAR : 5,
+	LITERAL_STRING : 6,
+	INTERPOLATED_STRING : 7,
+	SEMICOLON : 8,
+	DOT : 9,
+	COMMA : 10,
+	LEFT_PARENTHESIS : 11,
+	RIGHT_PARENTHESIS : 12,
+	LEFT_BRACKET : 13,
+	RIGHT_BRACKET : 14,
+	LEFT_BRACE : 15,
+	RIGHT_BRACE : 16,
+	PLUS : 17,
+	MINUS : 18,
+	ASTERISK : 19,
+	SLASH : 20,
+	MOD : 21,
+	AND : 22,
+	OR : 23,
+	XOR : 24,
+	TILDE : 25,
+	SHIFT_LEFT : 26,
+	SHIFT_RIGHT : 27,
+	EQUAL : 28,
+	NOT_EQUAL : 29,
+	LESS : 30,
+	LESS_OR_EQUAL : 31,
+	GREATER : 32,
+	GREATER_OR_EQUAL : 33,
+	RIGHT_ANGLE : 34,
+	COND_AND : 35,
+	COND_OR : 36,
+	EXCLAMATION_MARK : 37,
+	HASH : 38,
+	ASSIGN : 39,
+	ADD_ASSIGN : 40,
+	SUB_ASSIGN : 41,
+	MUL_ASSIGN : 42,
+	DIV_ASSIGN : 43,
+	MOD_ASSIGN : 44,
+	AND_ASSIGN : 45,
+	OR_ASSIGN : 46,
+	XOR_ASSIGN : 47,
+	SHIFT_LEFT_ASSIGN : 48,
+	SHIFT_RIGHT_ASSIGN : 49,
+	INCREMENT : 50,
+	DECREMENT : 51,
+	QUESTION_MARK : 52,
+	COLON : 53,
+	FAT_ARROW : 54,
+	DOC_REGULAR : 55,
+	DOC_BULLET : 56,
+	DOC_BLANK : 57,
+	ABSTRACT : 58,
+	ASSERT : 59,
+	BREAK : 60,
+	CASE : 61,
+	CLASS : 62,
+	CONST : 63,
+	CONTINUE : 64,
+	DEFAULT : 65,
+	DO : 66,
+	ELSE : 67,
+	ENUM : 68,
+	FALSE : 69,
+	FOR : 70,
+	FOREACH : 71,
+	IF : 72,
+	IN : 73,
+	INTERNAL : 74,
+	IS : 75,
+	LOCK_ : 76,
+	NATIVE : 77,
+	NEW : 78,
+	NULL : 79,
+	OVERRIDE : 80,
+	PROTECTED : 81,
+	PUBLIC : 82,
+	RESOURCE : 83,
+	RETURN : 84,
+	SEALED : 85,
+	STATIC : 86,
+	SWITCH : 87,
+	THROW : 88,
+	THROWS : 89,
+	TRUE : 90,
+	VIRTUAL : 91,
+	VOID : 92,
+	WHEN : 93,
+	WHILE : 94,
+	END_OF_LINE : 95,
+	PRE_UNKNOWN : 96,
+	PRE_IF : 97,
+	PRE_EL_IF : 98,
+	PRE_ELSE : 99,
+	PRE_END_IF : 100
 }
 
 const FuPreState = {
@@ -176,7 +177,7 @@ export class FuLexer
 		this.host.program.sourceFiles.at(-1).line = this.host.program.lineLocs.length;
 		this.host.program.lineLocs.push(this.loc);
 		this.#fillNextChar();
-		if (this.#nextChar == 65279)
+		if (this.#nextChar == 0xfeff)
 			this.#fillNextChar();
 		this.nextToken();
 	}
@@ -199,31 +200,31 @@ export class FuLexer
 	#readContinuationByte(hi)
 	{
 		let b = this.#readByte();
-		if (hi != 65533) {
-			if (b >= 128 && b <= 191)
-				return (hi << 6) + b - 128;
+		if (hi != 0xfffd) {
+			if (b >= 0x80 && b <= 0xbf)
+				return (hi << 6) + b - 0x80;
 			this.reportError("Invalid UTF-8");
 		}
-		return 65533;
+		return 0xfffd;
 	}
 
 	#fillNextChar()
 	{
 		this.charOffset = this.#nextOffset;
 		let b = this.#readByte();
-		if (b >= 128) {
-			if (b < 194 || b > 244) {
+		if (b >= 0x80) {
+			if (b < 0xc2 || b > 0xf4) {
 				this.reportError("Invalid UTF-8");
-				b = 65533;
+				b = 0xfffd;
 			}
-			else if (b < 224)
-				b = this.#readContinuationByte(b - 192);
-			else if (b < 240) {
-				b = this.#readContinuationByte(b - 224);
+			else if (b < 0xe0)
+				b = this.#readContinuationByte(b - 0xc0);
+			else if (b < 0xf0) {
+				b = this.#readContinuationByte(b - 0xe0);
 				b = this.#readContinuationByte(b);
 			}
 			else {
-				b = this.#readContinuationByte(b - 240);
+				b = this.#readContinuationByte(b - 0xf0);
 				b = this.#readContinuationByte(b);
 				b = this.#readContinuationByte(b);
 			}
@@ -260,7 +261,7 @@ export class FuLexer
 			this.#atLineStart = true;
 			break;
 		default:
-			this.loc += c < 65536 ? 1 : 2;
+			this.loc += c < 0x10000 ? 1 : 2;
 			this.#atLineStart = false;
 			break;
 		}
@@ -306,7 +307,7 @@ export class FuLexer
 					this.reportError("Invalid integer");
 				else if (tooBig)
 					this.reportError("Integer too big");
-				return FuToken.LITERAL_LONG;
+				return FuToken.LITERAL_HEX;
 			}
 			if (c >= 1 << bits)
 				invalidDigit = true;
@@ -438,14 +439,14 @@ export class FuLexer
 		let c = this.readChar();
 		if (c < 32) {
 			this.reportError("Invalid character in literal");
-			return 65533;
+			return 0xfffd;
 		}
 		if (c != 92)
 			return c;
 		c = FuLexer.getEscapedChar(this.readChar());
 		if (c < 0) {
 			this.reportError("Unknown escape sequence");
-			return 65533;
+			return 0xfffd;
 		}
 		return c;
 	}
@@ -1875,6 +1876,20 @@ class FuLiteralLong extends FuLiteral
 	}
 }
 
+class FuLiteralHex extends FuLiteralLong
+{
+
+	accept(visitor, parent)
+	{
+		visitor.visitLiteralHex(this.value);
+	}
+
+	toString()
+	{
+		return `0x${this.value.toString(16)}`;
+	}
+}
+
 class FuLiteralChar extends FuLiteralLong
 {
 
@@ -1885,7 +1900,7 @@ class FuLiteralChar extends FuLiteralLong
 
 	getLocLength()
 	{
-		return this.value >= 65536 || this.value == 10 || this.value == 13 || this.value == 9 || this.value == 92 || this.value == 39 ? 4 : 3;
+		return this.value >= 0x10000 || this.value == 10 || this.value == 13 || this.value == 9 || this.value == 92 || this.value == 39 ? 4 : 3;
 	}
 
 	accept(visitor, parent)
@@ -2049,7 +2064,7 @@ export class FuInterpolatedString extends FuExpr
 
 	isToString(format)
 	{
-		return this.suffix.length == 0 && this.parts.length == 1 && this.parts[0].prefix.length == 0 && this.parts[0].widthExpr == null && (this.parts[0].format | 32) == format;
+		return this.suffix.length == 0 && this.parts.length == 1 && this.parts[0].prefix.length == 0 && this.parts[0].widthExpr == null && (this.parts[0].format | 0x20) == format;
 	}
 
 	toString()
@@ -3750,13 +3765,13 @@ export class FuSystem extends FuScope
 		this.add(this.longType);
 		this.byteType.name = "byte";
 		this.add(this.byteType);
-		let sByteType = FuRangeType.new(-128, 127);
+		let sByteType = FuRangeType.new(-128, 0x7f);
 		sByteType.name = "sbyte";
 		this.add(sByteType);
-		let shortType = FuRangeType.new(-32768, 32767);
+		let shortType = FuRangeType.new(-32768, 0x7fff);
 		shortType.name = "short";
 		this.add(shortType);
-		let ushortType = FuRangeType.new(0, 65535);
+		let ushortType = FuRangeType.new(0, 0xffff);
 		ushortType.name = "ushort";
 		this.add(ushortType);
 		this.floatType.add(FuMethod.new(null, FuVisibility.PUBLIC, FuCallType.NORMAL, this.boolType, FuId.FLOAT_TRY_PARSE, "TryParse", true, FuVar.new(this.stringPtrType, "value")));
@@ -4178,7 +4193,7 @@ export class FuSystem extends FuScope
 			ifBlock.statements.push(this.#newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
 			ifBlock.statements.push(this.#newCall(jsonParserParseDigitsMethod));
 			let if2Block = new FuBlock();
-			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newOffsetLessInputLength(offsetField, inputLengthField), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.intType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.OR, right: this.newLiteralLong(32n) }), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 101n }) }) }), onTrue: if2Block, onFalse: null }));
+			methodBlock.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newOffsetLessInputLength(offsetField, inputLengthField), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.intType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.OR, right: this.newLiteralLong(0x20n) }), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 101n }) }) }), onTrue: if2Block, onFalse: null }));
 			if2Block.statements.push(Object.assign(new FuIf(), { cond: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuPrefixExpr(), { type: this.nIntType, op: FuToken.INCREMENT, inner: FuSystem.#newSymbolReference(offsetField) }), op: FuToken.LESS, right: FuSystem.#newSymbolReference(inputLengthField) }), op: FuToken.COND_AND, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 43n }) }), op: FuToken.COND_OR, right: Object.assign(new FuBinaryExpr(), { type: this.boolType, left: this.#newInputAtOffset(inputField, offsetField), op: FuToken.EQUAL, right: Object.assign(new FuLiteralChar(), { type: this.intType, value: 45n }) }) }) }), onTrue: Object.assign(new FuPostfixExpr(), { inner: FuSystem.#newSymbolReference(offsetField), op: FuToken.INCREMENT }), onFalse: null }));
 			if2Block.statements.push(this.#newIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
 			if2Block.statements.push(this.#newCall(jsonParserParseDigitsMethod));
@@ -4296,10 +4311,10 @@ export class FuSystem extends FuScope
 	#uIntType = FuRangeType.new(0, 2147483647);
 	nIntType = Object.assign(new FuIntegerType(), { id: FuId.N_INT_TYPE, name: "nint" });
 	longType = Object.assign(new FuIntegerType(), { id: FuId.LONG_TYPE, name: "long" });
-	byteType = FuRangeType.new(0, 255);
+	byteType = FuRangeType.new(0, 0xff);
 	floatType = Object.assign(new FuFloatingType(), { id: FuId.FLOAT_TYPE, name: "float" });
 	doubleType = Object.assign(new FuFloatingType(), { id: FuId.DOUBLE_TYPE, name: "double" });
-	charType = FuRangeType.new(-128, 65535);
+	charType = FuRangeType.new(-128, 0xffff);
 	boolType = Object.assign(new FuEnum(), { id: FuId.BOOL_TYPE, name: "bool" });
 	#stringClass = FuClass.new(FuCallType.NORMAL, FuId.STRING_CLASS, "string");
 	stringPtrType = Object.assign(new FuStringType(), { id: FuId.STRING_PTR_TYPE, name: "string" });
@@ -4317,6 +4332,12 @@ export class FuSystem extends FuScope
 	{
 		let type = value >= -2147483648 && value <= 2147483647 ? FuRangeType.new(Number(value), Number(value)) : this.longType;
 		return Object.assign(new FuLiteralLong(), { loc: loc, type: type, value: value });
+	}
+
+	newLiteralHex(value, loc)
+	{
+		let type = value >= -2147483648 && value <= 2147483647 ? FuRangeType.new(Number(value), Number(value)) : this.longType;
+		return Object.assign(new FuLiteralHex(), { loc: loc, type: type, value: value });
 	}
 
 	newLiteralString(value, loc = 0)
@@ -4849,6 +4870,10 @@ export class FuParser extends FuLexer
 			break;
 		case FuToken.LITERAL_LONG:
 			result = this.host.program.system.newLiteralLong(this.longValue, this.tokenLoc);
+			this.nextToken();
+			break;
+		case FuToken.LITERAL_HEX:
+			result = this.host.program.system.newLiteralHex(this.longValue, this.tokenLoc);
 			this.nextToken();
 			break;
 		case FuToken.LITERAL_DOUBLE:
@@ -8452,6 +8477,11 @@ export class GenBase extends FuVisitor
 		this.#writer.write(String(i));
 	}
 
+	visitLiteralHex(i)
+	{
+		this.#writer.write(`0x${i.toString(16)}`);
+	}
+
 	getLiteralChars()
 	{
 		return 0;
@@ -8522,14 +8552,14 @@ export class GenBase extends FuVisitor
 	#writeLowercaseChar(c)
 	{
 		if (c >= 65 && c <= 90)
-			c += 32;
+			c += 0x20;
 		this.#writer.write(String.fromCharCode(c));
 	}
 
 	#writeUppercaseChar(c)
 	{
 		if (c >= 97 && c <= 122)
-			c -= 32;
+			c -= 0x20;
 		this.#writer.write(String.fromCharCode(c));
 	}
 
@@ -10875,14 +10905,14 @@ export class GenTyped extends GenBase
 			switch (type.id) {
 			case FuId.S_BYTE_RANGE:
 			case FuId.BYTE_RANGE:
-				mask = 255n;
+				mask = 0xffn;
 				break;
 			case FuId.SHORT_RANGE:
 			case FuId.U_SHORT_RANGE:
-				mask = 65535n;
+				mask = 0xffffn;
 				break;
 			case FuId.INT_TYPE:
-				mask = 4294967295n;
+				mask = 0xffffffffn;
 				break;
 			default:
 				return expr;
@@ -18562,7 +18592,7 @@ export class GenCs extends GenTyped
 
 	getLiteralChars()
 	{
-		return 65536;
+		return 0x10000;
 	}
 
 	#writeVisibility(visibility)
@@ -18724,7 +18754,7 @@ export class GenCs extends GenTyped
 	writeCoercedLiteral(type, expr)
 	{
 		let range;
-		if (expr instanceof FuLiteralChar && (range = type) instanceof FuRangeType && range.max <= 255)
+		if (expr instanceof FuLiteralChar && (range = type) instanceof FuRangeType && range.max <= 0xff)
 			this.writeStaticCast(type, expr);
 		else {
 			super.writeCoercedLiteral(type, expr);
@@ -18738,7 +18768,7 @@ export class GenCs extends GenTyped
 		let unary;
 		let literal;
 		if ((unary = expr) instanceof FuPrefixExpr && unary.op == FuToken.TILDE && (literal = unary.inner) instanceof FuLiteralLong && (type.id == FuId.BYTE_RANGE || type.id == FuId.U_SHORT_RANGE))
-			this.visitLiteralLong(literal.value ^ (type.id == FuId.BYTE_RANGE ? 255n : 65535n), FuPriority.PRIMARY);
+			this.visitLiteralLong(literal.value ^ (type.id == FuId.BYTE_RANGE ? 0xffn : 0xffffn), FuPriority.PRIMARY);
 		else {
 			super.writeStaticCast(type, expr);
 			if (expr.type.nullable && !type.nullable)
@@ -19122,7 +19152,7 @@ export class GenCs extends GenTyped
 		case FuId.TEXT_WRITER_WRITE_CODE_POINT:
 			this.writePostfix(obj, ".Write(");
 			let literalChar;
-			if ((literalChar = args[0]) instanceof FuLiteralChar && literalChar.value < 65536)
+			if ((literalChar = args[0]) instanceof FuLiteralChar && literalChar.value < 0x10000)
 				args[0].accept(this, FuPriority.ARGUMENT);
 			else {
 				this.include("System.Text");
@@ -19839,7 +19869,7 @@ export class GenD extends GenCCppD
 
 	getLiteralChars()
 	{
-		return 65536;
+		return 0x10000;
 	}
 
 	#writeVisibility(visibility)
@@ -21327,9 +21357,16 @@ export class GenJava extends GenTyped
 			this.writeChar(76);
 	}
 
+	visitLiteralHex(value)
+	{
+		super.visitLiteralHex(value);
+		if (value < -2147483648 || value > 2147483647)
+			this.writeChar(76);
+	}
+
 	getLiteralChars()
 	{
-		return 65536;
+		return 0x10000;
 	}
 
 	#writeToString(expr, parent)
@@ -21735,7 +21772,7 @@ export class GenJava extends GenTyped
 
 	#writeSByteLiteral(literal)
 	{
-		if (literal.value >= 128)
+		if (literal.value >= 0x80)
 			this.write("(byte) ");
 		literal.accept(this, FuPriority.PRIMARY);
 	}
@@ -21811,7 +21848,7 @@ export class GenJava extends GenTyped
 			let indexing = expr.left;
 			this.#writeIndexingInternal(indexing);
 			this.write(" & ");
-			this.visitLiteralLong(255n & rightLiteral.value, FuPriority.AND);
+			this.visitLiteralLong(0xffn & rightLiteral.value, FuPriority.AND);
 			if (parent > FuPriority.COND_AND && parent != FuPriority.AND)
 				this.writeChar(41);
 		}

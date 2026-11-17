@@ -32,6 +32,7 @@ namespace Fusion
 		EndOfFile,
 		Id,
 		LiteralLong,
+		LiteralHex,
 		LiteralDouble,
 		LiteralChar,
 		LiteralString,
@@ -199,7 +200,7 @@ namespace Fusion
 			this.Host.Program.SourceFiles[^1].Line = this.Host.Program.LineLocs.Count;
 			this.Host.Program.LineLocs.Add(this.Loc);
 			FillNextChar();
-			if (this.NextChar == 65279)
+			if (this.NextChar == 0xfeff)
 				FillNextChar();
 			NextToken();
 		}
@@ -219,36 +220,36 @@ namespace Fusion
 			return this.Input[this.NextOffset++];
 		}
 
-		const int ReplacementChar = 65533;
+		const int ReplacementChar = 0xfffd;
 
 		int ReadContinuationByte(int hi)
 		{
 			int b = ReadByte();
-			if (hi != 65533) {
-				if (b >= 128 && b <= 191)
-					return (hi << 6) + b - 128;
+			if (hi != 0xfffd) {
+				if (b >= 0x80 && b <= 0xbf)
+					return (hi << 6) + b - 0x80;
 				ReportError("Invalid UTF-8");
 			}
-			return 65533;
+			return 0xfffd;
 		}
 
 		void FillNextChar()
 		{
 			this.CharOffset = this.NextOffset;
 			int b = ReadByte();
-			if (b >= 128) {
-				if (b < 194 || b > 244) {
+			if (b >= 0x80) {
+				if (b < 0xc2 || b > 0xf4) {
 					ReportError("Invalid UTF-8");
-					b = 65533;
+					b = 0xfffd;
 				}
-				else if (b < 224)
-					b = ReadContinuationByte(b - 192);
-				else if (b < 240) {
-					b = ReadContinuationByte(b - 224);
+				else if (b < 0xe0)
+					b = ReadContinuationByte(b - 0xc0);
+				else if (b < 0xf0) {
+					b = ReadContinuationByte(b - 0xe0);
 					b = ReadContinuationByte(b);
 				}
 				else {
-					b = ReadContinuationByte(b - 240);
+					b = ReadContinuationByte(b - 0xf0);
 					b = ReadContinuationByte(b);
 					b = ReadContinuationByte(b);
 				}
@@ -282,7 +283,7 @@ namespace Fusion
 				this.AtLineStart = true;
 				break;
 			default:
-				this.Loc += c < 65536 ? 1 : 2;
+				this.Loc += c < 0x10000 ? 1 : 2;
 				this.AtLineStart = false;
 				break;
 			}
@@ -328,7 +329,7 @@ namespace Fusion
 						ReportError("Invalid integer");
 					else if (tooBig)
 						ReportError("Integer too big");
-					return FuToken.LiteralLong;
+					return FuToken.LiteralHex;
 				}
 				if (c >= 1 << bits)
 					invalidDigit = true;
@@ -460,14 +461,14 @@ namespace Fusion
 			int c = ReadChar();
 			if (c < 32) {
 				ReportError("Invalid character in literal");
-				return 65533;
+				return 0xfffd;
 			}
 			if (c != '\\')
 				return c;
 			c = GetEscapedChar(ReadChar());
 			if (c < 0) {
 				ReportError("Unknown escape sequence");
-				return 65533;
+				return 0xfffd;
 			}
 			return c;
 		}
@@ -1623,6 +1624,8 @@ namespace Fusion
 
 		internal abstract void VisitLiteralLong(long value, FuPriority parent);
 
+		internal abstract void VisitLiteralHex(long value);
+
 		internal abstract void VisitLiteralChar(int value);
 
 		internal abstract void VisitLiteralDouble(double value);
@@ -1876,12 +1879,23 @@ namespace Fusion
 		public override string ToString() => $"{this.Value}";
 	}
 
+	class FuLiteralHex : FuLiteralLong
+	{
+
+		public override void Accept(FuVisitor visitor, FuPriority parent)
+		{
+			visitor.VisitLiteralHex(this.Value);
+		}
+
+		public override string ToString() => $"0x{this.Value:x}";
+	}
+
 	class FuLiteralChar : FuLiteralLong
 	{
 
 		public static FuLiteralChar New(int value, int loc) => new FuLiteralChar { Loc = loc, Type = FuRangeType.New(value, value), Value = value };
 
-		public override int GetLocLength() => this.Value >= 65536 || this.Value == '\n' || this.Value == '\r' || this.Value == '\t' || this.Value == '\\' || this.Value == '\'' ? 4 : 3;
+		public override int GetLocLength() => this.Value >= 0x10000 || this.Value == '\n' || this.Value == '\r' || this.Value == '\t' || this.Value == '\\' || this.Value == '\'' ? 4 : 3;
 
 		public override void Accept(FuVisitor visitor, FuPriority parent)
 		{
@@ -2033,7 +2047,7 @@ namespace Fusion
 
 		public bool IsToString(int format)
 		{
-			return this.Suffix.Length == 0 && this.Parts.Count == 1 && this.Parts[0].Prefix.Length == 0 && this.Parts[0].WidthExpr == null && (this.Parts[0].Format | 32) == format;
+			return this.Suffix.Length == 0 && this.Parts.Count == 1 && this.Parts[0].Prefix.Length == 0 && this.Parts[0].WidthExpr == null && (this.Parts[0].Format | 0x20) == format;
 		}
 
 		public override string ToString()
@@ -3434,13 +3448,13 @@ namespace Fusion
 			Add(this.LongType);
 			this.ByteType.Name = "byte";
 			Add(this.ByteType);
-			FuRangeType sByteType = FuRangeType.New(-128, 127);
+			FuRangeType sByteType = FuRangeType.New(-128, 0x7f);
 			sByteType.Name = "sbyte";
 			Add(sByteType);
-			FuRangeType shortType = FuRangeType.New(-32768, 32767);
+			FuRangeType shortType = FuRangeType.New(-32768, 0x7fff);
 			shortType.Name = "short";
 			Add(shortType);
-			FuRangeType ushortType = FuRangeType.New(0, 65535);
+			FuRangeType ushortType = FuRangeType.New(0, 0xffff);
 			ushortType.Name = "ushort";
 			Add(ushortType);
 			this.FloatType.Add(FuMethod.New(null, FuVisibility.Public, FuCallType.Normal, this.BoolType, FuId.FloatTryParse, "TryParse", true, FuVar.New(this.StringPtrType, "value")));
@@ -3862,7 +3876,7 @@ namespace Fusion
 				ifBlock.Statements.Add(NewIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
 				ifBlock.Statements.Add(NewCall(jsonParserParseDigitsMethod));
 				FuBlock if2Block = new FuBlock();
-				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewOffsetLessInputLength(offsetField, inputLengthField), Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.IntType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Or, Right = NewLiteralLong(32) }, Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = 'e' } } }, OnTrue = if2Block, OnFalse = null });
+				methodBlock.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = NewOffsetLessInputLength(offsetField, inputLengthField), Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.IntType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Or, Right = NewLiteralLong(0x20) }, Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = 'e' } } }, OnTrue = if2Block, OnFalse = null });
 				if2Block.Statements.Add(new FuIf { Cond = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = new FuPrefixExpr { Type = this.NIntType, Op = FuToken.Increment, Inner = NewSymbolReference(offsetField) }, Op = FuToken.Less, Right = NewSymbolReference(inputLengthField) }, Op = FuToken.CondAnd, Right = new FuBinaryExpr { Type = this.BoolType, Left = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '+' } }, Op = FuToken.CondOr, Right = new FuBinaryExpr { Type = this.BoolType, Left = NewInputAtOffset(inputField, offsetField), Op = FuToken.Equal, Right = new FuLiteralChar { Type = this.IntType, Value = '-' } } } }, OnTrue = new FuPostfixExpr { Inner = NewSymbolReference(offsetField), Op = FuToken.Increment }, OnFalse = null });
 				if2Block.Statements.Add(NewIfNotSeeDigitReturnNull(jsonParserSeeDigitMethod));
 				if2Block.Statements.Add(NewCall(jsonParserParseDigitsMethod));
@@ -3989,13 +4003,13 @@ namespace Fusion
 
 		internal FuIntegerType LongType = new FuIntegerType { Id = FuId.LongType, Name = "long" };
 
-		internal FuRangeType ByteType = FuRangeType.New(0, 255);
+		internal FuRangeType ByteType = FuRangeType.New(0, 0xff);
 
 		internal FuFloatingType FloatType = new FuFloatingType { Id = FuId.FloatType, Name = "float" };
 
 		internal FuFloatingType DoubleType = new FuFloatingType { Id = FuId.DoubleType, Name = "double" };
 
-		internal FuRangeType CharType = FuRangeType.New(-128, 65535);
+		internal FuRangeType CharType = FuRangeType.New(-128, 0xffff);
 
 		internal FuEnum BoolType = new FuEnum { Id = FuId.BoolType, Name = "bool" };
 
@@ -4025,6 +4039,12 @@ namespace Fusion
 		{
 			FuType type = value >= -2147483648 && value <= 2147483647 ? FuRangeType.New((int) value, (int) value) : this.LongType;
 			return new FuLiteralLong { Loc = loc, Type = type, Value = value };
+		}
+
+		internal FuLiteralHex NewLiteralHex(long value, int loc)
+		{
+			FuType type = value >= -2147483648 && value <= 2147483647 ? FuRangeType.New((int) value, (int) value) : this.LongType;
+			return new FuLiteralHex { Loc = loc, Type = type, Value = value };
 		}
 
 		internal FuLiteralString NewLiteralString(string value, int loc = 0) => new FuLiteralString { Loc = loc, Type = this.StringPtrType, Value = value };
@@ -4533,6 +4553,10 @@ namespace Fusion
 				break;
 			case FuToken.LiteralLong:
 				result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.TokenLoc);
+				NextToken();
+				break;
+			case FuToken.LiteralHex:
+				result = this.Host.Program.System.NewLiteralHex(this.LongValue, this.TokenLoc);
 				NextToken();
 				break;
 			case FuToken.LiteralDouble:
@@ -7947,6 +7971,11 @@ namespace Fusion
 			this.Writer.Write(i);
 		}
 
+		internal override void VisitLiteralHex(long i)
+		{
+			this.Writer.Write($"0x{i:x}");
+		}
+
 		protected virtual int GetLiteralChars() => 0;
 
 		internal override void VisitLiteralChar(int c)
@@ -8014,14 +8043,14 @@ namespace Fusion
 		void WriteLowercaseChar(int c)
 		{
 			if (c >= 'A' && c <= 'Z')
-				c += 32;
+				c += 0x20;
 			this.Writer.Write((char) c);
 		}
 
 		void WriteUppercaseChar(int c)
 		{
 			if (c >= 'a' && c <= 'z')
-				c -= 32;
+				c -= 0x20;
 			this.Writer.Write((char) c);
 		}
 
@@ -10315,14 +10344,14 @@ namespace Fusion
 				switch (type.Id) {
 				case FuId.SByteRange:
 				case FuId.ByteRange:
-					mask = 255;
+					mask = 0xff;
 					break;
 				case FuId.ShortRange:
 				case FuId.UShortRange:
-					mask = 65535;
+					mask = 0xffff;
 					break;
 				case FuId.IntType:
-					mask = 4294967295;
+					mask = 0xffffffff;
 					break;
 				default:
 					return expr;
@@ -17890,7 +17919,7 @@ namespace Fusion
 			}
 		}
 
-		protected override int GetLiteralChars() => 65536;
+		protected override int GetLiteralChars() => 0x10000;
 
 		void WriteVisibility(FuVisibility visibility)
 		{
@@ -18052,7 +18081,7 @@ namespace Fusion
 
 		protected override void WriteCoercedLiteral(FuType? type, FuExpr expr)
 		{
-			if (expr is FuLiteralChar && type is FuRangeType range && range.Max <= 255)
+			if (expr is FuLiteralChar && type is FuRangeType range && range.Max <= 0xff)
 				WriteStaticCast(type!, expr);
 			else {
 				base.WriteCoercedLiteral(type, expr);
@@ -18064,7 +18093,7 @@ namespace Fusion
 		protected override void WriteStaticCast(FuType type, FuExpr expr)
 		{
 			if (expr is FuPrefixExpr unary && unary.Op == FuToken.Tilde && unary.Inner is FuLiteralLong literal && (type.Id == FuId.ByteRange || type.Id == FuId.UShortRange))
-				VisitLiteralLong(literal.Value ^ (type.Id == FuId.ByteRange ? 255 : 65535), FuPriority.Primary);
+				VisitLiteralLong(literal.Value ^ (type.Id == FuId.ByteRange ? 0xff : 0xffff), FuPriority.Primary);
 			else {
 				base.WriteStaticCast(type, expr);
 				if (expr.Type!.Nullable && !type.Nullable)
@@ -18438,7 +18467,7 @@ namespace Fusion
 				break;
 			case FuId.TextWriterWriteCodePoint:
 				WritePostfix(obj!, ".Write(");
-				if (args[0] is FuLiteralChar literalChar && literalChar.Value < 65536)
+				if (args[0] is FuLiteralChar literalChar && literalChar.Value < 0x10000)
 					args[0].Accept(this, FuPriority.Argument);
 				else {
 					Include("System.Text");
@@ -19153,7 +19182,7 @@ namespace Fusion
 			}
 		}
 
-		protected override int GetLiteralChars() => 65536;
+		protected override int GetLiteralChars() => 0x10000;
 
 		void WriteVisibility(FuVisibility visibility)
 		{
@@ -20613,7 +20642,14 @@ namespace Fusion
 				WriteChar('L');
 		}
 
-		protected override int GetLiteralChars() => 65536;
+		internal override void VisitLiteralHex(long value)
+		{
+			base.VisitLiteralHex(value);
+			if (value < -2147483648 || value > 2147483647)
+				WriteChar('L');
+		}
+
+		protected override int GetLiteralChars() => 0x10000;
 
 		void WriteToString(FuExpr expr, FuPriority parent)
 		{
@@ -21013,7 +21049,7 @@ namespace Fusion
 
 		void WriteSByteLiteral(FuLiteralLong literal)
 		{
-			if (literal.Value >= 128)
+			if (literal.Value >= 0x80)
 				Write("(byte) ");
 			literal.Accept(this, FuPriority.Primary);
 		}
@@ -21080,7 +21116,7 @@ namespace Fusion
 				FuBinaryExpr indexing = (FuBinaryExpr) expr.Left;
 				WriteIndexingInternal(indexing);
 				Write(" & ");
-				VisitLiteralLong(255 & rightLiteral.Value, FuPriority.And);
+				VisitLiteralLong(0xff & rightLiteral.Value, FuPriority.And);
 				if (parent > FuPriority.CondAnd && parent != FuPriority.And)
 					WriteChar(')');
 			}

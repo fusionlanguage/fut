@@ -108,6 +108,11 @@ public abstract class GenBase : FuVisitor
 		this.Writer.Write(i);
 	}
 
+	internal override void VisitLiteralHex!(long i)
+	{
+		this.Writer.Write($"0x{i:x}");
+	}
+
 	protected virtual int GetLiteralChars() => 0;
 
 	internal override void VisitLiteralChar!(int c)

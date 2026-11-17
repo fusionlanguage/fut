@@ -67,7 +67,7 @@ void FuLexer::open(std::string_view filename, uint8_t const * input, int inputLe
 	this->host->program->sourceFiles.back().line = static_cast<int>(std::ssize(this->host->program->lineLocs));
 	this->host->program->lineLocs.push_back(this->loc);
 	fillNextChar();
-	if (this->nextChar == 65279)
+	if (this->nextChar == 0xfeff)
 		fillNextChar();
 	nextToken();
 }
@@ -90,31 +90,31 @@ int FuLexer::readByte()
 int FuLexer::readContinuationByte(int hi)
 {
 	int b = readByte();
-	if (hi != 65533) {
-		if (b >= 128 && b <= 191)
-			return (hi << 6) + b - 128;
+	if (hi != 0xfffd) {
+		if (b >= 0x80 && b <= 0xbf)
+			return (hi << 6) + b - 0x80;
 		reportError("Invalid UTF-8");
 	}
-	return 65533;
+	return 0xfffd;
 }
 
 void FuLexer::fillNextChar()
 {
 	this->charOffset = this->nextOffset;
 	int b = readByte();
-	if (b >= 128) {
-		if (b < 194 || b > 244) {
+	if (b >= 0x80) {
+		if (b < 0xc2 || b > 0xf4) {
 			reportError("Invalid UTF-8");
-			b = 65533;
+			b = 0xfffd;
 		}
-		else if (b < 224)
-			b = readContinuationByte(b - 192);
-		else if (b < 240) {
-			b = readContinuationByte(b - 224);
+		else if (b < 0xe0)
+			b = readContinuationByte(b - 0xc0);
+		else if (b < 0xf0) {
+			b = readContinuationByte(b - 0xe0);
 			b = readContinuationByte(b);
 		}
 		else {
-			b = readContinuationByte(b - 240);
+			b = readContinuationByte(b - 0xf0);
 			b = readContinuationByte(b);
 			b = readContinuationByte(b);
 		}
@@ -151,7 +151,7 @@ int FuLexer::readChar()
 		this->atLineStart = true;
 		break;
 	default:
-		this->loc += c < 65536 ? 1 : 2;
+		this->loc += c < 0x10000 ? 1 : 2;
 		this->atLineStart = false;
 		break;
 	}
@@ -197,7 +197,7 @@ FuToken FuLexer::readIntegerLiteral(int bits)
 				reportError("Invalid integer");
 			else if (tooBig)
 				reportError("Integer too big");
-			return FuToken::literalLong;
+			return FuToken::literalHex;
 		}
 		if (c >= 1 << bits)
 			invalidDigit = true;
@@ -329,14 +329,14 @@ int FuLexer::readCharLiteral()
 	int c = readChar();
 	if (c < 32) {
 		reportError("Invalid character in literal");
-		return 65533;
+		return 0xfffd;
 	}
 	if (c != '\\')
 		return c;
 	c = getEscapedChar(readChar());
 	if (c < 0) {
 		reportError("Unknown escape sequence");
-		return 65533;
+		return 0xfffd;
 	}
 	return c;
 }
@@ -1434,6 +1434,16 @@ std::string FuLiteralLong::toString() const
 	return std::format("{}", this->value);
 }
 
+void FuLiteralHex::accept(FuVisitor * visitor, FuPriority parent) const
+{
+	visitor->visitLiteralHex(this->value);
+}
+
+std::string FuLiteralHex::toString() const
+{
+	return std::format("0x{:x}", this->value);
+}
+
 std::shared_ptr<FuLiteralChar> FuLiteralChar::new_(int value, int loc)
 {
 	std::shared_ptr<FuLiteralChar> futemp0 = std::make_shared<FuLiteralChar>();
@@ -1445,7 +1455,7 @@ std::shared_ptr<FuLiteralChar> FuLiteralChar::new_(int value, int loc)
 
 int FuLiteralChar::getLocLength() const
 {
-	return this->value >= 65536 || this->value == '\n' || this->value == '\r' || this->value == '\t' || this->value == '\\' || this->value == '\'' ? 4 : 3;
+	return this->value >= 0x10000 || this->value == '\n' || this->value == '\r' || this->value == '\t' || this->value == '\\' || this->value == '\'' ? 4 : 3;
 }
 
 void FuLiteralChar::accept(FuVisitor * visitor, FuPriority parent) const
@@ -1585,7 +1595,7 @@ bool FuInterpolatedString::isNewString(bool substringOffset) const
 
 bool FuInterpolatedString::isToString(int format) const
 {
-	return this->suffix.empty() && std::ssize(this->parts) == 1 && this->parts[0].prefix.empty() && this->parts[0].widthExpr == nullptr && (this->parts[0].format | 32) == format;
+	return this->suffix.empty() && std::ssize(this->parts) == 1 && this->parts[0].prefix.empty() && this->parts[0].widthExpr == nullptr && (this->parts[0].format | 0x20) == format;
 }
 
 std::string FuInterpolatedString::toString() const
@@ -3011,13 +3021,13 @@ FuSystem::FuSystem()
 	add(this->longType);
 	this->byteType->name = "byte";
 	add(this->byteType);
-	std::shared_ptr<FuRangeType> sByteType = FuRangeType::new_(-128, 127);
+	std::shared_ptr<FuRangeType> sByteType = FuRangeType::new_(-128, 0x7f);
 	sByteType->name = "sbyte";
 	add(sByteType);
-	std::shared_ptr<FuRangeType> shortType = FuRangeType::new_(-32768, 32767);
+	std::shared_ptr<FuRangeType> shortType = FuRangeType::new_(-32768, 0x7fff);
 	shortType->name = "short";
 	add(shortType);
-	std::shared_ptr<FuRangeType> ushortType = FuRangeType::new_(0, 65535);
+	std::shared_ptr<FuRangeType> ushortType = FuRangeType::new_(0, 0xffff);
 	ushortType->name = "ushort";
 	add(ushortType);
 	this->floatType->add(FuMethod::new_(nullptr, FuVisibility::public_, FuCallType::normal, this->boolType, FuId::floatTryParse, "TryParse", true, FuVar::new_(this->stringPtrType, "value")));
@@ -3945,7 +3955,7 @@ FuSystem::FuSystem()
 		futemp44->type = this->intType;
 		futemp44->left = newInputAtOffset(inputField.get(), offsetField.get());
 		futemp44->op = FuToken::or_;
-		futemp44->right = newLiteralLong(32);
+		futemp44->right = newLiteralLong(0x20);
 		std::shared_ptr<FuLiteralChar> futemp45 = std::make_shared<FuLiteralChar>();
 		futemp45->type = this->intType;
 		futemp45->value = 'e';
@@ -4214,6 +4224,16 @@ std::shared_ptr<FuLiteralLong> FuSystem::newLiteralLong(int64_t value, int loc) 
 {
 	std::shared_ptr<FuType> type = value >= -2147483647 - 1 && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
 	std::shared_ptr<FuLiteralLong> futemp0 = std::make_shared<FuLiteralLong>();
+	futemp0->loc = loc;
+	futemp0->type = type;
+	futemp0->value = value;
+	return futemp0;
+}
+
+std::shared_ptr<FuLiteralHex> FuSystem::newLiteralHex(int64_t value, int loc) const
+{
+	std::shared_ptr<FuType> type = value >= -2147483647 - 1 && value <= 2147483647 ? FuRangeType::new_(static_cast<int>(value), static_cast<int>(value)) : this->longType;
+	std::shared_ptr<FuLiteralHex> futemp0 = std::make_shared<FuLiteralHex>();
 	futemp0->loc = loc;
 	futemp0->type = type;
 	futemp0->value = value;
@@ -4861,6 +4881,10 @@ std::shared_ptr<FuExpr> FuParser::parsePrimaryExpr(bool type, bool new_)
 		}
 	case FuToken::literalLong:
 		result = this->host->program->system->newLiteralLong(this->longValue, this->tokenLoc);
+		nextToken();
+		break;
+	case FuToken::literalHex:
+		result = this->host->program->system->newLiteralHex(this->longValue, this->tokenLoc);
 		nextToken();
 		break;
 	case FuToken::literalDouble:
@@ -8624,6 +8648,11 @@ void GenBase::visitLiteralLong(int64_t i, FuPriority parent)
 	*this->writer << i;
 }
 
+void GenBase::visitLiteralHex(int64_t i)
+{
+	*this->writer << "0x" << std::hex << i << std::dec;
+}
+
 int GenBase::getLiteralChars() const
 {
 	return 0;
@@ -8694,14 +8723,14 @@ void GenBase::visitLiteralString(std::string_view value)
 void GenBase::writeLowercaseChar(int c)
 {
 	if (c >= 'A' && c <= 'Z')
-		c += 32;
+		c += 0x20;
 	*this->writer << static_cast<char>(c);
 }
 
 void GenBase::writeUppercaseChar(int c)
 {
 	if (c >= 'a' && c <= 'z')
-		c -= 32;
+		c -= 0x20;
 	*this->writer << static_cast<char>(c);
 }
 
@@ -10973,14 +11002,14 @@ const FuExpr * GenTyped::getStaticCastInner(const FuType * type, const FuExpr * 
 		switch (type->id) {
 		case FuId::sByteRange:
 		case FuId::byteRange:
-			mask = 255;
+			mask = 0xff;
 			break;
 		case FuId::shortRange:
 		case FuId::uShortRange:
-			mask = 65535;
+			mask = 0xffff;
 			break;
 		case FuId::intType:
-			mask = 4294967295;
+			mask = 0xffffffff;
 			break;
 		default:
 			return expr;
@@ -18309,7 +18338,7 @@ void GenCs::writeName(const FuSymbol * symbol)
 
 int GenCs::getLiteralChars() const
 {
-	return 65536;
+	return 0x10000;
 }
 
 void GenCs::writeVisibility(FuVisibility visibility)
@@ -18470,7 +18499,7 @@ void GenCs::writeNewWithFields(const FuReadWriteClassType * type, const FuAggreg
 void GenCs::writeCoercedLiteral(const FuType * type, const FuExpr * expr)
 {
 	const FuRangeType * range;
-	if (dynamic_cast<const FuLiteralChar *>(expr) && (range = dynamic_cast<const FuRangeType *>(type)) && range->max <= 255)
+	if (dynamic_cast<const FuLiteralChar *>(expr) && (range = dynamic_cast<const FuRangeType *>(type)) && range->max <= 0xff)
 		writeStaticCast(type, expr);
 	else {
 		GenTyped::writeCoercedLiteral(type, expr);
@@ -18484,7 +18513,7 @@ void GenCs::writeStaticCast(const FuType * type, const FuExpr * expr)
 	const FuPrefixExpr * unary;
 	const FuLiteralLong * literal;
 	if ((unary = dynamic_cast<const FuPrefixExpr *>(expr)) && unary->op == FuToken::tilde && (literal = dynamic_cast<const FuLiteralLong *>(unary->inner.get())) && (type->id == FuId::byteRange || type->id == FuId::uShortRange))
-		visitLiteralLong(literal->value ^ (type->id == FuId::byteRange ? 255 : 65535), FuPriority::primary);
+		visitLiteralLong(literal->value ^ (type->id == FuId::byteRange ? 0xff : 0xffff), FuPriority::primary);
 	else {
 		GenTyped::writeStaticCast(type, expr);
 		if (expr->type->nullable && !type->nullable)
@@ -18871,7 +18900,7 @@ void GenCs::writeCallExpr(const FuType * type, const FuExpr * obj, const FuMetho
 		writePostfix(obj, ".Write(");
 		{
 			const FuLiteralChar * literalChar;
-			if ((literalChar = dynamic_cast<const FuLiteralChar *>((*args)[0].get())) && literalChar->value < 65536)
+			if ((literalChar = dynamic_cast<const FuLiteralChar *>((*args)[0].get())) && literalChar->value < 0x10000)
 				(*args)[0]->accept(this, FuPriority::argument);
 			else {
 				include("System.Text");
@@ -19395,7 +19424,7 @@ void GenD::writeName(const FuSymbol * symbol)
 
 int GenD::getLiteralChars() const
 {
-	return 65536;
+	return 0x10000;
 }
 
 void GenD::writeVisibility(FuVisibility visibility)
@@ -20864,9 +20893,16 @@ void GenJava::visitLiteralLong(int64_t value, FuPriority parent)
 		writeChar('L');
 }
 
+void GenJava::visitLiteralHex(int64_t value)
+{
+	GenBase::visitLiteralHex(value);
+	if (value < -2147483647 - 1 || value > 2147483647)
+		writeChar('L');
+}
+
 int GenJava::getLiteralChars() const
 {
-	return 65536;
+	return 0x10000;
 }
 
 void GenJava::writeToString(const FuExpr * expr, FuPriority parent)
@@ -21188,7 +21224,7 @@ void GenJava::visitPostfixExpr(const FuPostfixExpr * expr, FuPriority parent)
 
 void GenJava::writeSByteLiteral(const FuLiteralLong * literal)
 {
-	if (literal->value >= 128)
+	if (literal->value >= 0x80)
 		write("(byte) ");
 	literal->accept(this, FuPriority::primary);
 }
@@ -21264,7 +21300,7 @@ void GenJava::writeAnd(const FuBinaryExpr * expr, FuPriority parent)
 		const FuBinaryExpr * indexing = static_cast<const FuBinaryExpr *>(expr->left.get());
 		writeIndexingInternal(indexing);
 		write(" & ");
-		visitLiteralLong(255 & rightLiteral->value, FuPriority::and_);
+		visitLiteralLong(0xff & rightLiteral->value, FuPriority::and_);
 		if (parent > FuPriority::condAnd && parent != FuPriority::and_)
 			writeChar(')');
 	}

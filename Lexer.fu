@@ -40,6 +40,7 @@ public enum FuToken
 	EndOfFile,
 	Id,
 	LiteralLong,
+	LiteralHex,
 	LiteralDouble,
 	LiteralChar,
 	LiteralString,
@@ -158,7 +159,7 @@ public abstract class FuLexer
 	protected int TokenLoc;
 	protected int LexemeOffset;
 	protected FuToken CurrentToken;
-	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralChar
+	protected long LongValue; // for FuToken.LiteralLong, FuToken.LiteralHex, FuToken.LiteralChar
 	protected string() StringValue; // for FuToken.LiteralString, FuToken.InterpolatedString, FuToken.Id
 	HashSet<string()>() PreSymbols;
 	bool AtLineStart = true;
@@ -314,7 +315,7 @@ public abstract class FuLexer
 					ReportError("Invalid integer");
 				else if (tooBig)
 					ReportError("Integer too big");
-				return FuToken.LiteralLong;
+				return FuToken.LiteralHex;
 			}
 			if (c >= 1 << bits)
 				invalidDigit = true;

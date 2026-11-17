@@ -350,6 +350,7 @@ public abstract class FuVisitor
 	internal abstract void VisitLiteralFalse!();
 	internal abstract void VisitLiteralTrue!();
 	internal abstract void VisitLiteralLong!(long value, FuPriority parent);
+	internal abstract void VisitLiteralHex!(long value);
 	internal abstract void VisitLiteralChar!(int value);
 	internal abstract void VisitLiteralDouble!(double value);
 	internal abstract void VisitLiteralString!(string value);
@@ -503,6 +504,12 @@ class FuLiteralLong : FuLiteral
 	public override bool IsDefaultValue() => this.Value == 0;
 	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralLong(this.Value, parent); }
 	public override string() ToString() => $"{this.Value}";
+}
+
+class FuLiteralHex : FuLiteralLong
+{
+	public override void Accept(FuVisitor! visitor, FuPriority parent) { visitor.VisitLiteralHex(this.Value); }
+	public override string() ToString() => $"0x{this.Value:x}";
 }
 
 class FuLiteralChar : FuLiteralLong
@@ -1719,6 +1726,12 @@ public class FuSystem : FuScope
 	{
 		FuType# type = value >= int.MinValue && value <= int.MaxValue ? FuRangeType.New(value, value) : LongType;
 		return new FuLiteralLong { Loc = loc, Type = type, Value = value };
+	}
+
+	internal FuLiteralHex# NewLiteralHex(long value, int loc)
+	{
+		FuType# type = value >= int.MinValue && value <= int.MaxValue ? FuRangeType.New(value, value) : LongType;
+		return new FuLiteralHex { Loc = loc, Type = type, Value = value };
 	}
 
 	internal FuLiteralString# NewLiteralString(string value, int loc = 0) => new FuLiteralString { Loc = loc, Type = StringPtrType, Value = value };

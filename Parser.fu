@@ -237,6 +237,10 @@ public class FuParser : FuLexer
 			result = this.Host.Program.System.NewLiteralLong(this.LongValue, this.TokenLoc);
 			NextToken();
 			break;
+		case FuToken.LiteralHex:
+			result = this.Host.Program.System.NewLiteralHex(this.LongValue, this.TokenLoc);
+			NextToken();
+			break;
 		case FuToken.LiteralDouble:
 			result = ParseDouble();
 			break;

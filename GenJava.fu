@@ -34,6 +34,13 @@ public class GenJava : GenTyped
 			WriteChar('L');
 	}
 
+	internal override void VisitLiteralHex!(long value)
+	{
+		base.VisitLiteralHex(value);
+		if (value < int.MinValue || value > int.MaxValue)
+			WriteChar('L');
+	}
+
 	protected override int GetLiteralChars() => 0x10000;
 
 	void WriteToString!(FuExpr expr, FuPriority parent)
