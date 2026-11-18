@@ -1,0 +1,18 @@
+native {
+#include "fibonacci.hpp"
+}
+
+public class Tests
+{
+	public static void Main()
+	{
+		assert Fibonacci.Fib(0) == 0;
+		assert Fibonacci.Fib(1) == 1;
+		assert Fibonacci.Fib(2) == 1;
+		assert Fibonacci.Fib(3) == 2;
+		assert Fibonacci.Fib(4) == 3;
+		assert Fibonacci.Fib(5) == 5;
+		assert Fibonacci.Fib(6) == 8;
+		assert Fibonacci.Fib(20) == 6765;
+	}
+}
